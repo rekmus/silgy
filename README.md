@@ -26,4 +26,7 @@ Make your executable:
 m  
 Run:  
 sudo te  
-In the browser, navigate to your host.
+  
+Your app should now be online.  
+  
+Your app logic is in silgy_app.cpp and app_process_req() is your main, called with every browser request.
