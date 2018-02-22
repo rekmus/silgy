@@ -11,9 +11,9 @@
 #include "silgy.h"
 
 
-static char M_df=0;			/* date format */
-static char M_tsep=' ';		/* thousand separator */
-static char M_dsep='.';		/* decimal separator */
+static char M_df=0;         /* date format */
+static char M_tsep=' ';     /* thousand separator */
+static char M_dsep='.';     /* decimal separator */
 
 
 static char *unescstring(char *src, int srclen, char *dest, int maxlen);
@@ -29,12 +29,12 @@ static void set_param(const char *label, const char *value);
 -------------------------------------------------------------------------- */
 double lib_elapsed(struct timespec *start)
 {
-struct timespec	end;
-	double		elapsed;
-	clock_gettime(MONOTONIC_CLOCK_NAME, &end);
-	elapsed = (end.tv_sec - start->tv_sec) * 1000.0;
-	elapsed += (end.tv_nsec - start->tv_nsec) / 1000000.0;
-	return elapsed;
+struct timespec end;
+    double      elapsed;
+    clock_gettime(MONOTONIC_CLOCK_NAME, &end);
+    elapsed = (end.tv_sec - start->tv_sec) * 1000.0;
+    elapsed += (end.tv_nsec - start->tv_nsec) / 1000000.0;
+    return elapsed;
 }
 
 
@@ -43,18 +43,18 @@ struct timespec	end;
 -------------------------------------------------------------------------- */
 void lib_log_memory()
 {
-	long		mem_used;
-	char		mem_used_kb[32];
-	char		mem_used_mb[32];
-	char		mem_used_gb[32];
+    long        mem_used;
+    char        mem_used_kb[32];
+    char        mem_used_mb[32];
+    char        mem_used_gb[32];
 
-	mem_used = lib_get_memory();
+    mem_used = lib_get_memory();
 
-	amt(mem_used_kb, mem_used);
-	amtd(mem_used_mb, (double)mem_used/1024);
-	amtd(mem_used_gb, (double)mem_used/1024/1024);
+    amt(mem_used_kb, mem_used);
+    amtd(mem_used_mb, (double)mem_used/1024);
+    amtd(mem_used_gb, (double)mem_used/1024/1024);
 
-	ALWAYS("Memory: %s kB (%s MB / %s GB)", mem_used_kb, mem_used_mb, mem_used_gb);
+    ALWAYS("Memory: %s kB (%s MB / %s GB)", mem_used_kb, mem_used_mb, mem_used_gb);
 }
 
 
@@ -63,23 +63,23 @@ void lib_log_memory()
 -------------------------------------------------------------------------- */
 static int mem_parse_line(const char* line)
 {
-	long	ret=0;
-	int		i=0;
-	char	strret[64];
-	const char* p=line;
+    long    ret=0;
+    int     i=0;
+    char    strret[64];
+    const char* p=line;
 
-	while (!isdigit(*p)) ++p;		/* skip non-digits */
+    while (!isdigit(*p)) ++p;       /* skip non-digits */
 
-	while (isdigit(*p)) strret[i++] = *p++;
-		
-	strret[i] = EOS;
+    while (isdigit(*p)) strret[i++] = *p++;
+        
+    strret[i] = EOS;
 
-/*	DBG("mem_parse_line: line [%s]", line);
-	DBG("mem_parse_line: strret [%s]", strret);*/
+/*  DBG("mem_parse_line: line [%s]", line);
+    DBG("mem_parse_line: strret [%s]", strret);*/
 
-	ret = atol(strret);
+    ret = atol(strret);
 
-	return ret;
+    return ret;
 }
 
 
@@ -88,40 +88,40 @@ static int mem_parse_line(const char* line)
 -------------------------------------------------------------------------- */
 long lib_get_memory()
 {
-	long result=0;
+    long result=0;
 
 #ifdef __linux__
 
-	char line[128];
-	FILE* file = fopen("/proc/self/status", "r");
+    char line[128];
+    FILE* file = fopen("/proc/self/status", "r");
 
-	if ( !file )
-	{
-		ERR("fopen(\"/proc/self/status\" failed, errno = %d (%s)", errno, strerror(errno));
-		return result;
-	}
+    if ( !file )
+    {
+        ERR("fopen(\"/proc/self/status\" failed, errno = %d (%s)", errno, strerror(errno));
+        return result;
+    }
 
-	while ( fgets(line, 128, file) != NULL )
-	{
-		if ( strncmp(line, "VmHWM:", 6) == 0 )
-		{
-			result = mem_parse_line(line);
-			break;
-		}
-	}
+    while ( fgets(line, 128, file) != NULL )
+    {
+        if ( strncmp(line, "VmHWM:", 6) == 0 )
+        {
+            result = mem_parse_line(line);
+            break;
+        }
+    }
 
-	fclose(file);
+    fclose(file);
 
-#else	/* UNIX */
+#else   /* UNIX */
 
 struct rusage usage;
 
-	getrusage(RUSAGE_SELF, &usage);
-	result = usage.ru_maxrss;
+    getrusage(RUSAGE_SELF, &usage);
+    result = usage.ru_maxrss;
 
 #endif
 
-	return result;
+    return result;
 }
 
 
@@ -130,25 +130,25 @@ struct rusage usage;
 -------------------------------------------------------------------------- */
 char *lib_add_spaces(const char *src, int len)
 {
-static char	ret[256];
-	int		src_len;
-	int		spaces;
-	int		i;
+static char ret[256];
+    int     src_len;
+    int     spaces;
+    int     i;
 
-	src_len = strlen(src);
+    src_len = strlen(src);
 
-	spaces = len - src_len;
+    spaces = len - src_len;
 
-	if ( spaces < 0 ) spaces = 0;
+    if ( spaces < 0 ) spaces = 0;
 
-	strcpy(ret, src);
+    strcpy(ret, src);
 
-	for ( i=src_len; i<len; ++i )
-		ret[i] = ' ';
+    for ( i=src_len; i<len; ++i )
+        ret[i] = ' ';
 
-	ret[i] = EOS;
+    ret[i] = EOS;
 
-	return ret;
+    return ret;
 }
 
 
@@ -157,61 +157,61 @@ static char	ret[256];
 -------------------------------------------------------------------------- */
 void lib_send_ajax_msg(int ci, int errcode)
 {
-	char	id[4]="msg";		/* HTML id */
-	char	msg[256];
-	char	cat='E';			/* category = 'Error' by default */
+    char    id[4]="msg";        /* HTML id */
+    char    msg[256];
+    char    cat='E';            /* category = 'Error' by default */
 
-	if ( errcode == OK )
-	{
-		strcpy(id, "0");
-		cat = 'I';
-	}
-//	else if ( errcode < 0 )		/* server error */
-//	{
-//	}
-	else if ( errcode > 0 && errcode < 20 )	/* login */
-	{
-		strcpy(id, "loe");
-	}
-	else if ( errcode < 30 )	/* email */
-	{
-		strcpy(id, "eme");
-	}
-	else if ( errcode < 40 )	/* password */
-	{
-		strcpy(id, "pae");
-	}
-	else if ( errcode < 50 )	/* repeat password */
-	{
-		strcpy(id, "pre");
-	}
-	else if ( errcode < 60 )	/* old password */
-	{
-		strcpy(id, "poe");
-	}
-//	else if ( errcode < 100 )	/* other error */
-//	{
-//	}
-	else if ( errcode < 200 )	/* warning (yellow) */
-	{
-		cat = 'W';
-	}
-	else if ( errcode < 1000 )	/* info (green) */
-	{
-		cat = 'I';
-	}
-//	else	/* app error */
-//	{
-//	}
+    if ( errcode == OK )
+    {
+        strcpy(id, "0");
+        cat = 'I';
+    }
+//  else if ( errcode < 0 )     /* server error */
+//  {
+//  }
+    else if ( errcode > 0 && errcode < 20 ) /* login */
+    {
+        strcpy(id, "loe");
+    }
+    else if ( errcode < 30 )    /* email */
+    {
+        strcpy(id, "eme");
+    }
+    else if ( errcode < 40 )    /* password */
+    {
+        strcpy(id, "pae");
+    }
+    else if ( errcode < 50 )    /* repeat password */
+    {
+        strcpy(id, "pre");
+    }
+    else if ( errcode < 60 )    /* old password */
+    {
+        strcpy(id, "poe");
+    }
+//  else if ( errcode < 100 )   /* other error */
+//  {
+//  }
+    else if ( errcode < 200 )   /* warning (yellow) */
+    {
+        cat = 'W';
+    }
+    else if ( errcode < 1000 )  /* info (green) */
+    {
+        cat = 'I';
+    }
+//  else    /* app error */
+//  {
+//  }
 
 #ifndef ASYNC_SERVICE
-	eng_get_msg_str(ci, msg, errcode);
-	OUT("%s|%s|%c", id, msg, cat);
+    eng_get_msg_str(ci, msg, errcode);
+    OUT("%s|%s|%c", id, msg, cat);
 
-	DBG("lib_send_ajax_msg: [%s]", G_tmp);
+    DBG("lib_send_ajax_msg: [%s]", G_tmp);
 
-	conn[ci].ctype = RES_TEXT;
-	RES_DONT_CACHE;
+    conn[ci].ctype = RES_TEXT;
+    RES_DONT_CACHE;
 #endif
 }
 
@@ -221,50 +221,50 @@ void lib_send_ajax_msg(int ci, int errcode)
 -------------------------------------------------------------------------- */
 char get_res_type(const char *fname)
 {
-	char	*ext=NULL;
-	char	uext[8]="";
+    char    *ext=NULL;
+    char    uext[8]="";
 
-//	DBG("name: [%s]", fname);
+//  DBG("name: [%s]", fname);
 
-	if ( (ext=(char*)strrchr(fname, '.')) == NULL )		/* no dot */
-		return RES_TEXT;
+    if ( (ext=(char*)strrchr(fname, '.')) == NULL )     /* no dot */
+        return RES_TEXT;
 
-	if ( ext-fname == strlen(fname)-1 )				/* dot is the last char */
-		return RES_TEXT;
+    if ( ext-fname == strlen(fname)-1 )             /* dot is the last char */
+        return RES_TEXT;
 
-	++ext;
+    ++ext;
 
-	if ( strlen(ext) > 4 )							/* extension too long */
-		return RES_TEXT;
+    if ( strlen(ext) > 4 )                          /* extension too long */
+        return RES_TEXT;
 
-//	DBG("ext: [%s]", ext);
+//  DBG("ext: [%s]", ext);
 
-	strcpy(uext, upper(ext));
+    strcpy(uext, upper(ext));
 
-	if ( 0==strcmp(uext, "HTML") || 0==strcmp(uext, "HTM") )
-		return RES_HTML;
-	else if ( 0==strcmp(uext, "CSS") )
-		return RES_CSS;
-	else if ( 0==strcmp(uext, "JS") )
-		return RES_JS;
-	else if ( 0==strcmp(uext, "PDF") )
-		return RES_PDF;
-	else if ( 0==strcmp(uext, "GIF") )
-		return RES_GIF;
-	else if ( 0==strcmp(uext, "JPG") )
-		return RES_JPG;
-	else if ( 0==strcmp(uext, "ICO") )
-		return RES_ICO;
-	else if ( 0==strcmp(uext, "PNG") )
-		return RES_PNG;
-	else if ( 0==strcmp(uext, "BMP") )
-		return RES_BMP;
-	else if ( 0==strcmp(uext, "MP3") )
-		return RES_AMPEG;
-	else if ( 0==strcmp(uext, "EXE") )
-		return RES_EXE;
-	else if ( 0==strcmp(uext, "ZIP") )
-		return RES_ZIP;
+    if ( 0==strcmp(uext, "HTML") || 0==strcmp(uext, "HTM") )
+        return RES_HTML;
+    else if ( 0==strcmp(uext, "CSS") )
+        return RES_CSS;
+    else if ( 0==strcmp(uext, "JS") )
+        return RES_JS;
+    else if ( 0==strcmp(uext, "PDF") )
+        return RES_PDF;
+    else if ( 0==strcmp(uext, "GIF") )
+        return RES_GIF;
+    else if ( 0==strcmp(uext, "JPG") )
+        return RES_JPG;
+    else if ( 0==strcmp(uext, "ICO") )
+        return RES_ICO;
+    else if ( 0==strcmp(uext, "PNG") )
+        return RES_PNG;
+    else if ( 0==strcmp(uext, "BMP") )
+        return RES_BMP;
+    else if ( 0==strcmp(uext, "MP3") )
+        return RES_AMPEG;
+    else if ( 0==strcmp(uext, "EXE") )
+        return RES_EXE;
+    else if ( 0==strcmp(uext, "ZIP") )
+        return RES_ZIP;
 
 }
 
@@ -274,50 +274,50 @@ char get_res_type(const char *fname)
 -------------------------------------------------------------------------- */
 void date_str2rec(const char *str, date_t *rec)
 {
-	int		len;
-	int		i;
-	int		j=0;
-	char	part='Y';
-	char	strtmp[8];
+    int     len;
+    int     i;
+    int     j=0;
+    char    part='Y';
+    char    strtmp[8];
 
-	len = strlen(str);
+    len = strlen(str);
 
-	/* empty or invalid date => return today */
+    /* empty or invalid date => return today */
 
-	if ( len != 10 || str[4] != '-' || str[7] != '-' )
-	{
-		DBG("date_str2rec: empty or invalid date in URI, returning today");
-		rec->year = G_ptm->tm_year+1900;
-		rec->month = G_ptm->tm_mon+1;
-		rec->day = G_ptm->tm_mday;
-		return;
-	}
+    if ( len != 10 || str[4] != '-' || str[7] != '-' )
+    {
+        DBG("date_str2rec: empty or invalid date in URI, returning today");
+        rec->year = G_ptm->tm_year+1900;
+        rec->month = G_ptm->tm_mon+1;
+        rec->day = G_ptm->tm_mday;
+        return;
+    }
 
-	for (i=0; i<len; ++i)
-	{
-		if ( str[i] != '-' )
-			strtmp[j++] = str[i];
-		else	/* end of part */
-		{
-			strtmp[j] = EOS;
-			if ( part == 'Y' )	/* year */
-			{
-				rec->year = atoi(strtmp);
-				part = 'M';
-			}
-			else if ( part == 'M' )	/* month */
-			{
-				rec->month = atoi(strtmp);
-				part = 'D';
-			}
-			j = 0;
-		}
-	}
+    for (i=0; i<len; ++i)
+    {
+        if ( str[i] != '-' )
+            strtmp[j++] = str[i];
+        else    /* end of part */
+        {
+            strtmp[j] = EOS;
+            if ( part == 'Y' )  /* year */
+            {
+                rec->year = atoi(strtmp);
+                part = 'M';
+            }
+            else if ( part == 'M' ) /* month */
+            {
+                rec->month = atoi(strtmp);
+                part = 'D';
+            }
+            j = 0;
+        }
+    }
 
-	/* day */
+    /* day */
 
-	strtmp[j] = EOS;
-	rec->day = atoi(strtmp);
+    strtmp[j] = EOS;
+    rec->day = atoi(strtmp);
 }
 
 
@@ -326,7 +326,7 @@ void date_str2rec(const char *str, date_t *rec)
 -------------------------------------------------------------------------- */
 void date_rec2str(char *str, date_t *rec)
 {
-	sprintf(str, "%d-%02d-%02d", rec->year, rec->month, rec->day);
+    sprintf(str, "%d-%02d-%02d", rec->year, rec->month, rec->day);
 }
 
 
@@ -337,89 +337,89 @@ void date_rec2str(char *str, date_t *rec)
 -------------------------------------------------------------------------- */
 time_t time_http2epoch(const char *str)
 {
-	time_t	epoch;
-	char	tmp[8];
-struct tm	tm;
-//	char	*temp;	// temporarily
+    time_t  epoch;
+    char    tmp[8];
+struct tm   tm;
+//  char    *temp;  // temporarily
 
-	// temporarily
-//	DBG("time_http2epoch in:  [%s]", str);
+    // temporarily
+//  DBG("time_http2epoch in:  [%s]", str);
 
-	if ( strlen(str) != 29 )
-		return 0;
+    if ( strlen(str) != 29 )
+        return 0;
 
-	/* day */
+    /* day */
 
-	strncpy(tmp, str+5, 2);
-	tmp[2] = EOS;
-	tm.tm_mday = atoi(tmp);
+    strncpy(tmp, str+5, 2);
+    tmp[2] = EOS;
+    tm.tm_mday = atoi(tmp);
 
-	/* month */
+    /* month */
 
-	strncpy(tmp, str+8, 3);
-	tmp[3] = EOS;
-	if ( 0==strcmp(tmp, "Feb") )
-		tm.tm_mon = 1;
-	else if ( 0==strcmp(tmp, "Mar") )
-		tm.tm_mon = 2;
-	else if ( 0==strcmp(tmp, "Apr") )
-		tm.tm_mon = 3;
-	else if ( 0==strcmp(tmp, "May") )
-		tm.tm_mon = 4;
-	else if ( 0==strcmp(tmp, "Jun") )
-		tm.tm_mon = 5;
-	else if ( 0==strcmp(tmp, "Jul") )
-		tm.tm_mon = 6;
-	else if ( 0==strcmp(tmp, "Aug") )
-		tm.tm_mon = 7;
-	else if ( 0==strcmp(tmp, "Sep") )
-		tm.tm_mon = 8;
-	else if ( 0==strcmp(tmp, "Oct") )
-		tm.tm_mon = 9;
-	else if ( 0==strcmp(tmp, "Nov") )
-		tm.tm_mon = 10;
-	else if ( 0==strcmp(tmp, "Dec") )
-		tm.tm_mon = 11;
-	else	/* January */
-		tm.tm_mon = 0;
+    strncpy(tmp, str+8, 3);
+    tmp[3] = EOS;
+    if ( 0==strcmp(tmp, "Feb") )
+        tm.tm_mon = 1;
+    else if ( 0==strcmp(tmp, "Mar") )
+        tm.tm_mon = 2;
+    else if ( 0==strcmp(tmp, "Apr") )
+        tm.tm_mon = 3;
+    else if ( 0==strcmp(tmp, "May") )
+        tm.tm_mon = 4;
+    else if ( 0==strcmp(tmp, "Jun") )
+        tm.tm_mon = 5;
+    else if ( 0==strcmp(tmp, "Jul") )
+        tm.tm_mon = 6;
+    else if ( 0==strcmp(tmp, "Aug") )
+        tm.tm_mon = 7;
+    else if ( 0==strcmp(tmp, "Sep") )
+        tm.tm_mon = 8;
+    else if ( 0==strcmp(tmp, "Oct") )
+        tm.tm_mon = 9;
+    else if ( 0==strcmp(tmp, "Nov") )
+        tm.tm_mon = 10;
+    else if ( 0==strcmp(tmp, "Dec") )
+        tm.tm_mon = 11;
+    else    /* January */
+        tm.tm_mon = 0;
 
-	/* year */
+    /* year */
 
-	strncpy(tmp, str+12, 4);
-	tmp[4] = EOS;
-	tm.tm_year = atoi(tmp) - 1900;
+    strncpy(tmp, str+12, 4);
+    tmp[4] = EOS;
+    tm.tm_year = atoi(tmp) - 1900;
 
-	/* hour */
+    /* hour */
 
-	strncpy(tmp, str+17, 2);
-	tmp[2] = EOS;
-	tm.tm_hour = atoi(tmp);
+    strncpy(tmp, str+17, 2);
+    tmp[2] = EOS;
+    tm.tm_hour = atoi(tmp);
 
-	/* minute */
+    /* minute */
 
-	strncpy(tmp, str+20, 2);
-	tmp[2] = EOS;
-	tm.tm_min = atoi(tmp);
+    strncpy(tmp, str+20, 2);
+    tmp[2] = EOS;
+    tm.tm_min = atoi(tmp);
 
-	/* second */
+    /* second */
 
-	strncpy(tmp, str+23, 2);
-	tmp[2] = EOS;
-	tm.tm_sec = atoi(tmp);
+    strncpy(tmp, str+23, 2);
+    tmp[2] = EOS;
+    tm.tm_sec = atoi(tmp);
 
-//	DBG("%d-%02d-%02d %02d:%02d:%02d", tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+//  DBG("%d-%02d-%02d %02d:%02d:%02d", tm.tm_year+1900, tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
 #ifdef __linux__
-	epoch = timegm(&tm);
+    epoch = timegm(&tm);
 #else
-	epoch = mktime(&tm);
+    epoch = mktime(&tm);
 #endif
 
-	// temporarily
-//	char *temp = time_epoch2http(epoch);
-//	DBG("time_http2epoch out: [%s]", temp);
+    // temporarily
+//  char *temp = time_epoch2http(epoch);
+//  DBG("time_http2epoch out: [%s]", temp);
 
-	return epoch;
+    return epoch;
 }
 
 
@@ -429,56 +429,56 @@ struct tm	tm;
 -------------------------------------------------------------------------- */
 time_t time_db2epoch(const char *str)
 {
-	time_t	epoch;
-	char	tmp[8];
-struct tm	tm;
+    time_t  epoch;
+    char    tmp[8];
+struct tm   tm;
 
-	if ( strlen(str) != 19 )
-		return 0;
+    if ( strlen(str) != 19 )
+        return 0;
 
-	/* year */
+    /* year */
 
-	strncpy(tmp, str, 4);
-	tmp[4] = EOS;
-	tm.tm_year = atoi(tmp) - 1900;
+    strncpy(tmp, str, 4);
+    tmp[4] = EOS;
+    tm.tm_year = atoi(tmp) - 1900;
 
-	/* month */
+    /* month */
 
-	strncpy(tmp, str+5, 2);
-	tmp[2] = EOS;
-	tm.tm_mon = atoi(tmp) - 1;
+    strncpy(tmp, str+5, 2);
+    tmp[2] = EOS;
+    tm.tm_mon = atoi(tmp) - 1;
 
-	/* day */
+    /* day */
 
-	strncpy(tmp, str+8, 2);
-	tmp[2] = EOS;
-	tm.tm_mday = atoi(tmp);
+    strncpy(tmp, str+8, 2);
+    tmp[2] = EOS;
+    tm.tm_mday = atoi(tmp);
 
-	/* hour */
+    /* hour */
 
-	strncpy(tmp, str+11, 2);
-	tmp[2] = EOS;
-	tm.tm_hour = atoi(tmp);
+    strncpy(tmp, str+11, 2);
+    tmp[2] = EOS;
+    tm.tm_hour = atoi(tmp);
 
-	/* minute */
+    /* minute */
 
-	strncpy(tmp, str+14, 2);
-	tmp[2] = EOS;
-	tm.tm_min = atoi(tmp);
+    strncpy(tmp, str+14, 2);
+    tmp[2] = EOS;
+    tm.tm_min = atoi(tmp);
 
-	/* second */
+    /* second */
 
-	strncpy(tmp, str+17, 2);
-	tmp[2] = EOS;
-	tm.tm_sec = atoi(tmp);
+    strncpy(tmp, str+17, 2);
+    tmp[2] = EOS;
+    tm.tm_sec = atoi(tmp);
 
 #ifdef __linux__
-	epoch = timegm(&tm);
+    epoch = timegm(&tm);
 #else
-	epoch = mktime(&tm);
+    epoch = mktime(&tm);
 #endif
 
-	return epoch;
+    return epoch;
 }
 
 
@@ -487,13 +487,13 @@ struct tm	tm;
 -------------------------------------------------------------------------- */
 char *time_epoch2http(time_t epoch)
 {
-static char	str[32];
-struct tm	*ptm;
+static char str[32];
+struct tm   *ptm;
 
-	ptm = gmtime(&epoch);
-	strftime(str, 32, "%a, %d %b %Y %X %Z", ptm);
-//	DBG("time_epoch2http: [%s]", str);
-	return str;
+    ptm = gmtime(&epoch);
+    strftime(str, 32, "%a, %d %b %Y %X %Z", ptm);
+//  DBG("time_epoch2http: [%s]", str);
+    return str;
 }
 
 
@@ -502,40 +502,40 @@ struct tm	*ptm;
 ---------------------------------------------------------------------------*/
 void lib_set_datetime_formats(const char *lang)
 {
-	char ulang[8];
+    char ulang[8];
 
-	DBG("lib_set_datetime_formats, lang [%s]", lang);
+    DBG("lib_set_datetime_formats, lang [%s]", lang);
 
-	strcpy(ulang, upper(lang));
+    strcpy(ulang, upper(lang));
 
-	// date format
+    // date format
 
-	if ( 0==strcmp(ulang, "EN-US") )
-		M_df = 1;
-	else if ( 0==strcmp(ulang, "EN-GB") || 0==strcmp(ulang, "EN-AU") || 0==strcmp(ulang, "FR-FR") || 0==strcmp(ulang, "EN-IE") || 0==strcmp(ulang, "ES-ES") || 0==strcmp(ulang, "IT-IT") || 0==strcmp(ulang, "PT-PT") || 0==strcmp(ulang, "PT-BR") || 0==strcmp(ulang, "ES-AR") )
-		M_df = 2;
-	else if ( 0==strcmp(ulang, "PL-PL") || 0==strcmp(ulang, "RU-RU") || 0==strcmp(ulang, "DE-CH") || 0==strcmp(ulang, "FR-CH") )
-		M_df = 3;
-	else
-		M_df = 0;
+    if ( 0==strcmp(ulang, "EN-US") )
+        M_df = 1;
+    else if ( 0==strcmp(ulang, "EN-GB") || 0==strcmp(ulang, "EN-AU") || 0==strcmp(ulang, "FR-FR") || 0==strcmp(ulang, "EN-IE") || 0==strcmp(ulang, "ES-ES") || 0==strcmp(ulang, "IT-IT") || 0==strcmp(ulang, "PT-PT") || 0==strcmp(ulang, "PT-BR") || 0==strcmp(ulang, "ES-AR") )
+        M_df = 2;
+    else if ( 0==strcmp(ulang, "PL-PL") || 0==strcmp(ulang, "RU-RU") || 0==strcmp(ulang, "DE-CH") || 0==strcmp(ulang, "FR-CH") )
+        M_df = 3;
+    else
+        M_df = 0;
 
-	// amount format
+    // amount format
 
-	if ( 0==strcmp(ulang, "EN-US") || 0==strcmp(ulang, "EN-GB") || 0==strcmp(ulang, "EN-AU") || 0==strcmp(ulang, "TH-TH") )
-	{
-		M_tsep = ',';
-		M_dsep = '.';
-	}
-	else if ( 0==strcmp(ulang, "PL-PL") || 0==strcmp(ulang, "IT-IT") || 0==strcmp(ulang, "NB-NO") || 0==strcmp(ulang, "ES-ES") )
-	{
-		M_tsep = '.';
-		M_dsep = ',';
-	}
-	else
-	{
-		M_tsep = ' ';
-		M_dsep = ',';
-	}
+    if ( 0==strcmp(ulang, "EN-US") || 0==strcmp(ulang, "EN-GB") || 0==strcmp(ulang, "EN-AU") || 0==strcmp(ulang, "TH-TH") )
+    {
+        M_tsep = ',';
+        M_dsep = '.';
+    }
+    else if ( 0==strcmp(ulang, "PL-PL") || 0==strcmp(ulang, "IT-IT") || 0==strcmp(ulang, "NB-NO") || 0==strcmp(ulang, "ES-ES") )
+    {
+        M_tsep = '.';
+        M_dsep = ',';
+    }
+    else
+    {
+        M_tsep = ' ';
+        M_dsep = ',';
+    }
 }
 
 
@@ -544,32 +544,32 @@ void lib_set_datetime_formats(const char *lang)
 ---------------------------------------------------------------------------*/
 void amt(char *stramt, long in_amt)
 {
-	char	in_stramt[64];
-	int		len;
-	int		i, j=0;
-	bool	minus=FALSE;
+    char    in_stramt[64];
+    int     len;
+    int     i, j=0;
+    bool    minus=FALSE;
 
-	sprintf(in_stramt, "%ld", in_amt);
+    sprintf(in_stramt, "%ld", in_amt);
 
-	if ( in_stramt[0] == '-' )	/* change to proper UTF-8 minus sign */
-	{
-		strcpy(stramt, "− ");
-		j = 4;
-		minus = TRUE;
-	}
+    if ( in_stramt[0] == '-' )  /* change to proper UTF-8 minus sign */
+    {
+        strcpy(stramt, "− ");
+        j = 4;
+        minus = TRUE;
+    }
 
-	len = strlen(in_stramt);
+    len = strlen(in_stramt);
 
-/*	DBG("----- len = %d", len); */
+/*  DBG("----- len = %d", len); */
 
-	for ( i=(j?1:0); i<len; ++i, ++j )
-	{
-		if ( ((!minus && i) || (minus && i>1)) && !((len-i)%3) )
-			stramt[j++] = M_tsep;
-		stramt[j] = in_stramt[i];
-	}
+    for ( i=(j?1:0); i<len; ++i, ++j )
+    {
+        if ( ((!minus && i) || (minus && i>1)) && !((len-i)%3) )
+            stramt[j++] = M_tsep;
+        stramt[j] = in_stramt[i];
+    }
 
-	stramt[j] = EOS;
+    stramt[j] = EOS;
 }
 
 
@@ -578,37 +578,37 @@ void amt(char *stramt, long in_amt)
 ---------------------------------------------------------------------------*/
 void amtd(char *stramt, double in_amt)
 {
-	char	in_stramt[64];
-	int		len;
-	int		i, j=0;
-	bool	minus=FALSE;
+    char    in_stramt[64];
+    int     len;
+    int     i, j=0;
+    bool    minus=FALSE;
 
-	sprintf(in_stramt, "%0.2lf", in_amt);
+    sprintf(in_stramt, "%0.2lf", in_amt);
 
-	if ( in_stramt[0] == '-' )	/* change to proper UTF-8 minus sign */
-	{
-		strcpy(stramt, "− ");
-		j = 4;
-		minus = TRUE;
-	}
+    if ( in_stramt[0] == '-' )  /* change to proper UTF-8 minus sign */
+    {
+        strcpy(stramt, "− ");
+        j = 4;
+        minus = TRUE;
+    }
 
-	len = strlen(in_stramt);
+    len = strlen(in_stramt);
 
-	for ( i=(j?1:0); i<len; ++i, ++j )
-	{
-		if ( in_stramt[i]=='.' && M_dsep!='.' )
-		{
-			stramt[j] = M_dsep;
-			continue;
-		}
-		else if ( ((!minus && i) || (minus && i>1)) && !((len-i)%3) && len-i > 3 && in_stramt[i] != ' ' && in_stramt[i-1] != ' ' && in_stramt[i-1] != '-' )
-		{
-			stramt[j++] = M_tsep;	/* extra character */
-		}
-		stramt[j] = in_stramt[i];
-	}
+    for ( i=(j?1:0); i<len; ++i, ++j )
+    {
+        if ( in_stramt[i]=='.' && M_dsep!='.' )
+        {
+            stramt[j] = M_dsep;
+            continue;
+        }
+        else if ( ((!minus && i) || (minus && i>1)) && !((len-i)%3) && len-i > 3 && in_stramt[i] != ' ' && in_stramt[i-1] != ' ' && in_stramt[i-1] != '-' )
+        {
+            stramt[j++] = M_tsep;   /* extra character */
+        }
+        stramt[j] = in_stramt[i];
+    }
 
-	stramt[j] = EOS;
+    stramt[j] = EOS;
 }
 
 
@@ -617,10 +617,10 @@ void amtd(char *stramt, double in_amt)
 ---------------------------------------------------------------------------*/
 void samts(char *stramt, const char *in_amt)
 {
-	double	d;
+    double  d;
 
-	sscanf(in_amt, "%lf", &d);
-	amtd(stramt, d);
+    sscanf(in_amt, "%lf", &d);
+    amtd(stramt, d);
 }
 
 
@@ -629,20 +629,20 @@ void samts(char *stramt, const char *in_amt)
 ---------------------------------------------------------------------------*/
 void ftm(char *strtm, long in_tm)
 {
-	char	in_strtm[16];
-	int		i, j=0;
-const char	sep=':';
+    char    in_strtm[16];
+    int     i, j=0;
+const char  sep=':';
 
-	sprintf(in_strtm, "%06ld", in_tm);
+    sprintf(in_strtm, "%06ld", in_tm);
 
-	for ( i=0; i<6; ++i, ++j )
-	{
-		if ( i == 2 || i == 4 )
-			strtm[j++] = sep;
-		strtm[j] = in_strtm[i];
-	}
+    for ( i=0; i<6; ++i, ++j )
+    {
+        if ( i == 2 || i == 4 )
+            strtm[j++] = sep;
+        strtm[j] = in_strtm[i];
+    }
 
-	strtm[j] = EOS;
+    strtm[j] = EOS;
 }
 
 
@@ -653,16 +653,16 @@ char *fmt_date(short year, short month, short day)
 {
 static char date[16];
 
-	if ( M_df == 1 )
-		sprintf(date, "%02d/%02d/%d", month, day, year);
-	else if ( M_df == 2 )
-		sprintf(date, "%02d/%02d/%d", day, month, year);
-	else if ( M_df == 3 )
-		sprintf(date, "%02d.%02d.%d", day, month, year);
-	else	/* M_df == 0 */
-		sprintf(date, "%d-%02d-%02d", year, month, day);
+    if ( M_df == 1 )
+        sprintf(date, "%02d/%02d/%d", month, day, year);
+    else if ( M_df == 2 )
+        sprintf(date, "%02d/%02d/%d", day, month, year);
+    else if ( M_df == 3 )
+        sprintf(date, "%02d.%02d.%d", day, month, year);
+    else    /* M_df == 0 */
+        sprintf(date, "%d-%02d-%02d", year, month, day);
 
-	return date;
+    return date;
 }
 
 
@@ -672,66 +672,66 @@ static char date[16];
 bool get_qs_param(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-	int		fnamelen;
-	char	*p, *p2, *p3;
-	int		len1;		/* fieldname len */
-	int		len2;		/* value len */
-	char	*querystring;
-	int		vallen;
+    int     fnamelen;
+    char    *p, *p2, *p3;
+    int     len1;       /* fieldname len */
+    int     len2;       /* value len */
+    char    *querystring;
+    int     vallen;
 
-	fnamelen = strlen(fieldname);
+    fnamelen = strlen(fieldname);
 
-	if ( conn[ci].post )
-		querystring = conn[ci].data;
-	else
-		querystring = strchr(conn[ci].uri, '?');
+    if ( conn[ci].post )
+        querystring = conn[ci].data;
+    else
+        querystring = strchr(conn[ci].uri, '?');
 
-	if ( querystring == NULL ) return FALSE;	/* no question mark => no values */
+    if ( querystring == NULL ) return FALSE;    /* no question mark => no values */
 
-	if ( !conn[ci].post )
-		++querystring;		/* skip the question mark */
+    if ( !conn[ci].post )
+        ++querystring;      /* skip the question mark */
 
-	for ( p=querystring; *p!=EOS; )
-	{
-		p2 = strchr(p, '=');	/* end of field name */
-		p3 = strchr(p, '&');	/* end of value */
+    for ( p=querystring; *p!=EOS; )
+    {
+        p2 = strchr(p, '=');    /* end of field name */
+        p3 = strchr(p, '&');    /* end of value */
 
-		if ( p3 != NULL )	/* more than one field */
-			len2 = p3 - p;
-		else			/* only one field in URI */
-			len2 = strlen(p);
+        if ( p3 != NULL )   /* more than one field */
+            len2 = p3 - p;
+        else            /* only one field in URI */
+            len2 = strlen(p);
 
-		if ( p2 == NULL || p3 != NULL && p2 > p3 )
-		{
-			/* no '=' present in this field */
-			p3 += len2;
-			continue;
-		}
+        if ( p2 == NULL || p3 != NULL && p2 > p3 )
+        {
+            /* no '=' present in this field */
+            p3 += len2;
+            continue;
+        }
 
-		len1 = p2 - p;	/* field name length */
+        len1 = p2 - p;  /* field name length */
 
-		if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
-		{
-			/* found it */
+        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
+        {
+            /* found it */
 
-			vallen = len2 - len1 - 1;	/* value length before decoding */
+            vallen = len2 - len1 - 1;   /* value length before decoding */
 
-			unescstring(p2+1, vallen, retbuf, MAX_URI_VAL_LEN);
+            unescstring(p2+1, vallen, retbuf, MAX_URI_VAL_LEN);
 
-			return TRUE;
-		}
+            return TRUE;
+        }
 
-		/* try next value */
+        /* try next value */
 
-		p += len2;		/* skip current value */
-		if ( *p == '&' ) ++p;	/* skip & */
-	}
+        p += len2;      /* skip current value */
+        if ( *p == '&' ) ++p;   /* skip & */
+    }
 
-	/* not found */
+    /* not found */
 
-	retbuf[0] = EOS;
+    retbuf[0] = EOS;
 #endif
-	return FALSE;
+    return FALSE;
 }
 
 
@@ -742,66 +742,66 @@ bool get_qs_param(int ci, const char *fieldname, char *retbuf)
 bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-	int		fnamelen;
-	char	*p, *p2, *p3;
-	int		len1;		/* fieldname len */
-	int		len2;		/* value len */
-	char	*querystring;
-	int		vallen;
+    int     fnamelen;
+    char    *p, *p2, *p3;
+    int     len1;       /* fieldname len */
+    int     len2;       /* value len */
+    char    *querystring;
+    int     vallen;
 
-	fnamelen = strlen(fieldname);
+    fnamelen = strlen(fieldname);
 
-	if ( conn[ci].post )
-		querystring = conn[ci].data;
-	else
-		querystring = strchr(conn[ci].uri, '?');
+    if ( conn[ci].post )
+        querystring = conn[ci].data;
+    else
+        querystring = strchr(conn[ci].uri, '?');
 
-	if ( querystring == NULL ) return FALSE;	/* no question mark => no values */
+    if ( querystring == NULL ) return FALSE;    /* no question mark => no values */
 
-	if ( !conn[ci].post )
-		++querystring;		/* skip the question mark */
+    if ( !conn[ci].post )
+        ++querystring;      /* skip the question mark */
 
-	for ( p=querystring; *p!=EOS; )
-	{
-		p2 = strchr(p, '=');	/* end of field name */
-		p3 = strchr(p, '&');	/* end of value */
+    for ( p=querystring; *p!=EOS; )
+    {
+        p2 = strchr(p, '=');    /* end of field name */
+        p3 = strchr(p, '&');    /* end of value */
 
-		if ( p3 != NULL )	/* more than one field */
-			len2 = p3 - p;
-		else			/* only one field in URI */
-			len2 = strlen(p);
+        if ( p3 != NULL )   /* more than one field */
+            len2 = p3 - p;
+        else            /* only one field in URI */
+            len2 = strlen(p);
 
-		if ( p2 == NULL || p3 != NULL && p2 > p3 )
-		{
-			/* no '=' present in this field */
-			p3 += len2;
-			continue;
-		}
+        if ( p2 == NULL || p3 != NULL && p2 > p3 )
+        {
+            /* no '=' present in this field */
+            p3 += len2;
+            continue;
+        }
 
-		len1 = p2 - p;	/* field name length */
+        len1 = p2 - p;  /* field name length */
 
-		if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
-		{
-			/* found it */
+        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
+        {
+            /* found it */
 
-			vallen = len2 - len1 - 1;	/* value length before decoding */
+            vallen = len2 - len1 - 1;   /* value length before decoding */
 
-			unescstring(p2+1, vallen, retbuf, MAX_LONG_URI_VAL_LEN);
+            unescstring(p2+1, vallen, retbuf, MAX_LONG_URI_VAL_LEN);
 
-			return TRUE;
-		}
+            return TRUE;
+        }
 
-		/* try next value */
+        /* try next value */
 
-		p += len2;		/* skip current value */
-		if ( *p == '&' ) ++p;	/* skip & */
-	}
+        p += len2;      /* skip current value */
+        if ( *p == '&' ) ++p;   /* skip & */
+    }
 
-	/* not found */
+    /* not found */
 
-	retbuf[0] = EOS;
+    retbuf[0] = EOS;
 #endif
-	return FALSE;
+    return FALSE;
 }
 
 
@@ -810,19 +810,19 @@ bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
 -------------------------------------------------------------------------- */
 bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf)
 {
-	char	*p;
-	long	len;
-	
-	p = get_qs_param_multipart(ci, fieldname, &len, NULL);
-	
-	if ( !p ) return FALSE;
+    char    *p;
+    long    len;
+    
+    p = get_qs_param_multipart(ci, fieldname, &len, NULL);
+    
+    if ( !p ) return FALSE;
 
-	if ( len > MAX_URI_VAL_LEN ) return FALSE;
+    if ( len > MAX_URI_VAL_LEN ) return FALSE;
 
-	strncpy(retbuf, p, len);
-	retbuf[len] = EOS;
-	
-	return TRUE;
+    strncpy(retbuf, p, len);
+    retbuf[len] = EOS;
+    
+    return TRUE;
 }
 
 
@@ -834,201 +834,201 @@ bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf)
 -------------------------------------------------------------------------- */
 char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname)
 {
-	int		blen;			/* boundary length */
-	char	*cp;			/* current pointer */
+    int     blen;           /* boundary length */
+    char    *cp;            /* current pointer */
 #ifndef ASYNC_SERVICE
-	char	*p;				/* tmp pointer */
-	long	b;				/* tmp bytes count */
-	char	fn[MAX_LABEL_LEN+1];	/* field name */
-	char	*end;
-	long	len;
+    char    *p;             /* tmp pointer */
+    long    b;              /* tmp bytes count */
+    char    fn[MAX_LABEL_LEN+1];    /* field name */
+    char    *end;
+    long    len;
 
-	/* Couple of checks to make sure it's properly formatted multipart content */
+    /* Couple of checks to make sure it's properly formatted multipart content */
 
-	if ( conn[ci].in_ctype != CONTENT_TYPE_MULTIPART )
-	{
-		WAR("This is not multipart/form-data");
-		return NULL;
-	}
+    if ( conn[ci].in_ctype != CONTENT_TYPE_MULTIPART )
+    {
+        WAR("This is not multipart/form-data");
+        return NULL;
+    }
 
-	if ( conn[ci].clen < 10 )
-	{
-		WAR("Content length seems to be too small for multipart (%ld)", conn[ci].clen);
-		return NULL;
-	}
+    if ( conn[ci].clen < 10 )
+    {
+        WAR("Content length seems to be too small for multipart (%ld)", conn[ci].clen);
+        return NULL;
+    }
 
-	cp = conn[ci].data;
+    cp = conn[ci].data;
 
-	if ( !conn[ci].boundary[0] )	/* find first end of line -- that would be end of boundary */
-	{
-		if ( NULL == (p=strchr(cp, '\n')) )
-		{
-			WAR("Request syntax error");
-			return NULL;
-		}
+    if ( !conn[ci].boundary[0] )    /* find first end of line -- that would be end of boundary */
+    {
+        if ( NULL == (p=strchr(cp, '\n')) )
+        {
+            WAR("Request syntax error");
+            return NULL;
+        }
 
-		b = p - cp - 2;		/* skip -- */
+        b = p - cp - 2;     /* skip -- */
 
-		if ( b < 2 )
-		{
-			WAR("Boundary appears to be too short (%ld)", b);
-			return NULL;
-		}
-		else if ( b > 255 )
-		{
-			WAR("Boundary appears to be too long (%ld)", b);
-			return NULL;
-		}
+        if ( b < 2 )
+        {
+            WAR("Boundary appears to be too short (%ld)", b);
+            return NULL;
+        }
+        else if ( b > 255 )
+        {
+            WAR("Boundary appears to be too long (%ld)", b);
+            return NULL;
+        }
 
-		strncpy(conn[ci].boundary, cp+2, b);
-		if ( conn[ci].boundary[b-1] == '\r' )
-			conn[ci].boundary[b-1] = EOS;
-		else
-			conn[ci].boundary[b] = EOS;
-	}
+        strncpy(conn[ci].boundary, cp+2, b);
+        if ( conn[ci].boundary[b-1] == '\r' )
+            conn[ci].boundary[b-1] = EOS;
+        else
+            conn[ci].boundary[b] = EOS;
+    }
 
-	blen = strlen(conn[ci].boundary);
+    blen = strlen(conn[ci].boundary);
 
-	if ( conn[ci].data[conn[ci].clen-4] != '-' || conn[ci].data[conn[ci].clen-3] != '-' )
-	{
-		WAR("Content doesn't end with '--'");
-		return NULL;
-	}
+    if ( conn[ci].data[conn[ci].clen-4] != '-' || conn[ci].data[conn[ci].clen-3] != '-' )
+    {
+        WAR("Content doesn't end with '--'");
+        return NULL;
+    }
 
-	while (TRUE)	/* find the right section */
-	{
-		if ( NULL == (p=strstr(cp, conn[ci].boundary)) )
-		{
-			WAR("No (next) boundary found");
-			return NULL;
-		}
+    while (TRUE)    /* find the right section */
+    {
+        if ( NULL == (p=strstr(cp, conn[ci].boundary)) )
+        {
+            WAR("No (next) boundary found");
+            return NULL;
+        }
 
-		b = p - cp + blen;
-		cp += b;
+        b = p - cp + blen;
+        cp += b;
 
-		if ( NULL == (p=strstr(cp, "Content-Disposition: form-data;")) )
-		{
-			WAR("No Content-Disposition label");
-			return NULL;
-		}
+        if ( NULL == (p=strstr(cp, "Content-Disposition: form-data;")) )
+        {
+            WAR("No Content-Disposition label");
+            return NULL;
+        }
 
-		b = p - cp + 30;
-		cp += b;
+        b = p - cp + 30;
+        cp += b;
 
-		if ( NULL == (p=strstr(cp, "name=\"")) )
-		{
-			WAR("No field name");
-			return NULL;
-		}
+        if ( NULL == (p=strstr(cp, "name=\"")) )
+        {
+            WAR("No field name");
+            return NULL;
+        }
 
-		b = p - cp + 6;
-		cp += b;
+        b = p - cp + 6;
+        cp += b;
 
-//		DBG("field name starts from: [%s]", cp);
+//      DBG("field name starts from: [%s]", cp);
 
-		if ( NULL == (p=strchr(cp, '"')) )
-		{
-			WAR("No field name closing quote");
-			return NULL;
-		}
+        if ( NULL == (p=strchr(cp, '"')) )
+        {
+            WAR("No field name closing quote");
+            return NULL;
+        }
 
-		b = p - cp;
+        b = p - cp;
 
-		if ( b > MAX_LABEL_LEN )
-		{
-			WAR("Field name too long (%ld)", b);
-			return NULL;
-		}
+        if ( b > MAX_LABEL_LEN )
+        {
+            WAR("Field name too long (%ld)", b);
+            return NULL;
+        }
 
-		strncpy(fn, cp, b);
-		fn[b] = EOS;
+        strncpy(fn, cp, b);
+        fn[b] = EOS;
 
-//		DBG("fn: [%s]", fn);
+//      DBG("fn: [%s]", fn);
 
-		if ( 0==strcmp(fn, fieldname) )		/* found */
-			break;
+        if ( 0==strcmp(fn, fieldname) )     /* found */
+            break;
 
-		cp += b;
-	}
+        cp += b;
+    }
 
-	/* find a file name */
+    /* find a file name */
 
-	if ( retfname )
-	{
-		if ( NULL == (p=strstr(cp, "filename=\"")) )
-		{
-			WAR("No file name");
-			return NULL;
-		}
+    if ( retfname )
+    {
+        if ( NULL == (p=strstr(cp, "filename=\"")) )
+        {
+            WAR("No file name");
+            return NULL;
+        }
 
-		b = p - cp + 10;
-		cp += b;
+        b = p - cp + 10;
+        cp += b;
 
-	//	DBG("file name starts from: [%s]", cp);
+    //  DBG("file name starts from: [%s]", cp);
 
-		if ( NULL == (p=strchr(cp, '"')) )
-		{
-			WAR("No file name closing quote");
-			return NULL;
-		}
+        if ( NULL == (p=strchr(cp, '"')) )
+        {
+            WAR("No file name closing quote");
+            return NULL;
+        }
 
-		b = p - cp;
+        b = p - cp;
 
-		if ( b > 255 )
-		{
-			WAR("File name too long (%ld)", b);
-			return NULL;
-		}
+        if ( b > 255 )
+        {
+            WAR("File name too long (%ld)", b);
+            return NULL;
+        }
 
-		strncpy(fn, cp, b);
-		fn[b] = EOS;		/* fn now contains file name */
+        strncpy(fn, cp, b);
+        fn[b] = EOS;        /* fn now contains file name */
 
-		cp += b;
-	}
+        cp += b;
+    }
 
-	/* now look for the section header end where the actual data begins */
+    /* now look for the section header end where the actual data begins */
 
-	if ( NULL == (p=strstr(cp, "\r\n\r\n")) )
-	{
-		WAR("No section header end");
-		return NULL;
-	}
+    if ( NULL == (p=strstr(cp, "\r\n\r\n")) )
+    {
+        WAR("No section header end");
+        return NULL;
+    }
 
-	b = p - cp + 4;
-	cp += b;		/* cp now points to the actual data */
+    b = p - cp + 4;
+    cp += b;        /* cp now points to the actual data */
 
-	/* find out data length */
+    /* find out data length */
 
-	if ( !retfname )	/* text */
-	{
-		if ( NULL == (end=strstr(cp, conn[ci].boundary)) )
-		{
-			WAR("No closing boundary found");
-			return NULL;
-		}
+    if ( !retfname )    /* text */
+    {
+        if ( NULL == (end=strstr(cp, conn[ci].boundary)) )
+        {
+            WAR("No closing boundary found");
+            return NULL;
+        }
 
-		len = end - cp - 4;		/* minus CRLF-- */
-	}
-	else	/* potentially binary content -- calculate rather than use strstr */
-	{
-		len = conn[ci].clen - (cp - conn[ci].data) - blen - 8;	/* fast version */
-																/* Note that the file content must come as last! */
-	}
+        len = end - cp - 4;     /* minus CRLF-- */
+    }
+    else    /* potentially binary content -- calculate rather than use strstr */
+    {
+        len = conn[ci].clen - (cp - conn[ci].data) - blen - 8;  /* fast version */
+                                                                /* Note that the file content must come as last! */
+    }
 
-	if ( len < 0 )
-	{
-		WAR("Ooops, something went terribly wrong! Data length = %ld", len);
-		return NULL;
-	}
+    if ( len < 0 )
+    {
+        WAR("Ooops, something went terribly wrong! Data length = %ld", len);
+        return NULL;
+    }
 
-	/* everything looks good so far */
+    /* everything looks good so far */
 
-	*retlen = len;
+    *retlen = len;
 
-	if ( retfname )
-		strcpy(retfname, fn);
+    if ( retfname )
+        strcpy(retfname, fn);
 #endif
-	return cp;
+    return cp;
 }
 
 
@@ -1037,33 +1037,33 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
 -------------------------------------------------------------------------- */
 static char *unescstring(char *src, int srclen, char *dest, int maxlen)
 {
-	char	*endp=src+srclen;
-	char	*srcp;
-	char	*destp=dest;
-	int		nwrote=0;
+    char    *endp=src+srclen;
+    char    *srcp;
+    char    *destp=dest;
+    int     nwrote=0;
 
-	for ( srcp=src; srcp<endp; ++srcp )
-	{
-		if ( *srcp == '+' )
-			*destp++ = ' ';
-		else if ( *srcp == '%' )
-		{
-			*destp++ = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
-			srcp += 2;
-		}
-		else	/* copy as it is */
-			*destp++ = *srcp;
-		++nwrote;
-		if ( nwrote == maxlen )
-		{
-			DBG("URI val truncated");
-			break;
-		}
-	}
+    for ( srcp=src; srcp<endp; ++srcp )
+    {
+        if ( *srcp == '+' )
+            *destp++ = ' ';
+        else if ( *srcp == '%' )
+        {
+            *destp++ = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
+            srcp += 2;
+        }
+        else    /* copy as it is */
+            *destp++ = *srcp;
+        ++nwrote;
+        if ( nwrote == maxlen )
+        {
+            DBG("URI val truncated");
+            break;
+        }
+    }
 
-	*destp = EOS;
+    *destp = EOS;
 
-	return dest;
+    return dest;
 }
 
 
@@ -1072,14 +1072,14 @@ static char *unescstring(char *src, int srclen, char *dest, int maxlen)
 -------------------------------------------------------------------------- */
 static int xctod(int c)
 {
-	if ( isdigit(c) )
-		return c - '0';
-	else if ( isupper(c) )
-		return c - 'A' + 10;
-	else if ( islower(c) )
-		return c - 'a' + 10;
-	else
-		return 0;
+    if ( isdigit(c) )
+        return c - '0';
+    else if ( isupper(c) )
+        return c - 'A' + 10;
+    else if ( islower(c) )
+        return c - 'a' + 10;
+    else
+        return 0;
 }
 
 
@@ -1088,25 +1088,25 @@ static int xctod(int c)
 -------------------------------------------------------------------------- */
 char const *san(const char *str)
 {
-static char	san[1024];
-	int		i=0, j=0;
+static char san[1024];
+    int     i=0, j=0;
 
-	while ( str[i] && j<1022 )
-	{
-		if ( str[i] == '\'' )
-		{
-			san[j++] = '\'';
-			san[j++] = '\'';
-		}
-		else if ( str[i] != '\r' && str[i] != '\n' && str[i] != '\\' && str[i] != '|' )
-			san[j++] = str[i];
+    while ( str[i] && j<1022 )
+    {
+        if ( str[i] == '\'' )
+        {
+            san[j++] = '\'';
+            san[j++] = '\'';
+        }
+        else if ( str[i] != '\r' && str[i] != '\n' && str[i] != '\\' && str[i] != '|' )
+            san[j++] = str[i];
 
-		++i;
-	}
+        ++i;
+    }
 
-	san[j] = EOS;
+    san[j] = EOS;
 
-	return san;
+    return san;
 }
 
 
@@ -1115,28 +1115,28 @@ static char	san[1024];
 -------------------------------------------------------------------------- */
 char *san_long(const char *str)
 {
-static char	tmp[MAX_LONG_URI_VAL_LEN+1];
-	int		i=0, j=0;
+static char tmp[MAX_LONG_URI_VAL_LEN+1];
+    int     i=0, j=0;
 
-	while ( str[i] != EOS )
-	{
-		if ( j > MAX_LONG_URI_VAL_LEN-5 )
-			break;
-		else if ( str[i] == '\'' )
-		{
-			tmp[j++] = '\'';
-			tmp[j++] = '\'';
-		}
-		else if ( str[i] != '\\' )
-			tmp[j++] = str[i];
-		++i;
-	}
+    while ( str[i] != EOS )
+    {
+        if ( j > MAX_LONG_URI_VAL_LEN-5 )
+            break;
+        else if ( str[i] == '\'' )
+        {
+            tmp[j++] = '\'';
+            tmp[j++] = '\'';
+        }
+        else if ( str[i] != '\\' )
+            tmp[j++] = str[i];
+        ++i;
+    }
 
-	tmp[j] = EOS;
+    tmp[j] = EOS;
 
-//	strcpy(str, tmp);
+//  strcpy(str, tmp);
 
-	return tmp;
+    return tmp;
 }
 
 
@@ -1145,54 +1145,54 @@ static char	tmp[MAX_LONG_URI_VAL_LEN+1];
 -------------------------------------------------------------------------- */
 char *san_noparse(char *str)
 {
-static char	tmp[MAX_LONG_URI_VAL_LEN+1];
-	int		i=0, j=0;
+static char tmp[MAX_LONG_URI_VAL_LEN+1];
+    int     i=0, j=0;
 
-	while ( str[i] != EOS )
-	{
-		if ( j > MAX_LONG_URI_VAL_LEN-5 )
-			break;
-		else if ( str[i] == '\'' )
-		{
-			tmp[j++] = '\'';
-			tmp[j++] = '\'';
-		}
-		else if ( str[i] == '\\' )
-		{
-			tmp[j++] = '\\';
-			tmp[j++] = '\\';
-		}
-		else if ( str[i] == '<' )
-		{
-			tmp[j++] = '&';
-			tmp[j++] = 'l';
-			tmp[j++] = 't';
-			tmp[j++] = ';';
-		}
-		else if ( str[i] == '>' )
-		{
-			tmp[j++] = '&';
-			tmp[j++] = 'g';
-			tmp[j++] = 't';
-			tmp[j++] = ';';
-		}
-		else if ( str[i] == '\n' )
-		{
-			tmp[j++] = '<';
-			tmp[j++] = 'b';
-			tmp[j++] = 'r';
-			tmp[j++] = '>';
-		}
-		else if ( str[i] != '\r' )
-			tmp[j++] = str[i];
-		++i;
-	}
+    while ( str[i] != EOS )
+    {
+        if ( j > MAX_LONG_URI_VAL_LEN-5 )
+            break;
+        else if ( str[i] == '\'' )
+        {
+            tmp[j++] = '\'';
+            tmp[j++] = '\'';
+        }
+        else if ( str[i] == '\\' )
+        {
+            tmp[j++] = '\\';
+            tmp[j++] = '\\';
+        }
+        else if ( str[i] == '<' )
+        {
+            tmp[j++] = '&';
+            tmp[j++] = 'l';
+            tmp[j++] = 't';
+            tmp[j++] = ';';
+        }
+        else if ( str[i] == '>' )
+        {
+            tmp[j++] = '&';
+            tmp[j++] = 'g';
+            tmp[j++] = 't';
+            tmp[j++] = ';';
+        }
+        else if ( str[i] == '\n' )
+        {
+            tmp[j++] = '<';
+            tmp[j++] = 'b';
+            tmp[j++] = 'r';
+            tmp[j++] = '>';
+        }
+        else if ( str[i] != '\r' )
+            tmp[j++] = str[i];
+        ++i;
+    }
 
-	tmp[j] = EOS;
+    tmp[j] = EOS;
 
-	strcpy(str, tmp);
+    strcpy(str, tmp);
 
-	return str;
+    return str;
 }
 
 
@@ -1201,28 +1201,28 @@ static char	tmp[MAX_LONG_URI_VAL_LEN+1];
 -------------------------------------------------------------------------- */
 void unsan(char *dst, const char *str)
 {
-	int		i=0, j=0;
+    int     i=0, j=0;
 
-	while ( str[i] != EOS )
-	{
-		if ( j > MAX_LONG_URI_VAL_LEN-1 )
-			break;
-		else if ( str[i] == '\'' )
-		{
-			dst[j++] = '\\';
-			dst[j++] = '\'';
-		}
-		else if ( str[i] == '\\' )
-		{
-			dst[j++] = '\\';
-			dst[j++] = '\\';
-		}
-		else
-			dst[j++] = str[i];
-		++i;
-	}
+    while ( str[i] != EOS )
+    {
+        if ( j > MAX_LONG_URI_VAL_LEN-1 )
+            break;
+        else if ( str[i] == '\'' )
+        {
+            dst[j++] = '\\';
+            dst[j++] = '\'';
+        }
+        else if ( str[i] == '\\' )
+        {
+            dst[j++] = '\\';
+            dst[j++] = '\\';
+        }
+        else
+            dst[j++] = str[i];
+        ++i;
+    }
 
-	dst[j] = EOS;
+    dst[j] = EOS;
 }
 
 
@@ -1231,50 +1231,50 @@ void unsan(char *dst, const char *str)
 -------------------------------------------------------------------------- */
 void unsan_noparse(char *dst, const char *str)
 {
-	int		i=0, j=0;
+    int     i=0, j=0;
 
-	while ( str[i] != EOS )
-	{
-		if ( j > MAX_LONG_URI_VAL_LEN-1 )
-			break;
-		else if ( str[i] == '\'' )
-		{
-			dst[j++] = '\\';
-			dst[j++] = '\'';
-		}
-		else if ( i > 2
-					&& str[i-3]=='&'
-					&& str[i-2]=='l'
-					&& str[i-1]=='t'
-					&& str[i]==';' )
-		{
-			j -= 3;
-			dst[j++] = '<';
-		}
-		else if ( i > 2
-					&& str[i-3]=='&'
-					&& str[i-2]=='g'
-					&& str[i-1]=='t'
-					&& str[i]==';' )
-		{
-			j -= 3;
-			dst[j++] = '>';
-		}
-		else if ( i > 2
-					&& str[i-3]=='<'
-					&& str[i-2]=='b'
-					&& str[i-1]=='r'
-					&& str[i]=='>' )
-		{
-			j -= 3;
-			dst[j++] = '\n';
-		}
-		else
-			dst[j++] = str[i];
-		++i;
-	}
+    while ( str[i] != EOS )
+    {
+        if ( j > MAX_LONG_URI_VAL_LEN-1 )
+            break;
+        else if ( str[i] == '\'' )
+        {
+            dst[j++] = '\\';
+            dst[j++] = '\'';
+        }
+        else if ( i > 2
+                    && str[i-3]=='&'
+                    && str[i-2]=='l'
+                    && str[i-1]=='t'
+                    && str[i]==';' )
+        {
+            j -= 3;
+            dst[j++] = '<';
+        }
+        else if ( i > 2
+                    && str[i-3]=='&'
+                    && str[i-2]=='g'
+                    && str[i-1]=='t'
+                    && str[i]==';' )
+        {
+            j -= 3;
+            dst[j++] = '>';
+        }
+        else if ( i > 2
+                    && str[i-3]=='<'
+                    && str[i-2]=='b'
+                    && str[i-1]=='r'
+                    && str[i]=='>' )
+        {
+            j -= 3;
+            dst[j++] = '\n';
+        }
+        else
+            dst[j++] = str[i];
+        ++i;
+    }
 
-	dst[j] = EOS;
+    dst[j] = EOS;
 }
 
 
@@ -1283,17 +1283,17 @@ void unsan_noparse(char *dst, const char *str)
 ---------------------------------------------------------------------------*/
 /*void str2upper(char *dest, const char *src)
 {
-	int	i;
+    int i;
 
-	for ( i=0; src[i]; ++i )
-	{
-		if ( src[i] >= 97 && src[i] <= 122 )
-			dest[i] = src[i] - 32;
-		else
-			dest[i] = src[i];
-	}
+    for ( i=0; src[i]; ++i )
+    {
+        if ( src[i] >= 97 && src[i] <= 122 )
+            dest[i] = src[i] - 32;
+        else
+            dest[i] = src[i];
+    }
 
-	dest[i] = EOS;
+    dest[i] = EOS;
 }*/
 
 
@@ -1302,20 +1302,20 @@ void unsan_noparse(char *dst, const char *str)
 ---------------------------------------------------------------------------*/
 char *upper(const char *str)
 {
-static char	upper[1024];
-	int		i;
+static char upper[1024];
+    int     i;
 
-	for ( i=0; str[i] && i<1023; ++i )
-	{
-		if ( str[i] >= 97 && str[i] <= 122 )
-			upper[i] = str[i] - 32;
-		else
-			upper[i] = str[i];
-	}
+    for ( i=0; str[i] && i<1023; ++i )
+    {
+        if ( str[i] >= 97 && str[i] <= 122 )
+            upper[i] = str[i] - 32;
+        else
+            upper[i] = str[i];
+    }
 
-	upper[i] = EOS;
+    upper[i] = EOS;
 
-	return upper;
+    return upper;
 }
 
 
@@ -1324,14 +1324,14 @@ static char	upper[1024];
 -------------------------------------------------------------------------- */
 char *stp_right(char *str)
 {
-	char *p;
+    char *p;
 
-	for ( p = str + strlen(str) - 1;
-		  p >= str && (*p == ' ' || *p == '\t');
-		  p-- )
-		  *p = 0;
+    for ( p = str + strlen(str) - 1;
+          p >= str && (*p == ' ' || *p == '\t');
+          p-- )
+          *p = 0;
 
-	return str;
+    return str;
 }
 
 
@@ -1340,15 +1340,15 @@ char *stp_right(char *str)
 ---------------------------------------------------------------------------*/
 bool strdigits(const char *src)
 {
-	int	i;
+    int i;
 
-	for ( i=0; src[i]; ++i )
-	{
-		if ( !isdigit(src[i]) )
-			return FALSE;
-	}
+    for ( i=0; src[i]; ++i )
+    {
+        if ( !isdigit(src[i]) )
+            return FALSE;
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 
@@ -1357,19 +1357,19 @@ bool strdigits(const char *src)
 ---------------------------------------------------------------------------*/
 char *nospaces(char *dst, const char *src)
 {
-	const char	*p=src;
-	int		i=0;
+    const char  *p=src;
+    int     i=0;
 
-	while ( *p )
-	{
-		if ( *p != ' ' && *p != '\t' )
-			dst[i++] = *p;
-		++p;
-	}
+    while ( *p )
+    {
+        if ( *p != ' ' && *p != '\t' )
+            dst[i++] = *p;
+        ++p;
+    }
 
-	dst[i] = EOS;
+    dst[i] = EOS;
 
-	return dst;
+    return dst;
 }
 
 
@@ -1378,21 +1378,21 @@ char *nospaces(char *dst, const char *src)
 -------------------------------------------------------------------------- */
 void get_random_str(char *dest, int len)
 {
-const char	*chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const char  *chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 static unsigned long req=0;
-	int		max;
-	int		i;
+    int     max;
+    int     i;
 
-	max = strlen(chars);
+    max = strlen(chars);
 
-	srand(time(NULL)*G_pid+req);
+    srand(time(NULL)*G_pid+req);
 
-	++req;
+    ++req;
 
-	for ( i=0; i<len; ++i )
-		dest[i] = chars[rand() % max];
+    for ( i=0; i<len; ++i )
+        dest[i] = chars[rand() % max];
 
-	dest[i] = EOS;
+    dest[i] = EOS;
 }
 
 
@@ -1402,10 +1402,10 @@ static unsigned long req=0;
 -------------------------------------------------------------------------- */
 void msleep(long n)
 {
-	struct timeval tv;
-	tv.tv_sec = 0;
-	tv.tv_usec = n * 1000;
-	select(0, NULL, NULL, NULL, &tv);
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = n * 1000;
+    select(0, NULL, NULL, NULL, &tv);
 }
 
 
@@ -1427,13 +1427,13 @@ void get_byteorder32()
 
         if ( test.c[3] && !test.c[2] && !test.c[1] && !test.c[0] )
         {
-	        DBG("This is big endian");
+            DBG("This is big endian");
                 return;
         }
 
         if ( !test.c[3] && !test.c[2] && !test.c[1] && test.c[0] )
         {
-	        DBG("This is little endian");
+            DBG("This is little endian");
                 return;
         }
 
@@ -1459,13 +1459,13 @@ void get_byteorder64()
 
         if ( test.c[7] && !test.c[3] && !test.c[2] && !test.c[1] && !test.c[0] )
         {
-	        DBG("This is big endian");
+            DBG("This is big endian");
                 return;
         }
 
         if ( !test.c[7] && !test.c[3] && !test.c[2] && !test.c[1] && test.c[0] )
         {
-	        DBG("This is little endian");
+            DBG("This is little endian");
                 return;
         }
 
@@ -1479,56 +1479,56 @@ void get_byteorder64()
 time_t db2epoch(const char *str)
 {
 
-	int		i;
-	int		j=0;
-	char	part='Y';
-	char	strtmp[8];
-struct tm	t={0};
+    int     i;
+    int     j=0;
+    char    part='Y';
+    char    strtmp[8];
+struct tm   t={0};
 
-/*	DBG("db2epoch: str: [%s]", str); */
+/*  DBG("db2epoch: str: [%s]", str); */
 
-	for ( i=0; str[i]; ++i )
-	{
-		if ( isdigit(str[i]) )
-			strtmp[j++] = str[i];
-		else	/* end of part */
-		{
-			strtmp[j] = EOS;
-			if ( part == 'Y' )	/* year */
-			{
-				t.tm_year = atoi(strtmp) - 1900;
-				part = 'M';
-			}
-			else if ( part == 'M' )	/* month */
-			{
-				t.tm_mon = atoi(strtmp) - 1;
-				part = 'D';
-			}
-			else if ( part == 'D' )	/* day */
-			{
-				t.tm_mday = atoi(strtmp);
-				part = 'H';
-			}
-			else if ( part == 'H' )	/* hour */
-			{
-				t.tm_hour = atoi(strtmp);
-				part = 'm';
-			}
-			else if ( part == 'm' )	/* minutes */
-			{
-				t.tm_min = atoi(strtmp);
-				part = 's';
-			}
-			j = 0;
-		}
-	}
+    for ( i=0; str[i]; ++i )
+    {
+        if ( isdigit(str[i]) )
+            strtmp[j++] = str[i];
+        else    /* end of part */
+        {
+            strtmp[j] = EOS;
+            if ( part == 'Y' )  /* year */
+            {
+                t.tm_year = atoi(strtmp) - 1900;
+                part = 'M';
+            }
+            else if ( part == 'M' ) /* month */
+            {
+                t.tm_mon = atoi(strtmp) - 1;
+                part = 'D';
+            }
+            else if ( part == 'D' ) /* day */
+            {
+                t.tm_mday = atoi(strtmp);
+                part = 'H';
+            }
+            else if ( part == 'H' ) /* hour */
+            {
+                t.tm_hour = atoi(strtmp);
+                part = 'm';
+            }
+            else if ( part == 'm' ) /* minutes */
+            {
+                t.tm_min = atoi(strtmp);
+                part = 's';
+            }
+            j = 0;
+        }
+    }
 
-	/* seconds */
+    /* seconds */
 
-	strtmp[j] = EOS;
-	t.tm_sec = atoi(strtmp);
+    strtmp[j] = EOS;
+    t.tm_sec = atoi(strtmp);
 
-	return mktime(&t);
+    return mktime(&t);
 }
 
 
@@ -1538,42 +1538,42 @@ struct tm	t={0};
 bool sendemail(int ci, const char *to, const char *subject, const char *message)
 {
 #ifndef ASYNC_SERVICE
-	char	sender[256];
-	char	*colon;
-	char	comm[256];
+    char    sender[256];
+    char    *colon;
+    char    comm[256];
 
-	sprintf(sender, "%s <noreply@%s>", conn[ci].website, conn[ci].host);
+    sprintf(sender, "%s <noreply@%s>", conn[ci].website, conn[ci].host);
 
-	/* happens when using non-standard port */
+    /* happens when using non-standard port */
 
-	if ( G_test && (colon=strchr(sender, ':')) )
-	{
-		*colon = '>';
-		*(++colon) = EOS;
-		DBG("sender truncated to [%s]", sender);
-	}
+    if ( G_test && (colon=strchr(sender, ':')) )
+    {
+        *colon = '>';
+        *(++colon) = EOS;
+        DBG("sender truncated to [%s]", sender);
+    }
 
-	sprintf(comm, "/usr/lib/sendmail -t -f \"%s\"", sender);
+    sprintf(comm, "/usr/lib/sendmail -t -f \"%s\"", sender);
 
-	FILE *mailpipe = popen(comm, "w");
+    FILE *mailpipe = popen(comm, "w");
 
-	if ( mailpipe == NULL )
-	{
-		ERR("Failed to invoke sendmail");
-		return FALSE;
-	}
-	else
-	{
-		DBG("Sending email to: [%s], subject: [%s]", to, subject);
-		fprintf(mailpipe, "To: %s\n", to);
-		fprintf(mailpipe, "From: %s\n", sender);
-		fprintf(mailpipe, "Subject: %s\n\n", subject);
-		fwrite(message, 1, strlen(message), mailpipe);
-		fwrite("\n.\n", 1, 3, mailpipe);
-		pclose(mailpipe);
-	}
+    if ( mailpipe == NULL )
+    {
+        ERR("Failed to invoke sendmail");
+        return FALSE;
+    }
+    else
+    {
+        DBG("Sending email to: [%s], subject: [%s]", to, subject);
+        fprintf(mailpipe, "To: %s\n", to);
+        fprintf(mailpipe, "From: %s\n", sender);
+        fprintf(mailpipe, "Subject: %s\n\n", subject);
+        fwrite(message, 1, strlen(message), mailpipe);
+        fwrite("\n.\n", 1, 3, mailpipe);
+        pclose(mailpipe);
+    }
 #endif
-	return TRUE;
+    return TRUE;
 }
 
 
@@ -1586,8 +1586,8 @@ bool sendemail(int ci, const char *to, const char *subject, const char *message)
 -------------------------------------------------------------------------- */
 int lib_minify(char *dest, const char *src)
 {
-	minify_1(dest, src);
-	return minify_2(dest, dest);
+    minify_1(dest, src);
+    return minify_2(dest, dest);
 }
 
 
@@ -1596,55 +1596,55 @@ int lib_minify(char *dest, const char *src)
 -------------------------------------------------------------------------- */
 static void minify_1(char *dest, const char *src)
 {
-	int		len;
-	int		i;
-	int		j=0;
-	bool	opensq=FALSE;		/* single quote */
-	bool	opendq=FALSE;		/* double quote */
-	bool	openco=FALSE;		/* comment */
-	bool	opensc=FALSE;		/* star comment */
+    int     len;
+    int     i;
+    int     j=0;
+    bool    opensq=FALSE;       /* single quote */
+    bool    opendq=FALSE;       /* double quote */
+    bool    openco=FALSE;       /* comment */
+    bool    opensc=FALSE;       /* star comment */
 
-	len = strlen(src);
+    len = strlen(src);
 
-	for ( i=0; i<len; ++i )
-	{
-		if ( !openco && !opensc && !opensq && src[i]=='"' && (i==0 || (i>0 && src[i-1]!='\\')) )
-		{
-			if ( !opendq )
-				opendq = TRUE;
-			else
-				opendq = FALSE;
-		}
-		else if ( !openco && !opensc && !opendq && src[i]=='\'' )
-		{
-			if ( !opensq )
-				opensq = TRUE;
-			else
-				opensq = FALSE;
-		}
-		else if ( !opensq && !opendq && !openco && !opensc && src[i]=='/' && src[i+1] == '/' )
-		{
-			openco = TRUE;
-		}
-		else if ( !opensq && !opendq && !openco && !opensc && src[i]=='/' && src[i+1] == '*' )
-		{
-			opensc = TRUE;
-		}
-		else if ( openco && src[i]=='\n' )
-		{
-			openco = FALSE;
-		}
-		else if ( opensc && src[i]=='*' && src[i+1]=='/' )
-		{
-			opensc = FALSE;
-			i += 2;
-		}
+    for ( i=0; i<len; ++i )
+    {
+        if ( !openco && !opensc && !opensq && src[i]=='"' && (i==0 || (i>0 && src[i-1]!='\\')) )
+        {
+            if ( !opendq )
+                opendq = TRUE;
+            else
+                opendq = FALSE;
+        }
+        else if ( !openco && !opensc && !opendq && src[i]=='\'' )
+        {
+            if ( !opensq )
+                opensq = TRUE;
+            else
+                opensq = FALSE;
+        }
+        else if ( !opensq && !opendq && !openco && !opensc && src[i]=='/' && src[i+1] == '/' )
+        {
+            openco = TRUE;
+        }
+        else if ( !opensq && !opendq && !openco && !opensc && src[i]=='/' && src[i+1] == '*' )
+        {
+            opensc = TRUE;
+        }
+        else if ( openco && src[i]=='\n' )
+        {
+            openco = FALSE;
+        }
+        else if ( opensc && src[i]=='*' && src[i+1]=='/' )
+        {
+            opensc = FALSE;
+            i += 2;
+        }
 
-		if ( !openco && !opensc )		/* unless it's a comment ... */
-			dest[j++] = src[i];
-	}
+        if ( !openco && !opensc )       /* unless it's a comment ... */
+            dest[j++] = src[i];
+    }
 
-	dest[j] = EOS;
+    dest[j] = EOS;
 }
 
 
@@ -1653,103 +1653,103 @@ static void minify_1(char *dest, const char *src)
 -------------------------------------------------------------------------- */
 static int minify_2(char *dest, const char *src)
 {
-	int		len;
-	int		i;
-	int		j=0;
-	bool	opensq=FALSE;		/* single quote */
-	bool	opendq=FALSE;		/* double quote */
-	bool	openbr=FALSE;		/* curly braces */
-	bool	openwo=FALSE;		/* word */
-	bool	opencc=FALSE;		/* colon */
-	bool	skip_ws=FALSE;		/* skip white spaces */
-	char	word[256]="";
-	int		wi=0;				/* word index */
+    int     len;
+    int     i;
+    int     j=0;
+    bool    opensq=FALSE;       /* single quote */
+    bool    opendq=FALSE;       /* double quote */
+    bool    openbr=FALSE;       /* curly braces */
+    bool    openwo=FALSE;       /* word */
+    bool    opencc=FALSE;       /* colon */
+    bool    skip_ws=FALSE;      /* skip white spaces */
+    char    word[256]="";
+    int     wi=0;               /* word index */
 
-	len = strlen(src);
+    len = strlen(src);
 
-	for ( i=0; i<len; ++i )
-	{
-		if ( !opensq && src[i]=='"' && (i==0 || (i>0 && src[i-1]!='\\')) )
-		{
-			if ( !opendq )
-				opendq = TRUE;
-			else
-				opendq = FALSE;
-		}
-		else if ( !opendq && src[i]=='\'' )
-		{
-			if ( !opensq )
-				opensq = TRUE;
-			else
-				opensq = FALSE;
-		}
-		else if ( !opensq && !opendq && !openbr && src[i]=='{' )
-		{
-			openbr = TRUE;
-			openwo = FALSE;
-			wi = 0;
-			skip_ws = TRUE;
-		}
-		else if ( !opensq && !opendq && openbr && src[i]=='}' )
-		{
-			openbr = FALSE;
-			openwo = FALSE;
-			wi = 0;
-			skip_ws = TRUE;
-		}
-		else if ( !opensq && !opendq && openbr && !opencc && src[i]==':' )
-		{
-			opencc = TRUE;
-			openwo = FALSE;
-			wi = 0;
-			skip_ws = TRUE;
-		}
-		else if ( !opensq && !opendq && opencc && src[i]==';' )
-		{
-			opencc = FALSE;
-			openwo = FALSE;
-			wi = 0;
-			skip_ws = TRUE;
-		}
-		else if ( !opensq && !opendq && !opencc && !openwo && (isalpha(src[i]) || src[i]=='|' || src[i]=='&') )	/* word is starting */
-		{
-			openwo = TRUE;
-		}
-		else if ( !opensq && !opendq && openwo && !isalnum(src[i]) && src[i]!='_' && src[i]!='|' && src[i]!='&' )	/* end of word */
-		{
-			word[wi] = EOS;
-			if ( 0==strcmp(word, "var")
-					|| (0==strcmp(word, "function") && src[i]!='(')
-					|| (0==strcmp(word, "else") && src[i]!='{')
-					|| 0==strcmp(word, "new")
-					|| (0==strcmp(word, "return") && src[i]!=';')
-					|| 0==strcmp(word, "||")
-					|| 0==strcmp(word, "&&") )
-				dest[j++] = ' ';
-			openwo = FALSE;
-			wi = 0;
-			skip_ws = TRUE;
-		}
+    for ( i=0; i<len; ++i )
+    {
+        if ( !opensq && src[i]=='"' && (i==0 || (i>0 && src[i-1]!='\\')) )
+        {
+            if ( !opendq )
+                opendq = TRUE;
+            else
+                opendq = FALSE;
+        }
+        else if ( !opendq && src[i]=='\'' )
+        {
+            if ( !opensq )
+                opensq = TRUE;
+            else
+                opensq = FALSE;
+        }
+        else if ( !opensq && !opendq && !openbr && src[i]=='{' )
+        {
+            openbr = TRUE;
+            openwo = FALSE;
+            wi = 0;
+            skip_ws = TRUE;
+        }
+        else if ( !opensq && !opendq && openbr && src[i]=='}' )
+        {
+            openbr = FALSE;
+            openwo = FALSE;
+            wi = 0;
+            skip_ws = TRUE;
+        }
+        else if ( !opensq && !opendq && openbr && !opencc && src[i]==':' )
+        {
+            opencc = TRUE;
+            openwo = FALSE;
+            wi = 0;
+            skip_ws = TRUE;
+        }
+        else if ( !opensq && !opendq && opencc && src[i]==';' )
+        {
+            opencc = FALSE;
+            openwo = FALSE;
+            wi = 0;
+            skip_ws = TRUE;
+        }
+        else if ( !opensq && !opendq && !opencc && !openwo && (isalpha(src[i]) || src[i]=='|' || src[i]=='&') ) /* word is starting */
+        {
+            openwo = TRUE;
+        }
+        else if ( !opensq && !opendq && openwo && !isalnum(src[i]) && src[i]!='_' && src[i]!='|' && src[i]!='&' )   /* end of word */
+        {
+            word[wi] = EOS;
+            if ( 0==strcmp(word, "var")
+                    || (0==strcmp(word, "function") && src[i]!='(')
+                    || (0==strcmp(word, "else") && src[i]!='{')
+                    || 0==strcmp(word, "new")
+                    || (0==strcmp(word, "return") && src[i]!=';')
+                    || 0==strcmp(word, "||")
+                    || 0==strcmp(word, "&&") )
+                dest[j++] = ' ';
+            openwo = FALSE;
+            wi = 0;
+            skip_ws = TRUE;
+        }
 
-		if ( opensq || opendq
-				|| src[i+1] == '|' || src[i+1] == '&'
-				|| (src[i] != ' ' && src[i] != '\t' && src[i] != '\n' && src[i] != '\r')
-				|| opencc )
-			dest[j++] = src[i];
-		
-		if ( openwo )
-			word[wi++] = src[i];
+        if ( opensq || opendq
+                || src[i+1] == '|' || src[i+1] == '&'
+                || (src[i] != ' ' && src[i] != '\t' && src[i] != '\n' && src[i] != '\r')
+                || opencc )
+            dest[j++] = src[i];
+        
+        if ( openwo )
+            word[wi++] = src[i];
 
-		if ( skip_ws )
-		{
-			while ( src[i+1] && (src[i+1]==' ' || src[i+1]=='\t' || src[i+1]=='\n' || src[i+1]=='\r') ) ++i;
-			skip_ws = FALSE;
-		}
-	}
+        if ( skip_ws )
+        {
+            while ( src[i+1] && (src[i+1]==' ' || src[i+1]=='\t' || src[i+1]=='\n' || src[i+1]=='\r') ) ++i;
+            skip_ws = FALSE;
+        }
+    }
 
-	dest[j] = EOS;
-	
-	return j;
+    dest[j] = EOS;
+    
+    return j;
 }
 
 
@@ -1759,13 +1759,13 @@ static int minify_2(char *dest, const char *src)
 void add_script(int ci, const char *fname, bool first)
 {
 #ifndef ASYNC_SERVICE
-	if ( first )
-	{
-		DBG("first = TRUE; Defining ld()");
-		OUT("function ld(n){var f=document.createElement('script');f.setAttribute(\"type\",\"text/javascript\");f.setAttribute(\"src\",n);document.getElementsByTagName(\"head\")[0].appendChild(f);}");
-		first = FALSE;
-	}
-	OUT("ld('%s');", fname);
+    if ( first )
+    {
+        DBG("first = TRUE; Defining ld()");
+        OUT("function ld(n){var f=document.createElement('script');f.setAttribute(\"type\",\"text/javascript\");f.setAttribute(\"src\",n);document.getElementsByTagName(\"head\")[0].appendChild(f);}");
+        first = FALSE;
+    }
+    OUT("ld('%s');", fname);
 #endif
 }
 
@@ -1776,20 +1776,20 @@ void add_script(int ci, const char *fname, bool first)
 -------------------------------------------------------------------------- */
 void date_inc(char *str, int days, int *dow)
 {
-	char	full[32];
-	time_t	told, tnew;
+    char    full[32];
+    time_t  told, tnew;
 
-	sprintf(full, "%s 00:00:00", str);
+    sprintf(full, "%s 00:00:00", str);
 
-	told = db2epoch(full);
+    told = db2epoch(full);
 
-	tnew = told + 3600*24*days;
+    tnew = told + 3600*24*days;
 
-	G_ptm = gmtime(&tnew);
-	sprintf(str, "%d-%02d-%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday);
-	*dow = G_ptm->tm_wday;
+    G_ptm = gmtime(&tnew);
+    sprintf(str, "%d-%02d-%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday);
+    *dow = G_ptm->tm_wday;
 
-	G_ptm = gmtime(&G_now);	/* set it back */
+    G_ptm = gmtime(&G_now); /* set it back */
 
 }
 
@@ -1800,16 +1800,16 @@ void date_inc(char *str, int days, int *dow)
 -------------------------------------------------------------------------- */
 int date_cmp(const char *str1, const char *str2)
 {
-	char	full[32];
-	time_t	t1, t2;
+    char    full[32];
+    time_t  t1, t2;
 
-	sprintf(full, "%s 00:00:00", str1);
-	t1 = db2epoch(full);
+    sprintf(full, "%s 00:00:00", str1);
+    t1 = db2epoch(full);
 
-	sprintf(full, "%s 00:00:00", str2);
-	t2 = db2epoch(full);
+    sprintf(full, "%s 00:00:00", str2);
+    t2 = db2epoch(full);
 
-	return t1 - t2;
+    return t1 - t2;
 }
 
 
@@ -1818,112 +1818,112 @@ int date_cmp(const char *str1, const char *str2)
 -------------------------------------------------------------------------- */
 bool read_conf()
 {
-	char	default_conf_path[]="silgy.conf";
-	char	*p_conf_path=NULL;
-	FILE	*h_file=NULL;
-	int		c=0;
-	int		i=0;
-	char	now_label=1;
-	char	now_value=0;
-	char	now_comment=0;
-	char	label[64]="";
-	char	value[256]="";
+    char    default_conf_path[]="silgy.conf";
+    char    *p_conf_path=NULL;
+    FILE    *h_file=NULL;
+    int     c=0;
+    int     i=0;
+    char    now_label=1;
+    char    now_value=0;
+    char    now_comment=0;
+    char    label[64]="";
+    char    value[256]="";
 
-	/* set defaults */
+    /* set defaults */
 
-	G_logLevel = 2;
-	G_httpPort = 80;
-	G_httpsPort = 443;
-	G_certFile[0] = EOS;
-	G_certChainFile[0] = EOS;
-	G_keyFile[0] = EOS;
-	G_dbName[0] = EOS;
-	G_dbUser[0] = EOS;
-	G_dbPassword[0] = EOS;
-	G_blockedIPList[0] = EOS;
-	G_test = 0;
+    G_logLevel = 2;
+    G_httpPort = 80;
+    G_httpsPort = 443;
+    G_certFile[0] = EOS;
+    G_certChainFile[0] = EOS;
+    G_keyFile[0] = EOS;
+    G_dbName[0] = EOS;
+    G_dbUser[0] = EOS;
+    G_dbPassword[0] = EOS;
+    G_blockedIPList[0] = EOS;
+    G_test = 0;
 
-	/* get the conf file path & name */
+    /* get the conf file path & name */
 
-	if ( NULL == (p_conf_path=getenv("SILGY_CONF")) )
-	{
-		printf("SILGY_CONF not set, trying %s...\n", default_conf_path);
-		p_conf_path = default_conf_path;
-	}
+    if ( NULL == (p_conf_path=getenv("SILGY_CONF")) )
+    {
+        printf("SILGY_CONF not set, trying %s...\n", default_conf_path);
+        p_conf_path = default_conf_path;
+    }
 
-	/* open the conf file */
+    /* open the conf file */
 
-	if ( NULL == (h_file=fopen(p_conf_path, "r")) )
-	{
-		printf("Error opening %s, using defaults.\n", p_conf_path);
-		return FALSE;
-	}
+    if ( NULL == (h_file=fopen(p_conf_path, "r")) )
+    {
+        printf("Error opening %s, using defaults.\n", p_conf_path);
+        return FALSE;
+    }
 
-	/* parse the conf file */
+    /* parse the conf file */
 
-	while ( EOF != (c=fgetc(h_file)) )
-	{
-		if ( c == '\r' ) continue;
+    while ( EOF != (c=fgetc(h_file)) )
+    {
+        if ( c == '\r' ) continue;
 
-		if ( !now_value && (c == ' ' || c == '	') ) continue;	/* omit whitespaces */
+        if ( !now_value && (c == ' ' || c == '  ') ) continue;  /* omit whitespaces */
 
-		if ( c == '\n' )	/* end of value or end of comment or empty line */
-		{
-			if ( now_value )	/* end of value */
-			{
-				value[i] = EOS;
-				set_param(label, value);
-			}
-			now_label = 1;
-			now_value = 0;
-			now_comment = 0;
-			i = 0;
-		}
-		else if ( now_comment )
-		{
-			continue;
-		}
-		else if ( c == '=' )	/* end of label */
-		{
-			now_label = 0;
-			now_value = 1;
-			label[i] = EOS;
-			i = 0;
-		}
-		else if ( c == '#' )	/* possible end of value */
-		{
-			if ( now_value )	/* end of value */
-			{
-				value[i] = EOS;
-				set_param(label, value);
-			}
-			now_label = 0;
-			now_value = 0;
-			now_comment = 1;
-			i = 0;
-		}
-		else if ( now_label )	/* label */
-		{
-			label[i] = c;
-			++i;
-		}
-		else if ( now_value )	/* value */
-		{
-			value[i] = c;
-			++i;
-		}
-	}
+        if ( c == '\n' )    /* end of value or end of comment or empty line */
+        {
+            if ( now_value )    /* end of value */
+            {
+                value[i] = EOS;
+                set_param(label, value);
+            }
+            now_label = 1;
+            now_value = 0;
+            now_comment = 0;
+            i = 0;
+        }
+        else if ( now_comment )
+        {
+            continue;
+        }
+        else if ( c == '=' )    /* end of label */
+        {
+            now_label = 0;
+            now_value = 1;
+            label[i] = EOS;
+            i = 0;
+        }
+        else if ( c == '#' )    /* possible end of value */
+        {
+            if ( now_value )    /* end of value */
+            {
+                value[i] = EOS;
+                set_param(label, value);
+            }
+            now_label = 0;
+            now_value = 0;
+            now_comment = 1;
+            i = 0;
+        }
+        else if ( now_label )   /* label */
+        {
+            label[i] = c;
+            ++i;
+        }
+        else if ( now_value )   /* value */
+        {
+            value[i] = c;
+            ++i;
+        }
+    }
 
-	if ( now_value )	/* end of value */
-	{
-		value[i] = EOS;
-		set_param(label, value);
-	}
+    if ( now_value )    /* end of value */
+    {
+        value[i] = EOS;
+        set_param(label, value);
+    }
 
-	if ( NULL != h_file )
-		fclose(h_file);
+    if ( NULL != h_file )
+        fclose(h_file);
 
-	return TRUE;
+    return TRUE;
 }
 
 
@@ -1932,36 +1932,36 @@ bool read_conf()
 -------------------------------------------------------------------------- */
 static void set_param(const char *label, const char *value)
 {
-	if ( PARAM("logLevel") )
-		G_logLevel = atoi(value);
-	else if ( PARAM("httpPort") )
-		G_httpPort = atoi(value);
-	else if ( PARAM("httpsPort") )
-		G_httpsPort = atoi(value);
-	else if ( PARAM("cipherList") )
-		strcpy(G_cipherList, value);
-	else if ( PARAM("certFile") )
-		strcpy(G_certFile, value);
-	else if ( PARAM("certChainFile") )
-		strcpy(G_certChainFile, value);
-	else if ( PARAM("keyFile") )
-		strcpy(G_keyFile, value);
-//	else if ( PARAM("dbHost") )
-//		strcpy(G_dbHost, value);
-//	else if ( PARAM("dbPort") )
-//		G_dbPort = atoi(value);
-	else if ( PARAM("dbName") )
-		strcpy(G_dbName, value);
-	else if ( PARAM("dbUser") )
-		strcpy(G_dbUser, value);
-	else if ( PARAM("dbPassword") )
-		strcpy(G_dbPassword, value);
-	else if ( PARAM("blockedIPList") )
-		strcpy(G_blockedIPList, value);
-	else if ( PARAM("test") )
-		G_test = atoi(value);
+    if ( PARAM("logLevel") )
+        G_logLevel = atoi(value);
+    else if ( PARAM("httpPort") )
+        G_httpPort = atoi(value);
+    else if ( PARAM("httpsPort") )
+        G_httpsPort = atoi(value);
+    else if ( PARAM("cipherList") )
+        strcpy(G_cipherList, value);
+    else if ( PARAM("certFile") )
+        strcpy(G_certFile, value);
+    else if ( PARAM("certChainFile") )
+        strcpy(G_certChainFile, value);
+    else if ( PARAM("keyFile") )
+        strcpy(G_keyFile, value);
+//  else if ( PARAM("dbHost") )
+//      strcpy(G_dbHost, value);
+//  else if ( PARAM("dbPort") )
+//      G_dbPort = atoi(value);
+    else if ( PARAM("dbName") )
+        strcpy(G_dbName, value);
+    else if ( PARAM("dbUser") )
+        strcpy(G_dbUser, value);
+    else if ( PARAM("dbPassword") )
+        strcpy(G_dbPassword, value);
+    else if ( PARAM("blockedIPList") )
+        strcpy(G_blockedIPList, value);
+    else if ( PARAM("test") )
+        G_test = atoi(value);
 #ifndef ASYNC_SERVICE
-	app_set_param(label, value);
+    app_set_param(label, value);
 #endif
 }
 
@@ -1971,33 +1971,33 @@ static void set_param(const char *label, const char *value)
 -------------------------------------------------------------------------- */
 bool log_start(bool test)
 {
-	char	prefix[256];
-	char	file_name[512];
+    char    prefix[256];
+    char    file_name[512];
 
-	sprintf(prefix, "%s/logs/%d%02d%02d_%02d%02d", G_appdir, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
+    sprintf(prefix, "%s/logs/%d%02d%02d_%02d%02d", G_appdir, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
 
-	if ( test )
-		sprintf(file_name, "%s_t.log", prefix);
-	else
-		sprintf(file_name, "%s.log", prefix);
+    if ( test )
+        sprintf(file_name, "%s_t.log", prefix);
+    else
+        sprintf(file_name, "%s.log", prefix);
 
-	if ( NULL == (G_log=fopen(file_name, "a")) )
-	{
-		printf("ERROR: Couldn't open log file. Make sure %s is defined in your environment and there is a `logs' directory there.\n", APP_DIR);
-		return FALSE;
-	}
+    if ( NULL == (G_log=fopen(file_name, "a")) )
+    {
+        printf("ERROR: Couldn't open log file. Make sure %s is defined in your environment and there is a `logs' directory there.\n", APP_DIR);
+        return FALSE;
+    }
 
-	if ( fprintf(G_log, "----------------------------------------------------------------------------------------------\n") < 0 )
-	{
-		perror("fprintf");
-		return FALSE;
-	}
+    if ( fprintf(G_log, "----------------------------------------------------------------------------------------------\n") < 0 )
+    {
+        perror("fprintf");
+        return FALSE;
+    }
 
-	ALWAYS(" %s  Starting %s's log. Server version: %s, app version: %s", G_dt, APP_WEBSITE, WEB_SERVER_VERSION, APP_VERSION);
+    ALWAYS(" %s  Starting %s's log. Server version: %s, app version: %s", G_dt, APP_WEBSITE, WEB_SERVER_VERSION, APP_VERSION);
 
-	fprintf(G_log, "----------------------------------------------------------------------------------------------\n\n");
+    fprintf(G_log, "----------------------------------------------------------------------------------------------\n\n");
 
-	return TRUE;
+    return TRUE;
 }
 
 
@@ -2006,34 +2006,34 @@ bool log_start(bool test)
 -------------------------------------------------------------------------- */
 void log_write_time(int level, const char *message, ...)
 {
-	va_list		plist;
-static char		buffer[MAX_LOG_STR_LEN+1+64];	/* don't use stack */
+    va_list     plist;
+static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 
-	if ( level > G_logLevel ) return;
+    if ( level > G_logLevel ) return;
 
-	/* output timestamp */
+    /* output timestamp */
 
-	fprintf(G_log, "[%s] ", G_dt);
+    fprintf(G_log, "[%s] ", G_dt);
 
-	if ( LOG_ERR == level )
-		fprintf(G_log, "ERROR: ");
-	else if ( LOG_WAR == level )
-		fprintf(G_log, "WARNING: ");
+    if ( LOG_ERR == level )
+        fprintf(G_log, "ERROR: ");
+    else if ( LOG_WAR == level )
+        fprintf(G_log, "WARNING: ");
 
-	/* compile message with arguments into buffer */
+    /* compile message with arguments into buffer */
 
-	va_start(plist, message);
-	vsprintf(buffer, message, plist);
-	va_end(plist);
+    va_start(plist, message);
+    vsprintf(buffer, message, plist);
+    va_end(plist);
 
-	/* write to log file */
+    /* write to log file */
 
-	fprintf(G_log, "%s\n", buffer);
+    fprintf(G_log, "%s\n", buffer);
 
 #ifdef DUMP
-	fflush(G_log);
+    fflush(G_log);
 #else
-	if ( G_logLevel >= LOG_DBG ) fflush(G_log);
+    if ( G_logLevel >= LOG_DBG ) fflush(G_log);
 #endif
 }
 
@@ -2043,30 +2043,30 @@ static char		buffer[MAX_LOG_STR_LEN+1+64];	/* don't use stack */
 -------------------------------------------------------------------------- */
 void log_write(int level, const char *message, ...)
 {
-	va_list		plist;
-static char		buffer[MAX_LOG_STR_LEN+1+64];	/* don't use stack */
+    va_list     plist;
+static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 
-	if ( level > G_logLevel ) return;
+    if ( level > G_logLevel ) return;
 
-	if ( LOG_ERR == level )
-		fprintf(G_log, "ERROR: ");
-	else if ( LOG_WAR == level )
-		fprintf(G_log, "WARNING: ");
+    if ( LOG_ERR == level )
+        fprintf(G_log, "ERROR: ");
+    else if ( LOG_WAR == level )
+        fprintf(G_log, "WARNING: ");
 
-	/* compile message with arguments into buffer */
+    /* compile message with arguments into buffer */
 
-	va_start(plist, message);
-	vsprintf(buffer, message, plist);
-	va_end(plist);
+    va_start(plist, message);
+    vsprintf(buffer, message, plist);
+    va_end(plist);
 
-	/* write to log file */
+    /* write to log file */
 
-	fprintf(G_log, "%s\n", buffer);
+    fprintf(G_log, "%s\n", buffer);
 
 #ifdef DUMP
-	fflush(G_log);
+    fflush(G_log);
 #else
-	if ( G_logLevel >= LOG_DBG ) fflush(G_log);
+    if ( G_logLevel >= LOG_DBG ) fflush(G_log);
 #endif
 }
 
@@ -2077,16 +2077,16 @@ static char		buffer[MAX_LOG_STR_LEN+1+64];	/* don't use stack */
 -------------------------------------------------------------------------- */
 void log_long(const char *str, long len, const char *desc)
 {
-static char	log_buffer[MAX_LOG_STR_LEN+1];
+static char log_buffer[MAX_LOG_STR_LEN+1];
 
-	if ( len < MAX_LOG_STR_LEN-50 )
-		DBG("%s:\n\n[%s]\n", desc, str);
-	else
-	{
-		strncpy(log_buffer, str, MAX_LOG_STR_LEN-50);
-		strcpy(log_buffer+MAX_LOG_STR_LEN-50, " (...)");
-		DBG("%s:\n\n[%s]\n", desc, log_buffer);
-	}
+    if ( len < MAX_LOG_STR_LEN-50 )
+        DBG("%s:\n\n[%s]\n", desc, str);
+    else
+    {
+        strncpy(log_buffer, str, MAX_LOG_STR_LEN-50);
+        strcpy(log_buffer+MAX_LOG_STR_LEN-50, " (...)");
+        DBG("%s:\n\n[%s]\n", desc, log_buffer);
+    }
 }
 
 
@@ -2095,10 +2095,10 @@ static char	log_buffer[MAX_LOG_STR_LEN+1];
 -------------------------------------------------------------------------- */
 void log_finish()
 {
-	if ( !G_log ) return;
+    if ( !G_log ) return;
 
-	ALWAYS("Closing log");
-	fclose(G_log);
+    ALWAYS("Closing log");
+    fclose(G_log);
 }
 
 
@@ -2108,95 +2108,95 @@ void log_finish()
 -------------------------------------------------------------------------- */
 void maz2utf(char* output, const char* input)
 {
-	unsigned char* iPtr=(unsigned char*)input;
-	unsigned char* oPtr=(unsigned char*)output;
-//	int i=0;
+    unsigned char* iPtr=(unsigned char*)input;
+    unsigned char* oPtr=(unsigned char*)output;
+//  int i=0;
 
-	while (*iPtr)
-	{
-		switch (*iPtr)
-		{
-			case 0x8f: /* A */
-				*oPtr=0xc4; ++oPtr;
-				*oPtr=0x84;
-				break;
-			case 0x95: /* C */
-				*oPtr=0xc4; ++oPtr;
-				*oPtr=0x86;
-				break; 
-			case 0x90: /* E */
-				*oPtr=0xc4; ++oPtr;
-				*oPtr=0x98;
-				break; 
-			case 0x9c: /* L */
-				*oPtr=0xc5; ++oPtr;
-				*oPtr=0x81;
-				break; 
-			case 0xa5: /* N */
-				*oPtr=0xc5; ++oPtr;
-				*oPtr=0x83;
-				break;
-			case 0xa3: /* O */
-				*oPtr=0xc3; ++oPtr;
-				*oPtr=0x93;
-				break; 
-			case 0x98: /* S */
-				*oPtr=0xc5; ++oPtr;
-				*oPtr=0x9a;
-				break;
-			case 0xa0: /* Z */
-				*oPtr=0xc5; ++oPtr;
-				*oPtr=0xb9;
-				break; 
-			case 0xa1: /* Z */
-				*oPtr=0xc5; ++oPtr;
-				*oPtr=0xbb;
-				break; 
-			case 0x86: /* a */
-				*oPtr=0xc4; ++oPtr;
-				*oPtr=0x85;
-				break; 
-			case 0x8d: /* c */
-				*oPtr=0xc4; ++oPtr;
-				*oPtr=0x87;
-				break; 
-			case 0x91: /* e */
-				*oPtr=0xc4; ++oPtr;
-				*oPtr=0x99;
-				break; 
-			case 0x92: /* l */
-				*oPtr=0xc5; ++oPtr;
-				*oPtr=0x82;
-				break; 
-			case 0xa4: /* n */
-				*oPtr=0xc5; ++oPtr;
-				*oPtr=0x84;
-				break; 
-			case 0xa2: /* o */
-				*oPtr=0xc3; ++oPtr;
-				*oPtr=0xb3;
-				break; 
-			case 0x9e: /* s */
-				*oPtr=0xc5; ++oPtr;
-				*oPtr=0x9b;
-				break; 
-			case 0xa6: /* z */
-				*oPtr=0xc5; ++oPtr;
-				*oPtr=0xba;
-				break; 
-			case 0xa7: /* z */
-				*oPtr=0xc5; ++oPtr;
-				*oPtr=0xbc;
-				break; 
+    while (*iPtr)
+    {
+        switch (*iPtr)
+        {
+            case 0x8f: /* A */
+                *oPtr=0xc4; ++oPtr;
+                *oPtr=0x84;
+                break;
+            case 0x95: /* C */
+                *oPtr=0xc4; ++oPtr;
+                *oPtr=0x86;
+                break; 
+            case 0x90: /* E */
+                *oPtr=0xc4; ++oPtr;
+                *oPtr=0x98;
+                break; 
+            case 0x9c: /* L */
+                *oPtr=0xc5; ++oPtr;
+                *oPtr=0x81;
+                break; 
+            case 0xa5: /* N */
+                *oPtr=0xc5; ++oPtr;
+                *oPtr=0x83;
+                break;
+            case 0xa3: /* O */
+                *oPtr=0xc3; ++oPtr;
+                *oPtr=0x93;
+                break; 
+            case 0x98: /* S */
+                *oPtr=0xc5; ++oPtr;
+                *oPtr=0x9a;
+                break;
+            case 0xa0: /* Z */
+                *oPtr=0xc5; ++oPtr;
+                *oPtr=0xb9;
+                break; 
+            case 0xa1: /* Z */
+                *oPtr=0xc5; ++oPtr;
+                *oPtr=0xbb;
+                break; 
+            case 0x86: /* a */
+                *oPtr=0xc4; ++oPtr;
+                *oPtr=0x85;
+                break; 
+            case 0x8d: /* c */
+                *oPtr=0xc4; ++oPtr;
+                *oPtr=0x87;
+                break; 
+            case 0x91: /* e */
+                *oPtr=0xc4; ++oPtr;
+                *oPtr=0x99;
+                break; 
+            case 0x92: /* l */
+                *oPtr=0xc5; ++oPtr;
+                *oPtr=0x82;
+                break; 
+            case 0xa4: /* n */
+                *oPtr=0xc5; ++oPtr;
+                *oPtr=0x84;
+                break; 
+            case 0xa2: /* o */
+                *oPtr=0xc3; ++oPtr;
+                *oPtr=0xb3;
+                break; 
+            case 0x9e: /* s */
+                *oPtr=0xc5; ++oPtr;
+                *oPtr=0x9b;
+                break; 
+            case 0xa6: /* z */
+                *oPtr=0xc5; ++oPtr;
+                *oPtr=0xba;
+                break; 
+            case 0xa7: /* z */
+                *oPtr=0xc5; ++oPtr;
+                *oPtr=0xbc;
+                break; 
 
-			default:
-				*oPtr = *iPtr;
-		}
-		++oPtr;
-		++iPtr;
-//		++i;
-	}
-	*oPtr=0;
+            default:
+                *oPtr = *iPtr;
+        }
+        ++oPtr;
+        ++iPtr;
+//      ++i;
+    }
+    *oPtr=0;
 }
 
 
@@ -2422,10 +2422,10 @@ Still 100% Public Domain
 
 Corrected a problem which generated improper hash values on 16 bit machines
 Routine SHA1Update changed from
-	void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned int
+    void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned int
 len)
 to
-	void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned
+    void SHA1Update(SHA1_CTX* context, unsigned char* data, unsigned
 long len)
 
 The 'len' parameter was declared an int which works fine on 32 bit machines.
@@ -2488,7 +2488,7 @@ A million repetitions of "a"
   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
 */
 
-/*#define WORDS_BIGENDIAN		 on AIX only! */
+/*#define WORDS_BIGENDIAN        on AIX only! */
 
 #define SHA1HANDSOFF
 
@@ -2640,7 +2640,7 @@ static void libSHA1_Final(SHA1_CTX* context, uint8_t digest[SHA1_DIGEST_SIZE])
     memset(context->buffer, 0, 64);
     memset(context->state, 0, 20);
     memset(context->count, 0, 8);
-    memset(finalcount, 0, 8);	/* SWR */
+    memset(finalcount, 0, 8);   /* SWR */
 
 #ifdef SHA1HANDSOFF  /* make SHA1Transform overwrite its own static vars */
     SHA1_Transform2(context->state, context->buffer);

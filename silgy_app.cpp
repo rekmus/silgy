@@ -8,7 +8,7 @@
 
 #include "silgy.h"
 
-ausession_t	auses[MAX_SESSIONS+1];			/* app user sessions */
+ausession_t auses[MAX_SESSIONS+1];          /* app user sessions */
 
 /* --------------------------------------------------------------------------
    Main entry point for a single request
@@ -39,7 +39,7 @@ ausession_t	auses[MAX_SESSIONS+1];			/* app user sessions */
 -------------------------------------------------------------------------- */
 int app_process_req(int ci)
 {
-	int ret=OK;
+    int ret=OK;
 
     OUT("<!DOCTYPE html>");
     OUT("<head>");
@@ -58,22 +58,22 @@ int app_process_req(int ci)
     }
     else if ( REQ("welcome") )  // welcoming bot
     {
-		// show form
+        // show form
 
         OUT("<p>Please enter your name:</p>");
         OUT("<form action=\"welcome\"><input name=\"firstname\" autofocus> <input type=\"submit\" value=\"Run\"></form>");
 
         QSVAL qs_firstname;  // query string value
 
-		// bid welcome
+        // bid welcome
 
         if ( QS("firstname", qs_firstname) )  // firstname present in query string, copy it to qs_firstname
-		{
-			DBG("query string arrived with firstname %s", qs_firstname);  // this will write to the log file
+        {
+            DBG("query string arrived with firstname %s", qs_firstname);  // this will write to the log file
             OUT("<p>Welcome %s, my dear friend!</p>", qs_firstname);
-		}
+        }
 
-		// show link to main page
+        // show link to main page
 
         OUT("<p><a href=\"/\">Back to landing page</a></p>");
     }
@@ -85,7 +85,7 @@ int app_process_req(int ci)
     OUT("</body>");
     OUT("</html>");
 
-	return ret;
+    return ret;
 }
 
 
@@ -106,7 +106,7 @@ int app_process_req(int ci)
 -------------------------------------------------------------------------- */
 bool app_init(int argc, char *argv[])
 {
-	return TRUE;
+    return TRUE;
 }
 
 
@@ -116,10 +116,10 @@ bool app_init(int argc, char *argv[])
 
    Example:
 
-	if ( PARAM("Param1") )
-		strcpy(M_param1, value);
-	else if ( PARAM("Param2") )
-		strcpy(M_param1, value);
+    if ( PARAM("Param1") )
+        strcpy(M_param1, value);
+    else if ( PARAM("Param2") )
+        strcpy(M_param1, value);
 
 -------------------------------------------------------------------------- */
 void app_set_param(const char *label, const char *value)
@@ -160,7 +160,7 @@ void app_uses_reset(int usi)
 -------------------------------------------------------------------------- */
 bool app_gen_page_msg(int ci, int msg)
 {
-	return FALSE;	/* use engine generic page */
+    return FALSE;   /* use engine generic page */
 }
 
 
@@ -179,28 +179,28 @@ void app_get_msg_str(int ci, char *dest, int errcode)
 
    Example:
 
-	if ( S("get_customer") )
-	{
-		gen_header(ci);
-		if ( timeouted )
-		{
-			WAR("get_customer timeout-ed");
-			OUT("There was no response from get_customer service");
-		}
-		else
-			OUT(data);
-		gen_footer(ci);
-	}
-	else if ( S("get_records") )
-	{
-		if ( timeouted )
-		{
-			WAR("get_records timeout-ed");
-			OUT("-|get_records timeout-ed|\n");
-		}
-		else
-			OUT(data);
-	}
+    if ( S("get_customer") )
+    {
+        gen_header(ci);
+        if ( timeouted )
+        {
+            WAR("get_customer timeout-ed");
+            OUT("There was no response from get_customer service");
+        }
+        else
+            OUT(data);
+        gen_footer(ci);
+    }
+    else if ( S("get_records") )
+    {
+        if ( timeouted )
+        {
+            WAR("get_records timeout-ed");
+            OUT("-|get_records timeout-ed|\n");
+        }
+        else
+            OUT(data);
+    }
 
 -------------------------------------------------------------------------- */
 void app_async_done(int ci, const char *service, const char *data, bool timeouted)
