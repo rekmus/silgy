@@ -105,3 +105,43 @@ int app_process_req(int ci)
     return ret;
 }
 ```
+## Configuration File
+Without configuration file silgy server starts listening to port 80. As long as you use the same computer for development and production, you need a way to start your application with different port, since only one process can listen to port 80. Also, if you want to use https, you will need to pass your certificate file path. You can set these and some more in a configuration file. Default name is silgy.conf and you can overwrite this with SILGY_CONF environment variable. Create a new file in $SILGYDIR/bin and paste the below:
+```
+# ----------------------------------------------------------------------------
+# between 1...4 (most detailed)
+logLevel=3
+
+# ----------------------------------------------------------------------------
+# ports
+httpPort=80
+httpsPort=443
+
+# ----------------------------------------------------------------------------
+# HTTPS
+
+# mandatory
+certFile=/etc/letsencrypt/live/example.com/fullchain.pem
+keyFile=/etc/letsencrypt/live/example.com/privkey.pem
+
+# optional
+# below cipher list will support IE8 on Windows XP but SSLLabs would cap the grade to B
+#cipherList=ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS+RC4:RC4
+certChainFile=/etc/letsencrypt/live/example.com/chain.pem
+
+# ----------------------------------------------------------------------------
+# database connection details
+dbName=mydatabase
+dbUser=mysqluser
+dbPassword=mysqlpassword
+
+# ----------------------------------------------------------------------------
+# IP blacklist
+blockedIPList=/home/ec2-user/live/bin/blacklist.txt
+
+# ----------------------------------------------------------------------------
+# setting this to 1 will add _t to the log file name
+# slightly different behaviour with https redirections
+test=0
+
+```
