@@ -50,4 +50,58 @@ sudo te
   
 That's it. Your app should now be online.  
   
-Your app logic is in silgy_app.cpp and app_process_req() is your main, called with every browser request.
+Your app logic is in silgy_app.cpp and app_process_req() is your main, called with every browser request.  
+  
+This is a tad extended Hello World example:  
+```
+int app_process_req(int ci)
+{
+    int ret=OK;
+
+    OUT("<!DOCTYPE html>");
+    OUT("<head>");
+    OUT("<title>%s</title>", APP_WEBSITE);
+    if ( REQ_MOB )  // if mobile request
+        OUT("<meta name=\"viewport\" content=\"width=device-width\">");
+    OUT("</head>");
+
+    OUT("<body>");
+    OUT("<h1>%s</h1>", APP_WEBSITE);
+
+    if ( REQ("") )  // landing page
+    {
+        OUT("<h2>Welcome to my web app!</h2>");
+        OUT("<p>Click <a href=\"welcome\">here</a> to try my welcoming bot.</p>");
+    }
+    else if ( REQ("welcome") )  // welcoming bot
+    {
+        // show form
+
+        OUT("<p>Please enter your name:</p>");
+        OUT("<form action=\"welcome\"><input name=\"firstname\" autofocus> <input type=\"submit\" value=\"Run\"></form>");
+
+        QSVAL qs_firstname;  // query string value
+
+        // bid welcome
+
+        if ( QS("firstname", qs_firstname) )  // firstname present in query string, copy it to qs_firstname
+        {
+            DBG("query string arrived with firstname %s", qs_firstname);  // this will write to the log file
+            OUT("<p>Welcome %s, my dear friend!</p>", qs_firstname);
+        }
+
+        // show link to main page
+
+        OUT("<p><a href=\"/\">Back to landing page</a></p>");
+    }
+    else  // page not found
+    {
+        ret = ERR_NOT_FOUND;  // this will return status 404 to the browser
+    }
+
+    OUT("</body>");
+    OUT("</html>");
+
+    return ret;
+}
+```
