@@ -1,7 +1,7 @@
 # silgy
-Silgy is a back-end framework for ultra fast, small and mid-sized web applications. It contains asynchronous (non-blocking) web engine that allows you to compile and link your logic into one executable. It's small enough to fit on free AWS t2.micro instance, together with MySQL server. Typical response time is around 100 us (micro seconds) (see https://budgeter.org performance for proof).  
+Silgy is a back-end framework for ultra fast, small and mid-sized web applications. It contains asynchronous (non-blocking) web engine that allows you to compile and link your logic into one executable that responds immediately to requests, without creating new thread or -- God forbid -- process. It's small enough to fit on free AWS t2.micro instance, together with MySQL server. Typical response time is around 100 us (micro seconds) (see https://budgeter.org performance for proof).  
   
-Silgy supports https, typical registered users handling and rudimentary asynchronous services mechanism.  
+Silgy supports https, binary data upload, typical registered users handling and rudimentary asynchronous services mechanism to use it in microservices architecture.  
   
 Silgy requires Linux/UNIX computer with C or C++ compiler.  
   
@@ -52,7 +52,7 @@ That's it. Your app should now be online.
   
 Your app logic is in silgy_app.cpp and app_process_req() is your main, called with every browser request.  
   
-This is a tad extended Hello World example:  
+This is a tad extended Hello World example to demonstrate query string handling:  
 ```
 int app_process_req(int ci)
 {
