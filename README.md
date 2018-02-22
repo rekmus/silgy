@@ -53,7 +53,7 @@ That's it. Your app should now be online.
 Your app logic is in **silgy_app.cpp** and **app_process_req()** is your main, called with every browser request.  
   
 This is a tad extended Hello World example to demonstrate query string handling:  
-```
+```c_cpp
 int app_process_req(int ci)
 {
     int ret=OK;
