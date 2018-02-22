@@ -1865,7 +1865,7 @@ bool read_conf()
     {
         if ( c == '\r' ) continue;
 
-        if ( !now_value && (c == ' ' || c == '  ') ) continue;  /* omit whitespaces */
+        if ( !now_value && (c == ' ' || c == '\t') ) continue;  /* omit whitespaces */
 
         if ( c == '\n' )    /* end of value or end of comment or empty line */
         {
