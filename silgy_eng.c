@@ -908,19 +908,11 @@ static void respond_to_expect(int ci)
 -------------------------------------------------------------------------- */
 static void log_proc_time(int ci)
 {
-struct timespec end;
-    double      elapsed;
-
-    clock_gettime(MONOTONIC_CLOCK_NAME, &end);
-
-    elapsed = (end.tv_sec - conn[ci].proc_start.tv_sec) * 1000.0;
-    elapsed += (end.tv_nsec - conn[ci].proc_start.tv_nsec) / 1000000.0;
-
-    DBG("Processing time: %.3lf ms [%s]\n", elapsed, conn[ci].resource);
+    DBG("Processing time: %.3lf ms [%s]\n", lib_elapsed(&conn[ci].proc_start), conn[ci].resource);
 
     if ( G_logLevel < LOG_DBG )
     {
-        ALWAYS("[%s] #%ld %s %s  %s  %d  %.3lf ms%s", G_dt+11, conn[ci].req, conn[ci].method, conn[ci].uri, (conn[ci].static_res==NOT_STATIC && !conn[ci].post)?conn[ci].referer:"", conn[ci].status, elapsed, conn[ci].bot?" [bot]":"");
+        ALWAYS("[%s] #%ld %s %s  %s  %d  %.3lf ms%s", G_dt+11, conn[ci].req, conn[ci].method, conn[ci].uri, (conn[ci].static_res==NOT_STATIC && !conn[ci].post)?conn[ci].referer:"", conn[ci].status, lib_elapsed(&conn[ci].proc_start), conn[ci].bot?" [bot]":"");
     }
 }
 
