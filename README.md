@@ -15,8 +15,8 @@ mkdir resmin
 mkdir logs  
   
 Then copy all the files to src. m, mobj and te must have executable flag. In src:  
-chmod m* u+x  
-chmod te u+x  
+chmod u+x m*  
+chmod u+x te  
   
 Set SILGYDIR environment variable to your project directory.  
   
