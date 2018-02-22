@@ -24,8 +24,6 @@ Go to src and compile everything:
 mobj  
 Make your executable:  
 m  
-Run in test mode:  
-te  
-In the browser, navigate to your host with port 1234:  
-example.com:1234  
-  
+Run:  
+sudo te  
+In the browser, navigate to your host.
