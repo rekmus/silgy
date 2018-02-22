@@ -1818,8 +1818,9 @@ int date_cmp(const char *str1, const char *str2)
 -------------------------------------------------------------------------- */
 bool read_conf()
 {
-    char    default_conf_path[]="silgy.conf";
-    char    *p_conf_path=NULL;
+    char    default_conf_path[256];
+	char	*p_conf_path=NULL;
+    char    conf_path[256];
     FILE    *h_file=NULL;
     int     c=0;
     int     i=0;
@@ -1847,6 +1848,7 @@ bool read_conf()
 
     if ( NULL == (p_conf_path=getenv("SILGY_CONF")) )
     {
+		sprintf(default_conf_path, "%s/bin/silgy.conf", G_appdir);
         printf("SILGY_CONF not set, trying %s...\n", default_conf_path);
         p_conf_path = default_conf_path;
     }
