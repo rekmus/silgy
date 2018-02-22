@@ -5,7 +5,7 @@ Silgy supports https, binary data upload, anonymous and registered user sessions
   
 Silgy requires Linux/UNIX computer with C or C++ compiler.  
   
-# Quick Start Guide
+## Quick Start Guide
   
 1. Create a project directory, i.e. web:  
 ```
