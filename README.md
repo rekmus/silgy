@@ -163,7 +163,7 @@ Example:
 ```source.c++
 QSVAL qs_firstname;
 if ( QS("firstname", qs_firstname) )
-    show_options(ci);
+    OUT("<p>Welcome %s!</p>", qs_firstname);
 ```
   
 ### bool URI(string)
