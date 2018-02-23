@@ -137,7 +137,7 @@ test=0
 ## API
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
 ### bool REQ(string)
-Return TRUE if first part of URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
+Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
 ```
 URI: /calc?first=2&second=3    REQ("calc")
 URI: /customers/123            REQ("customers")
