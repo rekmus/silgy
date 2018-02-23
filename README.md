@@ -139,29 +139,32 @@ test=0
 Return TRUE if request matches *string*.  
 Example:  
 ```source.c++
-REQ("about")
+if ( REQ("about") )
+    process_about(ci);
 ```
   
 ### void OUT(string[, ...])
 Send *string* to a browser. Optionally it takes additional arguments, as per printf function family specification.  
 Examples:
 ```source.c++
-OUT("<!DOCTYPE html>")
-OUT("<p>There are %d records in the table.</p>", records)
+OUT("<!DOCTYPE html>");
+OUT("<p>There are %d records in the table.</p>", records);
 ```
   
 ### bool URI(string)
 Return TRUE if URI matches *string*.  
 Example:
 ```source.c++
-URI("temp/document.pdf")
+if ( URI("temp/document.pdf") )
+    send_pdf(ci);
 ```
   
 ### bool REQ_METHOD(string)
 Return TRUE if request method matches *string*.  
 Example:  
 ```source.c++
-REQ_METHOD("OPTIONS")
+if ( REQ_METHOD("OPTIONS") )
+    show_options(ci);
 ```
   
 ### char* REQ_URI
@@ -197,28 +200,29 @@ User agent language code.
 Return TRUE if host matches *string*. Case is ignored.  
 Example:
 ```source.c++
-HOST("example.com")
+if ( HOST("example.com") )
+    process_example(ci);
 ```
   
 ### void RES_STATUS(int code)
 Set response status to *code*.  
 Example:
 ```source.c++
-RES_STATUS(501)
+RES_STATUS(501);
 ```
   
 ### void RES_CONTENT_TYPE(string)
 Set response content type to *string*.  
 Example:
 ```source.c++
-RES_CONTENT_TYPE("text/plain")
+RES_CONTENT_TYPE("text/plain");
 ```
   
 ### void RES_LOCATION(string)
 Redirect browser to *string*.  
 Example:
 ```source.c++
-RES_LOCATION("login")
+RES_LOCATION("login");
 ```
   
 ### void RES_DONT_CACHE
@@ -227,19 +231,36 @@ Prevent the response from caching by browser.
 ### void REDIRECT_TO_LANDING
 Redirect browser to landing page.  
   
+### void ALWAYS(string[, ...]), void ERR(string[, ...]), void WAR(string[, ...]), void INF(string[, ...]), void DBG(string[, ...])
+Write *string* to log, depending on debug level set in conf file. Optionally it takes additional arguments, as per printf function family specification.  
+ALWAYS - regardless of debug level  
+ERR - debug level >= 1, writes ERROR: before string  
+WAR - debug level >= 2, writes WARNING: before string  
+INF - debug level >= 3  
+DBG - debug level >= 4  
+Examples:
+```source.c++
+ALWAYS("Server is starting");
+DBG("in a while loop, i = %d", i);
+```
+  
 ### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
 Call *service*. Timeout is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*.  
 Example:
 ```source.c++
-CALL_ASYNC("get_customer", cust_id, 10)
+CALL_ASYNC("get_customer", cust_id, 10);
 ```
   
 ### void CALL_ASYNC_NR(const char \*service, const char \*data)
 Call *service*. Response is not required.  
 Example:
 ```source.c++
-CALL_ASYNC_NR("set_counter", counter)
+CALL_ASYNC_NR("set_counter", counter);
 ```
+  
+### bool S(string)
+Return TRUE if service matches *string*.  
+Example: see *app_async_done*.  
   
 ### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
 Process anynchronous call response.  
