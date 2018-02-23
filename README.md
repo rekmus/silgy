@@ -254,12 +254,12 @@ Prevent response from being cached by browser.
 Redirect browser to landing page.  
   
 ### void ALWAYS(string[, ...]), void ERR(string[, ...]), void WAR(string[, ...]), void INF(string[, ...]), void DBG(string[, ...])
-Write *string* to log, depending on debug level set in [conf file](https://github.com/silgy/silgy/blob/master/README.md#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).  
+Write *string* to log, depending on log level set in [conf file](https://github.com/silgy/silgy/blob/master/README.md#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).  
 ALWAYS - regardless of debug level  
-ERR - debug level >= 1, writes ERROR: before string  
-WAR - debug level >= 2, writes WARNING: before string  
-INF - debug level >= 3  
-DBG - debug level >= 4  
+ERR - log level >= 1, writes ERROR: before string  
+WAR - log level >= 2, writes WARNING: before string  
+INF - log level >= 3  
+DBG - log level >= 4  
 Examples:
 ```source.c++
 ALWAYS("Server is starting");
