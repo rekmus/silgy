@@ -254,18 +254,20 @@ Prevent response from being cached by browser.
 Redirect browser to landing page.  
   
 ### void ALWAYS(string[, ...]), void ERR(string[, ...]), void WAR(string[, ...]), void INF(string[, ...]), void DBG(string[, ...])
-Write *string* to log, depending on log level set in [conf file](https://github.com/silgy/silgy/blob/master/README.md#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).  
-ALWAYS - regardless of debug level  
-ERR - log level >= 1, writes ERROR: before string  
-WAR - log level >= 2, writes WARNING: before string  
-INF - log level >= 3  
-DBG - log level >= 4  
+Write *string* to log, depending on log level set in [conf file](https://github.com/silgy/silgy/blob/master/README.md#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
+```
+ALWAYS - regardless of log level  
+ERR - only if log level >= 1, writes ERROR: before string  
+WAR - only if log level >= 2, writes WARNING: before string  
+INF - only if log level >= 3  
+DBG - only if log level >= 4  
+```
 Examples:
 ```source.c++
 ALWAYS("Server is starting");
 DBG("in a while loop, i = %d", i);
 ```
-Note: if debug level is set to 4, every call flushes the buffer.  
+Note: if log level is set to 4, every call flushes the buffer.  
   
 ### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
 Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.  
