@@ -194,10 +194,10 @@ if ( REQ_MOB )
 ```
   
 ### char* REQ_LANG
-User agent language code.
+User agent language code.  
   
 ### bool HOST(string)
-Return TRUE if host matches *string*. Case is ignored.  
+Return TRUE if HTTP request *Host* header matches *string*. Case is ignored.  
 Example:
 ```source.c++
 if ( HOST("example.com") )
@@ -226,7 +226,7 @@ RES_LOCATION("login");
 ```
   
 ### void RES_DONT_CACHE
-Prevent the response from caching by browser.  
+Prevent response from being cached by browser.  
   
 ### void REDIRECT_TO_LANDING
 Redirect browser to landing page.  
@@ -243,6 +243,7 @@ Examples:
 ALWAYS("Server is starting");
 DBG("in a while loop, i = %d", i);
 ```
+Note: if debug level is set to 4, every call flushes the buffer.  
   
 ### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
 Call *service*. Timeout is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*.  
