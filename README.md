@@ -135,16 +135,38 @@ test=0
 
 ```
 ## API
-### REQ(string)
+### bool REQ(string)
 Return TRUE if request matches string.  
 Example:  
 ```source.c++
 REQ("about")
 ```
-### OUT(string[, ...])
+### void OUT(string[, ...])
 Send string to a browser. Optionally it takes additional arguments, as per printf function family specification.  
 Examples:
 ```source.c++
 OUT("<!DOCTYPE html>")
 OUT("<p>There are %d records in the table.</p>", records)
 ```
+### bool REQ_METHOD(string)
+Return TRUE if request method matches string.  
+Example:  
+```source.c++
+REQ_METHOD("OPTIONS")
+```
+### char* REQ_URI
+Request URI.
+### bool REQ_GET
+Return TRUE if request method is GET.
+### bool REQ_POST
+Return TRUE if request method is POST.
+### bool REQ_PUT
+Return TRUE if request method is PUT.
+### bool REQ_DELETE
+Return TRUE if request method is DELETE.
+### bool REQ_DSK
+Return TRUE if request user agent is desktop.
+### bool REQ_MOB
+Return TRUE if request user agent is mobile.
+### char* REQ_LANG
+User agent language code.
