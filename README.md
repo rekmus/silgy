@@ -29,23 +29,19 @@ mkdir resmin
 mkdir logs  
 ```
   
-4. Throw all the files to src. m, mobj and te must have executable flag. In src:  
+4. Throw all the files to src. **m** and **te** scripts must have executable flag. In src:  
 ```
-chmod u+x m*  
+chmod u+x m  
 chmod u+x te  
 ```
   
-5. Go to src and compile everything:  
+5. Go to src and compile:  
 ```
-mobj  
+m
 ```
-Make your executable:  
+Run:
 ```
-m  
-```
-Run:  
-```
-sudo te  
+sudo te
 ```
   
 That's it. Your app should now be online.  
