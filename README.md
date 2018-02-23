@@ -141,6 +141,7 @@ Example:
 ```source.c++
 REQ("about")
 ```
+  
 ### void OUT(string[, ...])
 Send string to a browser. Optionally it takes additional arguments, as per printf function family specification.  
 Examples:
@@ -148,25 +149,76 @@ Examples:
 OUT("<!DOCTYPE html>")
 OUT("<p>There are %d records in the table.</p>", records)
 ```
+  
+### bool URI(string)
+Return TRUE if URI matches string.  
+Example:
+```source.c++
+URI("temp/document.pdf")
+```
+  
 ### bool REQ_METHOD(string)
 Return TRUE if request method matches string.  
 Example:  
 ```source.c++
 REQ_METHOD("OPTIONS")
 ```
+  
 ### char* REQ_URI
 Request URI.
+  
 ### bool REQ_GET
 Return TRUE if request method is GET.
+  
 ### bool REQ_POST
 Return TRUE if request method is POST.
+  
 ### bool REQ_PUT
 Return TRUE if request method is PUT.
+  
 ### bool REQ_DELETE
 Return TRUE if request method is DELETE.
+  
 ### bool REQ_DSK
 Return TRUE if request user agent is desktop.
+  
 ### bool REQ_MOB
 Return TRUE if request user agent is mobile.
+  
 ### char* REQ_LANG
 User agent language code.
+  
+### bool HOST(string)
+Return TRUE if host matches string. Case is ignored.  
+Example:
+```source.c++
+HOST("example.com")
+```
+  
+### void RES_STATUS(string)
+Set response status.  
+Example:
+```source.c++
+RES_STATUS(501)
+```
+  
+### void RES_CONTENT_TYPE(string)
+Set response content type.  
+Example:
+```source.c++
+RES_CONTENT_TYPE("text/plain")
+```
+  
+### void RES_LOCATION(string)
+Redirect browser to string.  
+Example:
+```source.c++
+RES_LOCATION("login")
+```
+  
+### void RES_DONT_CACHE
+Prevent the response from caching by browser.  
+  
+### void REDIRECT_TO_LANDING
+Redirect browser to landing page.  
+  
