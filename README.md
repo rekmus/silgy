@@ -135,7 +135,7 @@ test=0
 
 ```
 ## API
-### bool REQ(string)
+### bool **REQ**(string)
 Return TRUE if request matches *string*.  
 Example:  
 ```source.c++
@@ -143,7 +143,7 @@ if ( REQ("about") )
     process_about(ci);
 ```
   
-### void OUT(string[, ...])
+### void **OUT**(string[, ...])
 Send *string* to a browser. Optionally it takes additional arguments, as per printf function family specification.  
 Examples:
 ```source.c++
@@ -151,7 +151,7 @@ OUT("<!DOCTYPE html>");
 OUT("<p>There are %d records in the table.</p>", records);
 ```
   
-### bool URI(string)
+### bool **URI**(string)
 Return TRUE if URI matches *string*.  
 Example:
 ```source.c++
@@ -159,7 +159,7 @@ if ( URI("temp/document.pdf") )
     send_pdf(ci);
 ```
   
-### bool REQ_METHOD(string)
+### bool **REQ_METHOD**(string)
 Return TRUE if request method matches *string*.  
 Example:  
 ```source.c++
