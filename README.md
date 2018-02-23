@@ -1,5 +1,5 @@
 # silgy
-Silgy is a back-end framework for ultra fast, small and mid-sized web applications. It contains asynchronous (non-blocking) web engine that allows you to compile and link your logic into one executable that responds immediately to requests, without creating new thread or — God forbid — process. It's small enough to fit on free 1GB AWS t2.micro instance, together with MySQL server. Typical response time is around 100 µs (microseconds) (see https://budgeter.org performance for proof).  
+Silgy is a simple back-end framework for ultra fast, small and mid-sized web applications. It contains asynchronous (non-blocking) web engine that allows you to compile and link your logic into one executable that responds immediately to requests, without creating new thread or — God forbid — process. It's small enough to fit on free 1GB AWS t2.micro instance, together with MySQL server. Typical response time is around 100 µs (microseconds) (see https://budgeter.org performance for proof).  
   
 Silgy supports https, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism to use it in microservices architecture.  
   
@@ -135,15 +135,21 @@ test=0
 
 ```
 ## API
-### bool **REQ**(string)
-Return TRUE if request matches *string*.  
+I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
+### bool REQ(string)
+Return TRUE if first part of URI matches *string*. By first part I mean everything until **/** or **?**, for example:  
+```
+URI: /calc?first=2&second=3    REQ("calc")
+URI: /customers/123            REQ("customers")
+URI: /about.html               REQ("about.html")
+```
 Example:  
 ```source.c++
-if ( REQ("about") )
-    process_about(ci);
+if ( REQ("calc") )
+    process_calc(ci);
 ```
   
-### void **OUT**(string[, ...])
+### void OUT(string[, ...])
 Send *string* to a browser. Optionally it takes additional arguments, as per printf function family specification.  
 Examples:
 ```source.c++
@@ -151,7 +157,16 @@ OUT("<!DOCTYPE html>");
 OUT("<p>There are %d records in the table.</p>", records);
 ```
   
-### bool **URI**(string)
+### bool QS(param, variable)
+Search URI-decoded query string for *param* and if found, copy its value to *variable* and return TRUE. Otherwise return FALSE. QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.  
+Example:  
+```source.c++
+QSVAL qs_firstname;
+if ( QS("firstname", qs_firstname) )
+    show_options(ci);
+```
+  
+### bool URI(string)
 Return TRUE if URI matches *string*.  
 Example:
 ```source.c++
@@ -159,7 +174,7 @@ if ( URI("temp/document.pdf") )
     send_pdf(ci);
 ```
   
-### bool **REQ_METHOD**(string)
+### bool REQ_METHOD(string)
 Return TRUE if request method matches *string*.  
 Example:  
 ```source.c++
