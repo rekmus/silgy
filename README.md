@@ -183,7 +183,12 @@ Return TRUE if request method is DELETE.
 Return TRUE if request user agent is desktop.
   
 ### bool REQ_MOB
-Return TRUE if request user agent is mobile.
+Return TRUE if request user agent is mobile.  
+Example:  
+```source.c++
+if ( REQ_MOB )
+    OUT("<meta name=\"viewport\" content=\"width=device-width\">");
+```
   
 ### char* REQ_LANG
 User agent language code.
@@ -221,4 +226,18 @@ Prevent the response from caching by browser.
   
 ### void REDIRECT_TO_LANDING
 Redirect browser to landing page.  
+  
+### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
+Call *service*. Timeout is in seconds. When the response arrives, app_async_done() will be called.  
+Example:
+```source.c++
+CALL_ASYNC("get_customer", cust_id, 10)
+```
+  
+### void CALL_ASYNC_NR(const char \*service, const char \*data)
+Call *service*. Response is not required.  
+Example:
+```source.c++
+CALL_ASYNC("set_counter", counter)
+```
   
