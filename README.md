@@ -205,7 +205,7 @@ OUT("<p>There are %d records in the table.</p>", records);
 ```
   
 ### bool QS(param, variable)
-Search URI-decoded query string for *param* and if found, copy its value to *variable* and return TRUE. Otherwise return FALSE. QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.  
+Search URI-decoded query string for *param* and if found, copy its value to *variable* and return TRUE. Otherwise return FALSE. For POST and PUT it assumes query string is in payload. QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.  
 Example:  
 ```source.c++
 QSVAL qs_firstname;
