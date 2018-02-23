@@ -48,7 +48,40 @@ Static resources are read into memory on startup from **res** directory. Static 
 Static resources are handled automatically, you don't have to add anything in your app.  
   
 ## Hello World
-This is a tad extended Hello World example to demonstrate query string handling:
+Simple Hello World:
+```source.c++
+int app_process_req(int ci)
+{
+    OUT("<!DOCTYPE html>");
+    OUT("<head>");
+    OUT("<title>%s</title>", APP_WEBSITE);
+    OUT("</head>");
+    OUT("<body>");
+    OUT("<h1>%s</h1>", APP_WEBSITE);
+
+    if ( REQ("") )  // landing page
+    {
+        OUT("<h2>Welcome to my web app!</h2>");
+    }
+    else if ( REQ("about") )
+    {
+        OUT("<h2>About</h2>");
+        OUT("<p>Hello World Sample Silgy Web Application</p>");
+        OUT("<p><a href=\"/\">Back to landing page</a></p>");
+    }
+    else  // page not found
+    {
+        ret = ERR_NOT_FOUND;
+    }
+
+    OUT("</body>");
+    OUT("</html>");
+
+    return OK;
+}
+```
+  
+And this is a tad extended Hello World example to demonstrate query string handling:
 ```source.c++
 int app_process_req(int ci)
 {
