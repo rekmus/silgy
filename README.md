@@ -94,8 +94,9 @@ int app_process_req(int ci)
     return ret;
 }
 ```
+  
 ## Configuration File
-Without configuration file silgy server starts listening to port 80. As long as you use the same computer for development and production, you need a way to start your application with different port, since only one process can listen to port 80. Also, if you want to use https, you will need to pass your certificate file path. You can set these and some more in a configuration file. Default name is silgy.conf and you can overwrite this with SILGY_CONF environment variable. Create a new file in $SILGYDIR/bin and paste the below:
+By default silgy server starts listening on port 80. As long as you use the same computer for development and production, you need a way to test your application with different port, since only one process can listen on the port 80. Also, if you want to use https, you will need to pass your certificate file path. You can set these and some more in a configuration file. Default name is silgy.conf and you can overwrite this with SILGY_CONF environment variable. Create a new file in $SILGYDIR/bin and paste the below:
 ```
 # ----------------------------------------------------------------------------
 # between 1...4 (most detailed)
@@ -133,7 +134,13 @@ blockedIPList=/home/ec2-user/live/bin/blacklist.txt
 # slightly different behaviour with https redirections
 test=0
 
+# ----------------------------------------------------------------------------
+# Custom params
+myParam1=someValue
+myParam2=someOtherValue
 ```
+Change the contents to your taste. Note that you can use the config file to pass your own parameters, perhaps when using the same application on multiple servers.  
+  
 ## API
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
 ### bool REQ(string)
