@@ -157,7 +157,7 @@ if ( REQ("calc") )
 ```
   
 ### void OUT(string[, ...])
-Send *string* to a browser. Optionally it takes additional arguments, as per printf function family specification.  
+Send *string* to a browser. Optionally it takes additional arguments, as per [printf function family specification] (https://en.wikipedia.org/wiki/Printf_format_string).  
 Examples:
 ```source.c++
 OUT("<!DOCTYPE html>");
