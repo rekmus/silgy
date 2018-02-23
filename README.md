@@ -141,3 +141,10 @@ Example:
 ```source.c++
 REQ("about")
 ```
+### OUT(string[, ...])
+Send string to a browser. Optionally it takes additional arguments, as per printf function family specification.  
+Examples:
+```source.c++
+OUT("<!DOCTYPE html>")
+OUT("<p>There are %d records in the table.</p>", records)
+```
