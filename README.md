@@ -39,8 +39,15 @@ sudo te
 ```
 That's it. Your app should now be online.  
   
-Your app logic is in **silgy_app.cpp** and **app_process_req()** is your main, called with every browser request.  
+Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and **app_process_req()** is your main, called with every browser request.  
   
+## Static Resources
+Static resources are simply the files you want to serve from disk, as opposed to dynamic content that is generated in your code. Statics usually include pictures, css, robots.txt etc.  
+Static resources are read into memory on startup from **res** directory. Static resources you want to serve minified (CSS and JS), are read into memory and minified on startup from **resmin** directory.  
+  
+Static resources are handled automatically, you don't have to add anything in your app.  
+  
+## Hello World
 This is a tad extended Hello World example to demonstrate query string handling:
 ```source.c++
 int app_process_req(int ci)
