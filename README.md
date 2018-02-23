@@ -136,14 +136,14 @@ test=0
 ```
 ## API
 ### bool REQ(string)
-Return TRUE if request matches string.  
+Return TRUE if request matches *string*.  
 Example:  
 ```source.c++
 REQ("about")
 ```
   
 ### void OUT(string[, ...])
-Send string to a browser. Optionally it takes additional arguments, as per printf function family specification.  
+Send *string* to a browser. Optionally it takes additional arguments, as per printf function family specification.  
 Examples:
 ```source.c++
 OUT("<!DOCTYPE html>")
@@ -151,14 +151,14 @@ OUT("<p>There are %d records in the table.</p>", records)
 ```
   
 ### bool URI(string)
-Return TRUE if URI matches string.  
+Return TRUE if URI matches *string*.  
 Example:
 ```source.c++
 URI("temp/document.pdf")
 ```
   
 ### bool REQ_METHOD(string)
-Return TRUE if request method matches string.  
+Return TRUE if request method matches *string*.  
 Example:  
 ```source.c++
 REQ_METHOD("OPTIONS")
@@ -194,28 +194,28 @@ if ( REQ_MOB )
 User agent language code.
   
 ### bool HOST(string)
-Return TRUE if host matches string. Case is ignored.  
+Return TRUE if host matches *string*. Case is ignored.  
 Example:
 ```source.c++
 HOST("example.com")
 ```
   
-### void RES_STATUS(string)
-Set response status.  
+### void RES_STATUS(int code)
+Set response status to *code*.  
 Example:
 ```source.c++
 RES_STATUS(501)
 ```
   
 ### void RES_CONTENT_TYPE(string)
-Set response content type.  
+Set response content type to *string*.  
 Example:
 ```source.c++
 RES_CONTENT_TYPE("text/plain")
 ```
   
 ### void RES_LOCATION(string)
-Redirect browser to string.  
+Redirect browser to *string*.  
 Example:
 ```source.c++
 RES_LOCATION("login")
@@ -228,7 +228,7 @@ Prevent the response from caching by browser.
 Redirect browser to landing page.  
   
 ### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
-Call *service*. Timeout is in seconds. When the response arrives, app_async_done() will be called.  
+Call *service*. Timeout is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*.  
 Example:
 ```source.c++
 CALL_ASYNC("get_customer", cust_id, 10)
@@ -238,6 +238,37 @@ CALL_ASYNC("get_customer", cust_id, 10)
 Call *service*. Response is not required.  
 Example:
 ```source.c++
-CALL_ASYNC("set_counter", counter)
+CALL_ASYNC_NR("set_counter", counter)
+```
+  
+### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
+Process anynchronous call response.  
+Example:
+```source.c++
+void app_async_done(int ci, const char *service, const char *data, bool timeouted)
+{
+    if ( S("get_customer") )
+    {
+        gen_header(ci);
+        if ( timeouted )
+        {
+            WAR("get_customer timeout-ed");
+            OUT("There was no response from get_customer service");
+        }
+        else
+            OUT(data);
+        gen_footer(ci);
+    }
+    else if ( S("get_records") )
+    {
+        if ( timeouted )
+        {
+            WAR("get_records timeout-ed");
+            OUT("-|get_records timeout-ed|\n");
+        }
+        else
+            OUT(data);
+    }
+}
 ```
   
