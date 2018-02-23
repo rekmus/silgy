@@ -3255,7 +3255,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
                 ares[j].state = ASYNC_STATE_SENT;
                 ares[j].sent = G_now;
                 if ( timeout < 0 ) timeout = 0;
-                else if ( timeout == 0 || timeout > ASYNC_MAX_TIMEOUT ) timeout = ASYNC_MAX_TIMEOUT;
+                if ( timeout == 0 || timeout > ASYNC_MAX_TIMEOUT ) timeout = ASYNC_MAX_TIMEOUT;
                 ares[j].timeout = timeout;
                 break;
             }

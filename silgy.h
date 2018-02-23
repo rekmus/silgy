@@ -275,6 +275,8 @@ typedef char                        bool;
 #define ASYNC_RES_QUEUE             "/silgy_res"    /* response queue name */
 #define ASYNC_MAX_TIMEOUT           1800            /* in seconds ==> 30 minutes */
 #define S(s)                        (0==strcmp(service,s))
+#define CALL_ASYNC(s,d,t)			eng_async_req(ci, s, d, TRUE, t)
+#define CALL_ASYNC_NR(s,d)			eng_async_req(ci, s, d, FALSE, 0)
 
 /* resource / content types */
 
