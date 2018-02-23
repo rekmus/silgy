@@ -1,5 +1,0 @@
-#!/bin/sh
-
-. ./dev.env
-
-g++ -c silgy_eng.c silgy_lib.c $WEB_INCLUDE_PATH $WEB_CFLAGS
