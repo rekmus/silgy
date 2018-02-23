@@ -246,7 +246,7 @@ DBG("in a while loop, i = %d", i);
 Note: if debug level is set to 4, every call flushes the buffer.  
   
 ### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
-Call *service*. Timeout is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*.  
+Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.  
 Example:
 ```source.c++
 CALL_ASYNC("get_customer", cust_id, 10);
