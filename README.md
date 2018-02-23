@@ -283,7 +283,7 @@ CALL_ASYNC_NR("set_counter", counter);
   
 ### bool S(string)
 Return TRUE if service matches *string*.  
-Example: see *app_async_done*.  
+Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
   
 ### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
 Process anynchronous call response.  
