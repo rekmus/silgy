@@ -3,39 +3,33 @@ Silgy is a back-end framework for ultra fast, small and mid-sized web applicatio
   
 Silgy supports https, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism to use it in microservices architecture.  
   
-Silgy requires Linux/UNIX computer with C or C++ compiler for development. Production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.  
-  
+Silgy requires Linux/UNIX computer with C or C++ compiler for development. Production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 ## Quick Start Guide
-  
 1. Create a project directory, i.e. web:  
 ```
-mkdir web  
+mkdir web
 ```
-
-2. Set SILGYDIR environment variable to your project directory. If you use bash, that would be in .bash_profile in your home directory:  
+2. Set SILGYDIR environment variable to your project directory. If you use bash, that would be in .bash_profile in your home directory:
 ```
-export SILGYDIR=/home/ec2-user/web  
+export SILGYDIR=/home/ec2-user/web
 ```
-  
 Then you need to either restart your shell session or execute above command.  
   
-3. In your project directory, create some others:  
+3. In your project directory, create some others:
 ```
-cd web  
-mkdir src  
-mkdir bin  
-mkdir res  
-mkdir resmin  
-mkdir logs  
+cd web
+mkdir src
+mkdir bin
+mkdir res
+mkdir resmin
+mkdir logs
 ```
-  
-4. Throw all the files to src. **m** and **te** scripts must have executable flag. In src:  
+4. Throw all the files to src. **m** and **te** scripts must have executable flag. In src:
 ```
-chmod u+x m  
-chmod u+x te  
+chmod u+x m
+chmod u+x te
 ```
-  
-5. Go to src and compile:  
+5. Go to src and compile:
 ```
 m
 ```
@@ -43,12 +37,11 @@ Run:
 ```
 sudo te
 ```
-  
 That's it. Your app should now be online.  
   
 Your app logic is in **silgy_app.cpp** and **app_process_req()** is your main, called with every browser request.  
   
-This is a tad extended Hello World example to demonstrate query string handling:  
+This is a tad extended Hello World example to demonstrate query string handling:
 ```source.c++
 int app_process_req(int ci)
 {
@@ -106,7 +99,7 @@ Without configuration file silgy server starts listening to port 80. As long as 
 ```
 # ----------------------------------------------------------------------------
 # between 1...4 (most detailed)
-logLevel=3
+logLevel=4
 
 # ----------------------------------------------------------------------------
 # ports
@@ -140,4 +133,11 @@ blockedIPList=/home/ec2-user/live/bin/blacklist.txt
 # slightly different behaviour with https redirections
 test=0
 
+```
+## API
+### REQ(string)
+Return TRUE if request matches string.  
+Example:  
+```source.c++
+REQ("about")
 ```
