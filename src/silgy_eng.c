@@ -2113,6 +2113,10 @@ static void gen_response_header(int ci)
 //      print_content_type(ci, RES_TEXT);
 //  }
 
+#ifndef NO_IDENTITY
+    PRINT_HTTP_SERVER;
+#endif
+
     PRINT_HTTP_END_OF_HEADER;
 
     DBG("Response status: %d", conn[ci].status);

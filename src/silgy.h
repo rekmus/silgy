@@ -33,7 +33,7 @@
 typedef char                        bool;
 #endif
 
-#define WEB_SERVER_VERSION          "1.6"
+#define WEB_SERVER_VERSION          "1.7"
 
 /* for use with booleans */
 
@@ -125,9 +125,6 @@ typedef char                        bool;
 /* connection */
 #define PRINT_HTTP_CONNECTION(ci)   (sprintf(G_tmp, "Connection: %s\r\n", conn[ci].keep_alive?"keep-alive":"close"), HOUT(G_tmp))
 
-/* server */
-#define PRINT_HTTP_SERVER           (sprintf(G_tmp, "Server: %s\r\n", PROGRAM), HOUT(G_tmp))
-
 /* vary */
 #define PRINT_HTTP_VARY_DYN         HOUT("Vary: Accept-Encoding, User-Agent\r\n")
 #define PRINT_HTTP_VARY_STAT        HOUT("Vary: Accept-Encoding\r\n")
@@ -147,6 +144,9 @@ typedef char                        bool;
 
 /* content length */
 #define PRINT_HTTP_CONTENT_LEN(len) (sprintf(G_tmp, "Content-Length: %d\r\n", len), HOUT(G_tmp))
+
+/* identity */
+#define PRINT_HTTP_SERVER           HOUT("Server: Silgy\r\n")
 
 /* must be last! */
 #define PRINT_HTTP_END_OF_HEADER    HOUT("\r\n")
