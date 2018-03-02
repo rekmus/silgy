@@ -77,7 +77,9 @@ extern "C" {
     void add_script(int ci, const char *fname, bool first);
     void date_inc(char *str, int days, int *dow);
     int date_cmp(const char *str1, const char *str2);
-    bool read_conf(void);
+    bool lib_read_conf(const char *file);
+	bool lib_shm_create(long bytes);
+	void lib_shm_delete(long bytes);
     bool log_start(bool test);
     void log_write_time(int level, const char *message, ...);
     void log_write(int level, const char *message, ...);

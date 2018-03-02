@@ -94,6 +94,7 @@ int         G_blacklist_cnt;            /* M_blacklist length */
 counters_t  G_cnts_today;               /* today's counters */
 counters_t  G_cnts_yesterday;           /* yesterday's counters */
 counters_t  G_cnts_day_before;          /* day before's counters */
+char        *G_shm_segptr;				/* SHM pointer */
 
 /* locals */
 
@@ -117,6 +118,7 @@ static bool         M_appleicon_exists=FALSE;   /* -''- */
 
 static void set_state(int ci, long bytes);
 static void set_state_sec(int ci, long bytes);
+static bool read_conf(void);
 static void respond_to_expect(int ci);
 static void log_proc_time(int ci);
 static void close_conn(int ci);
@@ -861,6 +863,44 @@ static void set_state_sec(int ci, long bytes)
         }
     }
 #endif
+}
+
+
+/* --------------------------------------------------------------------------
+   Read & parse conf file and set global parameters
+-------------------------------------------------------------------------- */
+static bool read_conf()
+{
+    char    default_conf_path[256];
+	char	*p_conf_path=NULL;
+    char    conf_path[256];
+
+    /* set defaults */
+
+    G_logLevel = 2;
+    G_httpPort = 80;
+    G_httpsPort = 443;
+    G_certFile[0] = EOS;
+    G_certChainFile[0] = EOS;
+    G_keyFile[0] = EOS;
+    G_dbName[0] = EOS;
+    G_dbUser[0] = EOS;
+    G_dbPassword[0] = EOS;
+    G_blockedIPList[0] = EOS;
+    G_test = 0;
+
+    /* get the conf file path & name */
+
+    if ( NULL == (p_conf_path=getenv("SILGY_CONF")) )
+    {
+		sprintf(default_conf_path, "%s/bin/silgy.conf", G_appdir);
+        printf("SILGY_CONF not set, trying %s...\n", default_conf_path);
+        p_conf_path = default_conf_path;
+    }
+
+    /* parse the conf file */
+
+	return lib_read_conf(p_conf_path);
 }
 
 
@@ -3143,9 +3183,46 @@ static bool init_ssl()
 
 
 
-/* ==================================================================================================================================== */
-/* PUBLIC ENGINE FUNCTIONS                                                                                                              */
-/* ==================================================================================================================================== */
+/* ============================================================================================================= */
+/* PUBLIC ENGINE FUNCTIONS (callbacks)                                                                           */
+/* ============================================================================================================= */
+
+
+/* --------------------------------------------------------------------------
+   Set global parameters read from conf file
+   lib_read_conf() callback
+-------------------------------------------------------------------------- */
+void eng_set_param(const char *label, const char *value)
+{
+    if ( PARAM("logLevel") )
+        G_logLevel = atoi(value);
+    else if ( PARAM("httpPort") )
+        G_httpPort = atoi(value);
+    else if ( PARAM("httpsPort") )
+        G_httpsPort = atoi(value);
+    else if ( PARAM("cipherList") )
+        strcpy(G_cipherList, value);
+    else if ( PARAM("certFile") )
+        strcpy(G_certFile, value);
+    else if ( PARAM("certChainFile") )
+        strcpy(G_certChainFile, value);
+    else if ( PARAM("keyFile") )
+        strcpy(G_keyFile, value);
+//  else if ( PARAM("dbHost") )
+//      strcpy(G_dbHost, value);
+//  else if ( PARAM("dbPort") )
+//      G_dbPort = atoi(value);
+    else if ( PARAM("dbName") )
+        strcpy(G_dbName, value);
+    else if ( PARAM("dbUser") )
+        strcpy(G_dbUser, value);
+    else if ( PARAM("dbPassword") )
+        strcpy(G_dbPassword, value);
+    else if ( PARAM("blockedIPList") )
+        strcpy(G_blockedIPList, value);
+    else if ( PARAM("test") )
+        G_test = atoi(value);
+}
 
 
 /* --------------------------------------------------------------------------

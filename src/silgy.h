@@ -16,6 +16,8 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <arpa/inet.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
 
 #ifdef DBMYSQL
 #include <mysql.h>
@@ -33,7 +35,7 @@
 typedef char                        bool;
 #endif
 
-#define WEB_SERVER_VERSION          "1.7"
+#define WEB_SERVER_VERSION          "1.8"
 
 /* for use with booleans */
 
@@ -523,6 +525,8 @@ extern int      G_blacklist_cnt;            /* M_blacklist length */
 extern counters_t G_cnts_today;             /* today's counters */
 extern counters_t G_cnts_yesterday;         /* yesterday's counters */
 extern counters_t G_cnts_day_before;        /* day before's counters */
+/* SHM */
+extern char     *G_shm_segptr;				/* SHM pointer */
 
 
 /* public engine functions */
@@ -530,6 +534,7 @@ extern counters_t G_cnts_day_before;        /* day before's counters */
 #ifdef __cplusplus
 extern "C" {
 #endif
+	void eng_set_param(const char *label, const char *value);
     void eng_set_auth_level(const char *resource, char level);
     void eng_close_uses(int usi);
     void eng_uses_reset(int usi);

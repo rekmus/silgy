@@ -15,12 +15,12 @@ static char M_df=0;         /* date format */
 static char M_tsep=' ';     /* thousand separator */
 static char M_dsep='.';     /* decimal separator */
 
+static int	M_shmid;		/* SHM id */
 
 static char *unescstring(char *src, int srclen, char *dest, int maxlen);
 static int xctod(int c);
 static void minify_1(char *dest, const char *src);
 static int minify_2(char *dest, const char *src);
-static void set_param(const char *label, const char *value);
 
 
 
@@ -1816,11 +1816,8 @@ int date_cmp(const char *str1, const char *str2)
 /* --------------------------------------------------------------------------
    Read & parse conf file and set global parameters
 -------------------------------------------------------------------------- */
-bool read_conf()
+bool lib_read_conf(const char *file)
 {
-    char    default_conf_path[256];
-	char	*p_conf_path=NULL;
-    char    conf_path[256];
     FILE    *h_file=NULL;
     int     c=0;
     int     i=0;
@@ -1830,34 +1827,11 @@ bool read_conf()
     char    label[64]="";
     char    value[256]="";
 
-    /* set defaults */
-
-    G_logLevel = 2;
-    G_httpPort = 80;
-    G_httpsPort = 443;
-    G_certFile[0] = EOS;
-    G_certChainFile[0] = EOS;
-    G_keyFile[0] = EOS;
-    G_dbName[0] = EOS;
-    G_dbUser[0] = EOS;
-    G_dbPassword[0] = EOS;
-    G_blockedIPList[0] = EOS;
-    G_test = 0;
-
-    /* get the conf file path & name */
-
-    if ( NULL == (p_conf_path=getenv("SILGY_CONF")) )
-    {
-		sprintf(default_conf_path, "%s/bin/silgy.conf", G_appdir);
-        printf("SILGY_CONF not set, trying %s...\n", default_conf_path);
-        p_conf_path = default_conf_path;
-    }
-
     /* open the conf file */
 
-    if ( NULL == (h_file=fopen(p_conf_path, "r")) )
+    if ( NULL == (h_file=fopen(file, "r")) )
     {
-        printf("Error opening %s, using defaults.\n", p_conf_path);
+        printf("Error opening %s, using defaults.\n", file);
         return FALSE;
     }
 
@@ -1874,7 +1848,10 @@ bool read_conf()
             if ( now_value )    /* end of value */
             {
                 value[i] = EOS;
-                set_param(label, value);
+#ifndef ASYNC_SERVICE
+				eng_set_param(label, value);
+				app_set_param(label, value);
+#endif
             }
             now_label = 1;
             now_value = 0;
@@ -1897,7 +1874,10 @@ bool read_conf()
             if ( now_value )    /* end of value */
             {
                 value[i] = EOS;
-                set_param(label, value);
+#ifndef ASYNC_SERVICE
+				eng_set_param(label, value);
+				app_set_param(label, value);
+#endif
             }
             now_label = 0;
             now_value = 0;
@@ -1919,7 +1899,10 @@ bool read_conf()
     if ( now_value )    /* end of value */
     {
         value[i] = EOS;
-        set_param(label, value);
+#ifndef ASYNC_SERVICE
+        eng_set_param(label, value);
+        app_set_param(label, value);
+#endif
     }
 
     if ( NULL != h_file )
@@ -1930,41 +1913,53 @@ bool read_conf()
 
 
 /* --------------------------------------------------------------------------
-   Set global parameters read from conf file
+   Attach to shared memory segment
 -------------------------------------------------------------------------- */
-static void set_param(const char *label, const char *value)
+bool lib_shm_create(long bytes)
 {
-    if ( PARAM("logLevel") )
-        G_logLevel = atoi(value);
-    else if ( PARAM("httpPort") )
-        G_httpPort = atoi(value);
-    else if ( PARAM("httpsPort") )
-        G_httpsPort = atoi(value);
-    else if ( PARAM("cipherList") )
-        strcpy(G_cipherList, value);
-    else if ( PARAM("certFile") )
-        strcpy(G_certFile, value);
-    else if ( PARAM("certChainFile") )
-        strcpy(G_certChainFile, value);
-    else if ( PARAM("keyFile") )
-        strcpy(G_keyFile, value);
-//  else if ( PARAM("dbHost") )
-//      strcpy(G_dbHost, value);
-//  else if ( PARAM("dbPort") )
-//      G_dbPort = atoi(value);
-    else if ( PARAM("dbName") )
-        strcpy(G_dbName, value);
-    else if ( PARAM("dbUser") )
-        strcpy(G_dbUser, value);
-    else if ( PARAM("dbPassword") )
-        strcpy(G_dbPassword, value);
-    else if ( PARAM("blockedIPList") )
-        strcpy(G_blockedIPList, value);
-    else if ( PARAM("test") )
-        G_test = atoi(value);
-#ifndef ASYNC_SERVICE
-    app_set_param(label, value);
-#endif
+	key_t key;
+
+	/* Create unique key via call to ftok() */
+	key = ftok(".", 'S');
+
+	/* Open the shared memory segment - create if necessary */
+	if ( (M_shmid=shmget(key, bytes, IPC_CREAT|IPC_EXCL|0666)) == -1 ) 
+	{
+		printf("Shared memory segment exists - opening as client\n");
+
+		/* Segment probably already exists - try as a client */
+		if ( (M_shmid=shmget(key, bytes, 0)) == -1 ) 
+		{
+			perror("shmget");
+			return FALSE;
+		}
+	}
+	else
+	{
+		printf("Creating new shared memory segment\n");
+	}
+
+	/* Attach (map) the shared memory segment into the current process */
+	if ( (G_shm_segptr=(char*)shmat(M_shmid, 0, 0)) == (char*)-1 )
+	{
+		perror("shmat");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Delete shared memory segment
+-------------------------------------------------------------------------- */
+void lib_shm_delete(long bytes)
+{
+	if ( lib_shm_create(bytes) )
+	{
+		shmctl(M_shmid, IPC_RMID, 0);
+		printf("Shared memory segment marked for deletion\n");
+	}
 }
 
 
