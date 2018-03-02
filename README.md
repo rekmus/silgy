@@ -60,7 +60,7 @@ int app_process_req(int ci)
 }
 ```
   
-Simple HTML Hello World:
+Simple HTML with 2 pages:
 ```source.c++
 int app_process_req(int ci)
 {
@@ -195,14 +195,23 @@ Change the contents to your taste. Note that you can use config file to pass you
   
 ## Compilation Switches
 Because speed is Silgys's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
-Add your switches to dev.env before compilation, i.e.:
+Add your switches to [dev.env](https://github.com/silgy/silgy/blob/master/src/dev.env) before compilation, i.e.:
 ```
 WEB_CFLAGS="-D HTTPS -D DBMYSQL"
 ```
 ### HTTPS
-Use HTTPS. Both ports will be open and listened to. You need to supply certFile, keyFile and optionally certChainFile (for example Let's Encrypt generates this separately).
+Use HTTPS. Both ports will be open and listened to. You need to supply *certFile*, *keyFile* and optionally *certChainFile* (for example Let's Encrypt generates this separately).  
   
-## API
+### DBMYSQL
+Open MySQL connection at the start and close it at clean up. Use *dbName*, *dbUser* and *dbPassword*.  
+  
+### USERS
+Use users module. It provides an API for handling all registered users logic, including common things like i.e. password reset.  
+  
+### DOMAINONLY
+Always redirect to APP_DOMAIN.  
+  
+## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
 ### bool REQ(string)
 Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
