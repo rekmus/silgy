@@ -47,8 +47,20 @@ Static resources are read into memory on startup from **res** directory. Static 
   
 Static resources are handled automatically, you don't have to add anything in your app.  
   
+## Response Header
+Response header is generated automatically, however you can overwrite defaults with a couple of macros.  
+  
 ## Hello World
-Simple Hello World:
+Simplest Hello World:
+```source.c++
+int app_process_req(int ci)
+{
+    OUT("Hello World!");
+    return OK;
+}
+```
+  
+Simple HTML Hello World:
 ```source.c++
 int app_process_req(int ci)
 {
@@ -180,6 +192,15 @@ myParam1=someValue
 myParam2=someOtherValue
 ```
 Change the contents to your taste. Note that you can use config file to pass your own parameters.  
+  
+## Compilation Switches
+Because speed is Silgys's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
+Add your switches to dev.env before compilation, i.e.:
+```
+WEB_CFLAGS="-D HTTPS -D DBMYSQL"
+```
+### HTTPS
+Use HTTPS. Both ports will be open and listened to. You need to supply certFile, keyFile and optionally certChainFile (for example Let's Encrypt generates this separately).
   
 ## API
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
