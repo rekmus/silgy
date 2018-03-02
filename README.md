@@ -48,7 +48,7 @@ Static resources are read into memory on startup from **res** directory. Static 
 Static resources are handled automatically, you don't have to add anything in your app.  
   
 ## Response Header
-Response header is generated automatically, however you can overwrite defaults with a couple of macros.  
+Response header is generated automatically, however you can overwrite defaults with a couple of [macros](https://github.com/silgy/silgy/blob/master/README.md#void-res_statusint-code).  
   
 ## Hello World
 Simplest Hello World:
