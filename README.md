@@ -194,7 +194,7 @@ myParam2=someOtherValue
 Change the contents to your taste. Note that you can use config file to pass your own parameters.  
   
 ## Compilation Switches
-Because speed is Silgys's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
+Because speed is Silgy's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
 Add your switches to [dev.env](https://github.com/silgy/silgy/blob/master/src/dev.env) before compilation, i.e.:
 ```
 WEB_CFLAGS="-D HTTPS -D DBMYSQL"
