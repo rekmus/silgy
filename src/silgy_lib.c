@@ -1754,18 +1754,33 @@ static int minify_2(char *dest, const char *src)
 
 
 /* --------------------------------------------------------------------------
-  add script to HTML head
+   Add script to HTML head
 -------------------------------------------------------------------------- */
 void add_script(int ci, const char *fname, bool first)
 {
 #ifndef ASYNC_SERVICE
     if ( first )
     {
-        DBG("first = TRUE; Defining ld()");
-        OUT("function ld(n){var f=document.createElement('script');f.setAttribute(\"type\",\"text/javascript\");f.setAttribute(\"src\",n);document.getElementsByTagName(\"head\")[0].appendChild(f);}");
-        first = FALSE;
+        DBG("first = TRUE; Defining ldscript()");
+        OUT("function ldscript(n){var f=document.createElement('script');f.setAttribute(\"type\",\"text/javascript\");f.setAttribute(\"src\",n);document.getElementsByTagName(\"head\")[0].appendChild(f);}");
     }
-    OUT("ld('%s');", fname);
+    OUT("ldscript('%s');", fname);
+#endif
+}
+
+
+/* --------------------------------------------------------------------------
+   Add CSS link to HTML head
+-------------------------------------------------------------------------- */
+void add_css(int ci, const char *fname, bool first)
+{
+#ifndef ASYNC_SERVICE
+    if ( first )
+    {
+        DBG("first = TRUE; Defining ldlink()");
+        OUT("function ldlink(n){var f=document.createElement('link');f.setAttribute(\"rel\",\"stylesheet\");f.setAttribute(\"type\",\"text/css\");f.setAttribute(\"href\",n);document.getElementsByTagName(\"head\")[0].appendChild(f);}");
+    }
+    OUT("ldlink('%s');", fname);
 #endif
 }
 
@@ -1913,6 +1928,49 @@ bool lib_read_conf(const char *file)
 
 
 /* --------------------------------------------------------------------------
+   Create a pid file
+-------------------------------------------------------------------------- */
+char *lib_create_pid_file(const char *name)
+{
+static char pidfilename[256];
+    FILE    *fpid=NULL;
+
+    G_pid = getpid();
+
+    sprintf(pidfilename, "%s.pid", name);
+
+    /* check if the pid file already exists */
+
+    if ( access(pidfilename, F_OK) != -1 )
+    {
+        ERR("PID file already exists");
+        return NULL;
+    }
+
+    /* create a pid file */
+
+    if ( NULL == (fpid=fopen(pidfilename, "w")) )
+    {
+        INF("Tried to create [%s]", pidfilename);
+        ERR("Failed to create pid file, errno = %d (%s)", errno, strerror(errno));
+        return NULL;
+    }
+
+    /* write pid to pid file */
+
+    if ( fprintf(fpid, "%d", G_pid) < 1 )
+    {
+        ERR("Couldn't write to pid file, errno = %d (%s)", errno, strerror(errno));
+        return NULL;
+    }
+
+    fclose(fpid);
+
+    return pidfilename;
+}
+
+
+/* --------------------------------------------------------------------------
    Attach to shared memory segment
 -------------------------------------------------------------------------- */
 bool lib_shm_create(long bytes)
@@ -1966,19 +2024,23 @@ void lib_shm_delete(long bytes)
 /* --------------------------------------------------------------------------
   start a log. uses global G_log as file handler
 -------------------------------------------------------------------------- */
-bool log_start(bool test)
+bool log_start(const char *prefix, bool test)
 {
-    char    prefix[256];
-    char    file_name[512];
+	char	fprefix[64]="";		/* formatted prefix */
+    char    fname[512];			/* file name */
+    char    ffname[512];		/* full file name */
 
-    sprintf(prefix, "%s/logs/%d%02d%02d_%02d%02d", G_appdir, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
+	if ( prefix && prefix[0] )
+		sprintf(fprefix, "%s_", prefix);
+
+    sprintf(fname, "%s/logs/%s%d%02d%02d_%02d%02d", G_appdir, fprefix, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
 
     if ( test )
-        sprintf(file_name, "%s_t.log", prefix);
+        sprintf(ffname, "%s_t.log", fname);
     else
-        sprintf(file_name, "%s.log", prefix);
+        sprintf(ffname, "%s.log", fname);
 
-    if ( NULL == (G_log=fopen(file_name, "a")) )
+    if ( NULL == (G_log=fopen(ffname, "a")) )
     {
         printf("ERROR: Couldn't open log file. Make sure %s is defined in your environment and there is a `logs' directory there.\n", APP_DIR);
         return FALSE;

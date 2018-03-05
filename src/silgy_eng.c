@@ -98,7 +98,7 @@ char        *G_shm_segptr;				/* SHM pointer */
 
 /* locals */
 
-static char         M_pidfile[256];             /* pid file name */
+static char         *M_pidfile;                 /* pid file name */
 static int          M_listening_fd=0;           /* The socket file descriptor for our "listening" socket */
 static int          M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
 #ifdef HTTPS
@@ -383,7 +383,7 @@ struct timeval  timeout;                    /* Timeout for select */
                 {
                     dump_counters();
                     log_finish();
-                    if ( !log_start(G_test) )
+                    if ( !log_start("", G_test) )
                         return EXIT_FAILURE;
                     prev_day = G_ptm->tm_mday;
 
@@ -977,7 +977,6 @@ static void close_conn(int ci)
 -------------------------------------------------------------------------- */
 static bool init(int argc, char **argv)
 {
-    FILE        *fpid=NULL;
     char        *appdir=NULL;
     time_t      sometimeahead;
     int         i=0;
@@ -1034,7 +1033,7 @@ static bool init(int argc, char **argv)
 
     /* start log */
 
-    if ( !log_start(G_test) )
+    if ( !log_start("", G_test) )
         return FALSE;
 
     ALWAYS("Starting program");
@@ -1054,34 +1053,8 @@ static bool init(int argc, char **argv)
 
     /* pid file --------------------------------------------------------------------------- */
 
-    sprintf(M_pidfile, "%s.pid", argv[0]);
-
-    /* check if the pid file already exists */
-
-    if ( access(M_pidfile, F_OK) != -1 )
-    {
-        ERR("PID file already exists");
+    if ( !(M_pidfile=lib_create_pid_file(argv[0])) )
         return FALSE;
-    }
-
-    /* create a pid file */
-
-    if ( NULL == (fpid=fopen(M_pidfile, "w")) )
-    {
-        INF("Tried to create [%s]", M_pidfile);
-        ERR("Failed to create pid file, errno = %d (%s)", errno, strerror(errno));
-        return FALSE;
-    }
-
-    /* write pid to pid file */
-
-    if ( fprintf(fpid, "%d", G_pid) < 1 )
-    {
-        ERR("Couldn't write to pid file, errno = %d (%s)", errno, strerror(errno));
-        return FALSE;
-    }
-
-    fclose(fpid);
 
     /* empty static resources list */
 
@@ -2246,6 +2219,7 @@ static void print_content_type(int ci, char type)
 -------------------------------------------------------------------------- */
 static bool start_new_uses(int ci)
 {
+    int     i;
     char    sesid[SESID_LEN+1];
 
     DBG("start_new_uses");
@@ -2258,13 +2232,22 @@ static bool start_new_uses(int ci)
 
     ++G_sessions;   /* start from 1 */
 
-    conn[ci].usi = G_sessions;
+    /* find first free slot */
+
+    for ( i=1; i<=MAX_SESSIONS; ++i )
+    {
+        if ( uses[i].sesid[0] == EOS )
+        {
+            conn[ci].usi = i;
+            break;
+        }
+    }
 
     /* generate sesid */
 
     get_random_str(sesid, SESID_LEN);
 
-    INF("Starting new session, usi=%d, sesid [%s]", G_sessions, sesid);
+    INF("Starting new session, usi=%d, sesid [%s]", conn[ci].usi, sesid);
 
     /* add record to uses */
 
@@ -3246,6 +3229,20 @@ static int current=0;
    Close user session
 -------------------------------------------------------------------------- */
 void eng_close_uses(int usi)
+{
+    eng_uses_reset(usi);
+    app_uses_reset(usi);
+
+    G_sessions--;
+
+    DBG("%d session(s) remaining", G_sessions);
+}
+
+
+/* --------------------------------------------------------------------------
+   Close user session
+-------------------------------------------------------------------------- */
+void eng_close_uses_old(int usi)
 {
     int i;
 
