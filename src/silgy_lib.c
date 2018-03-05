@@ -15,7 +15,7 @@ static char M_df=0;         /* date format */
 static char M_tsep=' ';     /* thousand separator */
 static char M_dsep='.';     /* decimal separator */
 
-static int	M_shmid;		/* SHM id */
+static int  M_shmid;        /* SHM id */
 
 static char *unescstring(char *src, int srclen, char *dest, int maxlen);
 static int xctod(int c);
@@ -1864,8 +1864,8 @@ bool lib_read_conf(const char *file)
             {
                 value[i] = EOS;
 #ifndef ASYNC_SERVICE
-				eng_set_param(label, value);
-				app_set_param(label, value);
+                eng_set_param(label, value);
+                app_set_param(label, value);
 #endif
             }
             now_label = 1;
@@ -1890,8 +1890,8 @@ bool lib_read_conf(const char *file)
             {
                 value[i] = EOS;
 #ifndef ASYNC_SERVICE
-				eng_set_param(label, value);
-				app_set_param(label, value);
+                eng_set_param(label, value);
+                app_set_param(label, value);
 #endif
             }
             now_label = 0;
@@ -1975,36 +1975,36 @@ static char pidfilename[256];
 -------------------------------------------------------------------------- */
 bool lib_shm_create(long bytes)
 {
-	key_t key;
+    key_t key;
 
-	/* Create unique key via call to ftok() */
-	key = ftok(".", 'S');
+    /* Create unique key via call to ftok() */
+    key = ftok(".", 'S');
 
-	/* Open the shared memory segment - create if necessary */
-	if ( (M_shmid=shmget(key, bytes, IPC_CREAT|IPC_EXCL|0666)) == -1 ) 
-	{
-		printf("Shared memory segment exists - opening as client\n");
+    /* Open the shared memory segment - create if necessary */
+    if ( (M_shmid=shmget(key, bytes, IPC_CREAT|IPC_EXCL|0666)) == -1 ) 
+    {
+        printf("Shared memory segment exists - opening as client\n");
 
-		/* Segment probably already exists - try as a client */
-		if ( (M_shmid=shmget(key, bytes, 0)) == -1 ) 
-		{
-			perror("shmget");
-			return FALSE;
-		}
-	}
-	else
-	{
-		printf("Creating new shared memory segment\n");
-	}
+        /* Segment probably already exists - try as a client */
+        if ( (M_shmid=shmget(key, bytes, 0)) == -1 ) 
+        {
+            perror("shmget");
+            return FALSE;
+        }
+    }
+    else
+    {
+        printf("Creating new shared memory segment\n");
+    }
 
-	/* Attach (map) the shared memory segment into the current process */
-	if ( (G_shm_segptr=(char*)shmat(M_shmid, 0, 0)) == (char*)-1 )
-	{
-		perror("shmat");
-		return FALSE;
-	}
+    /* Attach (map) the shared memory segment into the current process */
+    if ( (G_shm_segptr=(char*)shmat(M_shmid, 0, 0)) == (char*)-1 )
+    {
+        perror("shmat");
+        return FALSE;
+    }
 
-	return TRUE;
+    return TRUE;
 }
 
 
@@ -2013,11 +2013,11 @@ bool lib_shm_create(long bytes)
 -------------------------------------------------------------------------- */
 void lib_shm_delete(long bytes)
 {
-	if ( lib_shm_create(bytes) )
-	{
-		shmctl(M_shmid, IPC_RMID, 0);
-		printf("Shared memory segment marked for deletion\n");
-	}
+    if ( lib_shm_create(bytes) )
+    {
+        shmctl(M_shmid, IPC_RMID, 0);
+        printf("Shared memory segment marked for deletion\n");
+    }
 }
 
 
@@ -2026,12 +2026,12 @@ void lib_shm_delete(long bytes)
 -------------------------------------------------------------------------- */
 bool log_start(const char *prefix, bool test)
 {
-	char	fprefix[64]="";		/* formatted prefix */
-    char    fname[512];			/* file name */
-    char    ffname[512];		/* full file name */
+    char    fprefix[64]="";     /* formatted prefix */
+    char    fname[512];         /* file name */
+    char    ffname[512];        /* full file name */
 
-	if ( prefix && prefix[0] )
-		sprintf(fprefix, "%s_", prefix);
+    if ( prefix && prefix[0] )
+        sprintf(fprefix, "%s_", prefix);
 
     sprintf(fname, "%s/logs/%s%d%02d%02d_%02d%02d", G_appdir, fprefix, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
 
@@ -2042,7 +2042,7 @@ bool log_start(const char *prefix, bool test)
 
     if ( NULL == (G_log=fopen(ffname, "a")) )
     {
-        printf("ERROR: Couldn't open log file. Make sure %s is defined in your environment and there is a `logs' directory there.\n", APP_DIR);
+        printf("ERROR: Couldn't open log file. Make sure SILGYDIR is defined in your environment and there is a `logs' directory there.\n");
         return FALSE;
     }
 

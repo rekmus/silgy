@@ -9,7 +9,6 @@
 #ifndef SILGY_APP_H
 #define SILGY_APP_H
 
-#define APP_DIR                     "SILGYDIR"                  /* application root directory */
 #define APP_WEBSITE                 "Silgy Hello World"         /* website name */
 #define APP_DOMAIN                  "example.com"               /* website domain */
 #define APP_DESCRIPTION             "Hello World Sample Silgy Web Application"

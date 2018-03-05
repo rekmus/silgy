@@ -94,7 +94,7 @@ int         G_blacklist_cnt;            /* M_blacklist length */
 counters_t  G_cnts_today;               /* today's counters */
 counters_t  G_cnts_yesterday;           /* yesterday's counters */
 counters_t  G_cnts_day_before;          /* day before's counters */
-char        *G_shm_segptr;				/* SHM pointer */
+char        *G_shm_segptr;              /* SHM pointer */
 
 /* locals */
 
@@ -872,7 +872,7 @@ static void set_state_sec(int ci, long bytes)
 static bool read_conf()
 {
     char    default_conf_path[256];
-	char	*p_conf_path=NULL;
+    char    *p_conf_path=NULL;
     char    conf_path[256];
 
     /* set defaults */
@@ -893,14 +893,14 @@ static bool read_conf()
 
     if ( NULL == (p_conf_path=getenv("SILGY_CONF")) )
     {
-		sprintf(default_conf_path, "%s/bin/silgy.conf", G_appdir);
+        sprintf(default_conf_path, "%s/bin/silgy.conf", G_appdir);
         printf("SILGY_CONF not set, trying %s...\n", default_conf_path);
         p_conf_path = default_conf_path;
     }
 
     /* parse the conf file */
 
-	return lib_read_conf(p_conf_path);
+    return lib_read_conf(p_conf_path);
 }
 
 
@@ -1011,15 +1011,23 @@ static bool init(int argc, char **argv)
 
     /* app root dir */
 
-    if ( strlen(APP_DIR) && NULL != (appdir=getenv(APP_DIR)) )
+    if ( NULL != (appdir=getenv("SILGYDIR")) )
+    {
         strcpy(G_appdir, appdir);
+    }
     else if ( NULL != (appdir=getenv("HOME")) )
     {
         strcpy(G_appdir, appdir);
-        printf("WARNING: No %s defined. Assuming app dir = %s\n", APP_DIR, G_appdir);
+        printf("WARNING: No SILGYDIR defined. Assuming app dir = %s\n", G_appdir);
     }
     else
+    {
         strcpy(G_appdir, ".");
+        printf("WARNING: No SILGYDIR defined. Assuming app dir = .\n");
+    }
+
+    int len = strlen(G_appdir);
+    if ( G_appdir[len-1] == '/' ) G_appdir[len-1] = EOS;
 
     /* read the config file or set defaults */
 
