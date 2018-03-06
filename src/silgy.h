@@ -377,10 +377,10 @@ typedef struct {
     char    header[1024];                   /* outgoing HTTP header */
 #ifdef OUTCHECKREALLOC
     char    *out_data;                      /* body */
-    long    out_data_allocated;
 #else
     char    out_data[OUT_BUFSIZE];
 #endif
+    long    out_data_allocated;
     int     status;                         /* HTTP status */
     long    data_sent;                      /* how many body bytes has been sent */
     char    ctype;                          /* content type */
@@ -536,6 +536,7 @@ extern "C" {
 #endif
 	void eng_set_param(const char *label, const char *value);
     void eng_set_auth_level(const char *resource, char level);
+    bool eng_start_new_uses(int ci);
     void eng_close_uses(int usi);
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);

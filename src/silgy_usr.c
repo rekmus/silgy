@@ -78,9 +78,33 @@ static bool valid_email(const char *email)
 
 
 /* --------------------------------------------------------------------------
-  start new logged in user session
+   Start new logged in user session
 -------------------------------------------------------------------------- */
 static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *sesid)
+{
+    DBG("start_new_luses");
+
+    if ( !conn[ci].usi && !eng_start_new_uses(ci) )    /* no anonymous session -- try to start one */
+    {
+        return FALSE;
+    }
+
+    DBG("Upgrading anonymous session to logged in, usi=%d, sesid [%s]", conn[ci].usi, sesid);
+    strcpy(conn[ci].cookie_out_a, "x");     /* no longer needed */
+    strcpy(conn[ci].cookie_out_a_exp, G_last_modified);     /* to be removed by browser */
+
+    US.logged = TRUE;
+    strcpy(US.sesid, sesid);
+    strcpy(US.login, login);
+    strcpy(US.email, email);
+    strcpy(US.name, name);
+    US.uid = uid;
+
+    return TRUE;
+}
+
+
+static bool start_new_luses_old(int ci, long uid, const char *login, const char *email, const char *name, const char *sesid)
 {
     DBG("start_new_luses");
 

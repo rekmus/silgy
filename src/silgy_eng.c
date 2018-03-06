@@ -136,7 +136,6 @@ static bool open_db(void);
 static void process_req(int ci);
 static void gen_response_header(int ci);
 static void print_content_type(int ci, char type);
-static bool start_new_uses(int ci);
 static bool a_usession_ok(int ci);
 static void close_old_conn(void);
 static void close_uses_timeout(void);
@@ -1917,7 +1916,7 @@ static void process_req(int ci)
         {
             if ( !conn[ci].cookie_in_a[0] || !a_usession_ok(ci) )       /* valid anonymous sesid cookie not present */
             {
-                if ( !start_new_uses(ci) )  /* start new anonymous user session */
+                if ( !eng_start_new_uses(ci) )  /* start new anonymous user session */
                     ret = ERR_SERVER_TOOBUSY;   /* user sessions exhausted */
             }
         }
@@ -2220,65 +2219,6 @@ static void print_content_type(int ci, char type)
     else
         close_conn(ci);
 }*/
-
-
-/* --------------------------------------------------------------------------
-  start new anonymous user session
--------------------------------------------------------------------------- */
-static bool start_new_uses(int ci)
-{
-    int     i;
-    char    sesid[SESID_LEN+1];
-
-    DBG("start_new_uses");
-
-    if ( G_sessions == MAX_SESSIONS )
-    {
-        WAR("User sessions exhausted");
-        return FALSE;
-    }
-
-    ++G_sessions;   /* start from 1 */
-
-    /* find first free slot */
-
-    for ( i=1; i<=MAX_SESSIONS; ++i )
-    {
-        if ( uses[i].sesid[0] == EOS )
-        {
-            conn[ci].usi = i;
-            break;
-        }
-    }
-
-    /* generate sesid */
-
-    get_random_str(sesid, SESID_LEN);
-
-    INF("Starting new session, usi=%d, sesid [%s]", conn[ci].usi, sesid);
-
-    /* add record to uses */
-
-    strcpy(US.sesid, sesid);
-    strcpy(US.ip, conn[ci].ip);
-    strcpy(US.uagent, conn[ci].uagent);
-    strcpy(US.referer, conn[ci].referer);
-    strcpy(US.lang, conn[ci].lang);
-
-    lib_set_datetime_formats(US.lang);
-
-    /* custom session init */
-
-    app_uses_new(ci);
-
-    /* set 'as' cookie */
-
-    strcpy(conn[ci].cookie_out_a, sesid);
-
-    DBG("%d user session(s)", G_sessions);
-
-    return TRUE;
-}
 
 
 /* --------------------------------------------------------------------------
@@ -3230,6 +3170,65 @@ static int current=0;
     M_auth_levels[current].level = level;
 
     strcpy(M_auth_levels[++current].resource, "-");
+}
+
+
+/* --------------------------------------------------------------------------
+   Start new anonymous user session
+-------------------------------------------------------------------------- */
+bool eng_start_new_uses(int ci)
+{
+    int     i;
+    char    sesid[SESID_LEN+1];
+
+    DBG("eng_start_new_uses");
+
+    if ( G_sessions == MAX_SESSIONS )
+    {
+        WAR("User sessions exhausted");
+        return FALSE;
+    }
+
+    ++G_sessions;   /* start from 1 */
+
+    /* find first free slot */
+
+    for ( i=1; i<=MAX_SESSIONS; ++i )
+    {
+        if ( uses[i].sesid[0] == EOS )
+        {
+            conn[ci].usi = i;
+            break;
+        }
+    }
+
+    /* generate sesid */
+
+    get_random_str(sesid, SESID_LEN);
+
+    INF("Starting new session, usi=%d, sesid [%s]", conn[ci].usi, sesid);
+
+    /* add record to uses */
+
+    strcpy(US.sesid, sesid);
+    strcpy(US.ip, conn[ci].ip);
+    strcpy(US.uagent, conn[ci].uagent);
+    strcpy(US.referer, conn[ci].referer);
+    strcpy(US.lang, conn[ci].lang);
+
+    lib_set_datetime_formats(US.lang);
+
+    /* custom session init */
+
+    app_uses_new(ci);
+
+    /* set 'as' cookie */
+
+    strcpy(conn[ci].cookie_out_a, sesid);
+
+    DBG("%d user session(s)", G_sessions);
+
+    return TRUE;
 }
 
 
