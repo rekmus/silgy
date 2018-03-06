@@ -111,6 +111,14 @@ bool app_init(int argc, char *argv[])
 
 
 /* --------------------------------------------------------------------------
+   App clean-up
+-------------------------------------------------------------------------- */
+void app_done()
+{
+}
+
+
+/* --------------------------------------------------------------------------
 
    Read parameters from conf file
 
@@ -130,7 +138,7 @@ void app_set_param(const char *label, const char *value)
 /* --------------------------------------------------------------------------
    Called when starting new anonymous user session
 -------------------------------------------------------------------------- */
-void app_uses_new(int ci)
+void app_uses_init(int ci)
 {
 }
 
@@ -139,7 +147,7 @@ void app_uses_new(int ci)
 /* --------------------------------------------------------------------------
    Called when starting new logged in user session
 -------------------------------------------------------------------------- */
-void app_luses_new(int ci)
+void app_luses_init(int ci)
 {
 }
 #endif
@@ -207,14 +215,6 @@ void app_async_done(int ci, const char *service, const char *data, bool timeoute
 {
 }
 #endif
-
-
-/* --------------------------------------------------------------------------
-   App clean-up
--------------------------------------------------------------------------- */
-void app_done()
-{
-}
 
 
 #ifdef EVERY_SECOND

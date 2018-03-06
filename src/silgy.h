@@ -536,8 +536,8 @@ extern "C" {
 #endif
 	void eng_set_param(const char *label, const char *value);
     void eng_set_auth_level(const char *resource, char level);
-    bool eng_start_new_uses(int ci);
-    void eng_close_uses(int usi);
+    bool eng_uses_start(int ci);
+    void eng_uses_close(int usi);
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
     void eng_add_to_static_res(const char *name, char *data);

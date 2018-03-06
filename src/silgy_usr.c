@@ -84,7 +84,7 @@ static bool start_new_luses(int ci, long uid, const char *login, const char *ema
 {
     DBG("start_new_luses");
 
-    if ( !conn[ci].usi && !eng_start_new_uses(ci) )    /* no anonymous session -- try to start one */
+    if ( !conn[ci].usi && !eng_uses_start(ci) )    /* no anonymous session -- try to start one */
     {
         return FALSE;
     }
@@ -320,7 +320,7 @@ void libusr_close_l_uses(int ci, int usi)
     else    /* timeout'ed */
     {
         DBG("Closing logged in session, usi=%d, sesid [%s]", usi, uses[usi].sesid);
-        eng_close_uses(usi);
+        eng_uses_close(usi);
     }
 }
 

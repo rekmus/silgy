@@ -976,7 +976,6 @@ static void close_conn(int ci)
 -------------------------------------------------------------------------- */
 static bool init(int argc, char **argv)
 {
-    char        *appdir=NULL;
     time_t      sometimeahead;
     int         i=0;
 
@@ -1006,27 +1005,11 @@ static bool init(int argc, char **argv)
 
     /* command line arguments */
 
-    /* nothing here anymore -- everything went to the conf file */
+    /* nothing here anymore -- everything's gone to the conf file */
 
     /* app root dir */
 
-    if ( NULL != (appdir=getenv("SILGYDIR")) )
-    {
-        strcpy(G_appdir, appdir);
-    }
-    else if ( NULL != (appdir=getenv("HOME")) )
-    {
-        strcpy(G_appdir, appdir);
-        printf("WARNING: No SILGYDIR defined. Assuming app dir = %s\n", G_appdir);
-    }
-    else
-    {
-        strcpy(G_appdir, ".");
-        printf("WARNING: No SILGYDIR defined. Assuming app dir = .\n");
-    }
-
-    int len = strlen(G_appdir);
-    if ( G_appdir[len-1] == '/' ) G_appdir[len-1] = EOS;
+    lib_get_app_dir();      // set G_appdir
 
     /* read the config file or set defaults */
 
@@ -1916,7 +1899,7 @@ static void process_req(int ci)
         {
             if ( !conn[ci].cookie_in_a[0] || !a_usession_ok(ci) )       /* valid anonymous sesid cookie not present */
             {
-                if ( !eng_start_new_uses(ci) )  /* start new anonymous user session */
+                if ( !eng_uses_start(ci) )  /* start new anonymous user session */
                     ret = ERR_SERVER_TOOBUSY;   /* user sessions exhausted */
             }
         }
@@ -2291,7 +2274,7 @@ static void close_uses_timeout()
 static void close_a_uses(int usi)
 {
     DBG("Closing anonymous session, usi=%d, sesid [%s]", usi, uses[usi].sesid);
-    eng_close_uses(usi);
+    eng_uses_close(usi);
 }
 
 
@@ -3176,12 +3159,12 @@ static int current=0;
 /* --------------------------------------------------------------------------
    Start new anonymous user session
 -------------------------------------------------------------------------- */
-bool eng_start_new_uses(int ci)
+bool eng_uses_start(int ci)
 {
     int     i;
     char    sesid[SESID_LEN+1];
 
-    DBG("eng_start_new_uses");
+    DBG("eng_uses_start");
 
     if ( G_sessions == MAX_SESSIONS )
     {
@@ -3220,7 +3203,7 @@ bool eng_start_new_uses(int ci)
 
     /* custom session init */
 
-    app_uses_new(ci);
+    app_uses_init(ci);
 
     /* set 'as' cookie */
 
@@ -3235,7 +3218,7 @@ bool eng_start_new_uses(int ci)
 /* --------------------------------------------------------------------------
    Close user session
 -------------------------------------------------------------------------- */
-void eng_close_uses(int usi)
+void eng_uses_close(int usi)
 {
     eng_uses_reset(usi);
     app_uses_reset(usi);

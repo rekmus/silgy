@@ -25,6 +25,33 @@ static int minify_2(char *dest, const char *src);
 
 
 /* --------------------------------------------------------------------------
+   Set G_appdir
+-------------------------------------------------------------------------- */
+void lib_get_app_dir()
+{
+    char *appdir=NULL;
+
+    if ( NULL != (appdir=getenv("SILGYDIR")) )
+    {
+        strcpy(G_appdir, appdir);
+    }
+    else if ( NULL != (appdir=getenv("HOME")) )
+    {
+        strcpy(G_appdir, appdir);
+        printf("WARNING: No SILGYDIR defined. Assuming app dir = %s\n", G_appdir);
+    }
+    else
+    {
+        strcpy(G_appdir, ".");
+        printf("WARNING: No SILGYDIR defined. Assuming app dir = .\n");
+    }
+
+    int len = strlen(G_appdir);
+    if ( G_appdir[len-1] == '/' ) G_appdir[len-1] = EOS;
+}
+    
+    
+/* --------------------------------------------------------------------------
    Calculate elapsed time
 -------------------------------------------------------------------------- */
 double lib_elapsed(struct timespec *start)

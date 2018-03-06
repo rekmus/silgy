@@ -37,6 +37,7 @@ typedef char                    QSVAL[QSBUF];
 #ifdef __cplusplus
 extern "C" {
 #endif
+    void lib_get_app_dir(void);
     double lib_elapsed(struct timespec *start);
     long lib_get_memory(void);
     void lib_log_memory(void);
