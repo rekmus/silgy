@@ -18,6 +18,8 @@
 #include <arpa/inet.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+//#include <sys/types.h>
+#include <unistd.h>
 
 #ifdef DBMYSQL
 #include <mysql.h>
