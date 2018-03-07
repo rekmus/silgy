@@ -170,9 +170,9 @@ unsigned long   sql_records;
 
     /* try in hot sessions first */
 
-    for ( i=1; i<=G_sessions; ++i )
+    for ( i=1; i<=MAX_SESSIONS; ++i )
     {
-        if ( uses[i].logged && 0==strcmp(conn[ci].cookie_in_l, uses[i].sesid)
+        if ( uses[i].sesid[0] && uses[i].logged && 0==strcmp(conn[ci].cookie_in_l, uses[i].sesid)
 /*              && 0==strcmp(conn[ci].ip, uses[i].ip) */
                 && 0==strcmp(conn[ci].uagent, uses[i].uagent) )
         {

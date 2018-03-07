@@ -8,8 +8,6 @@
 
 #include "silgy.h"
 
-ausession_t auses[MAX_SESSIONS+1];          /* app user sessions */
-
 /* --------------------------------------------------------------------------
    Main entry point for a single request
 

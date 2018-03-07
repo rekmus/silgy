@@ -2205,16 +2205,16 @@ static void print_content_type(int ci, char type)
 
 
 /* --------------------------------------------------------------------------
-  verify IP & User-Agent against sesid in uses (anonymous users)
-  return user session array index if all ok
+   Verify IP & User-Agent against sesid in uses (anonymous users)
+   Return user session array index if all ok
 -------------------------------------------------------------------------- */
 static bool a_usession_ok(int ci)
 {
     int i;
 
-    for (i=1; i<=G_sessions; ++i)
+    for (i=1; i<=MAX_SESSIONS; ++i)
     {
-        if ( !uses[i].logged && 0==strcmp(conn[ci].cookie_in_a, uses[i].sesid)
+        if ( uses[i].sesid[0] && !uses[i].logged && 0==strcmp(conn[ci].cookie_in_a, uses[i].sesid)
 /*              && 0==strcmp(conn[ci].ip, uses[i].ip) */
                 && 0==strcmp(conn[ci].uagent, uses[i].uagent) )
         {
@@ -2230,7 +2230,7 @@ static bool a_usession_ok(int ci)
 
 
 /* --------------------------------------------------------------------------
-  close timeouted connections
+   Close timeouted connections
 -------------------------------------------------------------------------- */
 static void close_old_conn()
 {
@@ -2260,9 +2260,9 @@ static void close_uses_timeout()
 
     last_allowed = G_now - USES_TIMEOUT;
 
-    for (i=1; i<=G_sessions; ++i)
+    for (i=1; i<=MAX_SESSIONS; ++i)
     {
-        if ( !uses[i].logged && uses[i].last_activity < last_allowed )
+        if ( uses[i].sesid[0] && !uses[i].logged && uses[i].last_activity < last_allowed )
             close_a_uses(i);
     }
 }
@@ -3222,40 +3222,6 @@ void eng_uses_close(int usi)
 {
     eng_uses_reset(usi);
     app_uses_reset(usi);
-
-    G_sessions--;
-
-    DBG("%d session(s) remaining", G_sessions);
-}
-
-
-/* --------------------------------------------------------------------------
-   Close user session
--------------------------------------------------------------------------- */
-void eng_close_uses_old(int usi)
-{
-    int i;
-
-    /* replace closing spot with the last session (reuse usi) */
-
-    if ( usi != G_sessions )
-    {
-        memcpy(&(uses[usi]), &(uses[G_sessions]), sizeof(usession_t));
-        memcpy(&(auses[usi]), &(auses[G_sessions]), sizeof(ausession_t));
-        /* update all active connections that belonged to the last session */
-        for (i=0; i<MAX_CONNECTIONS; ++i)
-            if ( conn[i].usi == G_sessions && conn[i].conn_state != CONN_STATE_DISCONNECTED )
-                conn[i].usi = usi;
-        /* reset user session */
-        eng_uses_reset(G_sessions);
-        app_uses_reset(G_sessions);
-    }
-    else
-    {
-        /* reset user session */
-        eng_uses_reset(usi);
-        app_uses_reset(usi);
-    }
 
     G_sessions--;
 
