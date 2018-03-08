@@ -18,6 +18,7 @@ static char M_dsep='.';     /* decimal separator */
 static int  M_shmid;        /* SHM id */
 
 static char *unescstring(char *src, int srclen, char *dest, int maxlen);
+static char *unescstring_san(char *src, int srclen, char *dest, int maxlen);
 static int xctod(int c);
 static void minify_1(char *dest, const char *src);
 static int minify_2(char *dest, const char *src);
@@ -694,7 +695,7 @@ static char date[16];
 
 
 /* --------------------------------------------------------------------------
-  Get incoming request data. TRUE if found.
+   Get query string value. Return TRUE if found.
 -------------------------------------------------------------------------- */
 bool get_qs_param(int ci, const char *fieldname, char *retbuf)
 {
@@ -744,6 +745,76 @@ bool get_qs_param(int ci, const char *fieldname, char *retbuf)
             vallen = len2 - len1 - 1;   /* value length before decoding */
 
             unescstring(p2+1, vallen, retbuf, MAX_URI_VAL_LEN);
+
+            return TRUE;
+        }
+
+        /* try next value */
+
+        p += len2;      /* skip current value */
+        if ( *p == '&' ) ++p;   /* skip & */
+    }
+
+    /* not found */
+
+    retbuf[0] = EOS;
+#endif
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get & sanitize query string value. Return TRUE if found.
+   Duplicated code for speed.
+-------------------------------------------------------------------------- */
+bool get_qs_param_san(int ci, const char *fieldname, char *retbuf)
+{
+#ifndef ASYNC_SERVICE
+    int     fnamelen;
+    char    *p, *p2, *p3;
+    int     len1;       /* fieldname len */
+    int     len2;       /* value len */
+    char    *querystring;
+    int     vallen;
+
+    fnamelen = strlen(fieldname);
+
+    if ( conn[ci].post )
+        querystring = conn[ci].data;
+    else
+        querystring = strchr(conn[ci].uri, '?');
+
+    if ( querystring == NULL ) return FALSE;    /* no question mark => no values */
+
+    if ( !conn[ci].post )
+        ++querystring;      /* skip the question mark */
+
+    for ( p=querystring; *p!=EOS; )
+    {
+        p2 = strchr(p, '=');    /* end of field name */
+        p3 = strchr(p, '&');    /* end of value */
+
+        if ( p3 != NULL )   /* more than one field */
+            len2 = p3 - p;
+        else            /* only one field in URI */
+            len2 = strlen(p);
+
+        if ( p2 == NULL || p3 != NULL && p2 > p3 )
+        {
+            /* no '=' present in this field */
+            p3 += len2;
+            continue;
+        }
+
+        len1 = p2 - p;  /* field name length */
+
+        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
+        {
+            /* found it */
+
+            vallen = len2 - len1 - 1;   /* value length before decoding */
+
+            unescstring_san(p2+1, vallen, retbuf, MAX_URI_VAL_LEN);
 
             return TRUE;
         }
@@ -1060,7 +1131,7 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
 
 
 /* --------------------------------------------------------------------------
-  decode src
+   URI-decode src
 -------------------------------------------------------------------------- */
 static char *unescstring(char *src, int srclen, char *dest, int maxlen)
 {
@@ -1080,7 +1151,9 @@ static char *unescstring(char *src, int srclen, char *dest, int maxlen)
         }
         else    /* copy as it is */
             *destp++ = *srcp;
+
         ++nwrote;
+
         if ( nwrote == maxlen )
         {
             DBG("URI val truncated");
@@ -1095,7 +1168,233 @@ static char *unescstring(char *src, int srclen, char *dest, int maxlen)
 
 
 /* --------------------------------------------------------------------------
- decode character
+   URI-decode src, sanitize
+   Duplicated code for speed
+-------------------------------------------------------------------------- */
+static char *unescstring_san(char *src, int srclen, char *dest, int maxlen)
+{
+    char    *endp=src+srclen;
+    char    *srcp;
+    char    *destp=dest;
+    int     nwrote=0;
+    char    tmp;
+    
+    maxlen -= 7;
+
+    for ( srcp=src; srcp<endp; ++srcp )
+    {
+        if ( *srcp == '+' )
+        {
+            *destp++ = ' ';
+            ++nwrote;
+        }
+        else if ( *srcp == '%' )
+        {
+            tmp = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
+            srcp += 2;
+
+            if ( tmp == '\'' )
+            {
+                *destp++ = '&';
+                *destp++ = 'a';
+                *destp++ = 'p';
+                *destp++ = 'o';
+                *destp++ = 's';
+                *destp++ = ';';
+                nwrote += 6;
+            }
+            else if ( tmp == '\\' )
+            {
+                *destp++ = '\\';
+                *destp++ = '\\';
+                nwrote += 2;
+            }
+            else if ( tmp == '"' )
+            {
+                *destp++ = '&';
+                *destp++ = 'q';
+                *destp++ = 'u';
+                *destp++ = 'o';
+                *destp++ = 't';
+                *destp++ = ';';
+                nwrote += 6;
+            }
+            else if ( tmp == '<' )
+            {
+                *destp++ = '&';
+                *destp++ = 'l';
+                *destp++ = 't';
+                *destp++ = ';';
+                nwrote += 4;
+            }
+            else if ( tmp == '>' )
+            {
+                *destp++ = '&';
+                *destp++ = 'g';
+                *destp++ = 't';
+                *destp++ = ';';
+                nwrote += 4;
+            }
+            else if ( tmp == '&' )
+            {
+                *destp++ = '&';
+                *destp++ = 'a';
+                *destp++ = 'm';
+                *destp++ = 'p';
+                *destp++ = ';';
+                nwrote += 5;
+            }
+            else if ( tmp != '\r' && tmp != '\n' )
+            {
+                *destp++ = tmp;
+                ++nwrote;
+            }
+        }
+        else if ( *srcp == '\'' )    /* ugly but fast */
+        {
+            *destp++ = '&';
+            *destp++ = 'a';
+            *destp++ = 'p';
+            *destp++ = 'o';
+            *destp++ = 's';
+            *destp++ = ';';
+            nwrote += 6;
+        }
+        else if ( *srcp == '\\' )
+        {
+            *destp++ = '\\';
+            *destp++ = '\\';
+            nwrote += 2;
+        }
+        else if ( *srcp == '"' )
+        {
+            *destp++ = '&';
+            *destp++ = 'q';
+            *destp++ = 'u';
+            *destp++ = 'o';
+            *destp++ = 't';
+            *destp++ = ';';
+            nwrote += 6;
+        }
+        else if ( *srcp == '<' )
+        {
+            *destp++ = '&';
+            *destp++ = 'l';
+            *destp++ = 't';
+            *destp++ = ';';
+            nwrote += 4;
+        }
+        else if ( *srcp == '>' )
+        {
+            *destp++ = '&';
+            *destp++ = 'g';
+            *destp++ = 't';
+            *destp++ = ';';
+            nwrote += 4;
+        }
+        else if ( *srcp == '&' )
+        {
+            *destp++ = '&';
+            *destp++ = 'a';
+            *destp++ = 'm';
+            *destp++ = 'p';
+            *destp++ = ';';
+            nwrote += 5;
+        }
+        else if ( *srcp != '\r' && *srcp != '\n' )
+        {
+            *destp++ = *srcp;
+            ++nwrote;
+        }
+
+        if ( nwrote > maxlen )
+        {
+            DBG("URI val truncated");
+            break;
+        }
+    }
+
+    *destp = EOS;
+
+    return dest;
+}
+
+
+/* --------------------------------------------------------------------------
+   URI-decode src, sanitize
+   Duplicated code for speed
+-------------------------------------------------------------------------- */
+static char *unescstring_san_old(char *src, int srclen, char *dest, int maxlen)
+{
+    char    *endp=src+srclen;
+    char    *srcp;
+    char    *destp=dest;
+    int     nwrote=0;
+    char    tmp;
+
+    for ( srcp=src; srcp<endp; ++srcp )
+    {
+        if ( *srcp == '+' )
+        {
+            *destp++ = ' ';
+            ++nwrote;
+        }
+        else if ( *srcp == '%' )
+        {
+            tmp = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
+            srcp += 2;
+
+            if ( tmp == '\'' )    /* ugly but fast */
+            {
+                *destp++ = '\\';
+                *destp++ = '\'';
+                nwrote += 2;
+            }
+/*            else if ( tmp == '"' )
+            {
+                *destp++ = '\\';
+                *destp++ = '"';
+                nwrote += 2;
+            }*/
+            else if ( tmp != '\\' && tmp != ';' )
+            {
+                *destp++ = tmp;
+                ++nwrote;
+            }
+        }
+        else if ( *srcp == '\'' )
+        {
+            *destp++ = '\\';
+            *destp++ = '\'';
+            nwrote += 2;
+        }
+/*        else if ( *srcp == '"' )
+        {
+            *destp++ = '\\';
+            *destp++ = '"';
+            nwrote += 2;
+        }*/
+        else if ( *srcp != '\\' && *srcp != ';' )
+        {
+            *destp++ = *srcp;
+            ++nwrote;
+        }
+
+        if ( nwrote == maxlen-1 )
+        {
+            DBG("URI val truncated");
+            break;
+        }
+    }
+
+    *destp = EOS;
+
+    return dest;
+}
+
+
+/* --------------------------------------------------------------------------
+   URI-decode character
 -------------------------------------------------------------------------- */
 static int xctod(int c)
 {
@@ -1125,7 +1424,12 @@ static char san[1024];
             san[j++] = '\'';
             san[j++] = '\'';
         }
-        else if ( str[i] != '\r' && str[i] != '\n' && str[i] != '\\' && str[i] != '|' && str[i] != '"' && str[i] != ';' )
+        else if ( str[i] == '"' )
+        {
+            san[j++] = '\\';
+            san[j++] = '"';
+        }
+        else if ( str[i] != '\r' && str[i] != '\n' && str[i] != '\\' && str[i] != '|' && str[i] != ';' )
             san[j++] = str[i];
 
         ++i;
@@ -1168,7 +1472,7 @@ static char tmp[MAX_LONG_URI_VAL_LEN+1];
 
 
 /* --------------------------------------------------------------------------
-  sanitize user input for large text blocks with possible HTML tags
+   Sanitize user input for large text blocks with possible HTML tags
 -------------------------------------------------------------------------- */
 char *san_noparse(char *str)
 {
@@ -1177,17 +1481,30 @@ static char tmp[MAX_LONG_URI_VAL_LEN+1];
 
     while ( str[i] != EOS )
     {
-        if ( j > MAX_LONG_URI_VAL_LEN-5 )
+        if ( j > MAX_LONG_URI_VAL_LEN-7 )
             break;
         else if ( str[i] == '\'' )
         {
-            tmp[j++] = '\'';
-            tmp[j++] = '\'';
+            tmp[j++] = '&';
+            tmp[j++] = 'a';
+            tmp[j++] = 'p';
+            tmp[j++] = 'o';
+            tmp[j++] = 's';
+            tmp[j++] = ';';
         }
         else if ( str[i] == '\\' )
         {
             tmp[j++] = '\\';
             tmp[j++] = '\\';
+        }
+        else if ( str[i] == '"' )
+        {
+            tmp[j++] = '&';
+            tmp[j++] = 'q';
+            tmp[j++] = 'u';
+            tmp[j++] = 'o';
+            tmp[j++] = 't';
+            tmp[j++] = ';';
         }
         else if ( str[i] == '<' )
         {
@@ -1201,6 +1518,14 @@ static char tmp[MAX_LONG_URI_VAL_LEN+1];
             tmp[j++] = '&';
             tmp[j++] = 'g';
             tmp[j++] = 't';
+            tmp[j++] = ';';
+        }
+        else if ( str[i] == '&' )
+        {
+            tmp[j++] = '&';
+            tmp[j++] = 'a';
+            tmp[j++] = 'm';
+            tmp[j++] = 'p';
             tmp[j++] = ';';
         }
         else if ( str[i] == '\n' )

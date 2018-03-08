@@ -9,7 +9,7 @@
 #ifndef SILGY_LIB_H
 #define SILGY_LIB_H
 
-#define MAX_URI_VAL_LEN         63              /* max value length received in URI -- sufficient for 99% cases */
+#define MAX_URI_VAL_LEN         127             /* max value length received in URI -- sufficient for 99% cases */
 //#define MAX_LONG_URI_VAL_LEN  65535           /* max long value length received in URI -- 64 kB - 1 B. Please declare local vars as static! */
 #define MAX_LONG_URI_VAL_LEN    4194303         /* max long value length received in URI -- 4 MB - 1 B. Please declare local vars as static! */
 
@@ -22,7 +22,8 @@
 #define INF(s, ...)             log_write(LOG_INF, s, ##__VA_ARGS__)
 #define DBG(s, ...)             log_write(LOG_DBG, s, ##__VA_ARGS__)
 
-#define QS(l, v)                get_qs_param(ci, l, v)
+#define QS(l, v)                get_qs_param_san(ci, l, v)
+#define QS_DONT_SANITIZE(l, v)  get_qs_param(ci, l, v)
 
 #define LOREM_IPSUM             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
@@ -55,6 +56,7 @@ extern "C" {
     void samts(char *stramt, const char *in_amt);
     void ftm(char *strtm, long in_tm);
     bool get_qs_param(int ci, const char *fieldname, char *retbuf);
+    bool get_qs_param_san(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_long(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf);
     char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
