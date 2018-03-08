@@ -23,6 +23,7 @@
 #define DBG(s, ...)             log_write(LOG_DBG, s, ##__VA_ARGS__)
 
 #define QS(l, v)                get_qs_param_san(ci, l, v)
+#define QS_RAW(l, v)            get_qs_param_raw(ci, l, v)
 #define QS_DONT_SANITIZE(l, v)  get_qs_param(ci, l, v)
 
 #define LOREM_IPSUM             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
@@ -57,6 +58,7 @@ extern "C" {
     void ftm(char *strtm, long in_tm);
     bool get_qs_param(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_san(int ci, const char *fieldname, char *retbuf);
+    bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_long(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf);
     char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
@@ -65,6 +67,7 @@ extern "C" {
     char *san_noparse(char *str);
     void unsan(char *dst, const char *str);
     void unsan_noparse(char *dst, const char *str);
+    char *uri_encode(const char *str);
 //  void str2upper(char *dest, const char *src);
     char *upper(const char *str);
     char *stp_right(char *str);

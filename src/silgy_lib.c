@@ -834,6 +834,76 @@ bool get_qs_param_san(int ci, const char *fieldname, char *retbuf)
 
 
 /* --------------------------------------------------------------------------
+   Get query string value. Return TRUE if found.
+-------------------------------------------------------------------------- */
+bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf)
+{
+#ifndef ASYNC_SERVICE
+    int     fnamelen;
+    char    *p, *p2, *p3;
+    int     len1;       /* fieldname len */
+    int     len2;       /* value len */
+    char    *querystring;
+    int     vallen;
+
+    fnamelen = strlen(fieldname);
+
+    if ( conn[ci].post )
+        querystring = conn[ci].data;
+    else
+        querystring = strchr(conn[ci].uri, '?');
+
+    if ( querystring == NULL ) return FALSE;    /* no question mark => no values */
+
+    if ( !conn[ci].post )
+        ++querystring;      /* skip the question mark */
+
+    for ( p=querystring; *p!=EOS; )
+    {
+        p2 = strchr(p, '=');    /* end of field name */
+        p3 = strchr(p, '&');    /* end of value */
+
+        if ( p3 != NULL )   /* more than one field */
+            len2 = p3 - p;
+        else            /* only one field in URI */
+            len2 = strlen(p);
+
+        if ( p2 == NULL || p3 != NULL && p2 > p3 )
+        {
+            /* no '=' present in this field */
+            p3 += len2;
+            continue;
+        }
+
+        len1 = p2 - p;  /* field name length */
+
+        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
+        {
+            /* found it */
+
+            vallen = len2 - len1 - 1;   /* value length before decoding */
+
+            strncpy(retbuf, p2+1, MAX_URI_VAL_LEN);
+            retbuf[MAX_URI_VAL_LEN] = EOS;
+
+            return TRUE;
+        }
+
+        /* try next value */
+
+        p += len2;      /* skip current value */
+        if ( *p == '&' ) ++p;   /* skip & */
+    }
+
+    /* not found */
+
+    retbuf[0] = EOS;
+#endif
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
   Get incoming request data -- long string version. TRUE if found.
   One of the exceptions from DRY rule for the performance reasons.
 -------------------------------------------------------------------------- */
@@ -1627,6 +1697,28 @@ void unsan_noparse(char *dst, const char *str)
     }
 
     dst[j] = EOS;
+}
+
+
+/* --------------------------------------------------------------------------
+   Primitive URI encoding
+---------------------------------------------------------------------------*/
+char *uri_encode(const char *str)
+{
+static char uri_encode[1024];
+    int     i;
+
+    for ( i=0; str[i] && i<1023; ++i )
+    {
+        if ( str[i] == ' ' )
+            uri_encode[i] = '+';
+        else
+            uri_encode[i] = str[i];
+    }
+
+    uri_encode[i] = EOS;
+
+    return uri_encode;
 }
 
 
