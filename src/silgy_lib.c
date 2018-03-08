@@ -700,9 +700,9 @@ static char date[16];
 bool get_qs_param(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-static char buf[MAX_URI_LEN];
+static char buf[MAX_URI_VAL_LEN];
 
-    if ( get_qs_param_raw(ci, fieldname, buf) )
+    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
         unescstring(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
@@ -719,9 +719,9 @@ static char buf[MAX_URI_LEN];
 bool get_qs_param_san(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-static char buf[MAX_URI_LEN];
+static char buf[MAX_URI_VAL_LEN];
 
-    if ( get_qs_param_raw(ci, fieldname, buf) )
+    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
         DBG("get_qs_param_san: %s = [%s]", fieldname, buf);
         unescstring_san(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
@@ -735,14 +735,14 @@ static char buf[MAX_URI_LEN];
 /* --------------------------------------------------------------------------
    Get query string value. Return TRUE if found.
 -------------------------------------------------------------------------- */
-bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, long *length)
+bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 {
     int     fnamelen;
     char    *p, *p2, *p3;
     int     len1;       /* fieldname len */
     int     len2;       /* value len */
     char    *querystring;
-    long    vallen;
+    int     vallen;
 
     fnamelen = strlen(fieldname);
 
@@ -753,8 +753,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, long *length)
 
     if ( querystring == NULL )
     {
-        *length = 0;
-        retbuf[0] = EOS;
+        if ( retbuf) retbuf[0] = EOS;
         return FALSE;    /* no question mark => no values */
     }
 
@@ -785,11 +784,15 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, long *length)
             /* found it */
 
             vallen = len2 - len1 - 1;   /* value length before decoding */
+            if ( vallen > maxlen )
+                vallen = maxlen;
 
-            strncpy(retbuf, p2+1, vallen);
-            retbuf[vallen] = EOS;
+            if ( retbuf)
+            {
+                strncpy(retbuf, p2+1, vallen);
+                retbuf[vallen] = EOS;
+            }
 
-            *length = vallen;
             return TRUE;
         }
 
@@ -801,8 +804,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, long *length)
 
     /* not found */
 
-    *length = 0;
-    retbuf[0] = EOS;
+    if ( retbuf) retbuf[0] = EOS;
 
     return FALSE;
 }
@@ -816,7 +818,7 @@ bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
 #ifndef ASYNC_SERVICE
 static char buf[MAX_LONG_URI_VAL_LEN];
 
-    if ( get_qs_param_raw(ci, fieldname, buf) )
+    if ( get_qs_param_raw(ci, fieldname, buf, MAX_LONG_URI_VAL_LEN) )
     {
         unescstring(buf, strlen(buf), retbuf, MAX_LONG_URI_VAL_LEN);
         return TRUE;
@@ -1279,7 +1281,7 @@ static char san[1024];
             san[j++] = '\\';
             san[j++] = '"';
         }
-        else if ( str[i] != '\r' && str[i] != '\n' && str[i] != '\\' && str[i] != '|' && str[i] != ';' )
+        else if ( str[i] != '\r' && str[i] != '\n' && str[i] != '\\' && str[i] != '|' )
             san[j++] = str[i];
 
         ++i;
