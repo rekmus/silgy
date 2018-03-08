@@ -17,8 +17,8 @@ static char M_dsep='.';     /* decimal separator */
 
 static int  M_shmid;        /* SHM id */
 
-static char *unescstring(char *src, int srclen, char *dest, int maxlen);
-static char *unescstring_san(char *src, int srclen, char *dest, int maxlen);
+static char *uri_decode(char *src, int srclen, char *dest, int maxlen);
+static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen);
 static int xctod(int c);
 static void minify_1(char *dest, const char *src);
 static int minify_2(char *dest, const char *src);
@@ -704,7 +704,7 @@ static char buf[MAX_URI_VAL_LEN];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
-        unescstring(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        uri_decode(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
 #endif
@@ -713,18 +713,17 @@ static char buf[MAX_URI_VAL_LEN];
 
 
 /* --------------------------------------------------------------------------
-   Get, URI-decode and sanitize query string value. Return TRUE if found.
-   Duplicated code for speed.
+   Get, URI-decode and HTML-escape query string value. Return TRUE if found.
 -------------------------------------------------------------------------- */
-bool get_qs_param_san(int ci, const char *fieldname, char *retbuf)
+bool get_qs_param_esc(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
 static char buf[MAX_URI_VAL_LEN];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
-        DBG("get_qs_param_san: %s = [%s]", fieldname, buf);
-        unescstring_san(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        DBG("get_qs_param_esc: %s = [%s]", fieldname, buf);
+        uri_decode_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
 #endif
@@ -820,7 +819,7 @@ static char buf[MAX_LONG_URI_VAL_LEN];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_LONG_URI_VAL_LEN) )
     {
-        unescstring(buf, strlen(buf), retbuf, MAX_LONG_URI_VAL_LEN);
+        uri_decode(buf, strlen(buf), retbuf, MAX_LONG_URI_VAL_LEN);
         return TRUE;
     }
 #endif
@@ -1058,7 +1057,7 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
 /* --------------------------------------------------------------------------
    URI-decode src
 -------------------------------------------------------------------------- */
-static char *unescstring(char *src, int srclen, char *dest, int maxlen)
+static char *uri_decode(char *src, int srclen, char *dest, int maxlen)
 {
     char    *endp=src+srclen;
     char    *srcp;
@@ -1093,10 +1092,10 @@ static char *unescstring(char *src, int srclen, char *dest, int maxlen)
 
 
 /* --------------------------------------------------------------------------
-   URI-decode src, sanitize
+   URI-decode src, HTML-escape
    Duplicated code for speed
 -------------------------------------------------------------------------- */
-static char *unescstring_san(char *src, int srclen, char *dest, int maxlen)
+static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen)
 {
     char    *endp=src+srclen;
     char    *srcp;
@@ -1262,7 +1261,7 @@ static int xctod(int c)
 
 
 /* --------------------------------------------------------------------------
-   Sanitize user input
+   Sanitize / SQL-escape user input -- depreciated
 -------------------------------------------------------------------------- */
 char const *san(const char *str)
 {
@@ -1294,7 +1293,7 @@ static char san[1024];
 
 
 /* --------------------------------------------------------------------------
-  sanitize user input for database queries
+   Sanitize user input for database queries
 -------------------------------------------------------------------------- */
 char *san_long(const char *str)
 {
@@ -1324,7 +1323,7 @@ static char tmp[MAX_LONG_URI_VAL_LEN+1];
 
 
 /* --------------------------------------------------------------------------
-   Sanitize user input for large text blocks with possible HTML tags
+   HTML-escape user input for large text blocks with possible HTML tags
 -------------------------------------------------------------------------- */
 char *san_noparse(char *str)
 {
@@ -1431,7 +1430,7 @@ void unsan(char *dst, const char *str)
 
 
 /* --------------------------------------------------------------------------
-  un-sanitize user input for large text blocks with possible HTML tags
+   HTML un-escape user input for large text blocks
 -------------------------------------------------------------------------- */
 void unsan_noparse(char *dst, const char *str)
 {
