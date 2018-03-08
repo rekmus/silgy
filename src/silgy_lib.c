@@ -695,139 +695,38 @@ static char date[16];
 
 
 /* --------------------------------------------------------------------------
-   Get query string value. Return TRUE if found.
+   Get query string value and URI-decode. Return TRUE if found.
 -------------------------------------------------------------------------- */
 bool get_qs_param(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-    int     fnamelen;
-    char    *p, *p2, *p3;
-    int     len1;       /* fieldname len */
-    int     len2;       /* value len */
-    char    *querystring;
-    int     vallen;
+static char buf[MAX_URI_LEN];
 
-    fnamelen = strlen(fieldname);
-
-    if ( conn[ci].post )
-        querystring = conn[ci].data;
-    else
-        querystring = strchr(conn[ci].uri, '?');
-
-    if ( querystring == NULL ) return FALSE;    /* no question mark => no values */
-
-    if ( !conn[ci].post )
-        ++querystring;      /* skip the question mark */
-
-    for ( p=querystring; *p!=EOS; )
+    if ( get_qs_param_raw(ci, fieldname, buf) )
     {
-        p2 = strchr(p, '=');    /* end of field name */
-        p3 = strchr(p, '&');    /* end of value */
-
-        if ( p3 != NULL )   /* more than one field */
-            len2 = p3 - p;
-        else            /* only one field in URI */
-            len2 = strlen(p);
-
-        if ( p2 == NULL || p3 != NULL && p2 > p3 )
-        {
-            /* no '=' present in this field */
-            p3 += len2;
-            continue;
-        }
-
-        len1 = p2 - p;  /* field name length */
-
-        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
-        {
-            /* found it */
-
-            vallen = len2 - len1 - 1;   /* value length before decoding */
-
-            unescstring(p2+1, vallen, retbuf, MAX_URI_VAL_LEN);
-
-            return TRUE;
-        }
-
-        /* try next value */
-
-        p += len2;      /* skip current value */
-        if ( *p == '&' ) ++p;   /* skip & */
+        unescstring(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        return TRUE;
     }
-
-    /* not found */
-
-    retbuf[0] = EOS;
 #endif
     return FALSE;
 }
 
 
 /* --------------------------------------------------------------------------
-   Get & sanitize query string value. Return TRUE if found.
+   Get, URI-decode and sanitize query string value. Return TRUE if found.
    Duplicated code for speed.
 -------------------------------------------------------------------------- */
 bool get_qs_param_san(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-    int     fnamelen;
-    char    *p, *p2, *p3;
-    int     len1;       /* fieldname len */
-    int     len2;       /* value len */
-    char    *querystring;
-    int     vallen;
+static char buf[MAX_URI_LEN];
 
-    fnamelen = strlen(fieldname);
-
-    if ( conn[ci].post )
-        querystring = conn[ci].data;
-    else
-        querystring = strchr(conn[ci].uri, '?');
-
-    if ( querystring == NULL ) return FALSE;    /* no question mark => no values */
-
-    if ( !conn[ci].post )
-        ++querystring;      /* skip the question mark */
-
-    for ( p=querystring; *p!=EOS; )
+    if ( get_qs_param_raw(ci, fieldname, buf) )
     {
-        p2 = strchr(p, '=');    /* end of field name */
-        p3 = strchr(p, '&');    /* end of value */
-
-        if ( p3 != NULL )   /* more than one field */
-            len2 = p3 - p;
-        else            /* only one field in URI */
-            len2 = strlen(p);
-
-        if ( p2 == NULL || p3 != NULL && p2 > p3 )
-        {
-            /* no '=' present in this field */
-            p3 += len2;
-            continue;
-        }
-
-        len1 = p2 - p;  /* field name length */
-
-        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
-        {
-            /* found it */
-
-            vallen = len2 - len1 - 1;   /* value length before decoding */
-
-            unescstring_san(p2+1, vallen, retbuf, MAX_URI_VAL_LEN);
-
-            return TRUE;
-        }
-
-        /* try next value */
-
-        p += len2;      /* skip current value */
-        if ( *p == '&' ) ++p;   /* skip & */
+        DBG("get_qs_param_san: %s = [%s]", fieldname, buf);
+        unescstring_san(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        return TRUE;
     }
-
-    /* not found */
-
-    retbuf[0] = EOS;
 #endif
     return FALSE;
 }
@@ -836,15 +735,14 @@ bool get_qs_param_san(int ci, const char *fieldname, char *retbuf)
 /* --------------------------------------------------------------------------
    Get query string value. Return TRUE if found.
 -------------------------------------------------------------------------- */
-bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf)
+bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, long *length)
 {
-#ifndef ASYNC_SERVICE
     int     fnamelen;
     char    *p, *p2, *p3;
     int     len1;       /* fieldname len */
     int     len2;       /* value len */
     char    *querystring;
-    int     vallen;
+    long    vallen;
 
     fnamelen = strlen(fieldname);
 
@@ -853,7 +751,12 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf)
     else
         querystring = strchr(conn[ci].uri, '?');
 
-    if ( querystring == NULL ) return FALSE;    /* no question mark => no values */
+    if ( querystring == NULL )
+    {
+        *length = 0;
+        retbuf[0] = EOS;
+        return FALSE;    /* no question mark => no values */
+    }
 
     if ( !conn[ci].post )
         ++querystring;      /* skip the question mark */
@@ -883,9 +786,10 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf)
 
             vallen = len2 - len1 - 1;   /* value length before decoding */
 
-            strncpy(retbuf, p2+1, MAX_URI_VAL_LEN);
-            retbuf[MAX_URI_VAL_LEN] = EOS;
+            strncpy(retbuf, p2+1, vallen);
+            retbuf[vallen] = EOS;
 
+            *length = vallen;
             return TRUE;
         }
 
@@ -897,84 +801,33 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf)
 
     /* not found */
 
+    *length = 0;
     retbuf[0] = EOS;
-#endif
+
     return FALSE;
 }
 
 
 /* --------------------------------------------------------------------------
-  Get incoming request data -- long string version. TRUE if found.
-  One of the exceptions from DRY rule for the performance reasons.
+   Get incoming request data -- long string version. TRUE if found.
 -------------------------------------------------------------------------- */
 bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-    int     fnamelen;
-    char    *p, *p2, *p3;
-    int     len1;       /* fieldname len */
-    int     len2;       /* value len */
-    char    *querystring;
-    int     vallen;
+static char buf[MAX_LONG_URI_VAL_LEN];
 
-    fnamelen = strlen(fieldname);
-
-    if ( conn[ci].post )
-        querystring = conn[ci].data;
-    else
-        querystring = strchr(conn[ci].uri, '?');
-
-    if ( querystring == NULL ) return FALSE;    /* no question mark => no values */
-
-    if ( !conn[ci].post )
-        ++querystring;      /* skip the question mark */
-
-    for ( p=querystring; *p!=EOS; )
+    if ( get_qs_param_raw(ci, fieldname, buf) )
     {
-        p2 = strchr(p, '=');    /* end of field name */
-        p3 = strchr(p, '&');    /* end of value */
-
-        if ( p3 != NULL )   /* more than one field */
-            len2 = p3 - p;
-        else            /* only one field in URI */
-            len2 = strlen(p);
-
-        if ( p2 == NULL || p3 != NULL && p2 > p3 )
-        {
-            /* no '=' present in this field */
-            p3 += len2;
-            continue;
-        }
-
-        len1 = p2 - p;  /* field name length */
-
-        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
-        {
-            /* found it */
-
-            vallen = len2 - len1 - 1;   /* value length before decoding */
-
-            unescstring(p2+1, vallen, retbuf, MAX_LONG_URI_VAL_LEN);
-
-            return TRUE;
-        }
-
-        /* try next value */
-
-        p += len2;      /* skip current value */
-        if ( *p == '&' ) ++p;   /* skip & */
+        unescstring(buf, strlen(buf), retbuf, MAX_LONG_URI_VAL_LEN);
+        return TRUE;
     }
-
-    /* not found */
-
-    retbuf[0] = EOS;
 #endif
     return FALSE;
 }
 
 
 /* --------------------------------------------------------------------------
-  Get text value from multipart-form-data
+   Get text value from multipart-form-data
 -------------------------------------------------------------------------- */
 bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf)
 {
@@ -995,10 +848,10 @@ bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf)
 
 
 /* --------------------------------------------------------------------------
-  Experimental multipart-form-data receipt
-  return length or -1 if error
-  if retfname is not NULL then assume binary data and it must be the last
-  data element
+   Experimental multipart-form-data receipt
+   Return length or -1 if error
+   If retfname is not NULL then assume binary data and it must be the last
+   data element
 -------------------------------------------------------------------------- */
 char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname)
 {
@@ -1226,7 +1079,7 @@ static char *unescstring(char *src, int srclen, char *dest, int maxlen)
 
         if ( nwrote == maxlen )
         {
-            DBG("URI val truncated");
+            WAR("URI val truncated");
             break;
         }
     }
@@ -1379,80 +1232,7 @@ static char *unescstring_san(char *src, int srclen, char *dest, int maxlen)
 
         if ( nwrote > maxlen )
         {
-            DBG("URI val truncated");
-            break;
-        }
-    }
-
-    *destp = EOS;
-
-    return dest;
-}
-
-
-/* --------------------------------------------------------------------------
-   URI-decode src, sanitize
-   Duplicated code for speed
--------------------------------------------------------------------------- */
-static char *unescstring_san_old(char *src, int srclen, char *dest, int maxlen)
-{
-    char    *endp=src+srclen;
-    char    *srcp;
-    char    *destp=dest;
-    int     nwrote=0;
-    char    tmp;
-
-    for ( srcp=src; srcp<endp; ++srcp )
-    {
-        if ( *srcp == '+' )
-        {
-            *destp++ = ' ';
-            ++nwrote;
-        }
-        else if ( *srcp == '%' )
-        {
-            tmp = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
-            srcp += 2;
-
-            if ( tmp == '\'' )    /* ugly but fast */
-            {
-                *destp++ = '\\';
-                *destp++ = '\'';
-                nwrote += 2;
-            }
-/*            else if ( tmp == '"' )
-            {
-                *destp++ = '\\';
-                *destp++ = '"';
-                nwrote += 2;
-            }*/
-            else if ( tmp != '\\' && tmp != ';' )
-            {
-                *destp++ = tmp;
-                ++nwrote;
-            }
-        }
-        else if ( *srcp == '\'' )
-        {
-            *destp++ = '\\';
-            *destp++ = '\'';
-            nwrote += 2;
-        }
-/*        else if ( *srcp == '"' )
-        {
-            *destp++ = '\\';
-            *destp++ = '"';
-            nwrote += 2;
-        }*/
-        else if ( *srcp != '\\' && *srcp != ';' )
-        {
-            *destp++ = *srcp;
-            ++nwrote;
-        }
-
-        if ( nwrote == maxlen-1 )
-        {
-            DBG("URI val truncated");
+            WAR("URI val truncated");
             break;
         }
     }
