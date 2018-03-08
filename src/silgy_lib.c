@@ -1125,7 +1125,7 @@ static char san[1024];
             san[j++] = '\'';
             san[j++] = '\'';
         }
-        else if ( str[i] != '\r' && str[i] != '\n' && str[i] != '\\' && str[i] != '|' )
+        else if ( str[i] != '\r' && str[i] != '\n' && str[i] != '\\' && str[i] != '|' && str[i] != '"' && str[i] != ';' )
             san[j++] = str[i];
 
         ++i;
