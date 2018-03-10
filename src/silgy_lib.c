@@ -18,7 +18,8 @@ static char M_dsep='.';     /* decimal separator */
 static int  M_shmid;        /* SHM id */
 
 static char *uri_decode(char *src, int srclen, char *dest, int maxlen);
-static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen);
+static char *uri_decode_html_esc(char *src, int srclen, char *dest, int maxlen);
+static char *uri_decode_sql_esc(char *src, int srclen, char *dest, int maxlen);
 static int xctod(int c);
 static void minify_1(char *dest, const char *src);
 static int minify_2(char *dest, const char *src);
@@ -715,15 +716,32 @@ static char buf[MAX_URI_VAL_LEN];
 /* --------------------------------------------------------------------------
    Get, URI-decode and HTML-escape query string value. Return TRUE if found.
 -------------------------------------------------------------------------- */
-bool get_qs_param_esc(int ci, const char *fieldname, char *retbuf)
+bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
 static char buf[MAX_URI_VAL_LEN];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
-        DBG("get_qs_param_esc: %s = [%s]", fieldname, buf);
-        uri_decode_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        return TRUE;
+    }
+#endif
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get, URI-decode and SQL-escape query string value. Return TRUE if found.
+-------------------------------------------------------------------------- */
+bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf)
+{
+#ifndef ASYNC_SERVICE
+static char buf[MAX_URI_VAL_LEN];
+
+    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
+    {
+        uri_decode_sql_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
 #endif
@@ -1095,7 +1113,7 @@ static char *uri_decode(char *src, int srclen, char *dest, int maxlen)
    URI-decode src, HTML-escape
    Duplicated code for speed
 -------------------------------------------------------------------------- */
-static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen)
+static char *uri_decode_html_esc(char *src, int srclen, char *dest, int maxlen)
 {
     char    *endp=src+srclen;
     char    *srcp;
@@ -1117,7 +1135,7 @@ static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen)
             tmp = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
             srcp += 2;
 
-            if ( tmp == '\'' )
+            if ( tmp == '\'' )      /* single quote */
             {
                 *destp++ = '&';
                 *destp++ = 'a';
@@ -1127,13 +1145,7 @@ static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen)
                 *destp++ = ';';
                 nwrote += 6;
             }
-            else if ( tmp == '\\' )
-            {
-                *destp++ = '\\';
-                *destp++ = '\\';
-                nwrote += 2;
-            }
-            else if ( tmp == '"' )
+            else if ( tmp == '"' )  /* double quote */
             {
                 *destp++ = '&';
                 *destp++ = 'q';
@@ -1142,6 +1154,12 @@ static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen)
                 *destp++ = 't';
                 *destp++ = ';';
                 nwrote += 6;
+            }
+            else if ( tmp == '\\' ) /* backslash */
+            {
+                *destp++ = '\\';
+                *destp++ = '\\';
+                nwrote += 2;
             }
             else if ( tmp == '<' )
             {
@@ -1174,7 +1192,7 @@ static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen)
                 ++nwrote;
             }
         }
-        else if ( *srcp == '\'' )    /* ugly but fast */
+        else if ( *srcp == '\'' )    /* ugly but fast -- everything again */
         {
             *destp++ = '&';
             *destp++ = 'a';
@@ -1184,13 +1202,7 @@ static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen)
             *destp++ = ';';
             nwrote += 6;
         }
-        else if ( *srcp == '\\' )
-        {
-            *destp++ = '\\';
-            *destp++ = '\\';
-            nwrote += 2;
-        }
-        else if ( *srcp == '"' )
+        else if ( *srcp == '"' )    /* double quote */
         {
             *destp++ = '&';
             *destp++ = 'q';
@@ -1199,6 +1211,12 @@ static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen)
             *destp++ = 't';
             *destp++ = ';';
             nwrote += 6;
+        }
+        else if ( *srcp == '\\' )   /* backslash */
+        {
+            *destp++ = '\\';
+            *destp++ = '\\';
+            nwrote += 2;
         }
         else if ( *srcp == '<' )
         {
@@ -1229,6 +1247,83 @@ static char *uri_decode_esc(char *src, int srclen, char *dest, int maxlen)
         {
             *destp++ = *srcp;
             ++nwrote;
+        }
+
+        if ( nwrote > maxlen )
+        {
+            WAR("URI val truncated");
+            break;
+        }
+    }
+
+    *destp = EOS;
+
+    return dest;
+}
+
+
+/* --------------------------------------------------------------------------
+   URI-decode src, SQL-escape
+   Duplicated code for speed
+-------------------------------------------------------------------------- */
+static char *uri_decode_sql_esc(char *src, int srclen, char *dest, int maxlen)
+{
+    char    *endp=src+srclen;
+    char    *srcp;
+    char    *destp=dest;
+    int     nwrote=0;
+    char    tmp;
+    
+    maxlen -= 3;
+
+    for ( srcp=src; srcp<endp; ++srcp )
+    {
+        if ( *srcp == '+' )
+        {
+            *destp++ = ' ';
+            ++nwrote;
+        }
+        else if ( *srcp == '%' )
+        {
+            tmp = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
+            srcp += 2;
+
+            if ( tmp == '\'' )      /* single quote */
+            {
+                *destp++ = '\\';
+                *destp++ = '\'';
+                nwrote += 2;
+            }
+            else if ( *srcp == '"' )    /* double quote */
+            {
+                *destp++ = '\\';
+                *destp++ = '"';
+                nwrote += 2;
+            }
+            else if ( tmp == '\\' )     /* backslash */
+            {
+                *destp++ = '\\';
+                *destp++ = '\\';
+                nwrote += 2;
+            }
+        }
+        else if ( *srcp == '\'' )   /* ugly but fast -- everything again */
+        {
+            *destp++ = '\\';
+            *destp++ = '\'';
+            nwrote += 2;
+        }
+        else if ( *srcp == '"' )    /* double quote */
+        {
+            *destp++ = '\\';
+            *destp++ = '"';
+            nwrote += 2;
+        }
+        else if ( *srcp == '\\' )   /* backslash */
+        {
+            *destp++ = '\\';
+            *destp++ = '\\';
+            nwrote += 2;
         }
 
         if ( nwrote > maxlen )
@@ -1293,127 +1388,54 @@ static char san[1024];
 
 
 /* --------------------------------------------------------------------------
-   Sanitize user input for database queries
+   Sanitize user input for database queries -- depreciated
 -------------------------------------------------------------------------- */
 char *san_long(const char *str)
 {
-static char tmp[MAX_LONG_URI_VAL_LEN+1];
+static char dst[MAX_LONG_URI_VAL_LEN+1];
     int     i=0, j=0;
 
-    while ( str[i] != EOS )
+    while ( str[i] )
     {
         if ( j > MAX_LONG_URI_VAL_LEN-5 )
             break;
         else if ( str[i] == '\'' )
         {
-            tmp[j++] = '\'';
-            tmp[j++] = '\'';
+            dst[j++] = '\'';
+            dst[j++] = '\'';
         }
         else if ( str[i] != '\\' )
-            tmp[j++] = str[i];
+            dst[j++] = str[i];
         ++i;
     }
 
-    tmp[j] = EOS;
+    dst[j] = EOS;
 
-//  strcpy(str, tmp);
-
-    return tmp;
+    return dst;
 }
 
 
 /* --------------------------------------------------------------------------
-   HTML-escape user input for large text blocks with possible HTML tags
+   SQL-escape string
 -------------------------------------------------------------------------- */
-char *san_noparse(char *str)
+char *lib_sql_esc(const char *str)
 {
-static char tmp[MAX_LONG_URI_VAL_LEN+1];
+static char dst[MAX_LONG_URI_VAL_LEN+1];
     int     i=0, j=0;
 
-    while ( str[i] != EOS )
+    while ( str[i] )
     {
-        if ( j > MAX_LONG_URI_VAL_LEN-7 )
-            break;
-        else if ( str[i] == '\'' )
-        {
-            tmp[j++] = '&';
-            tmp[j++] = 'a';
-            tmp[j++] = 'p';
-            tmp[j++] = 'o';
-            tmp[j++] = 's';
-            tmp[j++] = ';';
-        }
-        else if ( str[i] == '\\' )
-        {
-            tmp[j++] = '\\';
-            tmp[j++] = '\\';
-        }
-        else if ( str[i] == '"' )
-        {
-            tmp[j++] = '&';
-            tmp[j++] = 'q';
-            tmp[j++] = 'u';
-            tmp[j++] = 'o';
-            tmp[j++] = 't';
-            tmp[j++] = ';';
-        }
-        else if ( str[i] == '<' )
-        {
-            tmp[j++] = '&';
-            tmp[j++] = 'l';
-            tmp[j++] = 't';
-            tmp[j++] = ';';
-        }
-        else if ( str[i] == '>' )
-        {
-            tmp[j++] = '&';
-            tmp[j++] = 'g';
-            tmp[j++] = 't';
-            tmp[j++] = ';';
-        }
-        else if ( str[i] == '&' )
-        {
-            tmp[j++] = '&';
-            tmp[j++] = 'a';
-            tmp[j++] = 'm';
-            tmp[j++] = 'p';
-            tmp[j++] = ';';
-        }
-        else if ( str[i] == '\n' )
-        {
-            tmp[j++] = '<';
-            tmp[j++] = 'b';
-            tmp[j++] = 'r';
-            tmp[j++] = '>';
-        }
-        else if ( str[i] != '\r' )
-            tmp[j++] = str[i];
-        ++i;
-    }
-
-    tmp[j] = EOS;
-
-    strcpy(str, tmp);
-
-    return str;
-}
-
-
-/* --------------------------------------------------------------------------
-  un-sanitize user input
--------------------------------------------------------------------------- */
-void unsan(char *dst, const char *str)
-{
-    int     i=0, j=0;
-
-    while ( str[i] != EOS )
-    {
-        if ( j > MAX_LONG_URI_VAL_LEN-1 )
+        if ( j > MAX_LONG_URI_VAL_LEN-3 )
             break;
         else if ( str[i] == '\'' )
         {
             dst[j++] = '\\';
             dst[j++] = '\'';
+        }
+        else if ( str[i] == '"' )
+        {
+            dst[j++] = '\\';
+            dst[j++] = '"';
         }
         else if ( str[i] == '\\' )
         {
@@ -1426,6 +1448,83 @@ void unsan(char *dst, const char *str)
     }
 
     dst[j] = EOS;
+
+    return dst;
+}
+
+
+/* --------------------------------------------------------------------------
+   HTML-escape string
+-------------------------------------------------------------------------- */
+char *lib_html_esc(const char *str)
+{
+static char dst[MAX_LONG_URI_VAL_LEN+1];
+    int     i=0, j=0;
+
+    while ( str[i] )
+    {
+        if ( j > MAX_LONG_URI_VAL_LEN-7 )
+            break;
+        else if ( str[i] == '\'' )
+        {
+            dst[j++] = '&';
+            dst[j++] = 'a';
+            dst[j++] = 'p';
+            dst[j++] = 'o';
+            dst[j++] = 's';
+            dst[j++] = ';';
+        }
+        else if ( str[i] == '\\' )
+        {
+            dst[j++] = '\\';
+            dst[j++] = '\\';
+        }
+        else if ( str[i] == '"' )
+        {
+            dst[j++] = '&';
+            dst[j++] = 'q';
+            dst[j++] = 'u';
+            dst[j++] = 'o';
+            dst[j++] = 't';
+            dst[j++] = ';';
+        }
+        else if ( str[i] == '<' )
+        {
+            dst[j++] = '&';
+            dst[j++] = 'l';
+            dst[j++] = 't';
+            dst[j++] = ';';
+        }
+        else if ( str[i] == '>' )
+        {
+            dst[j++] = '&';
+            dst[j++] = 'g';
+            dst[j++] = 't';
+            dst[j++] = ';';
+        }
+        else if ( str[i] == '&' )
+        {
+            dst[j++] = '&';
+            dst[j++] = 'a';
+            dst[j++] = 'm';
+            dst[j++] = 'p';
+            dst[j++] = ';';
+        }
+        else if ( str[i] == '\n' )
+        {
+            dst[j++] = '<';
+            dst[j++] = 'b';
+            dst[j++] = 'r';
+            dst[j++] = '>';
+        }
+        else if ( str[i] != '\r' )
+            dst[j++] = str[i];
+        ++i;
+    }
+
+    dst[j] = EOS;
+
+    return dst;
 }
 
 
@@ -1471,6 +1570,38 @@ void unsan_noparse(char *dst, const char *str)
         {
             j -= 3;
             dst[j++] = '\n';
+        }
+        else if ( i > 3
+                    && str[i-4]=='&'
+                    && str[i-3]=='a'
+                    && str[i-2]=='m'
+                    && str[i-1]=='p'
+                    && str[i]==';' )
+        {
+            j -= 4;
+            dst[j++] = '&';
+        }
+        else if ( i > 4
+                    && str[i-5]=='&'
+                    && str[i-4]=='a'
+                    && str[i-3]=='p'
+                    && str[i-2]=='o'
+                    && str[i-1]=='s'
+                    && str[i]==';' )
+        {
+            j -= 5;
+            dst[j++] = '\'';
+        }
+        else if ( i > 4
+                    && str[i-5]=='&'
+                    && str[i-4]=='q'
+                    && str[i-3]=='u'
+                    && str[i-2]=='o'
+                    && str[i-1]=='t'
+                    && str[i]==';' )
+        {
+            j -= 5;
+            dst[j++] = '"';
         }
         else
             dst[j++] = str[i];

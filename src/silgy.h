@@ -15,11 +15,10 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
-//#include <sys/types.h>
-#include <unistd.h>
 
 #ifdef DBMYSQL
 #include <mysql.h>
@@ -37,7 +36,7 @@
 typedef char                        bool;
 #endif
 
-#define WEB_SERVER_VERSION          "1.8.1"
+#define WEB_SERVER_VERSION          "1.9"
 
 /* for use with booleans */
 
@@ -76,9 +75,24 @@ typedef char                        bool;
 #define PROTOCOL                    (conn[ci].secure?"https":"http")
 #define COLON_POSITION              (conn[ci].secure?5:4)
 
+/* defaults */
+#ifndef MEM_MEDIUM
+#ifndef MEM_BIG
+#ifndef MEM_HUGE
+#define MEM_SMALL   /* default memory model */
+#endif
+#endif
+#endif
+
 #ifndef OUTFAST
 #ifndef OUTCHECK
-#define OUTCHECKREALLOC
+#define OUTCHECKREALLOC   /* default output type */
+#endif
+#endif
+
+#ifndef QS_DEF_SQL_ESCAPE
+#ifndef QS_DEF_DONT_ESCAPE
+#define QS_DEF_HTML_ESCAPE   /* default query string security */
 #endif
 #endif
 

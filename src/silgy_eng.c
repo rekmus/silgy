@@ -9,7 +9,6 @@
 
 #include <signal.h>
 #include <sys/socket.h>
-#include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
 
@@ -1056,38 +1055,83 @@ static bool init(int argc, char **argv)
     get_byteorder64();
 
     ALWAYS("");
+    ALWAYS("----------------------------------------------------------------------------------------------");
+    ALWAYS("");
     ALWAYS("System:");
+    ALWAYS("-------");
+    ALWAYS("              SIZE_MAX = %lu (%lu kB / %lu MB)", SIZE_MAX, SIZE_MAX/1024, SIZE_MAX/1024/1024);
+    ALWAYS("            FD_SETSIZE = %d", FD_SETSIZE);
+    ALWAYS("             SOMAXCONN = %d", SOMAXCONN);
     ALWAYS("");
-    ALWAYS("       SIZE_MAX = %lu (%lu kB / %lu MB)", SIZE_MAX, SIZE_MAX/1024, SIZE_MAX/1024/1024);
-    ALWAYS("     FD_SETSIZE = %d", FD_SETSIZE);
-    ALWAYS("      SOMAXCONN = %d", SOMAXCONN);
-    ALWAYS(" CLOCKS_PER_SEC = %ld", CLOCKS_PER_SEC);
-    ALWAYS("");
-    ALWAYS("Program:");
-    ALWAYS("");
-    ALWAYS("        APP DIR = %s", G_appdir);
-    ALWAYS("MAX_CONNECTIONS = %d", MAX_CONNECTIONS);
-    ALWAYS("   CONN_TIMEOUT = %d", CONN_TIMEOUT);
-    ALWAYS("    OUT_BUFSIZE = %lu (%lu kB / %0.2lf MB)", OUT_BUFSIZE, OUT_BUFSIZE/1024, (double)OUT_BUFSIZE/1024/1024);
-    ALWAYS("   MAX_SESSIONS = %d", MAX_SESSIONS);
-    ALWAYS("   USES_TIMEOUT = %d", USES_TIMEOUT);
-#ifdef USERS
-    ALWAYS("  LUSES_TIMEOUT = %d", LUSES_TIMEOUT);
+    ALWAYS("Server:");
+    ALWAYS("-------");
+    ALWAYS("              SILGYDIR = %s", G_appdir);
+    ALWAYS("    WEB_SERVER_VERSION = %s", WEB_SERVER_VERSION);
+#ifdef MEM_SMALL
+    ALWAYS("          Memory model = MEM_SMALL");
 #endif
-    ALWAYS("    conn's size = %lu (%lu kB / %0.2lf MB)", sizeof(conn), sizeof(conn)/1024, (double)sizeof(conn)/1024/1024);
-    ALWAYS("     uses' size = %lu (%lu kB / %0.2lf MB)", sizeof(uses), sizeof(uses)/1024, (double)sizeof(uses)/1024/1024);
-    ALWAYS("    auses' size = %lu (%lu kB / %0.2lf MB)", sizeof(auses), sizeof(auses)/1024, (double)sizeof(auses)/1024/1024);
+#ifdef MEM_MEDIUM
+    ALWAYS("          Memory model = MEM_MEDIUM");
+#endif
+#ifdef MEM_BIG
+    ALWAYS("          Memory model = MEM_BIG");
+#endif
+#ifdef MEM_HUGE
+    ALWAYS("          Memory model = MEM_HUGE");
+#endif
+    ALWAYS("       MAX_CONNECTIONS = %d", MAX_CONNECTIONS);
+    ALWAYS("          MAX_SESSIONS = %d", MAX_SESSIONS);
+    ALWAYS("          CONN_TIMEOUT = %d seconds", CONN_TIMEOUT);
+    ALWAYS("          USES_TIMEOUT = %d seconds", USES_TIMEOUT);
+#ifdef USERS
+    ALWAYS("         LUSES_TIMEOUT = %d seconds", LUSES_TIMEOUT);
+#endif
     ALWAYS("");
+    ALWAYS("           conn's size = %lu B (%lu kB / %0.2lf MB)", sizeof(conn), sizeof(conn)/1024, (double)sizeof(conn)/1024/1024);
+    ALWAYS("            uses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(uses), sizeof(uses)/1024, (double)sizeof(uses)/1024/1024);
+    ALWAYS("");
+    ALWAYS("           OUT_BUFSIZE = %lu B (%lu kB / %0.2lf MB)", OUT_BUFSIZE, OUT_BUFSIZE/1024, (double)OUT_BUFSIZE/1024/1024);
 #ifdef OUTFAST
-    ALWAYS("Output type = OUTFAST");
+    ALWAYS("           Output type = OUTFAST");
 #endif
 #ifdef OUTCHECK
-    ALWAYS("Output type = OUTCHECK");
+    ALWAYS("           Output type = OUTCHECK");
 #endif
 #ifdef OUTCHECKREALLOC
-    ALWAYS("Output type = OUTCHECKREALLOC");
+    ALWAYS("           Output type = OUTCHECKREALLOC");
 #endif
 
+#ifdef QS_DEF_SQL_ESCAPE
+    ALWAYS(" Query string security = QS_DEF_SQL_ESCAPE");
+#endif
+#ifdef QS_DEF_DONT_ESCAPE
+    ALWAYS(" Query string security = QS_DEF_DONT_ESCAPE");
+#endif
+#ifdef QS_DEF_HTML_ESCAPE
+    ALWAYS(" Query string security = QS_DEF_HTML_ESCAPE");
+#endif
+    ALWAYS("");
+    ALWAYS("Program:");
+    ALWAYS("--------");
+    ALWAYS("           APP_WEBSITE = %s", APP_WEBSITE);
+    ALWAYS("            APP_DOMAIN = %s", APP_DOMAIN);
+    ALWAYS("           APP_VERSION = %s", APP_VERSION);
+    ALWAYS("         APP_COPYRIGHT = %s", APP_COPYRIGHT);
+    ALWAYS("         APP_LOGIN_URI = %s", APP_LOGIN_URI);
+    if ( APP_DEF_AUTH_LEVEL == AUTH_LEVEL_NONE )
+        ALWAYS("    APP_DEF_AUTH_LEVEL = AUTH_LEVEL_NONE");
+    else if ( APP_DEF_AUTH_LEVEL == AUTH_LEVEL_ANONYMOUS )
+        ALWAYS("    APP_DEF_AUTH_LEVEL = AUTH_LEVEL_ANONYMOUS");
+    else if ( APP_DEF_AUTH_LEVEL == AUTH_LEVEL_LOGGEDIN )
+        ALWAYS("    APP_DEF_AUTH_LEVEL = AUTH_LEVEL_LOGGEDIN");
+    else if ( APP_DEF_AUTH_LEVEL == AUTH_LEVEL_ADMIN )
+        ALWAYS("    APP_DEF_AUTH_LEVEL = AUTH_LEVEL_ADMIN");
+    ALWAYS("       APP_ADMIN_EMAIL = %s", APP_ADMIN_EMAIL);
+    ALWAYS("     APP_CONTACT_EMAIL = %s", APP_CONTACT_EMAIL);
+    ALWAYS("");
+    ALWAYS("           auses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(auses), sizeof(auses)/1024, (double)sizeof(auses)/1024/1024);
+    ALWAYS("");
+    ALWAYS("----------------------------------------------------------------------------------------------");
     ALWAYS("");
 
     /* custom init

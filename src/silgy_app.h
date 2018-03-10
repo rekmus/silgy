@@ -13,13 +13,13 @@
 #define APP_DOMAIN                  "example.com"               /* website domain */
 #define APP_DESCRIPTION             "Hello World Sample Silgy Web Application"
 #define APP_KEYWORDS                "hello world"
-#define APP_CONTACT_EMAIL           "contact@example.com"
 #define APP_VERSION                 "1.0"
 #define APP_IP                      "1.1.1.1"
 #define APP_COPYRIGHT               "Author"
 #define APP_LOGIN_URI               "login"                     /* redirect here if login required */
 #define APP_DEF_AUTH_LEVEL          AUTH_LEVEL_ANONYMOUS        /* default authorization level */
 #define APP_ADMIN_EMAIL             "admin@example.com"
+#define APP_CONTACT_EMAIL           "contact@example.com"
 
 /* for USERS module passwords' hashing */
 

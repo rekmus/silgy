@@ -871,7 +871,7 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
 
     /* send an email to admin */
 
-    sendemail(ci, APP_EMAIL, "New message!", message);
+    sendemail(ci, APP_CONTACT_EMAIL, "New message!", message);
 
     return OK;
 }
@@ -1139,7 +1139,7 @@ unsigned long   sql_records;
         sprintf(message, "%s%s://%s/preset?k=%s\n\n", message, PROTOCOL, conn[ci].host, linkkey);
         sprintf(message, "%sPlease keep in mind that this link will only be valid for the next 24 hours.\n\n", message);
         sprintf(message, "%sIf you did this by mistake or it wasn't you, you can safely ignore this email.\n\n", message);
-        sprintf(message, "%sIn case you needed any help, please contact us at %s.\n\n", message, APP_EMAIL);
+        sprintf(message, "%sIn case you needed any help, please contact us at %s.\n\n", message, APP_CONTACT_EMAIL);
         sprintf(message, "%sKind Regards\n%s\n", message, conn[ci].website);
 
         if ( !sendemail(ci, email, subject, message) )
