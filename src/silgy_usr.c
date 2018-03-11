@@ -98,53 +98,9 @@ static bool start_new_luses(int ci, long uid, const char *login, const char *ema
     strcpy(US.login, login);
     strcpy(US.email, email);
     strcpy(US.name, name);
-    US.uid = uid;
-
-    return TRUE;
-}
-
-
-static bool start_new_luses_old(int ci, long uid, const char *login, const char *email, const char *name, const char *sesid)
-{
-    DBG("start_new_luses");
-
-    if ( !conn[ci].usi )    /* no anonymous session */
-    {
-        /* add record to uses */
-
-        if ( G_sessions == MAX_SESSIONS )
-        {
-            WAR("User sessions exhausted");
-            return FALSE;
-        }
-
-        ++G_sessions;   /* start from 1 */
-
-        conn[ci].usi = G_sessions;
-
-        DBG("No anonymous session found, starting new logged in, usi=%d, sesid [%s]", G_sessions, sesid);
-
-        strcpy(US.ip, conn[ci].ip);
-        strcpy(US.uagent, conn[ci].uagent);
-        strcpy(US.referer, conn[ci].referer);
-        strcpy(US.lang, conn[ci].lang);
-
-        lib_set_datetime_formats(US.lang);
-
-        DBG("%d user session(s)", G_sessions);
-    }
-    else    /* upgrade existing anonymous session */
-    {
-        DBG("Upgrading anonymous session to logged in, usi=%d, sesid [%s]", conn[ci].usi, sesid);
-        strcpy(conn[ci].cookie_out_a, "x");     /* no longer needed */
-        strcpy(conn[ci].cookie_out_a_exp, G_last_modified);     /* to be removed by browser */
-    }
-
-    US.logged = TRUE;
-    strcpy(US.sesid, sesid);
-    strcpy(US.login, login);
-    strcpy(US.email, email);
-    strcpy(US.name, name);
+    strcpy(US.login_tmp, login);
+    strcpy(US.email_tmp, email);
+    strcpy(US.name_tmp, name);
     US.uid = uid;
 
     return TRUE;
@@ -929,7 +885,9 @@ unsigned long   sql_records;
     strcpy(US.email_tmp, email);
     strcpy(US.name_tmp, name);
 
-    DBG("Old email: [%s]", US.email);
+    DBG("login_tmp: [%s]", US.login_tmp);
+    DBG("email_tmp: [%s]", US.email_tmp);
+    DBG("name_tmp: [%s]", US.name_tmp);
 
     /* basic validation */
 
@@ -979,12 +937,13 @@ unsigned long   sql_records;
 
     sql_records = mysql_num_rows(result);
 
-    DBG("users: %lu record(s) found", sql_records);
-
     mysql_free_result(result);
 
     if ( 0 == sql_records )
-        return ERR_OLD_PASSWORD;    /* invalid old password */
+    {
+        ERR("Invalid old password");
+        return ERR_OLD_PASSWORD;
+    }
 
     /* Old password OK ---------------------------------------- */
 
@@ -1030,6 +989,9 @@ unsigned long   sql_records;
         return ERR_INT_SERVER_ERROR;
     }
 
+    DBG("Updating login, email & name in user session");
+
+    strcpy(US.login, US.login_tmp);
     strcpy(US.email, US.email_tmp);
     strcpy(US.name, US.name_tmp);
 
