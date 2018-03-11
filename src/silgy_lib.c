@@ -705,10 +705,11 @@ static char buf[MAX_URI_VAL_LEN];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
-        uri_decode(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        if ( retbuf ) uri_decode(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
 #endif
+    else if ( retbuf ) retbuf[0] = EOS;
     return FALSE;
 }
 
@@ -723,10 +724,11 @@ static char buf[MAX_URI_VAL_LEN];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
-        uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        if ( retbuf ) uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
 #endif
+    else if ( retbuf ) retbuf[0] = EOS;
     return FALSE;
 }
 
@@ -741,10 +743,11 @@ static char buf[MAX_URI_VAL_LEN];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
-        uri_decode_sql_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        if ( retbuf ) uri_decode_sql_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
 #endif
+    else if ( retbuf ) retbuf[0] = EOS;
     return FALSE;
 }
 
@@ -770,7 +773,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 
     if ( querystring == NULL )
     {
-        if ( retbuf) retbuf[0] = EOS;
+        if ( retbuf ) retbuf[0] = EOS;
         return FALSE;    /* no question mark => no values */
     }
 
@@ -800,12 +803,12 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
         {
             /* found it */
 
-            vallen = len2 - len1 - 1;   /* value length before decoding */
-            if ( vallen > maxlen )
-                vallen = maxlen;
-
-            if ( retbuf)
+            if ( retbuf )
             {
+                vallen = len2 - len1 - 1;
+                if ( vallen > maxlen )
+                    vallen = maxlen;
+
                 strncpy(retbuf, p2+1, vallen);
                 retbuf[vallen] = EOS;
             }
@@ -821,8 +824,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 
     /* not found */
 
-    if ( retbuf) retbuf[0] = EOS;
-
+    if ( retbuf ) retbuf[0] = EOS;
     return FALSE;
 }
 
