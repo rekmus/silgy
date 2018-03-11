@@ -295,7 +295,7 @@ static int user_exists(const char *login)
 //  if ( 0==strcmp(sanlogin, "ADMIN") )
 //      return ERR_USERNAME_TAKEN;
 
-    sprintf(sql_query, "SELECT id FROM users WHERE UPPER(login)='%s'", upper(san(login)));
+    sprintf(sql_query, "SELECT id FROM users WHERE UPPER(login)='%s'", upper(login));
 
     DBG("sql_query: %s", sql_query);
 
@@ -492,7 +492,7 @@ unsigned long   sql_records;
 
     if ( M_libusr.auth == AUTH_BY_LOGIN )
     {
-        if ( !QS("login", login) || !QS("passwd", passwd) )
+        if ( !QS_HTML_ESCAPE("login", login) || !QS_HTML_ESCAPE("passwd", passwd) )
         {
             WAR("Invalid request (URI val missing?)");
             return ERR_INVALID_REQUEST;
@@ -501,7 +501,7 @@ unsigned long   sql_records;
     }
     else    /* by email */
     {
-        if ( !QS("email", email) || !QS("passwd", passwd) )
+        if ( !QS_HTML_ESCAPE("email", email) || !QS_HTML_ESCAPE("passwd", passwd) )
         {
             WAR("Invalid request (URI val missing?)");
             return ERR_INVALID_REQUEST;
@@ -647,7 +647,7 @@ unsigned long   sql_records;
 
     /* Keep me logged in -- set cookie expiry date */
 
-    if ( QS("keep", keep) && 0==strcmp(keep, "on") )
+    if ( QS_HTML_ESCAPE("keep", keep) && 0==strcmp(keep, "on") )
     {
         DBG("keep is ON!");
         sometimeahead = G_now + 3600*24*30; /* 30 days */
@@ -664,71 +664,82 @@ unsigned long   sql_records;
 
 
 /* --------------------------------------------------------------------------
-  create user account
-  return OK or:
-  ERR_INVALID_REQUEST
-  ERR_WEBSITE_FIRST_LETTER
-  ERR_USERNAME_TOO_SHORT
-  ERR_USER_NAME_CHARS
-  ERR_USERNAME_TAKEN
-  ERR_EMAIL_FORMAT_OR_EMPTY
-  ERR_PASSWORD_TOO_SHORT
-  ERR_PASSWORD_DIFFERENT
-  ERR_INT_SERVER_ERROR
+   Create user account
+   Return OK or:
+   ERR_INVALID_REQUEST
+   ERR_WEBSITE_FIRST_LETTER
+   ERR_USERNAME_TOO_SHORT
+   ERR_USER_NAME_CHARS
+   ERR_USERNAME_TAKEN
+   ERR_EMAIL_FORMAT_OR_EMPTY
+   ERR_PASSWORD_TOO_SHORT
+   ERR_PASSWORD_DIFFERENT
+   ERR_INT_SERVER_ERROR
 -------------------------------------------------------------------------- */
 int libusr_do_create_acc(int ci)
 {
     int     ret=OK;
     QSVAL   login;
     QSVAL   email;
-    QSVAL   name="";
+    QSVAL   name;
     QSVAL   passwd;
     QSVAL   rpasswd;
     QSVAL   message;
-    char    login_san[MAX_URI_VAL_LEN*2+1];
-    char    email_san[MAX_URI_VAL_LEN*2+1];
-    char    name_san[MAX_URI_VAL_LEN*2+1];
+//    char    login_san[MAX_URI_VAL_LEN*2+1];
+//    char    email_san[MAX_URI_VAL_LEN*2+1];
+//   char    name_san[MAX_URI_VAL_LEN*2+1];
     int     plen;
     char    sql_query[MAX_SQL_QUERY_LEN+1];
     char    str1[32], str2[32];
 
     DBG("libusr_do_create_acc");
 
-    if ( M_libusr.auth == AUTH_BY_LOGIN )
+    if ( QS_HTML_ESCAPE("login", login) )
     {
-        if ( !QS("login", login) )
-        {
-            WAR("Invalid request (login missing)");
-            return ERR_INVALID_REQUEST;
-        }
         stp_right(login);
         strcpy(US.login, login);
     }
 
+    if ( M_libusr.auth == AUTH_BY_LOGIN && !login[0] )
+    {
+        WAR("Invalid request (login missing)");
+        return ERR_INVALID_REQUEST;
+    }
+
+    if ( QS_HTML_ESCAPE("email", email) )
+    {
+        stp_right(email);
+        strcpy(US.email, email);
+    }
+
+    if ( M_libusr.auth == AUTH_BY_EMAIL && !email[0] )
+    {
+        WAR("Invalid request (email missing)");
+        return ERR_INVALID_REQUEST;
+    }
+
     /* regardless of auth method */
 
-    if ( !QS("email", email)
-            || !QS("passwd", passwd)
-            || !QS("rpasswd", rpasswd) )
+    if ( !QS_HTML_ESCAPE("passwd", passwd)
+            || !QS_HTML_ESCAPE("rpasswd", rpasswd) )
     {
         WAR("Invalid request (URI val missing?)");
         return ERR_INVALID_REQUEST;
     }
 
-    stp_right(email);
-    strcpy(US.email, email);
+    /* optional */
 
-    /* not mandatory */
-
-    if ( QS("name", name) )
+    if ( QS_HTML_ESCAPE("name", name) )
     {
         stp_right(name);
         strcpy(US.name, name);
     }
 
+    /* ----------------------------------------------------------------- */
+
     plen = strlen(passwd);
 
-    if ( QS("message", message) && message[0] )
+    if ( QS_HTML_ESCAPE("message", message) && message[0] )
         return ERR_ROBOT;
 
     if ( M_libusr.auth == AUTH_BY_LOGIN )
@@ -759,22 +770,18 @@ int libusr_do_create_acc(int ci)
 
     /* welcome! -- and generate password hashes ------------------------------------------------------- */
 
-    strcpy(login_san, san(login));
-    strcpy(email_san, san(email));
-    strcpy(name_san, san(name));
+//    strcpy(login_san, san(login));
+//    strcpy(email_san, san(email));
+//    strcpy(name_san, san(name));
 
     if ( M_libusr.auth == AUTH_BY_LOGIN )
-    {
         doit(str1, str2, login, email[0]?email:STR_005, passwd);
-        sprintf(sql_query, "INSERT INTO users (id,login,email,name,passwd1,passwd2,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s',0,'%s',0,0,0,'N')", login_san, email[0]?email_san:"", name_san, str1, str2, G_dt);
-    }
     else    /* AUTH_BY_EMAIL */
-    {
         doit(str1, str2, email, email, passwd);
-        sprintf(sql_query, "INSERT INTO users (id,email,name,passwd1,passwd2,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s',0,'%s',0,0,0,'N')", email_san, name_san, str1, str2, G_dt);
-    }
 
-    DBG("sql_query: %s", sql_query);
+    sprintf(sql_query, "INSERT INTO users (id,login,email,name,passwd1,passwd2,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s',0,'%s',0,0,0,'N')", login, email, name, str1, str2, G_dt);
+
+    DBG("sql_query: INSERT INTO users (id,login,email,name,...) VALUES (0,'%s','%s','%s',...)", login, email, name);
 
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -807,7 +814,7 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
         return ERR_INVALID_REQUEST;
     }
 
-    if ( QS("email", email) )
+    if ( QS_HTML_ESCAPE("email", email) )
         stp_right(email);
 
     strcpy(sanmessage, san_long(message));
@@ -841,7 +848,7 @@ int libusr_do_save_myacc(int ci)
     int         ret=OK;
     QSVAL       login;
     QSVAL       email;
-    QSVAL       name="";
+    QSVAL       name;
     QSVAL       passwd;
     QSVAL       rpasswd;
     QSVAL       opasswd;
@@ -858,24 +865,22 @@ unsigned long   sql_records;
 
     DBG("libusr_do_save_myacc");
 
-    if ( !QS("opasswd", opasswd)
-            || !QS("email", email)
-            || !QS("passwd", passwd)
-            || !QS("rpasswd", rpasswd)
-            || ( M_libusr.auth==AUTH_BY_LOGIN && !QS("login", login) ) )
+    if ( !QS_HTML_ESCAPE("opasswd", opasswd)
+            || !QS_HTML_ESCAPE("email", email)
+            || !QS_HTML_ESCAPE("passwd", passwd)
+            || !QS_HTML_ESCAPE("rpasswd", rpasswd)
+            || ( M_libusr.auth==AUTH_BY_LOGIN && !QS_HTML_ESCAPE("login", login) ) )
     {
         WAR("Invalid request (URI val missing?)");
         return ERR_INVALID_REQUEST;
     }
 
-    if ( M_libusr.auth == AUTH_BY_LOGIN )
+    if ( M_libusr.auth == AUTH_BY_EMAIL || QS_HTML_ESCAPE("login", login) )     /* try to get login anyway */
         stp_right(login);
 
-    stp_right(email);   /* potentially new email */
+    stp_right(email);   /* always present but can be empty */
 
-    plen = strlen(passwd);
-
-    if ( QS("name", name) )
+    if ( QS_HTML_ESCAPE("name", name) ) /* optional */
         stp_right(name);
 
     /* remember form fields */
@@ -890,6 +895,8 @@ unsigned long   sql_records;
     DBG("name_tmp: [%s]", US.name_tmp);
 
     /* basic validation */
+
+    plen = strlen(passwd);
 
     if ( M_libusr.auth == AUTH_BY_LOGIN && email[0] && !valid_email(email) )
         return ERR_EMAIL_FORMAT_OR_EMPTY;
@@ -915,15 +922,15 @@ unsigned long   sql_records;
     if ( M_libusr.auth == AUTH_BY_LOGIN )
     {
         doit(str1, str2, login, login, opasswd);
-        sprintf(sql_query, "SELECT id FROM users WHERE UPPER(login)='%s' AND passwd1='%s'", upper(san(login)), str1);
+        sprintf(sql_query, "SELECT id FROM users WHERE UPPER(login)='%s' AND passwd1='%s'", upper(login), str1);
+        DBG("sql_query: SELECT id FROM users WHERE UPPER(login)='%s' AND passwd1=...", upper(login));
     }
     else    /* auth by email */
     {
         doit(str1, str2, email, email, opasswd);
-        sprintf(sql_query, "SELECT id FROM users WHERE UPPER(email)='%s' AND passwd1='%s'", upper(san(login)), str1);
+        sprintf(sql_query, "SELECT id FROM users WHERE UPPER(email)='%s' AND passwd1='%s'", upper(email), str1);
+        DBG("sql_query: SELECT id FROM users WHERE UPPER(email)='%s' AND passwd1=...", upper(email));
     }
-
-// !!!!!!   DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
 
@@ -949,9 +956,9 @@ unsigned long   sql_records;
 
     DBG("Old password OK");
 
-    if ( QS("delete", strdelete) && 0==strcmp(strdelete, "on") )    /* delete user account */
+    if ( QS_HTML_ESCAPE("delete", strdelete) && 0==strcmp(strdelete, "on") )    /* delete user account */
     {
-        if ( !QS("delconf", strdelconf) || 0 != strcmp(strdelconf, "1") )
+        if ( !QS_HTML_ESCAPE("delconf", strdelconf) || 0 != strcmp(strdelconf, "1") )
             return WAR_BEFORE_DELETE;
         else
         {
@@ -972,16 +979,12 @@ unsigned long   sql_records;
     /* anything else than deleting account -- changin email and/or name and/or password */
 
     if ( M_libusr.auth == AUTH_BY_LOGIN )   /* either email or password change requires new hash */
-    {
         doit(str1, str2, login, email[0]?email:STR_005, plen?passwd:opasswd);
-    }
     else    /* auth by email */
-    {
         doit(str1, str2, email, email, plen?passwd:opasswd);
-    }
 
-    sprintf(sql_query, "UPDATE users SET email='%s', name='%s', passwd1='%s', passwd2='%s' WHERE id=%ld", email, san(name), str1, str2, US.uid);
-// !!!!!!   DBG("sql_query: %s", sql_query);
+    sprintf(sql_query, "UPDATE users SET login='%s', email='%s', name='%s', passwd1='%s', passwd2='%s' WHERE id=%ld", login, email, name, str1, str2, US.uid);
+    DBG("sql_query: UPDATE users SET login='%s', email='%s', name='%s',... WHERE id=%ld", login, email, name, US.uid);
 
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -1008,7 +1011,7 @@ int libusr_email_exists(int ci)
 
     DBG("libusr_email_exists");
 
-    if ( !QS("email", email) )
+    if ( !QS_HTML_ESCAPE("email", email) )
     {
         WAR("Invalid request (URI val missing?)");
         return ERR_INVALID_REQUEST;
@@ -1039,7 +1042,7 @@ unsigned long   sql_records;
 
     DBG("libusr_do_forgot");
 
-    if ( !QS("email", email) )
+    if ( !QS_HTML_ESCAPE("email", email) )
     {
         WAR("Invalid request (URI val missing?)");
         return ERR_INVALID_REQUEST;
@@ -1138,9 +1141,9 @@ unsigned long   sql_records;
 
     strcpy(linkkey, US.additional); /* from here instead of URI */
 
-    if ( !QS("email", email)
-            || !QS("passwd", passwd)
-            || !QS("rpasswd", rpasswd) )
+    if ( !QS_HTML_ESCAPE("email", email)
+            || !QS_HTML_ESCAPE("passwd", passwd)
+            || !QS_HTML_ESCAPE("rpasswd", rpasswd) )
     {
         WAR("Invalid request (URI val missing?)");
         return ERR_INVALID_REQUEST;
