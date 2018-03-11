@@ -333,7 +333,7 @@ static int email_exists(const char *email)
 
     DBG("email_exists, email [%s]", email);
 
-    sprintf(sql_query, "SELECT id FROM users WHERE UPPER(email)='%s'", upper(san(email)));
+    sprintf(sql_query, "SELECT id FROM users WHERE UPPER(email)='%s'", upper(email));
 
     DBG("sql_query: %s", sql_query);
 
@@ -470,7 +470,7 @@ int libusr_do_login(int ci)
     char        name[UNAME_LEN+1];
     QSVAL       passwd;
     QSVAL       keep;
-    char        usanlogin[MAX_VALUE_LEN*2+1];
+    char        ulogin[MAX_VALUE_LEN*2+1];
     char        sql_query[MAX_SQL_QUERY_LEN+1];
     char        p1[32], p2[32];
     char        str1[32], str2[32];
@@ -511,12 +511,12 @@ unsigned long   sql_records;
 
     if ( M_libusr.auth == AUTH_BY_LOGIN )
     {
-        strcpy(usanlogin, upper(san(login)));
-        sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,ula_time,ula_cnt,visits,deleted FROM users WHERE (UPPER(login)='%s' OR UPPER(email)='%s')", usanlogin, usanlogin);
+        strcpy(ulogin, upper(login));
+        sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,ula_time,ula_cnt,visits,deleted FROM users WHERE (UPPER(login)='%s' OR UPPER(email)='%s')", ulogin, ulogin);
     }
     else
     {
-        sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,ula_time,ula_cnt,visits,deleted FROM users WHERE UPPER(email)='%s'", upper(san(email)));
+        sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,ula_time,ula_cnt,visits,deleted FROM users WHERE UPPER(email)='%s'", upper(email));
     }
 
     DBG("sql_query: %s", sql_query);
@@ -578,13 +578,9 @@ unsigned long   sql_records;
     /* now check username/email and password pairs as they should be */
 
     if ( M_libusr.auth == AUTH_BY_LOGIN )
-    {
         doit(str1, str2, login, email[0]?email:STR_005, passwd);
-    }
     else    /* auth by email */
-    {
         doit(str1, str2, email, email, passwd);
-    }
 
     /* are these as expected? */
 
@@ -803,7 +799,7 @@ int libusr_do_contact(int ci)
 {
 static char message[MAX_LONG_URI_VAL_LEN+1];
 static char sanmessage[MAX_LONG_URI_VAL_LEN+1];
-    QSVAL   email="";
+    QSVAL   email;
 static char sql_query[MAX_LONG_URI_VAL_LEN*2];
 
     DBG("libusr_do_contact");
@@ -817,14 +813,14 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
     if ( QS_HTML_ESCAPE("email", email) )
         stp_right(email);
 
-    strcpy(sanmessage, san_long(message));
+    strcpy(sanmessage, lib_html_esc(message));
 
     /* remember user details in case of error or warning to correct */
 
-    strcpy(US.email, email);
+    strcpy(US.email_tmp, email);
 
-    sprintf(sql_query, "INSERT INTO messages (user_id,msg_id,email,message,created) VALUES (%ld,%ld,'%s','%s','%s')", US.uid, libusr_get_max(ci, "messages")+1, san(email), sanmessage, G_dt);
-//  DBG("sql_query: %s", sql_query); long!!!
+    sprintf(sql_query, "INSERT INTO messages (user_id,msg_id,email,message,created) VALUES (%ld,%ld,'%s','%s','%s')", US.uid, libusr_get_max(ci, "messages")+1, email, sanmessage, G_dt);
+    DBG("sql_query: INSERT INTO messages (user_id,msg_id,email,...) VALUES (%ld,libusr_get_max(),'%s',...)", US.uid, email);
 
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -1054,9 +1050,9 @@ unsigned long   sql_records;
         return ERR_EMAIL_FORMAT;
 
     if ( M_libusr.auth == AUTH_BY_LOGIN )
-        sprintf(sql_query, "SELECT id, login FROM users WHERE UPPER(email)='%s'", upper(san(email)));
+        sprintf(sql_query, "SELECT id, login FROM users WHERE UPPER(email)='%s'", upper(email));
     else
-        sprintf(sql_query, "SELECT id, name FROM users WHERE UPPER(email)='%s'", upper(san(email)));
+        sprintf(sql_query, "SELECT id, name FROM users WHERE UPPER(email)='%s'", upper(email));
 
     DBG("sql_query: %s", sql_query);
 
@@ -1305,7 +1301,7 @@ static void doit(char *result1, char *result2, const char *login, const char *em
     uint8_t digest[SHA1_DIGEST_SIZE];
     int     i, j=0;
 
-    sprintf(tmp, "%s%s%s%s", STR_001, upper(san(login)), STR_002, src); /* login */
+    sprintf(tmp, "%s%s%s%s", STR_001, upper(login), STR_002, src); /* login */
     libSHA1(tmp, strlen(tmp), digest);
     Base64encode(tmp, digest, SHA1_DIGEST_SIZE);
     for ( i=0; tmp[i] != EOS; ++i ) /* drop non-alphanumeric characters */
@@ -1317,7 +1313,7 @@ static void doit(char *result1, char *result2, const char *login, const char *em
 
     j = 0;
 
-    sprintf(tmp, "%s%s%s%s", STR_003, upper(san(email)), STR_004, src); /* email */
+    sprintf(tmp, "%s%s%s%s", STR_003, upper(email), STR_004, src); /* email */
     libSHA1(tmp, strlen(tmp), digest);
     Base64encode(tmp, digest, SHA1_DIGEST_SIZE);
     for ( i=0; tmp[i] != EOS; ++i ) /* drop non-alphanumeric characters */
