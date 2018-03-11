@@ -708,8 +708,8 @@ static char buf[MAX_URI_VAL_LEN];
         if ( retbuf ) uri_decode(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
-#endif
     else if ( retbuf ) retbuf[0] = EOS;
+#endif
     return FALSE;
 }
 
@@ -727,8 +727,8 @@ static char buf[MAX_URI_VAL_LEN];
         if ( retbuf ) uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
-#endif
     else if ( retbuf ) retbuf[0] = EOS;
+#endif
     return FALSE;
 }
 
@@ -746,8 +746,8 @@ static char buf[MAX_URI_VAL_LEN];
         if ( retbuf ) uri_decode_sql_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
-#endif
     else if ( retbuf ) retbuf[0] = EOS;
+#endif
     return FALSE;
 }
 
