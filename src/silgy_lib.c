@@ -701,9 +701,9 @@ static char date[16];
 bool get_qs_param(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-static char buf[MAX_URI_VAL_LEN+1];
+static char buf[MAX_URI_VAL_LEN*2+1];
 
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
+    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
     {
         if ( retbuf ) uri_decode(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
@@ -720,11 +720,10 @@ static char buf[MAX_URI_VAL_LEN+1];
 bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-static char buf[MAX_URI_VAL_LEN+1];
+static char buf[MAX_URI_VAL_LEN*2+1];
 
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
+    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
     {
-//        DBG("get_qs_param_html_esc buf: [%s]", buf);
         if ( retbuf ) uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
@@ -740,9 +739,9 @@ static char buf[MAX_URI_VAL_LEN+1];
 bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-static char buf[MAX_URI_VAL_LEN+1];
+static char buf[MAX_URI_VAL_LEN*2+1];
 
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
+    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
     {
         if ( retbuf ) uri_decode_sql_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
