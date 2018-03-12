@@ -701,7 +701,7 @@ static char date[16];
 bool get_qs_param(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-static char buf[MAX_URI_VAL_LEN];
+static char buf[MAX_URI_VAL_LEN+1];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
@@ -720,10 +720,11 @@ static char buf[MAX_URI_VAL_LEN];
 bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-static char buf[MAX_URI_VAL_LEN];
+static char buf[MAX_URI_VAL_LEN+1];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
+//        DBG("get_qs_param_html_esc buf: [%s]", buf);
         if ( retbuf ) uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
         return TRUE;
     }
@@ -739,7 +740,7 @@ static char buf[MAX_URI_VAL_LEN];
 bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-static char buf[MAX_URI_VAL_LEN];
+static char buf[MAX_URI_VAL_LEN+1];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN) )
     {
@@ -805,6 +806,8 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 
             if ( retbuf )
             {
+//                DBG("get_qs_param_raw p2+1: [%s]", p2+1);
+
                 vallen = len2 - len1 - 1;
                 if ( vallen > maxlen )
                     vallen = maxlen;
@@ -835,7 +838,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
 {
 #ifndef ASYNC_SERVICE
-static char buf[MAX_LONG_URI_VAL_LEN];
+static char buf[MAX_LONG_URI_VAL_LEN+1];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_LONG_URI_VAL_LEN) )
     {
@@ -1359,6 +1362,7 @@ static int xctod(int c)
 
 /* --------------------------------------------------------------------------
    Sanitize / SQL-escape user input -- depreciated
+   Use lib_sql_esc instead
 -------------------------------------------------------------------------- */
 char const *san(const char *str)
 {
@@ -1391,6 +1395,7 @@ static char san[1024];
 
 /* --------------------------------------------------------------------------
    Sanitize user input for database queries -- depreciated
+   Use lib_sql_esc instead
 -------------------------------------------------------------------------- */
 char *san_long(const char *str)
 {
