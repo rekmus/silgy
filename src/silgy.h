@@ -343,8 +343,7 @@ typedef char                        bool;
 
 typedef struct {
     int     status;
-    char    description[64];
-    int     len;
+    char    description[128];
 } http_status_t;
 
 

@@ -16,25 +16,25 @@
 
 
 http_status_t   M_http_status[]={
-        {200, "OK",                             19},
-        {201, "Created",                        24},
-        {206, "Partial Content",                32},
-        {301, "Moved Permanently",              34},
-        {302, "Found",                          22},
-        {303, "See Other",                      26},
-        {304, "Not Modified",                   29},
-        {400, "Bad Request",                    28},
-        {401, "Unauthorized",                   29},
-        {403, "Forbidden",                      26},
-        {404, "Not Found",                      26},
-        {405, "Method Not Allowed\r\nAllow: GET, POST, HEAD", 59},
-        {413, "Request Entity Too Large",       41},
-        {414, "Request-URI Too Long",           37},
-        {416, "Range Not Satisfiable",          38},
-        {500, "Internal Server Error",          38},
-        {501, "Not Implemented",                32},
-        {503, "Service Unavailable",            36},
-        { -1, "", 0}
+        {200, "OK"},
+        {201, "Created"},
+        {206, "Partial Content"},
+        {301, "Moved Permanently"},
+        {302, "Found"},
+        {303, "See Other"},
+        {304, "Not Modified"},
+        {400, "Bad Request"},
+        {401, "Unauthorized"},
+        {403, "Forbidden"},
+        {404, "Not Found"},
+        {405, "Method Not Allowed\r\nAllow: GET, POST, PUT, DELETE, OPTIONS, HEAD"},
+        {413, "Request Entity Too Large"},
+        {414, "Request-URI Too Long"},
+        {416, "Range Not Satisfiable"},
+        {500, "Internal Server Error"},
+        {501, "Not Implemented"},
+        {503, "Service Unavailable"},
+        { -1, ""}
     };
 
 
@@ -2221,34 +2221,6 @@ static void print_content_type(int ci, char type)
 
 
 /* --------------------------------------------------------------------------
-  send short, one-line HTTP response
--------------------------------------------------------------------------- */
-/*static void send_short_response(int ci)
-{
-    int     i;
-    char    response[256];
-    int     bytes;
-
-    INF("send_short_response, status = %d", conn[ci].status);
-
-    for ( i=0; M_http_status[i].status != -1; ++i )
-        if ( M_http_status[i].status == conn[ci].status )  // found
-            break;
-
-    sprintf(response, "HTTP/1.1 %d %s\r\n\r\n", conn[ci].status, M_http_status[i].description);
-
-    WRITE(ci, response, M_http_status[i].len);
-    if ( bytes < M_http_status[i].len )
-        ERR("write error, bytes = %d", bytes);
-
-    if ( conn[ci].status == 404 && conn[ci].keep_alive )
-        reset_conn(ci, CONN_STATE_CONNECTED);
-    else
-        close_conn(ci);
-}*/
-
-
-/* --------------------------------------------------------------------------
    Verify IP & User-Agent against sesid in uses (anonymous users)
    Return user session array index if all ok
 -------------------------------------------------------------------------- */
@@ -2466,16 +2438,31 @@ static int parse_req(int ci, long len)
         else    /* most likely space = end of method */
         {
             conn[ci].method[i] = EOS;
+
             /* check against the list of allowed methods */
-            if ( 0 == strcmp(conn[ci].method, "POST") )
-                conn[ci].post = TRUE;
-            else if ( 0 == strcmp(conn[ci].method, "HEAD") )
-                conn[ci].head_only = TRUE;
-            else if ( 0 != strcmp(conn[ci].method, "GET") )
+
+            if ( 0==strcmp(conn[ci].method, "GET") )
+            {
+                /* just go ahead */
+            }
+            else if ( 0==strcmp(conn[ci].method, "POST") || 0==strcmp(conn[ci].method, "PUT") || 0==strcmp(conn[ci].method, "DELETE") )
+            {
+                conn[ci].post = TRUE;   /* read query string from payload */
+            }
+            else if ( 0==strcmp(conn[ci].method, "OPTIONS") )
+            {
+                /* just go ahead */
+            }
+            else if ( 0==strcmp(conn[ci].method, "HEAD") )
+            {
+                conn[ci].head_only = TRUE;  /* send only header */
+            }
+            else
             {
                 ERR("Method [%s] not allowed, ignoring", conn[ci].method);
                 return 405;
             }
+
             break;
         }
     }
