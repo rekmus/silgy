@@ -36,7 +36,7 @@
 typedef char                        bool;
 #endif
 
-#define WEB_SERVER_VERSION          "1.9.1"
+#define WEB_SERVER_VERSION          "2.0"
 
 /* for use with booleans */
 
@@ -293,8 +293,8 @@ typedef char                        bool;
 #define ASYNC_RES_QUEUE             "/silgy_res"    /* response queue name */
 #define ASYNC_MAX_TIMEOUT           1800            /* in seconds ==> 30 minutes */
 #define S(s)                        (0==strcmp(service,s))
-#define CALL_ASYNC(s,d,t)			eng_async_req(ci, s, d, TRUE, t)
-#define CALL_ASYNC_NR(s,d)			eng_async_req(ci, s, d, FALSE, 0)
+#define CALL_ASYNC(s,d,t)           eng_async_req(ci, s, d, TRUE, t)
+#define CALL_ASYNC_NR(s,d)          eng_async_req(ci, s, d, FALSE, 0)
 
 /* resource / content types */
 
@@ -541,7 +541,7 @@ extern counters_t G_cnts_today;             /* today's counters */
 extern counters_t G_cnts_yesterday;         /* yesterday's counters */
 extern counters_t G_cnts_day_before;        /* day before's counters */
 /* SHM */
-extern char     *G_shm_segptr;				/* SHM pointer */
+extern char     *G_shm_segptr;              /* SHM pointer */
 
 
 /* public engine functions */
@@ -549,7 +549,7 @@ extern char     *G_shm_segptr;				/* SHM pointer */
 #ifdef __cplusplus
 extern "C" {
 #endif
-	void eng_set_param(const char *label, const char *value);
+    void eng_set_param(const char *label, const char *value);
     void eng_set_auth_level(const char *resource, char level);
     bool eng_uses_start(int ci);
     void eng_uses_close(int usi);

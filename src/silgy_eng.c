@@ -2447,7 +2447,7 @@ static int parse_req(int ci, long len)
             }
             else if ( 0==strcmp(conn[ci].method, "POST") || 0==strcmp(conn[ci].method, "PUT") || 0==strcmp(conn[ci].method, "DELETE") )
             {
-                conn[ci].post = TRUE;   /* read query string from payload */
+                conn[ci].post = TRUE;   /* read payload */
             }
             else if ( 0==strcmp(conn[ci].method, "OPTIONS") )
             {
@@ -2455,7 +2455,7 @@ static int parse_req(int ci, long len)
             }
             else if ( 0==strcmp(conn[ci].method, "HEAD") )
             {
-                conn[ci].head_only = TRUE;  /* send only header */
+                conn[ci].head_only = TRUE;  /* send only a header */
             }
             else
             {
