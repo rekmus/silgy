@@ -244,11 +244,14 @@ if ( QS("firstname", qs_firstname) )
     OUT("<p>Welcome %s!</p>", qs_firstname);
 ```
 QS comes with four SQL- and XSS-injection security flavours:  
-QS - default - behaviour depends on QS_DEF_ compilation switch  
+  
+QS - default - behaviour depends on QS_DEF_ compilation switch (by default it's QS_DEF_HTML_ESCAPE).  
 QS_HTML_ESCAPE - value is HTML-escaped  
 QS_SQL_ESCAPE - value is SQL-escaped  
 QS_DONT_ESCAPE - value is not escaped  
+  
 And the fifth one:  
+  
 QS_RAW - value is not URI-decoded  
   
 ### bool URI(string)
