@@ -235,7 +235,7 @@ OUT("<p>There are %d records in the table.</p>", records);
 ```
   
 ### bool QS(param, variable)
-Search URI-decoded query string for *param* and if found, copy its value to *variable* and return TRUE. Otherwise return FALSE. For POST and PUT it assumes query string is in payload.  
+Search query string for *param* and if found, URI-decode it, copy its value to *variable* and return TRUE. Otherwise return FALSE. For POST, PUT and DELETE methods it assumes query string is in payload.  
 QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.  
 Example:  
 ```source.c++
@@ -243,6 +243,13 @@ QSVAL qs_firstname;
 if ( QS("firstname", qs_firstname) )
     OUT("<p>Welcome %s!</p>", qs_firstname);
 ```
+QS comes with four SQL- and XSS-injection security flavours:  
+QS - default - behaviour depends on QS_DEF_ compilation switch  
+QS_HTML_ESCAPE - value is HTML-escaped  
+QS_SQL_ESCAPE - value is SQL-escaped  
+QS_DONT_ESCAPE - value is not escaped  
+And the fifth one:  
+QS_RAW - value is not URI-decoded  
   
 ### bool URI(string)
 Return TRUE if URI matches *string*.  
