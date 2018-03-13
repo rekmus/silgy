@@ -185,7 +185,7 @@ static char dst[1024];
 -------------------------------------------------------------------------- */
 char *lib_add_spaces(const char *src, int len)
 {
-static char ret[256];
+static char ret[1024];
     int     src_len;
     int     spaces;
     int     i;
@@ -202,6 +202,31 @@ static char ret[256];
         ret[i] = ' ';
 
     ret[i] = EOS;
+
+    return ret;
+}
+
+
+/* --------------------------------------------------------------------------
+   Add leading spaces to make string to have len length
+-------------------------------------------------------------------------- */
+char *lib_add_lspaces(const char *src, int len)
+{
+static char ret[1024];
+    int     src_len;
+    int     spaces;
+    int     i;
+
+    src_len = strlen(src);
+
+    spaces = len - src_len;
+
+    if ( spaces < 0 ) spaces = 0;
+
+    for ( i=0; i<spaces; ++i )
+        ret[i] = ' ';
+
+    strcpy(ret+spaces, src);
 
     return ret;
 }

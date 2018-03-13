@@ -56,6 +56,7 @@ extern "C" {
     void lib_log_memory(void);
     char *lib_filter_strict(const char *src);
     char *lib_add_spaces(const char *src, int len);
+    char *lib_add_lspaces(const char *src, int len);
     void lib_send_ajax_msg(int ci, int errcode);
     char get_res_type(const char *fname);
     void date_str2rec(const char *str, date_t *rec);
