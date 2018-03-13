@@ -1843,7 +1843,7 @@ static int first_free_stat()
 
 
 /* --------------------------------------------------------------------------
-  return M_stat array index if name is on statics' list
+   Return M_stat array index if name is on statics' list
 -------------------------------------------------------------------------- */
 static int is_static_res(int ci, const char *name)
 {
@@ -1868,7 +1868,7 @@ static int is_static_res(int ci, const char *name)
 
 
 /* --------------------------------------------------------------------------
-  open database connection
+   Open database connection
 -------------------------------------------------------------------------- */
 static bool open_db()
 {
@@ -1878,7 +1878,10 @@ static bool open_db()
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return FALSE;
     }
-
+#ifdef DBMYSQLRECONNECT
+    my_bool reconnect=1;
+    mysql_options(G_dbconn, MYSQL_OPT_RECONNECT, &reconnect);
+#endif
     if ( NULL == mysql_real_connect(G_dbconn, NULL, G_dbUser, G_dbPassword, G_dbName, 0, NULL, 0) )
     {
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
@@ -1890,8 +1893,8 @@ static bool open_db()
 
 
 /* --------------------------------------------------------------------------
-  main new request processing
-  request received over current conn is already parsed
+   Main new request processing
+   Request received over current conn is already parsed
 -------------------------------------------------------------------------- */
 static void process_req(int ci)
 {
