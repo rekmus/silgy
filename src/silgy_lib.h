@@ -67,6 +67,8 @@ extern "C" {
     void lib_set_datetime_formats(const char *lang);
     void amt(char *stramt, long in_amt);
     void amtd(char *stramt, double in_amt);
+    void lib_amt(char *stramt, long in_amt);
+    void lib_amtd(char *stramt, double in_amt);
     void samts(char *stramt, const char *in_amt);
     void ftm(char *strtm, long in_tm);
     bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf);

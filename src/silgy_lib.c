@@ -693,6 +693,77 @@ void amtd(char *stramt, double in_amt)
 
 
 /* --------------------------------------------------------------------------
+   Format amount -- special version
+---------------------------------------------------------------------------*/
+void lib_amt(char *stramt, long in_amt)
+{
+    char    in_stramt[64];
+    int     len;
+    int     i, j=0;
+    bool    minus=FALSE;
+
+    sprintf(in_stramt, "%ld", in_amt);
+
+    if ( in_stramt[0] == '-' )
+    {
+        strcpy(stramt, "- ");
+        j = 2;
+        minus = TRUE;
+    }
+
+    len = strlen(in_stramt);
+
+    for ( i=(j?1:0); i<len; ++i, ++j )
+    {
+        if ( ((!minus && i) || (minus && i>1)) && !((len-i)%3) )
+            stramt[j++] = M_tsep;
+        stramt[j] = in_stramt[i];
+    }
+
+    stramt[j] = EOS;
+}
+
+
+/* --------------------------------------------------------------------------
+   Format double amount -- special version
+---------------------------------------------------------------------------*/
+void lib_amtd(char *stramt, double in_amt)
+{
+    char    in_stramt[64];
+    int     len;
+    int     i, j=0;
+    bool    minus=FALSE;
+
+    sprintf(in_stramt, "%0.2lf", in_amt);
+
+    if ( in_stramt[0] == '-' )
+    {
+        strcpy(stramt, "- ");
+        j = 2;
+        minus = TRUE;
+    }
+
+    len = strlen(in_stramt);
+
+    for ( i=(j?1:0); i<len; ++i, ++j )
+    {
+        if ( in_stramt[i]=='.' && M_dsep!='.' )
+        {
+            stramt[j] = M_dsep;
+            continue;
+        }
+        else if ( ((!minus && i) || (minus && i>1)) && !((len-i)%3) && len-i > 3 && in_stramt[i] != ' ' && in_stramt[i-1] != ' ' && in_stramt[i-1] != '-' )
+        {
+            stramt[j++] = M_tsep;   /* extra character */
+        }
+        stramt[j] = in_stramt[i];
+    }
+
+    stramt[j] = EOS;
+}
+
+
+/* --------------------------------------------------------------------------
    Format double amount string to string
 ---------------------------------------------------------------------------*/
 void samts(char *stramt, const char *in_amt)
