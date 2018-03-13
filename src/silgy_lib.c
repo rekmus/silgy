@@ -155,6 +155,30 @@ struct rusage usage;
 
 
 /* --------------------------------------------------------------------------
+   Filter everything but basic letters and digits off
+---------------------------------------------------------------------------*/
+char *lib_filter_strict(const char *src)
+{
+static char dst[1024];
+    int     i=0, j=0;
+
+    while ( src[i] && j<1023 )
+    {
+        if ( (src[i] >= 65 && src[i] <= 90)
+                || (src[i] >= 97 && src[i] <= 122)
+                || isdigit(src[i]) )
+            dst[j++] = src[i];
+        else if ( src[i] == ' ' )
+            dst[j++] = '_';
+    }
+
+    dst[j] = EOS;
+    
+    return dst;
+}
+
+
+/* --------------------------------------------------------------------------
    Add spaces to make string to have len length
 -------------------------------------------------------------------------- */
 char *lib_add_spaces(const char *src, int len)

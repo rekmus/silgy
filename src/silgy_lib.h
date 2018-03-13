@@ -54,6 +54,7 @@ extern "C" {
     double lib_elapsed(struct timespec *start);
     long lib_get_memory(void);
     void lib_log_memory(void);
+    char *lib_filter_strict(const char *src);
     char *lib_add_spaces(const char *src, int len);
     void lib_send_ajax_msg(int ci, int errcode);
     char get_res_type(const char *fname);

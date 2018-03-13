@@ -2155,10 +2155,12 @@ static void gen_response_header(int ci)
     {
         print_content_type(ci, conn[ci].ctype);
     }
-//  else    /* content type unset */
-//  {
-//      print_content_type(ci, RES_TEXT);
-//  }
+
+    if ( conn[ci].cdisp[0] )
+    {
+        sprintf(G_tmp, "Content-Disposition: %s\r\n", conn[ci].cdisp);
+        HOUT(G_tmp);
+    }
 
 #ifndef NO_IDENTITY
     PRINT_HTTP_SERVER;
@@ -2331,6 +2333,7 @@ static void reset_conn(int ci, char conn_state)
     conn[ci].usi = 0;
     conn[ci].static_res = NOT_STATIC;
     conn[ci].ctype = RES_HTML;
+    conn[ci].cdisp[0] = EOS;
     conn[ci].modified = 0;
     conn[ci].cookie_out_a[0] = EOS;
     conn[ci].cookie_out_a_exp[0] = EOS;
@@ -3450,10 +3453,10 @@ void eng_set_res_status(int ci, int status)
 /* --------------------------------------------------------------------------
    Set response content type
 -------------------------------------------------------------------------- */
-void eng_set_res_content_type(int ci, const char *content_type)
+void eng_set_res_content_type(int ci, const char *str)
 {
     conn[ci].ctype = CONTENT_TYPE_USER;
-    strcpy(conn[ci].ctypestr, content_type);
+    strcpy(conn[ci].ctypestr, str);
 }
 
 
@@ -3466,6 +3469,19 @@ void eng_set_res_location(int ci, const char *str, ...)
 
     va_start(plist, str);
     vsprintf(conn[ci].location, str, plist);
+    va_end(plist);
+}
+
+
+/* --------------------------------------------------------------------------
+   Set response content disposition
+-------------------------------------------------------------------------- */
+void eng_set_res_content_disposition(int ci, const char *str, ...)
+{
+    va_list     plist;
+
+    va_start(plist, str);
+    vsprintf(conn[ci].cdisp, str, plist);
     va_end(plist);
 }
 

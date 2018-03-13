@@ -36,7 +36,7 @@
 typedef char                        bool;
 #endif
 
-#define WEB_SERVER_VERSION          "2.0"
+#define WEB_SERVER_VERSION          "2.1"
 
 /* for use with booleans */
 
@@ -335,6 +335,7 @@ typedef char                        bool;
 #define RES_CONTENT_TYPE(s)         eng_set_res_content_type(ci, s)
 #define RES_LOCATION(s, ...)        eng_set_res_location(ci, s, ##__VA_ARGS__)
 #define RES_DONT_CACHE              conn[ci].dont_cache=TRUE
+#define RES_CONTENT_DISPOSITION(s, ...) eng_set_res_content_disposition(ci, s, ##__VA_ARGS__)
 
 #define REDIRECT_TO_LANDING         sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host)
 
@@ -400,6 +401,7 @@ typedef struct {
     long    data_sent;                      /* how many body bytes has been sent */
     char    ctype;                          /* content type */
     char    ctypestr[256];                  /* user (custom) content type */
+    char    cdisp[256];                     /* content disposition */
     time_t  modified;
     char    cookie_out_a[SESID_LEN+1];
     char    cookie_out_a_exp[32];           /* cookie expires */
@@ -561,8 +563,9 @@ extern "C" {
     void eng_get_msg_str(int ci, char *dest, int errcode);
     bool eng_host(int ci, const char *host);
     void eng_set_res_status(int ci, int status);
-    void eng_set_res_content_type(int ci, const char *content_type);
+    void eng_set_res_content_type(int ci, const char *str);
     void eng_set_res_location(int ci, const char *str, ...);
+    void eng_set_res_content_disposition(int ci, const char *str, ...);
     void eng_out_check(int ci, const char *str);
     void eng_out_check_realloc(int ci, const char *str);
     void eng_out_check_realloc_bin(int ci, const char *data, long len);
