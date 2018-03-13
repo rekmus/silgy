@@ -170,6 +170,8 @@ static char dst[1024];
             dst[j++] = src[i];
         else if ( src[i] == ' ' )
             dst[j++] = '_';
+
+        ++i;
     }
 
     dst[j] = EOS;
