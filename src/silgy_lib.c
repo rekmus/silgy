@@ -1657,20 +1657,46 @@ static char dst[MAX_LONG_URI_VAL_LEN+1];
 
 
 /* --------------------------------------------------------------------------
-   HTML un-escape user input for large text blocks
+   ex unsan_noparse
+   HTML un-escape string
 -------------------------------------------------------------------------- */
-void unsan_noparse(char *dst, const char *str)
+char *lib_html_unesc(const char *str)
 {
+static char dst[MAX_LONG_URI_VAL_LEN+1];
     int     i=0, j=0;
 
-    while ( str[i] != EOS )
+    while ( str[i] )
     {
         if ( j > MAX_LONG_URI_VAL_LEN-1 )
             break;
-        else if ( str[i] == '\'' )
+        else if ( i > 4
+                    && str[i-5]=='&'
+                    && str[i-4]=='a'
+                    && str[i-3]=='p'
+                    && str[i-2]=='o'
+                    && str[i-1]=='s'
+                    && str[i]==';' )
         {
-            dst[j++] = '\\';
+            j -= 5;
             dst[j++] = '\'';
+        }
+        else if ( i > 1
+                    && str[i-1]=='\\'
+                    && str[i]=='\\' )
+        {
+            j -= 1;
+            dst[j++] = '\\';
+        }
+        else if ( i > 4
+                    && str[i-5]=='&'
+                    && str[i-4]=='q'
+                    && str[i-3]=='u'
+                    && str[i-2]=='o'
+                    && str[i-1]=='t'
+                    && str[i]==';' )
+        {
+            j -= 5;
+            dst[j++] = '"';
         }
         else if ( i > 2
                     && str[i-3]=='&'
@@ -1690,15 +1716,6 @@ void unsan_noparse(char *dst, const char *str)
             j -= 3;
             dst[j++] = '>';
         }
-        else if ( i > 2
-                    && str[i-3]=='<'
-                    && str[i-2]=='b'
-                    && str[i-1]=='r'
-                    && str[i]=='>' )
-        {
-            j -= 3;
-            dst[j++] = '\n';
-        }
         else if ( i > 3
                     && str[i-4]=='&'
                     && str[i-3]=='a'
@@ -1709,34 +1726,24 @@ void unsan_noparse(char *dst, const char *str)
             j -= 4;
             dst[j++] = '&';
         }
-        else if ( i > 4
-                    && str[i-5]=='&'
-                    && str[i-4]=='a'
-                    && str[i-3]=='p'
-                    && str[i-2]=='o'
-                    && str[i-1]=='s'
-                    && str[i]==';' )
+        else if ( i > 2
+                    && str[i-3]=='<'
+                    && str[i-2]=='b'
+                    && str[i-1]=='r'
+                    && str[i]=='>' )
         {
-            j -= 5;
-            dst[j++] = '\'';
-        }
-        else if ( i > 4
-                    && str[i-5]=='&'
-                    && str[i-4]=='q'
-                    && str[i-3]=='u'
-                    && str[i-2]=='o'
-                    && str[i-1]=='t'
-                    && str[i]==';' )
-        {
-            j -= 5;
-            dst[j++] = '"';
+            j -= 3;
+            dst[j++] = '\n';
         }
         else
             dst[j++] = str[i];
+
         ++i;
     }
 
     dst[j] = EOS;
+
+    return dst;
 }
 
 

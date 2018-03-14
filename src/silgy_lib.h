@@ -82,7 +82,7 @@ extern "C" {
     char *san_long(const char *str);
     char *lib_sql_esc(const char *str);
     char *lib_html_esc(const char *str);
-    void unsan_noparse(char *dst, const char *str);
+    char *lib_html_unesc(const char *str);
     char *uri_encode(const char *str);
 //  void str2upper(char *dest, const char *src);
     char *upper(const char *str);
