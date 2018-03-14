@@ -116,7 +116,7 @@ extern "C" {
     int Base64decode_len(const char * coded_src);
     int Base64decode(char * plain_dst, const char *coded_src);
 
-    char *lib_convert(const char *src, const char *cp_from, const char *cp_to);
+    char *lib_convert(char *src, const char *cp_from, const char *cp_to);
 
     size_t utf8_to_latin9(char *const output, const char *const input, const size_t length);
 
