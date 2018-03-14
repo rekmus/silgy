@@ -18,11 +18,11 @@ Then you need to either restart your shell session or execute above command.
 3. In your project directory, create some others:
 ```
 cd web
-mkdir src
-mkdir bin
-mkdir res
-mkdir resmin
-mkdir logs
+mkdir src      # all the sources from this repository's src
+mkdir bin      # executable(s), silgy.conf, blacklist.txt will be there
+mkdir res      # static resources like pictures, html-s, robots.txt etc.
+mkdir resmin   # resources to be minified (CSS and JS)
+mkdir logs     # peek there if there's something wrong
 ```
 4. Throw all the files to src. **m** and **te** scripts must have executable flag. In src:
 ```
