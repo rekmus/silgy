@@ -24,7 +24,7 @@ mkdir res      # static resources like pictures, html-s, robots.txt etc.
 mkdir resmin   # resources to be minified (CSS and JS)
 mkdir logs     # peek there if there's something wrong
 ```
-4. Throw all the files to src. **m** and **te** scripts must have executable flag. In src:
+4. Throw all the files from src directory here to your src. **m** and **te** scripts must have executable flag. In src:
 ```
 chmod u+x m
 chmod u+x te
@@ -214,6 +214,9 @@ Use users module. It provides an API for handling all registered users logic, in
   
 ### DOMAINONLY
 Always redirect to APP_DOMAIN.  
+  
+### BLACKLISTAUTOUPDATE
+Automatically add malicious IPs to file defined in *blockedIPList*.  
   
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
