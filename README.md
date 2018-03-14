@@ -43,6 +43,7 @@ Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/
   
 ## Static Resources
 Static resources are simply the files you want to serve from disk, as opposed to dynamic content that is generated in your code. Statics usually include pictures, css, robots.txt etc.  
+  
 Static resources are read into memory on startup from **res** directory. Static resources you want to serve minified (CSS and JS), are read into memory and minified on startup from **resmin** directory.  
   
 Static resources are handled automatically, you don't have to add anything in your app.  
@@ -179,7 +180,7 @@ dbPassword=mysqlpassword
 
 # ----------------------------------------------------------------------------
 # IP blacklist
-blockedIPList=/home/ec2-user/live/bin/blacklist.txt
+blockedIPList=/home/ec2-user/web/bin/blacklist.txt
 
 # ----------------------------------------------------------------------------
 # setting this to 1 will add _t to the log file name
@@ -205,8 +206,11 @@ Use HTTPS. Both ports will be open and listened to. You need to supply *certFile
 ### DBMYSQL
 Open MySQL connection at the start and close it at clean up. Use *dbName*, *dbUser* and *dbPassword*.  
   
+### DBMYSQLRECONNECT
+Open MySQL connection with auto-reconnect option. I recommend not to use this option at the beginning, until you're familiar with MySQL settings, for reconnect happens quietly and without you knowing, this may be impacting your app's performance. However, if you know what [wait_timeout](https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_wait_timeout) is and you know how often you may expect those quiet reconnects, by all means — use it.  
+  
 ### USERS
-Use users module. It provides an API for handling all registered users logic, including common things like i.e. password reset.  
+Use users module. It provides an API for handling all registered users logic, including common things like i.e. password reset. You need to have DBMYSQL defined as well. (and some tables in the database, specs coming soon)  
   
 ### DOMAINONLY
 Always redirect to APP_DOMAIN.  
