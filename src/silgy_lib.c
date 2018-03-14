@@ -3238,8 +3238,9 @@ static char dst[1024];
     iconv_t cd = iconv_open(cp_to, cp_from);
     if (cd == (iconv_t) -1)
     {
-        perror("iconv_open failed!");
-        return NULL;
+//        perror("iconv_open failed!");
+        strcpy(dst, "iconv_open failed");
+        return dst;
     }
 
     char *in_buf = src;
@@ -3248,10 +3249,13 @@ static char dst[1024];
     char *out_buf = &dst[0];
     size_t out_left = 1023;
 
-    do {
-        if (iconv(cd, &in_buf, &in_left, &out_buf, &out_left) == (size_t) -1) {
-            perror("iconv failed!");
-            return NULL;
+    do
+    {
+        if (iconv(cd, &in_buf, &in_left, &out_buf, &out_left) == (size_t) -1)
+        {
+//            perror("iconv failed!");
+            strcpy(dst, "iconv failed");
+            return dst;
         }
     } while (in_left > 0 && out_left > 0);
 
