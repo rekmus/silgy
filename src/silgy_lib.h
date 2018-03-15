@@ -10,8 +10,8 @@
 #define SILGY_LIB_H
 
 #define MAX_URI_VAL_LEN         127             /* max value length received in URI -- sufficient for 99% cases */
-//#define MAX_LONG_URI_VAL_LEN  65535           /* max long value length received in URI -- 64 kB - 1 B. Please declare local vars as static! */
-#define MAX_LONG_URI_VAL_LEN    4194303         /* max long value length received in URI -- 4 MB - 1 B. Please declare local vars as static! */
+#define MAX_LONG_URI_VAL_LEN    65535           /* max long value length received in URI -- 64 kB - 1 B. Please declare local vars as static! */
+//#define MAX_LONG_URI_VAL_LEN    4194303         /* max long value length received in URI -- 4 MB - 1 B. Please declare local vars as static! */
 
 #define QSBUF                   MAX_URI_VAL_LEN+1
 #define QS_BUF                  QSBUF
@@ -109,16 +109,12 @@ extern "C" {
     void log_write(int level, const char *message, ...);
     void log_long(const char *str, long len, const char *desc);
     void log_finish(void);
-    void maz2utf(char* output, const char* input);
+    char *lib_convert(char *src, const char *cp_from, const char *cp_to);
 
     int Base64encode_len(int len);
     int Base64encode(char * coded_dst, const char *plain_src,int len_plain_src);
     int Base64decode_len(const char * coded_src);
     int Base64decode(char * plain_dst, const char *coded_src);
-
-    char *lib_convert(char *src, const char *cp_from, const char *cp_to);
-
-    size_t utf8_to_latin9(char *const output, const char *const input, const size_t length);
 
 #ifdef __cplusplus
 }   // extern "C"

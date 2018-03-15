@@ -7,6 +7,7 @@
    General purpose library
 -------------------------------------------------------------------------- */
 
+#include <iconv.h>
 
 #include "silgy.h"
 
@@ -1482,68 +1483,6 @@ static int xctod(int c)
 
 
 /* --------------------------------------------------------------------------
-   Sanitize / SQL-escape user input -- depreciated
-   Use lib_sql_esc instead
--------------------------------------------------------------------------- */
-char const *san(const char *str)
-{
-static char san[1024];
-    int     i=0, j=0;
-
-    while ( str[i] && j<1022 )
-    {
-        if ( str[i] == '\'' )
-        {
-            san[j++] = '\'';
-            san[j++] = '\'';
-        }
-        else if ( str[i] == '"' )
-        {
-            san[j++] = '\\';
-            san[j++] = '"';
-        }
-        else if ( str[i] != '\r' && str[i] != '\n' && str[i] != '\\' && str[i] != '|' )
-            san[j++] = str[i];
-
-        ++i;
-    }
-
-    san[j] = EOS;
-
-    return san;
-}
-
-
-/* --------------------------------------------------------------------------
-   Sanitize user input for database queries -- depreciated
-   Use lib_sql_esc instead
--------------------------------------------------------------------------- */
-char *san_long(const char *str)
-{
-static char dst[MAX_LONG_URI_VAL_LEN+1];
-    int     i=0, j=0;
-
-    while ( str[i] )
-    {
-        if ( j > MAX_LONG_URI_VAL_LEN-5 )
-            break;
-        else if ( str[i] == '\'' )
-        {
-            dst[j++] = '\'';
-            dst[j++] = '\'';
-        }
-        else if ( str[i] != '\\' )
-            dst[j++] = str[i];
-        ++i;
-    }
-
-    dst[j] = EOS;
-
-    return dst;
-}
-
-
-/* --------------------------------------------------------------------------
    SQL-escape string
 -------------------------------------------------------------------------- */
 char *lib_sql_esc(const char *str)
@@ -2622,8 +2561,8 @@ static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 
 
 /* --------------------------------------------------------------------------
-  write looong string to a log or --
-  its first (MAX_LOG_STR_LEN-50) part if it's longer
+   Write looong string to a log or --
+   its first (MAX_LOG_STR_LEN-50) part if it's longer
 -------------------------------------------------------------------------- */
 void log_long(const char *str, long len, const char *desc)
 {
@@ -2641,7 +2580,7 @@ static char log_buffer[MAX_LOG_STR_LEN+1];
 
 
 /* --------------------------------------------------------------------------
-  close log. uses global G_log as file handler
+   Close log. uses global G_log as file handler
 -------------------------------------------------------------------------- */
 void log_finish()
 {
@@ -2653,104 +2592,47 @@ void log_finish()
 
 
 /* --------------------------------------------------------------------------
-  Znowu chamskie kopiowanie
-  Jurek Muszynski
+   Convert string
 -------------------------------------------------------------------------- */
-void maz2utf(char* output, const char* input)
+char *lib_convert(char *src, const char *cp_from, const char *cp_to)
 {
-    unsigned char* iPtr=(unsigned char*)input;
-    unsigned char* oPtr=(unsigned char*)output;
-//  int i=0;
+static char dst[1024];
 
-    while (*iPtr)
+    iconv_t cd = iconv_open(cp_to, cp_from);
+    if (cd == (iconv_t) -1)
     {
-        switch (*iPtr)
-        {
-            case 0x8f: /* A */
-                *oPtr=0xc4; ++oPtr;
-                *oPtr=0x84;
-                break;
-            case 0x95: /* C */
-                *oPtr=0xc4; ++oPtr;
-                *oPtr=0x86;
-                break; 
-            case 0x90: /* E */
-                *oPtr=0xc4; ++oPtr;
-                *oPtr=0x98;
-                break; 
-            case 0x9c: /* L */
-                *oPtr=0xc5; ++oPtr;
-                *oPtr=0x81;
-                break; 
-            case 0xa5: /* N */
-                *oPtr=0xc5; ++oPtr;
-                *oPtr=0x83;
-                break;
-            case 0xa3: /* O */
-                *oPtr=0xc3; ++oPtr;
-                *oPtr=0x93;
-                break; 
-            case 0x98: /* S */
-                *oPtr=0xc5; ++oPtr;
-                *oPtr=0x9a;
-                break;
-            case 0xa0: /* Z */
-                *oPtr=0xc5; ++oPtr;
-                *oPtr=0xb9;
-                break; 
-            case 0xa1: /* Z */
-                *oPtr=0xc5; ++oPtr;
-                *oPtr=0xbb;
-                break; 
-            case 0x86: /* a */
-                *oPtr=0xc4; ++oPtr;
-                *oPtr=0x85;
-                break; 
-            case 0x8d: /* c */
-                *oPtr=0xc4; ++oPtr;
-                *oPtr=0x87;
-                break; 
-            case 0x91: /* e */
-                *oPtr=0xc4; ++oPtr;
-                *oPtr=0x99;
-                break; 
-            case 0x92: /* l */
-                *oPtr=0xc5; ++oPtr;
-                *oPtr=0x82;
-                break; 
-            case 0xa4: /* n */
-                *oPtr=0xc5; ++oPtr;
-                *oPtr=0x84;
-                break; 
-            case 0xa2: /* o */
-                *oPtr=0xc3; ++oPtr;
-                *oPtr=0xb3;
-                break; 
-            case 0x9e: /* s */
-                *oPtr=0xc5; ++oPtr;
-                *oPtr=0x9b;
-                break; 
-            case 0xa6: /* z */
-                *oPtr=0xc5; ++oPtr;
-                *oPtr=0xba;
-                break; 
-            case 0xa7: /* z */
-                *oPtr=0xc5; ++oPtr;
-                *oPtr=0xbc;
-                break; 
-
-            default:
-                *oPtr = *iPtr;
-        }
-        ++oPtr;
-        ++iPtr;
-//      ++i;
+        strcpy(dst, "iconv_open failed");
+        return dst;
     }
-    *oPtr=0;
+
+    char *in_buf = src;
+    size_t in_left = strlen(src);
+
+    char *out_buf = &dst[0];
+    size_t out_left = 1023;
+
+    do
+    {
+        if (iconv(cd, &in_buf, &in_left, &out_buf, &out_left) == (size_t) -1)
+        {
+            strcpy(dst, "iconv failed");
+            return dst;
+        }
+    } while (in_left > 0 && out_left > 0);
+
+    *out_buf = 0;
+
+    iconv_close(cd);
+
+    return dst;
 }
 
 
 
+
+/* ================================================================================================ */
+/* Base64                                                                                           */
+/* ================================================================================================ */
 /*
  * Copyright (c) 2003 Apple Computer, Inc. All rights reserved.
  *
@@ -2959,7 +2841,9 @@ int Base64encode(char *encoded, const char *string, int len)
 
 
 
-
+/* ================================================================================================ */
+/* SHA1                                                                                             */
+/* ================================================================================================ */
 /*
 SHA-1 in C
 By Steve Reid <sreid@sea-to-sky.net>
@@ -3223,198 +3107,4 @@ void digest_to_hex(const uint8_t digest[SHA1_DIGEST_SIZE], char *output)
         c += 1;
     }
     *(c - 1) = '\0';
-}
-
-
-#include <iconv.h>
-
-/* --------------------------------------------------------------------------
-   Convert string
--------------------------------------------------------------------------- */
-char *lib_convert(char *src, const char *cp_from, const char *cp_to)
-{
-static char dst[1024];
-
-    iconv_t cd = iconv_open(cp_to, cp_from);
-    if (cd == (iconv_t) -1)
-    {
-//        perror("iconv_open failed!");
-        strcpy(dst, "iconv_open failed");
-        return dst;
-    }
-
-    char *in_buf = src;
-    size_t in_left = strlen(src);
-
-    char *out_buf = &dst[0];
-    size_t out_left = 1023;
-
-    do
-    {
-        if (iconv(cd, &in_buf, &in_left, &out_buf, &out_left) == (size_t) -1)
-        {
-//            perror("iconv failed!");
-            strcpy(dst, "iconv failed");
-            return dst;
-        }
-    } while (in_left > 0 && out_left > 0);
-
-    *out_buf = 0;
-
-    iconv_close(cd);
-
-//    printf("%s -> %s\n", input, output);
-
-    return dst;
-}
-
-
-/* https://stackoverflow.com/questions/11156473/is-there-a-way-to-convert-from-utf8-to-iso-8859-1 */
-/* UTF-8 to ISO-8859-1/ISO-8859-15 mapper.
- * Return 0..255 for valid ISO-8859-15 code points, 256 otherwise.
-*/
-/* Extended to include some not-overlapping Latin2 characters (JM) */
-static inline unsigned int to_latin9(const unsigned int code)
-{
-    /* Code points 0 to U+00FF are the same in both. */
-
-    if (code < 256U) return code;
-
-    switch (code)
-    {
-        case 0x0152U: return 188U; /* U+0152: OE ligature */
-        case 0x0153U: return 189U; /* U+0153: oe ligature */
-        case 0x0160U: return 166U; /* U+0160: S with caron */
-        case 0x0161U: return 168U; /* U+0161: s with caron */
-        case 0x0178U: return 190U; /* U+0178: Y with diaresis */
-        case 0x017DU: return 180U; /* U+017D: Z with caron */
-        case 0x017EU: return 184U; /* U+017E: z with caron */
-        case 0x20ACU: return 164U; /* U+20AC: Euro */
-
-        /* Latin2 */
-
-        case 0x0104U: return 161U; /* U+0104: A */
-        case 0x0141U: return 163U; /* U+0141: L */
-        case 0x0105U: return 177U; /* U+0105: a */
-        case 0x0142U: return 179U; /* U+0142: l */
-    //    case 0x20ACU: return 182U; /* U+20AC: s */
-    //    case 0x20ACU: return 191U; /* U+20AC: z */
-    //    case 0x20ACU: return 202U; /* U+20AC: E */
-    //    case 0x20ACU: return 209U; /* U+20AC: N */
-    //    case 0x20ACU: return 211U; /* U+20AC: O */
-    //    case 0x20ACU: return 234U; /* U+20AC: e */
-    //    case 0x20ACU: return 241U; /* U+20AC: n */
-    //    case 0x20ACU: return 243U; /* U+20AC: o */
-
-        default:      return 256U;
-    }
-}
-
-/* Convert an UTF-8 string to ISO-8859-15.
- * All invalid sequences are ignored.
- * Note: output == input is allowed,
- * but   input < output < input + length
- * is not.
- * Output has to have room for (length+1) chars, including the trailing NUL byte.
-*/
-size_t utf8_to_latin9(char *const output, const char *const input, const size_t length)
-{
-    unsigned char             *out = (unsigned char *)output;
-    const unsigned char       *in  = (const unsigned char *)input;
-    const unsigned char *const end = (const unsigned char *)input + length;
-    unsigned int               c;
-
-    while (in < end)
-        if (*in < 128)
-            *(out++) = *(in++); /* Valid codepoint */
-        else
-        if (*in < 192)
-            in++;               /* 10000000 .. 10111111 are invalid */
-        else
-        if (*in < 224) {        /* 110xxxxx 10xxxxxx */
-            if (in + 1 >= end)
-                break;
-            if ((in[1] & 192U) == 128U) {
-                c = to_latin9( (((unsigned int)(in[0] & 0x1FU)) << 6U)
-                             |  ((unsigned int)(in[1] & 0x3FU)) );
-                if (c < 256)
-                    *(out++) = c;
-            }
-            in += 2;
-
-        } else
-        if (*in < 240) {        /* 1110xxxx 10xxxxxx 10xxxxxx */
-            if (in + 2 >= end)
-                break;
-            if ((in[1] & 192U) == 128U &&
-                (in[2] & 192U) == 128U) {
-                c = to_latin9( (((unsigned int)(in[0] & 0x0FU)) << 12U)
-                             | (((unsigned int)(in[1] & 0x3FU)) << 6U)
-                             |  ((unsigned int)(in[2] & 0x3FU)) );
-                if (c < 256)
-                    *(out++) = c;
-            }
-            in += 3;
-
-        } else
-        if (*in < 248) {        /* 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx */
-            if (in + 3 >= end)
-                break;
-            if ((in[1] & 192U) == 128U &&
-                (in[2] & 192U) == 128U &&
-                (in[3] & 192U) == 128U) {
-                c = to_latin9( (((unsigned int)(in[0] & 0x07U)) << 18U)
-                             | (((unsigned int)(in[1] & 0x3FU)) << 12U)
-                             | (((unsigned int)(in[2] & 0x3FU)) << 6U)
-                             |  ((unsigned int)(in[3] & 0x3FU)) );
-                if (c < 256)
-                    *(out++) = c;
-            }
-            in += 4;
-
-        } else
-        if (*in < 252) {        /* 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-            if (in + 4 >= end)
-                break;
-            if ((in[1] & 192U) == 128U &&
-                (in[2] & 192U) == 128U &&
-                (in[3] & 192U) == 128U &&
-                (in[4] & 192U) == 128U) {
-                c = to_latin9( (((unsigned int)(in[0] & 0x03U)) << 24U)
-                             | (((unsigned int)(in[1] & 0x3FU)) << 18U)
-                             | (((unsigned int)(in[2] & 0x3FU)) << 12U)
-                             | (((unsigned int)(in[3] & 0x3FU)) << 6U)
-                             |  ((unsigned int)(in[4] & 0x3FU)) );
-                if (c < 256)
-                    *(out++) = c;
-            }
-            in += 5;
-
-        } else
-        if (*in < 254) {        /* 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-            if (in + 5 >= end)
-                break;
-            if ((in[1] & 192U) == 128U &&
-                (in[2] & 192U) == 128U &&
-                (in[3] & 192U) == 128U &&
-                (in[4] & 192U) == 128U &&
-                (in[5] & 192U) == 128U) {
-                c = to_latin9( (((unsigned int)(in[0] & 0x01U)) << 30U)
-                             | (((unsigned int)(in[1] & 0x3FU)) << 24U)
-                             | (((unsigned int)(in[2] & 0x3FU)) << 18U)
-                             | (((unsigned int)(in[3] & 0x3FU)) << 12U)
-                             | (((unsigned int)(in[4] & 0x3FU)) << 6U)
-                             |  ((unsigned int)(in[5] & 0x3FU)) );
-                if (c < 256)
-                    *(out++) = c;
-            }
-            in += 6;
-
-        } else
-            in++;               /* 11111110 and 11111111 are invalid */
-
-    /* Terminate the output string. */
-    *out = '\0';
-
-    return (size_t)(out - (unsigned char *)output);
 }
