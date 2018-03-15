@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ -f $SILGYDIR/bin/silgy_app.pid ]
+then
+	kill `cat $SILGYDIR/bin/silgy_app.pid`
+fi
+
+# if process hadn't existed, pid needs manual removal...
+
+if [ -f $SILGYDIR/bin/silgy_app.pid ]
+then
+	rm $SILGYDIR/bin/silgy_app.pid
+fi
