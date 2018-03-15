@@ -1,0 +1,3 @@
+#!/bin/sh
+
+nohup $SILGYDIR/bin/silgy_app &
