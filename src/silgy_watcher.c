@@ -53,17 +53,17 @@ int main(int argc, char *argv[])
 
     ALWAYS("Trying to connect...");
 
-	if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
+    if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
     {
         ERR("socket failed, errno = %d (%s)", errno, strerror(errno));
         exit(1);
     }
 
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-	serv_addr.sin_port = htons(80);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    serv_addr.sin_port = htons(80);
 
-	if ( (conn=connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0 )
+    if ( (conn=connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0 )
     {
         ERR("connect failed, errno = %d (%s)", errno, strerror(errno));
         close(sockfd);
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     p = stpcpy(p, "Connection: close\r\n");
     p = stpcpy(p, "\r\n");
 
-	bytes = write(sockfd, buffer, strlen(buffer));
+    bytes = write(sockfd, buffer, strlen(buffer));
 
     if ( bytes < 18 )
     {
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 
     ALWAYS("Reading response...");
 
-	bytes = read(sockfd, buffer, BUFSIZE);
+    bytes = read(sockfd, buffer, BUFSIZE);
 
     if ( bytes > 7 && 0==strncmp(buffer, "HTTP/1.1", 8) )
     {
@@ -116,8 +116,8 @@ int main(int argc, char *argv[])
 
     /* -------------------------------------------------------------------------- */
 
-	close(conn);
-	close(sockfd);
+    close(conn);
+    close(sockfd);
 
     log_finish();
 
