@@ -24,12 +24,13 @@ mkdir res      # static resources like pictures, html-s, robots.txt etc.
 mkdir resmin   # resources to be minified (CSS and JS)
 mkdir logs     # peek there if there's something wrong
 ```
-4. Throw all the files from src directory here to your src. **m** and **te** scripts must have executable flag. In src:
+4. Throw all the files from src directory here to your src. **m** and **te** scripts must have executable flag:
 ```
+cd src
 chmod u+x m
 chmod u+x te
 ```
-5. Go to src and compile:
+5. Compile:
 ```
 m
 ```
