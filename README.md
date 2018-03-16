@@ -6,7 +6,7 @@ Silgy supports https, anonymous and registered user sessions, binary data upload
 Silgy requires Linux/UNIX computer with C or C++ compiler for development. Production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 ## Quick Start Guide
 I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php), then to spend a quarter on watching some introductory video (I'll try to find something good later or any suggestions are welcome).
-### 1. In your $HOME, create a project directory, i.e. **web**:  
+### 1. In your $HOME, create a project directory, i.e. web:  
 ```
 mkdir web
 ```
@@ -29,7 +29,7 @@ and add a new line like this:
 ```
 Defaults    env_keep += "SILGYDIR"
 ```
-(If you don't know vi yet, here is a [cheat sheet](http://www.atmos.albany.edu/daes/atmclasses/atm350/vi_cheat_sheet.pdf).)  
+(If you don't know **vi** editor yet, here is a [cheat sheet](http://www.atmos.albany.edu/daes/atmclasses/atm350/vi_cheat_sheet.pdf).)  
   
 ### 4. In your project directory, create some others:
 ```
