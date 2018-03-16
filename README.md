@@ -5,7 +5,7 @@ Silgy supports https, anonymous and registered user sessions, binary data upload
   
 Silgy requires Linux/UNIX computer with C or C++ compiler for development. Production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 ## Quick Start Guide
-1. In your $HOME, create a project directory, i.e. web:  
+1. In your $HOME, create a project directory, i.e. **web**:  
 ```
 mkdir web
 ```
