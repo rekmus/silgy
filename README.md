@@ -26,7 +26,7 @@ mkdir resmin   # resources to be minified (CSS and JS)
 mkdir logs     # peek there if there's something wrong
 ```
 ### 4. Throw all the files from src directory here to your src.
-I use [WinSCP](https://winscp.net/eng/index.php) for moving files between my PC and the Cloud.
+I use [WinSCP](https://winscp.net/eng/index.php) for moving files between my PC and the Cloud.  
 **m** and **te** scripts must have executable flag:
 ```
 cd src
