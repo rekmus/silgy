@@ -33,7 +33,21 @@ chmod u+x te
 ```
 m
 ```
-Run:
+6. Add SILGYDIR to sudoers:
+```
+sudo visudo
+```
+then find the block starting with:
+```
+Defaults    env_reset
+```
+and add a new line like this:
+```
+Defaults    env_keep += "SILGYDIR"
+```
+(If you don't know vi yet, here is a [cheat sheet](http://www.atmos.albany.edu/daes/atmclasses/atm350/vi_cheat_sheet.pdf).)  
+  
+7. Run:
 ```
 sudo te
 ```
