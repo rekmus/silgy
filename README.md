@@ -7,18 +7,18 @@ Silgy requires Linux/UNIX computer with C or C++ compiler for development. Produ
 ## Quick Start Guide
 I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php), then to spend a quarter on watching some introductory video (I'll try to find something good later or any suggestions are welcome).
 ### 1. In your $HOME, create a project directory, i.e. web:  
-```
+```source.sh
 mkdir web
 ```
 ### 2. Set SILGYDIR environment variable to your project directory.
 If you use bash, that would be in .bash_profile in your home directory:
-```
+```source.sh
 export SILGYDIR=/home/ec2-user/web
 ```
 Then you need to either restart your shell session or execute above command.  
   
 ### 3. Add SILGYDIR to sudoers:
-```
+```source.sh
 sudo visudo
 ```
 then find the block starting with:
