@@ -27,6 +27,7 @@ mkdir logs     # peek there if there's something wrong
 ```
 ### 4. Throw all the files from src directory here to your src.
 I use [WinSCP](https://winscp.net/eng/index.php) for moving files between my PC and the Cloud.  
+  
 **m** and **te** scripts must have executable flag:
 ```
 cd src
@@ -37,7 +38,7 @@ chmod u+x te
 ```
 m
 ```
-or — if you don't have a . (dot) in your PATH, you may need to do:
+or — if you don't have a . (dot) in your PATH — you may need to do:
 ```
 ./m
 ```
