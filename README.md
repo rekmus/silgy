@@ -5,17 +5,18 @@ Silgy supports https, anonymous and registered user sessions, binary data upload
   
 Silgy requires Linux/UNIX computer with C or C++ compiler for development. Production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 ## Quick Start Guide
-1. In your $HOME, create a project directory, i.e. **web**:  
+### 1. In your $HOME, create a project directory, i.e. **web**:  
 ```
 mkdir web
 ```
-2. Set SILGYDIR environment variable to your project directory. If you use bash, that would be in .bash_profile in your home directory:
+### 2. Set SILGYDIR environment variable to your project directory.
+If you use bash, that would be in .bash_profile in your home directory:
 ```
 export SILGYDIR=/home/ec2-user/web
 ```
 Then you need to either restart your shell session or execute above command.  
   
-3. In your project directory, create some others:
+### 3. In your project directory, create some others:
 ```
 cd web
 mkdir src      # all the sources from this repository's src
@@ -24,17 +25,24 @@ mkdir res      # static resources like pictures, html-s, robots.txt etc.
 mkdir resmin   # resources to be minified (CSS and JS)
 mkdir logs     # peek there if there's something wrong
 ```
-4. Throw all the files from src directory here to your src. **m** and **te** scripts must have executable flag:
+### 4. Throw all the files from src directory here to your src.
+I use [WinSCP](https://winscp.net/eng/index.php) for moving files between my PC and the Cloud.
+**m** and **te** scripts must have executable flag:
 ```
 cd src
 chmod u+x m
 chmod u+x te
 ```
-5. Compile:
+### 5. Compile:
 ```
 m
 ```
-6. Add SILGYDIR to sudoers:
+or — if you don't have a . (dot) in your PATH, you may need to do:
+```
+./m
+```
+instead.
+### 6. Add SILGYDIR to sudoers:
 ```
 sudo visudo
 ```
@@ -48,7 +56,7 @@ Defaults    env_keep += "SILGYDIR"
 ```
 (If you don't know vi yet, here is a [cheat sheet](http://www.atmos.albany.edu/daes/atmclasses/atm350/vi_cheat_sheet.pdf).)  
   
-7. Run:
+### 7. Run:
 ```
 sudo te
 ```
