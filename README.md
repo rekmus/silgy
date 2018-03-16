@@ -40,7 +40,7 @@ mkdir res      # static resources like pictures, html-s, robots.txt etc.
 mkdir resmin   # resources to be minified (CSS and JS)
 mkdir logs     # peek there if there's something wrong
 ```
-### 5. Throw all the files from src directory here to your src.
+### 5. Throw all the files from [src](https://github.com/silgy/silgy/tree/master/src) directory here to your src.
 **m** and **te** scripts must have executable flag:
 ```source.sh
 cd src
