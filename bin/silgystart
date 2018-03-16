@@ -1,3 +1,4 @@
 #!/bin/sh
 
 nohup $SILGYDIR/bin/silgy_app &
+sleep 1  # return to prompt
