@@ -141,7 +141,7 @@ typedef char                        bool;
 #define PRINT_HTTP_LAST_MODIFIED(s) (sprintf(G_tmp, "Last-Modified: %s\r\n", s), HOUT(G_tmp))
 
 /* connection */
-#define PRINT_HTTP_CONNECTION(ci)   (sprintf(G_tmp, "Connection: %s\r\n", conn[ci].keep_alive?"keep-alive":"close"), HOUT(G_tmp))
+#define PRINT_HTTP_CONNECTION(ci)   (sprintf(G_tmp, "Connection: %s\r\n", conn[ci].keep_alive?"Keep-Alive":"close"), HOUT(G_tmp))
 
 /* vary */
 #define PRINT_HTTP_VARY_DYN         HOUT("Vary: Accept-Encoding, User-Agent\r\n")

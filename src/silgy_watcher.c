@@ -130,6 +130,9 @@ int main(int argc, char *argv[])
 -------------------------------------------------------------------------- */
 void restart()
 {
+    if ( strlen(APP_ADMIN_EMAIL) )
+        sendemail(0, APP_ADMIN_EMAIL, "Silgy restart", "Silgy Watcher had to restart web server.");
+
     ALWAYS("Stopping...");
     system(STOP_COMMAND);
 
