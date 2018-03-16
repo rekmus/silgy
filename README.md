@@ -17,32 +17,7 @@ export SILGYDIR=/home/ec2-user/web
 ```
 Then you need to either restart your shell session or execute above command.  
   
-### 3. In your project directory, create some others:
-```
-cd web
-mkdir src      # all the sources from this repository's src
-mkdir bin      # executable(s), silgy.conf, blacklist.txt will be there
-mkdir res      # static resources like pictures, html-s, robots.txt etc.
-mkdir resmin   # resources to be minified (CSS and JS)
-mkdir logs     # peek there if there's something wrong
-```
-### 4. Throw all the files from src directory here to your src.
-**m** and **te** scripts must have executable flag:
-```
-cd src
-chmod u+x m
-chmod u+x te
-```
-### 5. Compile:
-```
-m
-```
-or — if you don't have a . (dot) in your PATH — you may need to do:
-```
-./m
-```
-instead.
-### 6. Add SILGYDIR to sudoers:
+### 3. Add SILGYDIR to sudoers:
 ```
 sudo visudo
 ```
@@ -55,6 +30,32 @@ and add a new line like this:
 Defaults    env_keep += "SILGYDIR"
 ```
 (If you don't know vi yet, here is a [cheat sheet](http://www.atmos.albany.edu/daes/atmclasses/atm350/vi_cheat_sheet.pdf).)  
+  
+### 4. In your project directory, create some others:
+```
+cd web
+mkdir src      # all the sources from this repository's src
+mkdir bin      # executable(s), silgy.conf, blacklist.txt will be there
+mkdir res      # static resources like pictures, html-s, robots.txt etc.
+mkdir resmin   # resources to be minified (CSS and JS)
+mkdir logs     # peek there if there's something wrong
+```
+### 5. Throw all the files from src directory here to your src.
+**m** and **te** scripts must have executable flag:
+```
+cd src
+chmod u+x m
+chmod u+x te
+```
+### 6. Compile:
+```
+m
+```
+or — if you don't have a . (dot) in your PATH — you may need to do:
+```
+./m
+```
+instead.  
   
 ### 7. Run:
 ```
