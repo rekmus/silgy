@@ -68,11 +68,15 @@ instead.
   
 ### 7. Run:
 ```source.sh
-sudo te
+sudo ./te
 ```
 That's it. Your app should now be online.  
   
-Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and **app_process_req()** is your main, called with every browser request.  
+## Note for Amazon Web Services (AWS) users
+For your own good, fresh EC2 instances have a very restricted security policy with only SSH port (22) open. If you haven't done so, you need to edit that policy and add HTTP port (80) before AWS lets your browser in.  
+  
+## Where's my program?
+Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and **app_process_req()** is your main, called with every browser request. After downloading Silgy, there's a third version of Hello World there to help you get on.  
   
 ## Static Resources
 Static resources are simply the files you want to serve from disk, as opposed to dynamic content that is generated in your code. Statics usually include pictures, css, robots.txt etc.  
