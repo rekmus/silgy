@@ -50,7 +50,7 @@ mkdir resmin   # resources to be minified (CSS and JS)
 mkdir logs     # peek there if there's something wrong
 ```
 ### 5. Throw all the files from [src](https://github.com/silgy/silgy/tree/master/src) directory here to your src.
-If you are on Windows, click **Clone or download** button, then choose ZIP version, unpack it locally and copy content of src to your instance — I use WinSCP for this.  
+If you are on Windows, click **Clone or download** button, then choose ZIP version, unpack it locally and copy content of **src** to your instance — I use WinSCP for this.  
   
 Back to terminal window and **m** and **te** scripts must have executable flag:
 ```source.sh
@@ -60,14 +60,8 @@ chmod u+x te
 ```
 ### 6. Compile:
 ```source.sh
-m
-```
-or — if you don't have a . (dot) in your PATH — you may need to do:
-```source.sh
 ./m
 ```
-instead.  
-  
 ### 7. Run:
 ```source.sh
 sudo ./te
