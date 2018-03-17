@@ -24,6 +24,8 @@ static char *uri_decode_sql_esc(char *src, int srclen, char *dest, int maxlen);
 static int xctod(int c);
 static void minify_1(char *dest, const char *src);
 static int minify_2(char *dest, const char *src);
+static void get_byteorder32(void);
+static void get_byteorder64(void);
 
 
 
@@ -1852,71 +1854,83 @@ void msleep(long n)
 
 
 /* --------------------------------------------------------------------------
-  check system's endianness
+   Check system's endianness
 -------------------------------------------------------------------------- */
-void get_byteorder32()
+void get_byteorder()
 {
-        union {
-                long l;
-                char c[4];
-        } test;
-
-        DBG("Checking 32-bit endianness...");
-
-        memcpy(&test, 0, sizeof(test));
-
-        test.l = 1;
-
-        if ( test.c[3] && !test.c[2] && !test.c[1] && !test.c[0] )
-        {
-            DBG("This is big endian");
-                return;
-        }
-
-        if ( !test.c[3] && !test.c[2] && !test.c[1] && test.c[0] )
-        {
-            DBG("This is little endian");
-                return;
-        }
-
-        DBG("Unknown Endianness!");
+    if ( sizeof(long) == 4 )
+        get_byteorder32();
+    else
+        get_byteorder64();
 }
 
 
 /* --------------------------------------------------------------------------
-  check system's endianness
+   Check system's endianness
 -------------------------------------------------------------------------- */
-void get_byteorder64()
+static void get_byteorder32()
 {
-        union {
-                long l;
-                char c[8];
-        } test;
+    union {
+        long l;
+        char c[4];
+    } test;
 
-        DBG("Checking 64-bit endianness...");
+    DBG("Checking 32-bit endianness...");
 
-        memcpy(&test, 0, sizeof(test));
+    memset(&test, 0, sizeof(test));
 
-        test.l = 1;
+    test.l = 1;
 
-        if ( test.c[7] && !test.c[3] && !test.c[2] && !test.c[1] && !test.c[0] )
-        {
-            DBG("This is big endian");
-                return;
-        }
+    if ( test.c[3] && !test.c[2] && !test.c[1] && !test.c[0] )
+    {
+        INF("This is Big Endian");
+        return;
+    }
 
-        if ( !test.c[7] && !test.c[3] && !test.c[2] && !test.c[1] && test.c[0] )
-        {
-            DBG("This is little endian");
-                return;
-        }
+    if ( !test.c[3] && !test.c[2] && !test.c[1] && test.c[0] )
+    {
+        INF("This is Little Endian");
+        return;
+    }
 
-        DBG("Unknown Endianness!");
+    DBG("Unknown Endianness!");
 }
 
 
 /* --------------------------------------------------------------------------
-  convert database datetime to epoch time
+   Check system's endianness
+-------------------------------------------------------------------------- */
+static void get_byteorder64()
+{
+    union {
+        long l;
+        char c[8];
+    } test;
+
+    DBG("Checking 64-bit endianness...");
+
+    memset(&test, 0, sizeof(test));
+
+    test.l = 1;
+
+    if ( test.c[7] && !test.c[3] && !test.c[2] && !test.c[1] && !test.c[0] )
+    {
+        INF("This is Big Endian");
+        return;
+    }
+
+    if ( !test.c[7] && !test.c[3] && !test.c[2] && !test.c[1] && test.c[0] )
+    {
+        INF("This is Little Endian");
+        return;
+    }
+
+    DBG("Unknown Endianness!");
+}
+
+
+/* --------------------------------------------------------------------------
+   Convert database datetime to epoch time
 -------------------------------------------------------------------------- */
 time_t db2epoch(const char *str)
 {

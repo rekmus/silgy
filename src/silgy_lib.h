@@ -85,15 +85,13 @@ extern "C" {
     char *lib_html_esc(const char *str);
     char *lib_html_unesc(const char *str);
     char *uri_encode(const char *str);
-//  void str2upper(char *dest, const char *src);
     char *upper(const char *str);
     char *stp_right(char *str);
     bool strdigits(const char *src);
     char *nospaces(char *dst, const char *src);
     void get_random_str(char *dest, int len);
     void msleep(long n);
-    void get_byteorder32(void);
-    void get_byteorder64(void);
+    void get_byteorder(void);
     time_t db2epoch(const char *str);
     bool sendemail(int ci, const char *to, const char *subject, const char *message);
     int lib_minify(char *dest, const char *src);

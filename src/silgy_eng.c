@@ -869,13 +869,12 @@ static void set_state_sec(int ci, long bytes)
 -------------------------------------------------------------------------- */
 static bool read_conf()
 {
-    char    default_conf_path[256];
     char    *p_conf_path=NULL;
     char    conf_path[256];
 
     /* set defaults */
 
-    G_logLevel = 2;
+    G_logLevel = 4;
     G_httpPort = 80;
     G_httpsPort = 443;
     G_certFile[0] = EOS;
@@ -889,16 +888,16 @@ static bool read_conf()
 
     /* get the conf file path & name */
 
-    if ( NULL == (p_conf_path=getenv("SILGY_CONF")) )
+    if ( NULL != (p_conf_path=getenv("SILGY_CONF")) )
     {
-        sprintf(default_conf_path, "%s/bin/silgy.conf", G_appdir);
-        printf("SILGY_CONF not set, trying %s...\n", default_conf_path);
-        p_conf_path = default_conf_path;
+        return lib_read_conf(p_conf_path);
     }
-
-    /* parse the conf file */
-
-    return lib_read_conf(p_conf_path);
+    else    /* no SILGY_CONF -- try default */
+    {
+        sprintf(conf_path, "%s/bin/silgy.conf", G_appdir);
+        printf("SILGY_CONF not set, trying %s...\n", conf_path);
+        return lib_read_conf(conf_path);
+    }
 }
 
 
@@ -1051,8 +1050,7 @@ static bool init(int argc, char **argv)
 
     /* check endianness and some parameters */
 
-    get_byteorder32();
-    get_byteorder64();
+    get_byteorder();
 
     ALWAYS("");
     ALWAYS("----------------------------------------------------------------------------------------------");
