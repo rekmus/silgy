@@ -9,7 +9,6 @@ I assume that you know how to log in to your Linux. If not, and you're on Window
 ### 0. Install C++ compiler
 Optional step in case you haven't done this yet :)  
 ```source.sh
-sudo yum install gcc
 sudo yum install gcc-c++
 ```
 And if you're planning to use MySQL:
