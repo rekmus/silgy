@@ -68,7 +68,7 @@ sudo ./te
 ```
 That's it. Your app should now be online. For now, ignore the warnings about configuration file — you can add it [later](https://github.com/silgy/silgy/blob/master/README.md#configuration-file).  
   
-## Note for Amazon Web Services (AWS) users
+### Note for Amazon Web Services (AWS) users
 For your own good, fresh EC2 instances have a very restricted security policy with only SSH port (22) open. If you haven't done so, you need to edit that policy and add HTTP port (80) before AWS lets your browser in.  
   
 ## Where's my program?
