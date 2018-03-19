@@ -7,7 +7,7 @@ Silgy requires Linux/UNIX computer with C or C++ compiler for development. Produ
 ## Quick Start Guide
 I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php), then to spend a quarter on watching some introductory video (I'll try to find something good later, meanwhile suggestions are welcome).  
   
-I've managed to produce a [step by step video tutorial](https://www.youtube.com/watch?v=OtatIkHQAzs) on how to set Silgy Hello World up on free AWS EC2 instance.  
+I've managed to produce a [step by step video tutorial](https://www.youtube.com/watch?v=OtatIkHQAzs) on how to set Silgy Hello World up on free AWS EC2 instance. It shows AWS part (creating an instance, assigning public IP address, connecting to it via WinSCP and PuTTY) as well as the below steps.  
   
 ### 0. Install C++ compiler
 Optional step in case you haven't done this yet :)  
