@@ -228,7 +228,7 @@ test=0
 myParam1=someValue
 myParam2=someOtherValue
 ```
-Change the contents to your taste. Note that you can use config file to pass your own parameters.  
+Change the contents to your taste. Note that you can use config file to pass your own parameters which you can assign to variables in [app_set_param()](https://github.com/silgy/silgy/blob/master/README.md#void-app_set_paramconst-char-label-const-char-value).  
   
 ## Compilation Switches
 Because speed is Silgy's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
@@ -254,6 +254,16 @@ Always redirect to APP_DOMAIN.
 ### BLACKLISTAUTOUPDATE
 Automatically add malicious IPs to file defined in *blockedIPList*.  
   
+### MEM_SMALL, MEM_MEDIUM, MEM_BIG, MEM_HUGE
+Sets the memory model.
+
+macro|max connections|max user sessions
+-----|---------------|-----------------
+MEM_SMALL (default)|50|10
+MEM_MEDIUM|500|100
+MEM_BIG|2500|500
+MEM_HUGE|10000|2000
+
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
 ## Macros
