@@ -257,13 +257,19 @@ Automatically add malicious IPs to file defined in *blockedIPList*.
 ### MEM_SMALL, MEM_MEDIUM, MEM_BIG, MEM_HUGE
 Sets the memory model.
 
-macro|max connections|max user sessions
------|---------------|-----------------
-MEM_SMALL (default)|50|10
-MEM_MEDIUM|500|100
-MEM_BIG|2500|500
-MEM_HUGE|10000|2000
-
+macro|max connections|max user sessions|recommended memory
+-----|--------------:|----------------:|-----------------:
+MEM_SMALL (default)|50|10|1GB
+MEM_MEDIUM|500|100|2GB
+MEM_BIG|2500|500|4GB
+MEM_HUGE|10000|2000|>4GB
+When all the connections or sessions are taken, the next request will receive status 503.  
+  
+Note that memory requirements heavily depend on your application profile, particularily on how much data you want to store in each user session. Current memory usage is printed at the beginning and at the end of each log file, like this:
+```
+Memory: 13 216 kB (12.91 MB / 0.01 GB)
+```
+  
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
 ## Macros
