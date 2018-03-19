@@ -256,6 +256,7 @@ Automatically add malicious IPs to file defined in *blockedIPList*.
   
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
+## Macros
 ### bool REQ(string)
 Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
 ```
@@ -411,6 +412,19 @@ CALL_ASYNC_NR("set_counter", counter);
 Return TRUE if service matches *string*.  
 Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
   
+## Functions
+### void app_set_param(const char \*label, const char \*value)
+Assign config file parameter to a variable.  
+Example:
+```source.c++
+void app_set_param(const char *label, const char *value)
+{
+    if ( PARAM("Param1") )
+        strcpy(M_param1, value);
+    else if ( PARAM("Param2") )
+        strcpy(M_param1, value);
+}
+```
 ### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
 Process anynchronous call response.  
 Example:
