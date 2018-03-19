@@ -280,6 +280,7 @@ OUTCHECKREALLOC (default)|Every write checks available space, resize if necessar
 OUTCHECK|Every write checks available space, stop writing when exhausted
 OUTFAST|No check, therefore fastest
 
+  
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
 ## Macros
