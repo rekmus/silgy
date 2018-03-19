@@ -5,7 +5,10 @@ Silgy supports https, anonymous and registered user sessions, binary data upload
   
 Silgy requires Linux/UNIX computer with C or C++ compiler for development. Production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 ## Quick Start Guide
-I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php), then to spend a quarter on watching some introductory video (I'll try to find something good later, meanwhile suggestions are welcome).
+I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php), then to spend a quarter on watching some introductory video (I'll try to find something good later, meanwhile suggestions are welcome).  
+  
+I've managed to produce a [step by step video tutorial](https://www.youtube.com/watch?v=OtatIkHQAzs) on how to set Silgy Hello World up on free AWS EC2 instance.  
+  
 ### 0. Install C++ compiler
 Optional step in case you haven't done this yet :)  
 ```source.sh
