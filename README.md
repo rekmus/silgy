@@ -271,6 +271,15 @@ Note that memory requirements heavily depend on your application profile, partic
 Memory: 13 216 kB (12.91 MB / 0.01 GB)
 ```
   
+### OUTCHECKREALLOC, OUTCHECK, OUTFAST
+Sets the write to output buffer mode. This is the buffer that becomes response body. Initially, all the output buffers are of OUT_BUFSIZE size (currently 256 kB) and they may or may not be resized if necessary.
+
+macro|notes
+-----|-----
+OUTCHECKREALLOC (default)|Every write checks available space, resize if necessary
+OUTCHECK|Every write checks available space, stop writing when exhausted
+OUTFAST|No check, therefore fastest
+
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
 ## Macros
