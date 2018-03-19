@@ -269,7 +269,7 @@ Memory: 13 216 kB (12.91 MB / 0.01 GB)
 ```
   
 ### OUTCHECKREALLOC, OUTCHECK, OUTFAST
-Sets the write to output buffer mode, that is the mode in which [OUT]() works. This is the buffer that becomes response body. Initially, all the output buffers are of OUT_BUFSIZE size (currently 256 kB) and they may or may not be resized if necessary.
+Sets the [OUT](https://github.com/silgy/silgy/blob/master/README.md#void-outstring-) mode. Initially, all the output buffers are of OUT_BUFSIZE size (currently 256 kB) and they may or may not be resized if necessary.
 
 macro|notes
 -----|-----
