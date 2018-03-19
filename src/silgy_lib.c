@@ -1883,13 +1883,13 @@ static void get_byteorder32()
 
     if ( test.c[3] && !test.c[2] && !test.c[1] && !test.c[0] )
     {
-        INF("This is Big Endian");
+        INF("This is 32-bit Big Endian");
         return;
     }
 
     if ( !test.c[3] && !test.c[2] && !test.c[1] && test.c[0] )
     {
-        INF("This is Little Endian");
+        INF("This is 32-bit Little Endian");
         return;
     }
 
@@ -1915,13 +1915,13 @@ static void get_byteorder64()
 
     if ( test.c[7] && !test.c[3] && !test.c[2] && !test.c[1] && !test.c[0] )
     {
-        INF("This is Big Endian");
+        INF("This is 64-bit Big Endian");
         return;
     }
 
     if ( !test.c[7] && !test.c[3] && !test.c[2] && !test.c[1] && test.c[0] )
     {
-        INF("This is Little Endian");
+        INF("This is 64-bit Little Endian");
         return;
     }
 
