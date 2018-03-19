@@ -263,6 +263,7 @@ MEM_SMALL (default)|50|10|1GB
 MEM_MEDIUM|500|100|2GB
 MEM_BIG|2500|500|4GB
 MEM_HUGE|10000|2000|>4GB
+
 When all the connections or sessions are taken, the next request will receive status 503.  
   
 Note that memory requirements heavily depend on your application profile, particularily on how much data you want to store in each user session. Current memory usage is printed at the beginning and at the end of each log file, like this:
