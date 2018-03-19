@@ -236,8 +236,8 @@ Add your switches to [dev.env](https://github.com/silgy/silgy/blob/master/src/de
 ```
 WEB_CFLAGS="-D HTTPS -D DBMYSQL"
 ```
-### HTTPS
-Use HTTPS. Both ports will be open and listened to. You need to supply *certFile*, *keyFile* and optionally *certChainFile* (for example Let's Encrypt generates this separately).  
+### BLACKLISTAUTOUPDATE
+Automatically add malicious IPs to file defined in *blockedIPList*.  
   
 ### DBMYSQL
 Open MySQL connection at the start and close it at clean up. Use *dbName*, *dbUser* and *dbPassword*.  
@@ -245,14 +245,11 @@ Open MySQL connection at the start and close it at clean up. Use *dbName*, *dbUs
 ### DBMYSQLRECONNECT
 Open MySQL connection with auto-reconnect option. I recommend not to use this option at the beginning, until you're familiar with MySQL settings, for reconnect happens quietly and without you knowing, this may be impacting your app's performance. However, if you know what [wait_timeout](https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_wait_timeout) is and you know how often you may expect those quiet reconnects, by all means — use it.  
   
-### USERS
-Use users module. It provides an API for handling all registered users logic, including common things like i.e. password reset. You need to have DBMYSQL defined as well. (and some tables in the database, specs coming soon)  
-  
 ### DOMAINONLY
 Always redirect to APP_DOMAIN.  
   
-### BLACKLISTAUTOUPDATE
-Automatically add malicious IPs to file defined in *blockedIPList*.  
+### HTTPS
+Use HTTPS. Both ports will be open and listened to. You need to supply *certFile*, *keyFile* and optionally *certChainFile* (for example Let's Encrypt generates this separately).  
   
 ### MEM_SMALL, MEM_MEDIUM, MEM_BIG, MEM_HUGE
 Sets the memory model.
@@ -280,6 +277,8 @@ OUTCHECKREALLOC (default)|Every write checks available space, resize if necessar
 OUTCHECK|Every write checks available space, stop writing when exhausted
 OUTFAST|No check, therefore fastest
 
+### USERS
+Use users module. It provides an API for handling all registered users logic, including common things like i.e. password reset. You need to have DBMYSQL defined as well. (and some tables in the database, specs coming soon)  
   
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
