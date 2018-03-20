@@ -278,12 +278,12 @@ OUTCHECK|Every write checks available space, stop writing when exhausted
 OUTFAST|No check, therefore fastest
 
 ### QS_DEF_HTML_ESCAPE, QS_DEF_SQL_ESCAPE, QS_DEF_DONT_ESCAPE
-Sets the [QS]() mode.
+Sets the [QS](https://github.com/silgy/silgy/blob/master/README.md#bool-qsparam-variable) mode.
 
 macro|notes
 -----|-----
-QS_DEF_HTML_ESCAPE (default)|HTML-escape value, i.e. ' will become &apos;
-QS_DEF_SQL_ESCAPE|SQL-escape value, i.e. ' will become \'
+QS_DEF_HTML_ESCAPE (default)|HTML-escape value, i.e. ' will become &amp;apos;
+QS_DEF_SQL_ESCAPE|SQL-escape value, i.e. ' will become \\'
 QS_DEF_DONT_ESCAPE|Don't escape value
 
 ### USERS
