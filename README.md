@@ -236,6 +236,13 @@ Add your switches to [dev.env](https://github.com/silgy/silgy/blob/master/src/de
 ```
 WEB_CFLAGS="-D HTTPS -D DBMYSQL"
 ```
+### ASYNC
+Use asynchronous module.  
+  
+The server opens two queues at the start. One for requests, one for responses. Names are defined in ASYNC_REQ_QUEUE and ASYNC_RES_QUEUE. Then the app can use [CALL_ASYNC]() and [CALL_ASYNC_NR]() and []() will be called when response arrives.  
+  
+There's also a service library, yet to be documented.  
+  
 ### BLACKLISTAUTOUPDATE
 Automatically add malicious IPs to file defined in *blockedIPList*.  
   
