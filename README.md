@@ -239,7 +239,7 @@ WEB_CFLAGS="-D HTTPS -D DBMYSQL"
 ### ASYNC
 Use asynchronous module.  
   
-The server opens two queues at the start. One for requests, one for responses. Names are defined in ASYNC_REQ_QUEUE and ASYNC_RES_QUEUE. Then the app can use [CALL_ASYNC]() and [CALL_ASYNC_NR]() and []() will be called when response arrives.  
+The server opens two queues at the start. One for requests, one for responses. Names are defined in ASYNC_REQ_QUEUE and ASYNC_RES_QUEUE. Then the app can use [CALL_ASYNC](https://github.com/silgy/silgy/blob/master/README.md#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy/blob/master/README.md#void-call_async_nrconst-char-service-const-char-data-int-timeout) and [app_async_done()]() will be called when the response arrives.  
   
 There's also a service library, yet to be documented.  
   
