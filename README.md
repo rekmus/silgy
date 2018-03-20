@@ -1,5 +1,5 @@
 # Silgy
-Silgy is a simple back-end framework for ultra fast, small and mid-sized web applications or microservices. It contains asynchronous (non-blocking) web engine that allows you to compile and link your logic into one executable that responds immediately to HTTP requests, without creating new thread or — God forbid — process. It's small enough to fit on free 1GB AWS t2.micro instance, together with MySQL server. Typical response time is around 100 µs (microseconds).  
+Silgy is a simple back-end framework for ultra fast, small and mid-sized web applications or microservices. It contains asynchronous (non-blocking) web engine that allows you to compile and link your logic into one executable that responds immediately to HTTP requests, without creating new thread or — God forbid — process. It's small enough to fit on free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds).  
   
 <div align="center">
 <img src="https://minishare.com/show?p=NKEs7ybn&i=2" width=600/>
