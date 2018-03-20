@@ -324,7 +324,7 @@ if ( QS("firstname", qs_firstname) )
 ```
 QS comes with four SQL- and XSS-injection security flavours:  
   
-QS - default - behaviour depends on QS_DEF_ compilation switch (by default it's QS_DEF_HTML_ESCAPE).  
+QS - default - behaviour depends on [QS_DEF_](https://github.com/silgy/silgy/blob/master/README.md#qs_def_html_escape-qs_def_sql_escape-qs_def_dont_escape) compilation switch (by default it's QS_DEF_HTML_ESCAPE).  
 QS_HTML_ESCAPE - value is HTML-escaped  
 QS_SQL_ESCAPE - value is SQL-escaped  
 QS_DONT_ESCAPE - value is not escaped  
