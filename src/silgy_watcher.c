@@ -11,8 +11,9 @@
 #define START_COMMAND "sudo $SILGYDIR/bin/silgystart"
 
 
-char G_logLevel=4;
-FILE *G_log;
+bool G_test=0;
+char G_logLevel=0;
+FILE *G_log=NULL;
 struct tm *G_ptm;
 int G_pid;
 time_t G_now;
@@ -30,6 +31,7 @@ void restart(void);
 -------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
+    char config[256];
     int sockfd;
     int conn;
     int bytes;
@@ -44,14 +46,17 @@ int main(int argc, char *argv[])
     G_ptm = gmtime(&G_now);
     sprintf(G_dt, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
 
+    sprintf(config, "%s/bin/silgy_watcher.conf", G_appdir);
+    lib_read_conf(config);
+
     /* start log */
 
-    if ( !log_start("watch", TRUE) )
+    if ( G_logLevel && !log_start("watch", G_test) )
         return -1;
 
     /* -------------------------------------------------------------------------- */
 
-    ALWAYS("Trying to connect...");
+    INF("Trying to connect...");
 
     if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
     {
@@ -67,17 +72,17 @@ int main(int argc, char *argv[])
     {
         ERR("connect failed, errno = %d (%s)", errno, strerror(errno));
         close(sockfd);
-        ALWAYS("Restarting...");
+        INF("Restarting...");
         restart();
         log_finish();
         return 0;
     }
 
-    ALWAYS("Connected");
+    INF("Connected");
 
     /* -------------------------------------------------------------------------- */
 
-    ALWAYS("Sending request...");
+    INF("Sending request...");
 
     char *p=buffer;     /* stpcpy is more convenient and faster than strcat */
 
@@ -100,17 +105,17 @@ int main(int argc, char *argv[])
 
     /* -------------------------------------------------------------------------- */
 
-    ALWAYS("Reading response...");
+    INF("Reading response...");
 
     bytes = read(sockfd, buffer, BUFSIZE);
 
     if ( bytes > 7 && 0==strncmp(buffer, "HTTP/1.1", 8) )
     {
-        ALWAYS("Response OK");
+        INF("Response OK");
     }
     else
     {
-        ALWAYS("Response NOT OK, restarting...");
+        WAR("Response NOT OK, restarting...");
         restart();
     }
 
@@ -133,12 +138,12 @@ void restart()
     if ( strlen(APP_ADMIN_EMAIL) )
         sendemail(0, APP_ADMIN_EMAIL, "Silgy restart", "Silgy Watcher had to restart web server.");
 
-    ALWAYS("Stopping...");
+    INF("Stopping...");
     system(STOP_COMMAND);
 
-    ALWAYS("Waiting 1 second...");
+    INF("Waiting 1 second...");
     sleep(1);
 
-    ALWAYS("Starting...");
+    INF("Starting...");
     system(START_COMMAND);
 }

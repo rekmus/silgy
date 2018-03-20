@@ -2306,7 +2306,7 @@ bool lib_read_conf(const char *file)
 
     if ( NULL == (h_file=fopen(file, "r")) )
     {
-        printf("Error opening %s, using defaults.\n", file);
+//        printf("Error opening %s, using defaults.\n", file);
         return FALSE;
     }
 
