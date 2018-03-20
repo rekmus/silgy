@@ -5,9 +5,9 @@ Silgy supports https, anonymous and registered user sessions, binary data upload
   
 Silgy requires Linux/UNIX computer with C or C++ compiler for development. Production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 ## Quick Start Guide
-I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php), then to spend a quarter on watching some introductory video (I'll try to find something good later, meanwhile suggestions are welcome).  
+I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php).  
   
-I've managed to produce a [step by step video tutorial](https://www.youtube.com/watch?v=OtatIkHQAzs) on how to set Silgy Hello World up on free AWS EC2 instance. It shows AWS part (creating an instance, assigning public IP address, connecting to it via WinSCP and PuTTY) as well as the below steps.  
+I've managed to produce a [step by step video tutorial](https://www.youtube.com/watch?v=OtatIkHQAzs) on how to set Silgy Hello World up on a free AWS EC2 instance. It shows AWS part (creating an instance, assigning public IP address, connecting to it via WinSCP and PuTTY) as well as the below steps.  
   
 ### 0. Install C++ compiler
 Optional step in case you haven't done this yet :)  
@@ -185,7 +185,7 @@ int app_process_req(int ci)
 ```
   
 ## Configuration File
-By default silgy server starts listening on the port 80. As long as you use the same computer for development and production, you need a way to test your application with different port, since only one process can listen on the port 80. Also, if you want to use https, you will need to pass your certificate file path. You can set these and some more in a configuration file. Default name is silgy.conf and you can overwrite this with SILGY_CONF environment variable. Create a new file in $SILGYDIR/bin and paste the below:
+By default Silgy server starts listening on the port 80. As long as you use the same computer for development and production, you need a way to test your application with different port, since only one process can listen on the port 80. Also, if you want to use https, you will need to pass your certificate file path. You can set these and some more in a configuration file. Default name is silgy.conf and you can overwrite this with SILGY_CONF environment variable. Create a new file in $SILGYDIR/bin and paste the below:
 ```
 # ----------------------------------------------------------------------------
 # between 1...4 (most detailed)
@@ -239,7 +239,7 @@ WEB_CFLAGS="-D HTTPS -D DBMYSQL"
 ### ASYNC
 Use asynchronous module.  
   
-The server opens two queues at the start. One for requests, one for responses. Names are defined in ASYNC_REQ_QUEUE and ASYNC_RES_QUEUE. Then the app can use [CALL_ASYNC](https://github.com/silgy/silgy/blob/master/README.md#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy/blob/master/README.md#void-call_async_nrconst-char-service-const-char-data-int-timeout) to call the services, and [app_async_done()](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted) will be called when the response arrives.  
+If defined, the server opens two queues at the start: one for requests, one for responses. Then the app can use [CALL_ASYNC](https://github.com/silgy/silgy/blob/master/README.md#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy/blob/master/README.md#void-call_async_nrconst-char-service-const-char-data-int-timeout) to call the services, and [app_async_done()](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted) will be called when the response arrives.  
   
 There's also a service library, yet to be documented.  
   
