@@ -290,7 +290,7 @@ QS_DEF_DONT_ESCAPE|Don't escape value
 Use users module. It provides an API for handling all registered users logic, including common things like i.e. password reset. You need to have DBMYSQL defined as well. (and some tables in the database, specs coming soon)  
   
 ## API Reference
-I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in silgy.
+I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in Silgy.
 ## Macros
 ### bool REQ(string)
 Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
