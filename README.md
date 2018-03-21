@@ -267,7 +267,7 @@ Always redirect to APP_DOMAIN.
 ### HTTPS
 Use HTTPS. Both ports will be open and listened to.  
   
-1. Get a certificate and set *certFile*, *keyFile* and optionally *certChainFile* in config  
+1. Get a certificate and set *certFile*, *keyFile* and optionally *certChainFile* in config. [Let's Encrypt](https://letsencrypt.org/) is a good place to get one for free. Their certs are accepted by all popular browsers.  
   
 2. Add -D HTTPS and OpenSSL libraries to [m](https://github.com/silgy/silgy/blob/master/src/m), so it would look like this:
 ```
