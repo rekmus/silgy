@@ -33,7 +33,8 @@ export SILGYDIR=/home/ec2-user/web
 ```
 Then you need to either restart your shell session or execute above command.  
   
-### 3. Add SILGYDIR to sudoers:
+### 3. Add SILGYDIR to sudoers
+Without it sudo won't see it.
 ```source.sh
 sudo visudo
 ```
