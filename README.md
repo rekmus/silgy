@@ -18,7 +18,7 @@ Optional step in case you haven't done this yet :)
 ```source.sh
 sudo yum install gcc-c++
 ```
-Optionally, if you're planning to use HTTPS:
+Optionally, if you're planning to use [HTTPS](https://github.com/silgy/silgy/blob/master/README.md#https):
 ```source.sh
 sudo yum install openssl-devel
 ```
