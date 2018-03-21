@@ -241,9 +241,9 @@ Change the contents to your taste. Note that you can use config file to pass you
   
 ## Compilation Switches
 Because speed is Silgy's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
-Add your switches to [dev.env](https://github.com/silgy/silgy/blob/master/src/dev.env) before compilation, i.e.:
+Add your switches to [m](https://github.com/silgy/silgy/blob/master/src/m) before compilation, i.e.:
 ```
-WEB_CFLAGS="-D HTTPS -D DBMYSQL"
+g++ silgy_app.cpp silgy_eng.c silgy_lib.c -D HTTPS -D DBMYSQL ...
 ```
 ### ASYNC
 Use asynchronous module.  
@@ -269,7 +269,7 @@ Use HTTPS. Both ports will be open and listened to.
   
 1. Get a certificate and set *certFile*, *keyFile* and optionally *certChainFile* in config  
   
-2. Add -D HTTPS and OpenSSL libraries to [m](), so it would look like this:
+2. Add -D HTTPS and OpenSSL libraries to [m](https://github.com/silgy/silgy/blob/master/src/m), so it would look like this:
 ```
 g++ silgy_app.cpp silgy_eng.c silgy_lib.c -D HTTPS -o $SILGYDIR/bin/silgy_app_dev -lssl -lcrypto
 ```
