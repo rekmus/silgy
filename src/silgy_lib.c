@@ -12,6 +12,22 @@
 #include "silgy.h"
 
 
+/* globals */
+
+FILE        *G_log=NULL;            /* log file handle */
+char        G_logLevel=0;           /* log level */
+char        G_appdir[256]=".";      /* application root dir */
+char        G_test=0;               /* test run */
+int         G_pid=0;                /* pid */
+struct tm   *G_ptm={0};             /* human readable current time */
+time_t      G_now=0;                /* current time */
+char        G_dt[20]="";            /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
+char        G_tmp[TMP_BUFSIZE];     /* temporary string buffer */
+char        *G_shm_segptr=NULL;     /* SHM pointer */
+
+
+/* locals */
+
 static char M_df=0;         /* date format */
 static char M_tsep=' ';     /* thousand separator */
 static char M_dsep='.';     /* decimal separator */

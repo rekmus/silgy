@@ -11,18 +11,6 @@
 #define START_COMMAND "sudo $SILGYDIR/bin/silgystart"
 
 
-bool G_test=0;
-char G_logLevel=0;
-FILE *G_log=NULL;
-struct tm *G_ptm;
-int G_pid;
-time_t G_now;
-char G_appdir[256];
-char G_dt[20];
-char G_tmp[1048576];
-char *G_shm_segptr;
-
-
 void restart(void);
 
 

@@ -176,6 +176,7 @@ typedef char                        bool;
 
 #define IN_BUFSIZE                  8192            /* incoming request buffer length (8 kB) */
 #define OUT_BUFSIZE                 262144          /* initial HTTP response buffer length (256 kB) */
+#define TMP_BUFSIZE                 1048576         /* temporary string buffer size (1 MB) */
 #define MAX_POST_DATA_BUFSIZE       16777216+1048576    /* max incoming POST data length (16+1 MB) */
 #define MAX_LOG_STR_LEN             4095            /* max log string length */
 #define MAX_METHOD_LEN              7               /* method length */
@@ -522,7 +523,7 @@ extern long     G_days_up;                  /* web server's days up */
 extern conn_t   conn[MAX_CONNECTIONS];      /* HTTP connections & requests -- by far the most important structure around */
 #endif
 extern int      G_open_conn;                /* number of open connections */
-extern char     G_tmp[1048576];             /* temporary buffer used to write anything to response HTTP header or content */
+extern char     G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
 #ifndef ASYNC_SERVICE
 extern usession_t uses[MAX_SESSIONS+1];     /* user sessions -- they start from 1 */
 #endif

@@ -44,7 +44,6 @@ static struct {                         /* default auth level is set in app.h --
 /* globals */
 
 /* read from the config file */
-char        G_logLevel;
 int         G_httpPort;
 int         G_httpsPort;
 char        G_cipherList[256];
@@ -55,23 +54,16 @@ char        G_dbName[128];
 char        G_dbUser[128];
 char        G_dbPassword[128];
 char        G_blockedIPList[256];
-char        G_test;
 /* end of config params */
-int         G_pid;                      /* pid */
-char        G_appdir[256];              /* application root dir */
-FILE        *G_log;                     /* log file handle */
 long        G_days_up;                  /* web server's days up */
 #ifndef ASYNC_SERVICE
 conn_t      conn[MAX_CONNECTIONS];      /* HTTP connections & requests -- by far the most important structure around */
 #endif
 int         G_open_conn;                /* number of open connections */
-char        G_tmp[1048576];         /* temporary buffer used to write anything to response HTTP header or content */
 #ifndef ASYNC_SERVICE
 usession_t  uses[MAX_SESSIONS+1];       /* user sessions -- they start from 1 */
 #endif
 int         G_sessions;                 /* number of active user sessions */
-time_t      G_now;                      /* current time */
-struct tm   *G_ptm;                     /* human readable current time */
 char        G_last_modified[32];        /* response header field with server's start time */
 #ifdef DBMYSQL
 MYSQL       *G_dbconn;                  /* database connection */
@@ -83,13 +75,11 @@ mqd_t       G_queue_res;                /* response queue */
 async_res_t ares[MAX_ASYNC];            /* async response array */
 long        G_last_call_id;             /* counter */
 #endif
-char        G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 char        G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
 int         G_blacklist_cnt;            /* M_blacklist length */
 counters_t  G_cnts_today;               /* today's counters */
 counters_t  G_cnts_yesterday;           /* yesterday's counters */
 counters_t  G_cnts_day_before;          /* day before's counters */
-char        *G_shm_segptr;              /* SHM pointer */
 
 /* locals */
 
