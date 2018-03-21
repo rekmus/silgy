@@ -26,7 +26,7 @@ sudo yum install mysql-devel
 ```source.sh
 mkdir web
 ```
-### 2. Set SILGYDIR environment variable to your project directory.
+### 2. Set SILGYDIR environment variable to your project directory
 If you use bash, that would be in .bash_profile in your home directory:
 ```source.sh
 export SILGYDIR=/home/ec2-user/web
