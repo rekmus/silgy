@@ -19,8 +19,8 @@ char        G_logLevel=0;           /* log level */
 char        G_appdir[256]=".";      /* application root dir */
 char        G_test=0;               /* test run */
 int         G_pid=0;                /* pid */
+time_t      G_now=0;                /* current time (GMT) */
 struct tm   *G_ptm={0};             /* human readable current time */
-time_t      G_now=0;                /* current time */
 char        G_dt[20]="";            /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 char        G_tmp[TMP_BUFSIZE];     /* temporary string buffer */
 char        *G_shm_segptr=NULL;     /* SHM pointer */
@@ -1845,7 +1845,7 @@ static unsigned long req=0;
 
     max = strlen(chars);
 
-    srand(time(NULL)*G_pid+req);
+    srand((G_now-1500000000)+G_pid+req);
 
     ++req;
 

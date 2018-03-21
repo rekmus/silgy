@@ -972,7 +972,6 @@ static bool init(int argc, char **argv)
     /* init globals */
 
     G_pid = getpid();
-    G_log = NULL;
     G_days_up = 0;
     G_open_conn = 0;
     G_sessions = 0;
@@ -1011,6 +1010,10 @@ static bool init(int argc, char **argv)
         return FALSE;
 
     ALWAYS("Starting program");
+    ALWAYS("");
+
+    ALWAYS("sizeof(time_t) = %d", sizeof(time_t));
+    ALWAYS("G_now = %ld", G_now);
     ALWAYS("");
 
 #ifdef __linux__
