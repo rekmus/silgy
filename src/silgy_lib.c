@@ -1840,17 +1840,14 @@ void get_random_str(char *dest, int len)
 {
 const char  *chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 static unsigned long req=0;
-    int     max;
     int     i;
-
-    max = strlen(chars);
 
     srand((G_now-1500000000)+G_pid+req);
 
     ++req;
 
     for ( i=0; i<len; ++i )
-        dest[i] = chars[rand() % max];
+        dest[i] = chars[rand() % 62];
 
     dest[i] = EOS;
 }

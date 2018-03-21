@@ -1012,9 +1012,9 @@ static bool init(int argc, char **argv)
     ALWAYS("Starting program");
     ALWAYS("");
 
-    ALWAYS("sizeof(time_t) = %d", sizeof(time_t));
-    ALWAYS("G_now = %ld", G_now);
-    ALWAYS("");
+/*    DBG("sizeof(time_t) = %d", sizeof(time_t));
+    DBG("G_now = %ld", G_now);
+    DBG(""); */
 
 #ifdef __linux__
     INF("This is Linux");
