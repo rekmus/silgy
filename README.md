@@ -18,7 +18,11 @@ Optional step in case you haven't done this yet :)
 ```source.sh
 sudo yum install gcc-c++
 ```
-And if you're planning to use MySQL:
+Optionally, if you're planning to use HTTPS:
+```source.sh
+sudo yum install openssl-devel
+```
+Optionally, if you're planning to use MySQL:
 ```source.sh
 sudo yum install mysql-devel
 ```
@@ -261,8 +265,14 @@ Open MySQL connection with auto-reconnect option. I recommend not to use this op
 Always redirect to APP_DOMAIN.  
   
 ### HTTPS
-Use HTTPS. Both ports will be open and listened to. You need to supply *certFile*, *keyFile* and optionally *certChainFile* (for example Let's Encrypt generates this separately).  
+Use HTTPS. Both ports will be open and listened to.  
   
+1. Get a certificate and set *certFile*, *keyFile* and optionally *certChainFile* in config  
+  
+2. Add -D HTTPS and OpenSSL libraries to [m](), so it would look like this:
+```
+g++ silgy_app.cpp silgy_eng.c silgy_lib.c -D HTTPS -o $SILGYDIR/bin/silgy_app_dev -lssl -lcrypto
+```
 ### MEM_SMALL, MEM_MEDIUM, MEM_BIG, MEM_HUGE
 Sets the memory model.
 
