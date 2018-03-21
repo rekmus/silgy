@@ -17,8 +17,12 @@
 #include <errno.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <signal.h>
+#include <dirent.h>
 
 #ifdef DBMYSQL
 #include <mysql.h>

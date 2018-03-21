@@ -7,10 +7,6 @@
    Main web engine module
 -------------------------------------------------------------------------- */
 
-#include <signal.h>
-#include <sys/socket.h>
-#include <dirent.h>
-#include <sys/stat.h>
 
 #include "silgy.h"
 
