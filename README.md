@@ -482,6 +482,25 @@ if ( silgy_read_param("Param1", buffer) )
     // use buffer
 }
 ```
+### void silgy_set_auth_level(const char \*resource, char level)
+Set required authorization level for a resource.  
+*level* can have one of the following values:
+
+macro|notes
+-----|-----
+AUTH_LEVEL_NONE|No user session is required.
+AUTH_LEVEL_ANONYMOUS|Anonymous user session is required. If there's no valid as cookie, anonymous user session is started.
+AUTH_LEVEL_LOGGEDIN|Logged in user session is required. If request does not have valid ls cookie, it's redirected to URI defined in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_LOGIN_URI.
+AUTH_LEVEL_ADMIN|Logged in as admin is required.
+
+Resources not listed with silgy_set_auth_level() get default level specified in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_DEF_AUTH_LEVEL.  
+[Static resources](https://github.com/silgy/silgy#static-resources) always have AUTH_LEVEL_NONE.  
+Example:
+```source.c++
+// in app_init()
+silgy_set_auth_level("about", AUTH_LEVEL_NONE);
+silgy_set_auth_level("dashboard", AUTH_LEVEL_LOGGEDIN);
+```
 ## Engine callbacks
 ### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
 [ASYNC](https://github.com/silgy/silgy#async) compilation switch is required.  
