@@ -470,6 +470,8 @@ Return TRUE if service matches *string*.
 Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
   
 ## Functions
+### void silgy_random(char \*dest, int len)
+Generate random string of *len* length and copy it to *dest*. Generated string can contain letters (lower- and upper-case) and digits.
 ### bool silgy_read_param(const char \*param, char \*dest)
 Copy config file parameter to a variable. Returns true if found. *dest* can be NULL to only do presence check.  
 Example:
@@ -479,6 +481,7 @@ if ( silgy_read_param("Param1", buffer) )
     // use buffer
 }
 ```
+## Engine callbacks
 ### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
 Process anynchronous call response.  
 Example:
