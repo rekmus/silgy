@@ -237,7 +237,7 @@ test=0
 myParam1=someValue
 myParam2=someOtherValue
 ```
-Change the contents to your taste. Note that you can use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy/blob/master/README.md#void-app_set_paramconst-char-label-const-char-value).  
+Change the contents to your taste. Note that you can use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy/blob/master/README.md#bool-silgy_read_paramconst-char-param-char-dest).  
   
 ## Compilation Switches
 Because speed is Silgy's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
