@@ -398,7 +398,7 @@ if ( REQ_MOB )
 ```
   
 ### char* REQ_LANG
-User agent language code.  
+User agent primary language code.  
   
 ### bool HOST(string)
 Return TRUE if HTTP request *Host* header matches *string*. Case is ignored.  
