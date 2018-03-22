@@ -219,6 +219,8 @@ certChainFile=/etc/letsencrypt/live/example.com/chain.pem
 
 # ----------------------------------------------------------------------------
 # database connection details
+dbHost=                # leave empty if on local host
+dbPort=0               # 0 is good if on local host
 dbName=mydatabase
 dbUser=mysqluser
 dbPassword=mysqlpassword
@@ -493,7 +495,7 @@ AUTH_LEVEL_ANONYMOUS|Anonymous user session is required. If there's no valid **a
 AUTH_LEVEL_LOGGEDIN|Logged in user session is required. If request does not have valid **ls** cookie, it's redirected to URI defined in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_LOGIN_URI.
 AUTH_LEVEL_ADMIN|Logged in as admin is required.
 
-Resources not listed with silgy_set_auth_level() get default level specified in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_DEF_AUTH_LEVEL.  
+Resources not set with silgy_set_auth_level() get default level specified in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_DEF_AUTH_LEVEL.  
 [Static resources](https://github.com/silgy/silgy#static-resources) always have AUTH_LEVEL_NONE.  
 Example:
 ```source.c++
