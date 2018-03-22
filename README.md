@@ -237,7 +237,7 @@ test=0
 myParam1=someValue
 myParam2=someOtherValue
 ```
-Change the contents to your taste. Note that you can use config file to pass your own parameters which you can assign to variables in [app_set_param()](https://github.com/silgy/silgy/blob/master/README.md#void-app_set_paramconst-char-label-const-char-value).  
+Change the contents to your taste. Note that you can use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy/blob/master/README.md#void-app_set_paramconst-char-label-const-char-value).  
   
 ## Compilation Switches
 Because speed is Silgy's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
@@ -470,16 +470,13 @@ Return TRUE if service matches *string*.
 Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
   
 ## Functions
-### void app_set_param(const char \*label, const char \*value)
-Assign config file parameter to a variable.  
+### bool silgy_read_param(const char \*param, char \*dest)
+Copy config file parameter to a variable. Returns true if found. *dest* can be NULL to only do presence check.  
 Example:
 ```source.c++
-void app_set_param(const char *label, const char *value)
+if ( silgy_read_param("Param1", buffer) )
 {
-    if ( PARAM("Param1") )
-        strcpy(M_param1, value);
-    else if ( PARAM("Param2") )
-        strcpy(M_param1, value);
+    // use buffer
 }
 ```
 ### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
