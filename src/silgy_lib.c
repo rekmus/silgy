@@ -2311,7 +2311,7 @@ bool lib_read_conf(const char *file)
     fseek(h_file, 0, SEEK_END);     /* determine the file size */
     long size = ftell(h_file);
     rewind(h_file);
-    if ( (M_conf=malloc(size+1)) == NULL )
+    if ( (M_conf=(char*)malloc(size+1)) == NULL )
     {
         printf("ERROR: Couldn't get %ld bytes for M_conf\n", size+1);
         fclose(h_file);
@@ -2336,7 +2336,7 @@ bool lib_read_conf(const char *file)
                 value[i] = EOS;
 #ifndef ASYNC_SERVICE
                 eng_set_param(label, value);
-                app_set_param(label, value);
+//                app_set_param(label, value);
 #endif
             }
             now_label = 1;
@@ -2362,7 +2362,7 @@ bool lib_read_conf(const char *file)
                 value[i] = EOS;
 #ifndef ASYNC_SERVICE
                 eng_set_param(label, value);
-                app_set_param(label, value);
+//                app_set_param(label, value);
 #endif
             }
             now_label = 0;
@@ -2387,7 +2387,7 @@ bool lib_read_conf(const char *file)
         value[i] = EOS;
 #ifndef ASYNC_SERVICE
         eng_set_param(label, value);
-        app_set_param(label, value);
+//        app_set_param(label, value);
 #endif
     }
 
