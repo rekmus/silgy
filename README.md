@@ -476,6 +476,7 @@ Generate random string of *len* length and copy it to *dest*. Generated string c
 Copy config file parameter to a variable. Returns true if found. *dest* can be NULL to only do presence check.  
 Example:
 ```source.c++
+// in app_init()
 if ( silgy_read_param("Param1", buffer) )
 {
     // use buffer
@@ -483,6 +484,7 @@ if ( silgy_read_param("Param1", buffer) )
 ```
 ## Engine callbacks
 ### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
+[ASYNC](https://github.com/silgy/silgy#async) compilation switch is required.  
 Process anynchronous call response.  
 Example:
 ```source.c++
