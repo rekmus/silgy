@@ -243,6 +243,7 @@ Change the contents to your taste. Note that you can use config file to pass you
   
 ## Compilation Switches
 Because speed is Silgy's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
+  
 Add your switches to [m](https://github.com/silgy/silgy/blob/master/src/m) before compilation, i.e.:
 ```
 g++ silgy_app.cpp silgy_eng.c silgy_lib.c -D HTTPS -D DBMYSQL ...
