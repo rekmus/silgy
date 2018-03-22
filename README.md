@@ -489,8 +489,8 @@ Set required authorization level for a resource.
 macro|notes
 -----|-----
 AUTH_LEVEL_NONE|No user session is required.
-AUTH_LEVEL_ANONYMOUS|Anonymous user session is required. If there's no valid as cookie, anonymous user session is started.
-AUTH_LEVEL_LOGGEDIN|Logged in user session is required. If request does not have valid ls cookie, it's redirected to URI defined in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_LOGIN_URI.
+AUTH_LEVEL_ANONYMOUS|Anonymous user session is required. If there's no valid **as** cookie, anonymous user session is started.
+AUTH_LEVEL_LOGGEDIN|Logged in user session is required. If request does not have valid **ls** cookie, it's redirected to URI defined in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_LOGIN_URI.
 AUTH_LEVEL_ADMIN|Logged in as admin is required.
 
 Resources not listed with silgy_set_auth_level() get default level specified in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_DEF_AUTH_LEVEL.  
