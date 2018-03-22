@@ -117,23 +117,6 @@ void app_done()
 
 
 /* --------------------------------------------------------------------------
-
-   Read parameters from conf file
-
-   Example:
-
-    if ( PARAM("Param1") )
-        strcpy(M_param1, value);
-    else if ( PARAM("Param2") )
-        strcpy(M_param1, value);
-
--------------------------------------------------------------------------- */
-void app_set_param(const char *label, const char *value)
-{
-}
-
-
-/* --------------------------------------------------------------------------
    Called when starting new anonymous user session
 -------------------------------------------------------------------------- */
 void app_uses_init(int ci)

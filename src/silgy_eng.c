@@ -1239,8 +1239,6 @@ static bool init(int argc, char **argv)
 
     /* init user sessions */
 
-//  memset(&uses, 0, sizeof(uses));
-
     for (i=0; i<MAX_SESSIONS+1; ++i)
     {
         eng_uses_reset(i);
@@ -1724,9 +1722,7 @@ struct stat fstat;
         else
         {
             fseek(fd, 0, SEEK_END);     /* determine the file size */
-
             M_stat[i].len = ftell(fd);
-
             rewind(fd);
 
             if ( minify )
@@ -1740,13 +1736,14 @@ struct stat fstat;
                     closedir(dir);
                     return FALSE;
                 }
-                else    /* OK */
-                {
-                    rewind(fd);
-                }
+//                else    /* OK */
+//                {
+//                    rewind(fd);
+//                }
 
                 fread(data_tmp, M_stat[i].len, 1, fd);
-                data_tmp[M_stat[i].len] = EOS;
+//                data_tmp[M_stat[i].len] = EOS;
+                *(data_tmp+M_stat[i].len) = EOS;
 
                 /* can we use the same buffer again? */
                 M_stat[i].len = lib_minify(data_tmp, data_tmp); /* new length */
@@ -3211,7 +3208,7 @@ bool eng_uses_start(int ci)
 
     /* generate sesid */
 
-    get_random_str(sesid, SESID_LEN);
+    silgy_random(sesid, SESID_LEN);
 
     INF("Starting new session, usi=%d, sesid [%s]", conn[ci].usi, sesid);
 

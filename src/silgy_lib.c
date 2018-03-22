@@ -28,11 +28,13 @@ char        *G_shm_segptr=NULL;     /* SHM pointer */
 
 /* locals */
 
-static char M_df=0;         /* date format */
-static char M_tsep=' ';     /* thousand separator */
-static char M_dsep='.';     /* decimal separator */
+static char *M_conf=NULL;           /* config file content */
 
-static int  M_shmid;        /* SHM id */
+static char M_df=0;                 /* date format */
+static char M_tsep=' ';             /* thousand separator */
+static char M_dsep='.';             /* decimal separator */
+
+static int  M_shmid;                /* SHM id */
 
 static char *uri_decode(char *src, int srclen, char *dest, int maxlen);
 static char *uri_decode_html_esc(char *src, int srclen, char *dest, int maxlen);
@@ -70,8 +72,8 @@ void lib_get_app_dir()
     int len = strlen(G_appdir);
     if ( G_appdir[len-1] == '/' ) G_appdir[len-1] = EOS;
 }
-    
-    
+
+
 /* --------------------------------------------------------------------------
    Calculate elapsed time
 -------------------------------------------------------------------------- */
@@ -119,7 +121,7 @@ static int mem_parse_line(const char* line)
     while (!isdigit(*p)) ++p;       /* skip non-digits */
 
     while (isdigit(*p)) strret[i++] = *p++;
-        
+
     strret[i] = EOS;
 
 /*  DBG("mem_parse_line: line [%s]", line);
@@ -194,7 +196,7 @@ static char dst[1024];
     }
 
     dst[j] = EOS;
-    
+
     return dst;
 }
 
@@ -1009,16 +1011,16 @@ bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf)
 {
     char    *p;
     long    len;
-    
+
     p = get_qs_param_multipart(ci, fieldname, &len, NULL);
-    
+
     if ( !p ) return FALSE;
 
     if ( len > MAX_URI_VAL_LEN ) return FALSE;
 
     strncpy(retbuf, p, len);
     retbuf[len] = EOS;
-    
+
     return TRUE;
 }
 
@@ -1277,7 +1279,7 @@ static char *uri_decode_html_esc(char *src, int srclen, char *dest, int maxlen)
     char    *destp=dest;
     int     nwrote=0;
     char    tmp;
-    
+
     maxlen -= 7;
 
     for ( srcp=src; srcp<endp; ++srcp )
@@ -1430,7 +1432,7 @@ static char *uri_decode_sql_esc(char *src, int srclen, char *dest, int maxlen)
     char    *destp=dest;
     int     nwrote=0;
     char    tmp;
-    
+
     maxlen -= 3;
 
     for ( srcp=src; srcp<endp; ++srcp )
@@ -1741,25 +1743,6 @@ static char uri_encode[1024];
 /* --------------------------------------------------------------------------
    Convert string to upper
 ---------------------------------------------------------------------------*/
-/*void str2upper(char *dest, const char *src)
-{
-    int i;
-
-    for ( i=0; src[i]; ++i )
-    {
-        if ( src[i] >= 97 && src[i] <= 122 )
-            dest[i] = src[i] - 32;
-        else
-            dest[i] = src[i];
-    }
-
-    dest[i] = EOS;
-}*/
-
-
-/* --------------------------------------------------------------------------
-   Convert string to upper
----------------------------------------------------------------------------*/
 char *upper(const char *str)
 {
 static char upper[1024];
@@ -1836,13 +1819,13 @@ char *nospaces(char *dst, const char *src)
 /* --------------------------------------------------------------------------
    Generate random string
 -------------------------------------------------------------------------- */
-void get_random_str(char *dest, int len)
+void silgy_random(char *dest, int len)
 {
 const char  *chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 static unsigned long req=0;
     int     i;
 
-    srand((G_now-1500000000)+G_pid+req);
+    srand((G_now-1520000000)+G_pid+req);
 
     ++req;
 
@@ -2209,7 +2192,7 @@ static int minify_2(char *dest, const char *src)
                 || (src[i] != ' ' && src[i] != '\t' && src[i] != '\n' && src[i] != '\r')
                 || opencc )
             dest[j++] = src[i];
-        
+
         if ( openwo )
             word[wi++] = src[i];
 
@@ -2221,7 +2204,7 @@ static int minify_2(char *dest, const char *src)
     }
 
     dest[j] = EOS;
-    
+
     return j;
 }
 
@@ -2323,6 +2306,21 @@ bool lib_read_conf(const char *file)
         return FALSE;
     }
 
+    /* read content into M_conf for silgy_read_param */
+
+    fseek(h_file, 0, SEEK_END);     /* determine the file size */
+    long size = ftell(h_file);
+    rewind(h_file);
+    if ( (M_conf=malloc(size+1)) == NULL )
+    {
+        printf("ERROR: Couldn't get %ld bytes for M_conf\n", size+1);
+        fclose(h_file);
+        return FALSE;
+    }
+    fread(M_conf, size, 1, h_file);
+    *(M_conf+size) = EOS;
+    rewind(h_file);
+
     /* parse the conf file */
 
     while ( EOF != (c=fgetc(h_file)) )
@@ -2401,6 +2399,58 @@ bool lib_read_conf(const char *file)
 
 
 /* --------------------------------------------------------------------------
+   Get param from config file
+---------------------------------------------------------------------------*/
+bool silgy_read_param(const char *param, char *dest)
+{
+    char *p;
+
+    DBG("silgy_read_param [%s]", param);
+
+    if ( !M_conf )
+    {
+        ERR("No config file or not read yet");
+        return FALSE;
+    }
+
+    if ( (p=strstr(M_conf, param)) == NULL )
+    {
+        if ( dest ) dest[0] = EOS;
+        return FALSE;
+    }
+
+    /* string present but is it label or value? */
+
+    if ( p > M_conf && *(p-1) != '\n' )
+    {
+        /* looks like it's a value or it's commented out */
+        if ( dest ) dest[0] = EOS;
+        return FALSE;
+    }
+
+
+    /* param present ----------------------------------- */
+
+    if ( !dest ) return TRUE;   /* it's only a presence check */
+
+
+    /* copy value to dest ------------------------------ */
+
+    p += strlen(param);
+
+    while ( *p=='=' || *p==' ' || *p=='\t' )
+        ++p;
+
+    int i=0;
+
+    while ( *p != '\r' && *p != '\n' && *p != '#' && *p != EOS )
+        dest[i++] = *p++;
+
+    dest[i] = EOS;
+}
+
+
+/* --------------------------------------------------------------------------
    Create a pid file
 -------------------------------------------------------------------------- */
 char *lib_create_pid_file(const char *name)
@@ -2454,12 +2504,12 @@ bool lib_shm_create(long bytes)
     key = ftok(".", 'S');
 
     /* Open the shared memory segment - create if necessary */
-    if ( (M_shmid=shmget(key, bytes, IPC_CREAT|IPC_EXCL|0666)) == -1 ) 
+    if ( (M_shmid=shmget(key, bytes, IPC_CREAT|IPC_EXCL|0666)) == -1 )
     {
         printf("Shared memory segment exists - opening as client\n");
 
         /* Segment probably already exists - try as a client */
-        if ( (M_shmid=shmget(key, bytes, 0)) == -1 ) 
+        if ( (M_shmid=shmget(key, bytes, 0)) == -1 )
         {
             perror("shmget");
             return FALSE;
@@ -2680,16 +2730,16 @@ static char dst[1024];
  * Copyright (c) 2003 Apple Computer, Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
- * 
+ *
  * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
+ *
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
  * compliance with the License. Please obtain a copy of the License at
  * http://www.opensource.apple.com/apsl/ and read it before using this
  * file.
- * 
+ *
  * The Original Code and all software distributed under the License are
  * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
  * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
@@ -2697,7 +2747,7 @@ static char dst[1024];
  * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
  * Please see the License for the specific language governing rights and
  * limitations under the License.
- * 
+ *
  * @APPLE_LICENSE_HEADER_END@
  */
 /* ====================================================================

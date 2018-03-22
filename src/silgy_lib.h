@@ -89,7 +89,7 @@ extern "C" {
     char *stp_right(char *str);
     bool strdigits(const char *src);
     char *nospaces(char *dst, const char *src);
-    void get_random_str(char *dest, int len);
+    void silgy_random(char *dest, int len);
     void msleep(long n);
     void get_byteorder(void);
     time_t db2epoch(const char *str);
@@ -100,6 +100,7 @@ extern "C" {
     void date_inc(char *str, int days, int *dow);
     int date_cmp(const char *str1, const char *str2);
     bool lib_read_conf(const char *file);
+    bool silgy_read_param(const char *param, char *dest);
     char *lib_create_pid_file(const char *name);
 	bool lib_shm_create(long bytes);
 	void lib_shm_delete(long bytes);

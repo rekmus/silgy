@@ -614,7 +614,7 @@ unsigned long   sql_records;
 
     /* generate sesid */
 
-//  get_random_str(sesid, SESID_LEN);
+//  silgy_random(sesid, SESID_LEN);
 //  DBG("Generated new sesid: [%s]", sesid);
 
     /* use anonymous sesid */
@@ -1081,7 +1081,7 @@ unsigned long   sql_records;
 
         /* generate a key */
 
-        get_random_str(linkkey, PASSWD_RESET_KEY_LEN);
+        silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
 
         sprintf(sql_query, "INSERT INTO presets (user_id,linkkey,created) VALUES (%ld,'%s','%s')", uid, linkkey, G_dt);
         DBG("sql_query: %s", sql_query);
