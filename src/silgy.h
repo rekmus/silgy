@@ -509,6 +509,8 @@ extern char     G_cipherList[256];
 extern char     G_certFile[256];
 extern char     G_certChainFile[256];
 extern char     G_keyFile[256];
+extern char     G_dbHost[128];
+extern int      G_dbPort;
 extern char     G_dbName[128];
 extern char     G_dbUser[128];
 extern char     G_dbPassword[128];
@@ -557,7 +559,7 @@ extern char     *G_shm_segptr;              /* SHM pointer */
 extern "C" {
 #endif
     void eng_set_param(const char *label, const char *value);
-    void eng_set_auth_level(const char *resource, char level);
+    void silgy_set_auth_level(const char *resource, char level);
     bool eng_uses_start(int ci);
     void eng_uses_close(int usi);
     void eng_uses_reset(int usi);

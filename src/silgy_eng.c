@@ -50,6 +50,8 @@ char        G_cipherList[256];
 char        G_certFile[256];
 char        G_certChainFile[256];
 char        G_keyFile[256];
+char        G_dbHost[128];
+int         G_dbPort;
 char        G_dbName[128];
 char        G_dbUser[128];
 char        G_dbPassword[128];
@@ -866,6 +868,8 @@ static bool read_conf()
     G_certFile[0] = EOS;
     G_certChainFile[0] = EOS;
     G_keyFile[0] = EOS;
+    G_dbHost[0] = EOS;
+    G_dbPort = 0;
     G_dbName[0] = EOS;
     G_dbUser[0] = EOS;
     G_dbPassword[0] = EOS;
@@ -1025,6 +1029,8 @@ static bool init(int argc, char **argv)
     ALWAYS("logLevel = %d", G_logLevel);
     ALWAYS("httpPort = %d", G_httpPort);
     ALWAYS("httpsPort = %d", G_httpsPort);
+    ALWAYS("G_dbHost [%s]", G_dbHost);
+    ALWAYS("G_dbPort = %d", G_dbPort);
     ALWAYS("G_dbName [%s]", G_dbName);
     ALWAYS("G_test = %d", G_test);
 
@@ -1866,7 +1872,7 @@ static bool open_db()
     my_bool reconnect=1;
     mysql_options(G_dbconn, MYSQL_OPT_RECONNECT, &reconnect);
 #endif
-    if ( NULL == mysql_real_connect(G_dbconn, NULL, G_dbUser, G_dbPassword, G_dbName, 0, NULL, 0) )
+    if ( NULL == mysql_real_connect(G_dbconn, G_dbHost[0]?G_dbHost:NULL, G_dbUser, G_dbPassword, G_dbName, G_dbPort, NULL, 0) )
     {
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return FALSE;
@@ -3143,10 +3149,10 @@ void eng_set_param(const char *label, const char *value)
         strcpy(G_certChainFile, value);
     else if ( PARAM("keyFile") )
         strcpy(G_keyFile, value);
-//  else if ( PARAM("dbHost") )
-//      strcpy(G_dbHost, value);
-//  else if ( PARAM("dbPort") )
-//      G_dbPort = atoi(value);
+    else if ( PARAM("dbHost") )
+        strcpy(G_dbHost, value);
+    else if ( PARAM("dbPort") )
+        G_dbPort = atoi(value);
     else if ( PARAM("dbName") )
         strcpy(G_dbName, value);
     else if ( PARAM("dbUser") )
@@ -3163,7 +3169,7 @@ void eng_set_param(const char *label, const char *value)
 /* --------------------------------------------------------------------------
    Set required authorization level for the resource
 -------------------------------------------------------------------------- */
-void eng_set_auth_level(const char *resource, char level)
+void silgy_set_auth_level(const char *resource, char level)
 {
 static int current=0;
 
