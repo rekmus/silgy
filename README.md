@@ -219,8 +219,8 @@ certChainFile=/etc/letsencrypt/live/example.com/chain.pem
 
 # ----------------------------------------------------------------------------
 # database connection details
-dbHost=                # leave empty if on local host
-dbPort=0               # 0 is good if on local host
+#dbHost=                # not required if local
+#dbPort=                # not required if local
 dbName=mydatabase
 dbUser=mysqluser
 dbPassword=mysqlpassword
@@ -259,9 +259,11 @@ There's also a service library, yet to be documented.
 Automatically add malicious IPs to file defined in *blockedIPList*.  
   
 ### DBMYSQL
-Open MySQL connection at the start and close it at clean up. Use *dbName*, *dbUser* and *dbPassword*.  
+Open MySQL connection at the start and close it at clean up. Use *dbHost*, *dbPort*, *dbName*, *dbUser* and *dbPassword*.  
   
 ### DBMYSQLRECONNECT
+[DBMYSQL](https://github.com/silgy/silgy#dbmysql) compilation switch is required.  
+  
 Open MySQL connection with auto-reconnect option. I recommend not to use this option at the beginning, until you're familiar with MySQL settings, for reconnect happens quietly and without you knowing, this may be impacting your app's performance. However, if you know what [wait_timeout](https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_wait_timeout) is and you know how often you may expect those quiet reconnects, by all means — use it.  
   
 ### DOMAINONLY
@@ -507,6 +509,7 @@ silgy_set_auth_level("dashboard", AUTH_LEVEL_LOGGEDIN);
 ## Engine callbacks
 ### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
 [ASYNC](https://github.com/silgy/silgy#async) compilation switch is required.  
+  
 Process anynchronous call response.  
 Example:
 ```source.c++
