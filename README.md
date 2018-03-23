@@ -487,8 +487,8 @@ void create_css()  // called from app_init()
 {
     char dsk[2048];
     char mob[2048];
-    char css_desktop[2048];
-    char css_mobile[2048];
+    char dsk_min[2048];
+    char mob_min[2048];
 
     sprintf(dsk, ".w_border {color:%s; border:1px solid grey;}", red);
     sprintf(mob, ".w_border {color:%s; border:2px solid grey;}", red);
@@ -496,11 +496,11 @@ void create_css()  // called from app_init()
     sprintf(mob, " %s .no_border {color:%s; border:0;}", mob, red);
     // ...
 
-    silgy_minify(css_desktop, dsk);
-    silgy_add_to_static_res("dsk.css", css_desktop);
+    silgy_minify(dsk_min, dsk);
+    silgy_add_to_static_res("dsk.css", dsk_min);
 
-    silgy_minify(css_mobile, mob);
-    silgy_add_to_static_res("mob.css", css_mobile);
+    silgy_minify(mob_min, mob);
+    silgy_add_to_static_res("mob.css", mob_min);
 }
 ```
 ### int silgy_minify(char \*dest, const char \*src)
