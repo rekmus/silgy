@@ -372,6 +372,7 @@ int show_image(int ci, long user_id, long img_id)
 
     sql_row = mysql_fetch_row(result);
     lengths = mysql_fetch_lengths(result);
+    
     OUT_BIN(sql_row[1], lengths[1]);
 
     DBG("File: [%s], size = %ul", sql_row[0], lengths[1]);
@@ -388,6 +389,7 @@ QSVAL is just a typedef for C-style string, long enough to hold the value, as QS
 Example:  
 ```source.c++
 QSVAL qs_firstname;
+
 if ( QS("firstname", qs_firstname) )
     OUT("<p>Welcome %s!</p>", qs_firstname);
 ```
