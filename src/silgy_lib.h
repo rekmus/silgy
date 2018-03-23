@@ -81,9 +81,9 @@ extern "C" {
     char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
     char const *san(const char *str);
     char *san_long(const char *str);
-    char *lib_sql_esc(const char *str);
-    char *lib_html_esc(const char *str);
-    char *lib_html_unesc(const char *str);
+    char *silgy_sql_esc(const char *str);
+    char *silgy_html_esc(const char *str);
+    char *silgy_html_unesc(const char *str);
     char *uri_encode(const char *str);
     char *upper(const char *str);
     char *stp_right(char *str);

@@ -1517,7 +1517,7 @@ static int xctod(int c)
 /* --------------------------------------------------------------------------
    SQL-escape string
 -------------------------------------------------------------------------- */
-char *lib_sql_esc(const char *str)
+char *silgy_sql_esc(const char *str)
 {
 static char dst[MAX_LONG_URI_VAL_LEN+1];
     int     i=0, j=0;
@@ -1555,7 +1555,7 @@ static char dst[MAX_LONG_URI_VAL_LEN+1];
 /* --------------------------------------------------------------------------
    HTML-escape string
 -------------------------------------------------------------------------- */
-char *lib_html_esc(const char *str)
+char *silgy_html_esc(const char *str)
 {
 static char dst[MAX_LONG_URI_VAL_LEN+1];
     int     i=0, j=0;
@@ -1631,7 +1631,7 @@ static char dst[MAX_LONG_URI_VAL_LEN+1];
    ex unsan_noparse
    HTML un-escape string
 -------------------------------------------------------------------------- */
-char *lib_html_unesc(const char *str)
+char *silgy_html_unesc(const char *str)
 {
 static char dst[MAX_LONG_URI_VAL_LEN+1];
     int     i=0, j=0;

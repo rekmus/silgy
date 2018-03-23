@@ -140,12 +140,12 @@ unsigned long   sql_records;
 
     /* not found in memory -- try database */
 
-    strncpy(sanuagent, lib_sql_esc(conn[ci].uagent), DB_UAGENT_LEN);
+    strncpy(sanuagent, silgy_sql_esc(conn[ci].uagent), DB_UAGENT_LEN);
     sanuagent[DB_UAGENT_LEN] = EOS;
     if ( sanuagent[DB_UAGENT_LEN-1]=='\'' && sanuagent[DB_UAGENT_LEN-2]!='\'' )
         sanuagent[DB_UAGENT_LEN-1] = EOS;
 
-    sprintf(sql_query, "SELECT user_id, created FROM ulogins WHERE sesid='%s' AND uagent='%s'", lib_sql_esc(conn[ci].cookie_in_l), sanuagent);
+    sprintf(sql_query, "SELECT user_id, created FROM ulogins WHERE sesid='%s' AND uagent='%s'", silgy_sql_esc(conn[ci].cookie_in_l), sanuagent);
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -624,7 +624,7 @@ unsigned long   sql_records;
 
     /* save new session to ulogins and set the cookie */
 
-    strncpy(sanuagent, lib_sql_esc(conn[ci].uagent), DB_UAGENT_LEN);
+    strncpy(sanuagent, silgy_sql_esc(conn[ci].uagent), DB_UAGENT_LEN);
     sanuagent[DB_UAGENT_LEN] = EOS;
     if ( sanuagent[DB_UAGENT_LEN-1]=='\'' && sanuagent[DB_UAGENT_LEN-2]!='\'' )
         sanuagent[DB_UAGENT_LEN-1] = EOS;
@@ -766,9 +766,9 @@ int libusr_do_create_acc(int ci)
 
     /* welcome! -- and generate password hashes ------------------------------------------------------- */
 
-//    strcpy(login_san, lib_sql_esc(login));
-//    strcpy(email_san, lib_sql_esc(email));
-//    strcpy(name_san, lib_sql_esc(name));
+//    strcpy(login_san, silgy_sql_esc(login));
+//    strcpy(email_san, silgy_sql_esc(email));
+//    strcpy(name_san, silgy_sql_esc(name));
 
     if ( M_libusr.auth == AUTH_BY_LOGIN )
         doit(str1, str2, login, email[0]?email:STR_005, passwd);
@@ -813,7 +813,7 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
     if ( QS_HTML_ESCAPE("email", email) )
         stp_right(email);
 
-    strcpy(sanmessage, lib_html_esc(message));
+    strcpy(sanmessage, silgy_html_esc(message));
 
     /* remember user details in case of error or warning to correct */
 
@@ -1236,7 +1236,7 @@ unsigned long   sql_records;
     if ( strlen(linkkey) != PASSWD_RESET_KEY_LEN )
         return ERR_LINK_BROKEN;
 
-    sprintf(sql_query, "SELECT user_id, created FROM presets WHERE linkkey='%s'", lib_sql_esc(linkkey));
+    sprintf(sql_query, "SELECT user_id, created FROM presets WHERE linkkey='%s'", silgy_sql_esc(linkkey));
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
