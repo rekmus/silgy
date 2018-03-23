@@ -475,6 +475,27 @@ Return TRUE if service matches *string*.
 Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
   
 ## Functions
+### void silgy_add_to_static_res(const char \*name, char \*data)
+Add *data* to static resources. Instead of using a file, you may sometimes want to generate CSS or a picture and this function provides a way. Once you've added it, it's visible the same way other statics are.  
+Example:
+```source.c++
+static char red[8]="#b40000";
+char dsk[2048];
+char mob[2048];
+char css_desktop[2048];
+char css_mobile[2048];
+
+sprintf(dsk, ".w_border {color:%s; border:1px solid grey;}", red);
+sprintf(mob, ".w_border {color:%s; border:2px solid grey;}", red);
+sprintf(dsk, " %s .no_border {color:%s; border:0;}", dsk, red);
+sprintf(mob, " %s .no_border {color:%s; border:0;}", mob, red);
+// ...
+silgy_minify(css_desktop, dsk);
+silgy_add_to_static_res("dsk.css", css_desktop);
+
+silgy_minify(css_mobile, mob);
+silgy_add_to_static_res("mob.css", css_mobile);
+```
 ### void silgy_random(char \*dest, int len)
 Generate random string of *len* length and copy it to *dest*. Generated string can contain letters (lower- and upper-case) and digits.
 ### bool silgy_read_param(const char \*param, char \*dest)
