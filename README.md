@@ -296,7 +296,7 @@ Memory: 13 216 kB (12.91 MB / 0.01 GB)
 ```
   
 ### OUTCHECKREALLOC, OUTCHECK, OUTFAST
-Sets the [OUT]() and [OUT_BIN]() mode. Initially, all the output buffers are of OUT_BUFSIZE size (currently 256 kB) and they may or may not be resized if necessary.
+Sets the [OUT](https://github.com/silgy/silgy#void-outconst-char-string-) and [OUT_BIN](https://github.com/silgy/silgy#void-out_binconst-char-data-long-len) mode. Initially, all the output buffers are of OUT_BUFSIZE size (currently 256 kB) and they may or may not be resized if necessary.
 
 macro|notes
 -----|-----
@@ -305,7 +305,7 @@ OUTCHECK|Every write checks available space, stop writing when exhausted
 OUTFAST|No check, therefore fastest
 
 ### QS_DEF_HTML_ESCAPE, QS_DEF_SQL_ESCAPE, QS_DEF_DONT_ESCAPE
-Sets the [QS](https://github.com/silgy/silgy/blob/master/README.md#bool-qsparam-variable) mode.
+Sets the [QS](https://github.com/silgy/silgy#bool-qsconst-char-param-qsval-variable) mode.
 
 macro|notes
 -----|-----
