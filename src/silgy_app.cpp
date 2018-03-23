@@ -196,13 +196,3 @@ void app_async_done(int ci, const char *service, const char *data, bool timeoute
 {
 }
 #endif
-
-
-#ifdef EVERY_SECOND
-/* --------------------------------------------------------------------------
-   Called every second
--------------------------------------------------------------------------- */
-void app_every_second()
-{
-}
-#endif

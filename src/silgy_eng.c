@@ -315,9 +315,6 @@ struct timeval  timeout;                    /* Timeout for select */
         G_ptm = gmtime(&G_now);
         strftime(M_resp_date, 32, "%a, %d %b %Y %X %Z", G_ptm);
         sprintf(G_dt, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
-#ifdef EVERY_SECOND
-        app_every_second();
-#endif
 #ifdef ASYNC
         /* mark timeout-ed */
 
