@@ -393,7 +393,7 @@ QSVAL qs_firstname;
 if ( QS("firstname", qs_firstname) )
     OUT("<p>Welcome %s!</p>", qs_firstname);
 ```
-QS comes with four SQL- and XSS-injection security flavours:  
+QS comes in four SQL- and XSS-injection security flavours:  
   
 QS - default - behaviour depends on [QS_DEF_](https://github.com/silgy/silgy/blob/master/README.md#qs_def_html_escape-qs_def_sql_escape-qs_def_dont_escape) compilation switch (by default it's QS_DEF_HTML_ESCAPE).  
 QS_HTML_ESCAPE - value is HTML-escaped  
