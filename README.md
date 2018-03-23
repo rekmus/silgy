@@ -490,8 +490,11 @@ void create_css()  // called from app_init()
     char dsk_min[2048];
     char mob_min[2048];
 
+    // .w_border style used in .....
     sprintf(dsk, ".w_border {color:%s; border:1px solid grey;}", COLOR_RED);
     sprintf(mob, ".w_border {color:%s; border:2px solid grey;}", COLOR_RED);
+
+    // .no_border style used in .....
     sprintf(dsk, " %s .no_border {color:%s; border:0;}", dsk, COLOR_RED);
     sprintf(mob, " %s .no_border {color:%s; border:0;}", mob, COLOR_RED);
     // ...
