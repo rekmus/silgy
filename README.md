@@ -479,7 +479,7 @@ Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.
 Expose string *src* as a [static resource](https://github.com/silgy/silgy#static-resources). Instead of using a file, you may sometimes want to generate something like CSS. Once you've added it, it's visible the same way other statics are. *src* has to be a 0-terminated string.  
 Example:
 ```source.c++
-static char red[8]="#b40000";
+static char red[8]="#b40508";  // carefully crafted 'red' we want to use many times in CSS
 char dsk[2048];
 char mob[2048];
 char css_desktop[2048];
@@ -490,6 +490,7 @@ sprintf(mob, ".w_border {color:%s; border:2px solid grey;}", red);
 sprintf(dsk, " %s .no_border {color:%s; border:0;}", dsk, red);
 sprintf(mob, " %s .no_border {color:%s; border:0;}", mob, red);
 // ...
+
 silgy_minify(css_desktop, dsk);
 silgy_add_to_static_res("dsk.css", css_desktop);
 
@@ -505,6 +506,7 @@ Copy config file parameter to a variable. Returns true if found. *dest* can be N
 Example:
 ```source.c++
 // in app_init()
+char buffer[256];
 if ( silgy_read_param("Param1", buffer) )
 {
     // use buffer
