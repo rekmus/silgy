@@ -296,7 +296,7 @@ Memory: 13 216 kB (12.91 MB / 0.01 GB)
 ```
   
 ### OUTCHECKREALLOC, OUTCHECK, OUTFAST
-Sets the [OUT](https://github.com/silgy/silgy/blob/master/README.md#void-outstring-) mode. Initially, all the output buffers are of OUT_BUFSIZE size (currently 256 kB) and they may or may not be resized if necessary.
+Sets the [OUT]() and [OUT_BIN]() mode. Initially, all the output buffers are of OUT_BUFSIZE size (currently 256 kB) and they may or may not be resized if necessary.
 
 macro|notes
 -----|-----
@@ -319,7 +319,7 @@ Use users module. It provides an API for handling all registered users logic, in
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in Silgy.
 ## Macros
-### bool REQ(string)
+### bool REQ(const char \*string)
 Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
 ```
 URI: /calc?first=2&second=3  will be catched by  REQ("calc")
@@ -332,7 +332,7 @@ if ( REQ("calc") )
     process_calc(ci);
 ```
   
-### void OUT(string[, ...])
+### void OUT(const char \*string[, ...])
 Send *string* to a browser. Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).  
 Examples:
 ```source.c++
@@ -340,7 +340,49 @@ OUT("<!DOCTYPE html>");
 OUT("<p>There are %d records in the table.</p>", records);
 ```
   
-### bool QS(param, variable)
+### void OUT_BIN(const char \*data, long len)
+Send binary *data* to a browser. Typical usage would be to serve an image from a database.  
+Examples:
+```source.c++
+int show_image(int ci, long user_id, long img_id)
+{
+    int             ret=OK;
+    char            sql_query[1024];
+    MYSQL_RES       *result;
+    MYSQL_ROW       sql_row;
+    unsigned long   *lengths;
+
+    DBG("show_image");
+
+    sprintf(sql_query, "SELECT fname, bcontent FROM images WHERE user_id=%ld AND img_id=%ld", user_id, img_id);
+    DBG("sql_query: %s", sql_query);
+    mysql_query(G_dbconn, sql_query);
+    result = mysql_store_result(G_dbconn);
+    if ( !result )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    if ( !mysql_num_rows(result) )      /* no such entry */
+    {
+        mysql_free_result(result);
+        return ERR_NOT_FOUND;
+    }
+
+    sql_row = mysql_fetch_row(result);
+    lengths = mysql_fetch_lengths(result);
+    OUT_BIN(sql_row[1], lengths[1]);
+
+    DBG("File: [%s], size = %ul", sql_row[0], lengths[1]);
+
+    mysql_free_result(result);
+
+    return OK;
+}
+```
+  
+### bool QS(const char \*param, QSVAL variable)
 Search query string for *param* and if found, URI-decode it, copy its value to *variable* and return TRUE. Otherwise return FALSE. For POST, PUT and DELETE methods it assumes query string is in payload.  
 QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.  
 Example:  
@@ -360,7 +402,7 @@ And the fifth one:
   
 QS_RAW - value is not URI-decoded  
   
-### bool URI(string)
+### bool URI(const char \*string)
 Return TRUE if URI matches *string*.  
 Example:
 ```source.c++
@@ -368,7 +410,7 @@ if ( URI("temp/document.pdf") )
     send_pdf(ci);
 ```
   
-### bool REQ_METHOD(string)
+### bool REQ_METHOD(const char \*string)
 Return TRUE if request method matches *string*.  
 Example:  
 ```source.c++
@@ -405,7 +447,7 @@ if ( REQ_MOB )
 ### char* REQ_LANG
 User agent primary language code.  
   
-### bool HOST(string)
+### bool HOST(const char \*string)
 Return TRUE if HTTP request *Host* header matches *string*. Case is ignored.  
 Example:
 ```source.c++
@@ -420,14 +462,14 @@ Example:
 RES_STATUS(501);
 ```
   
-### void RES_CONTENT_TYPE(string)
+### void RES_CONTENT_TYPE(const char \*string)
 Set response content type to *string*.  
 Example:
 ```source.c++
 RES_CONTENT_TYPE("text/plain");
 ```
   
-### void RES_LOCATION(string)
+### void RES_LOCATION(const char \*string)
 Redirect browser to *string*.  
 Example:
 ```source.c++
@@ -440,8 +482,8 @@ Prevent response from being cached by browser.
 ### void REDIRECT_TO_LANDING
 Redirect browser to landing page.  
   
-### void ALWAYS(string[, ...]), void ERR(string[, ...]), void WAR(string[, ...]), void INF(string[, ...]), void DBG(string[, ...])
-Write *string* to log, depending on log level set in [conf file](https://github.com/silgy/silgy/blob/master/README.md#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
+### void ALWAYS(const char \*str[, ...]), void ERR(const char \*str[, ...]), void WAR(const char \*str[, ...]), void INF(const char \*str[, ...]), void DBG(const char \*str[, ...])
+Write *str* to log, depending on log level set in [conf file](https://github.com/silgy/silgy/blob/master/README.md#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
 ```
 ALWAYS - regardless of log level  
 ERR - only if log level >= 1, writes ERROR: before string  
@@ -470,7 +512,7 @@ Example:
 CALL_ASYNC_NR("set_counter", counter);
 ```
   
-### bool S(string)
+### bool S(const char \*string)
 Return TRUE if service matches *string*.  
 Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
   
