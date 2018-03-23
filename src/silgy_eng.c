@@ -313,7 +313,7 @@ struct timeval  timeout;                    /* Timeout for select */
 
         G_now = time(NULL);
         G_ptm = gmtime(&G_now);
-        strftime(M_resp_date, 32, "%a, %d %b %Y %X %Z", G_ptm);
+        strftime(M_resp_date, 32, "%a, %d %b %Y %T GMT", G_ptm);
         sprintf(G_dt, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
 #ifdef ASYNC
         /* mark timeout-ed */
@@ -373,7 +373,7 @@ struct timeval  timeout;                    /* Timeout for select */
                     /* set new Expires date */
                     sometimeahead = G_now + 3600*24*EXPIRES_IN_DAYS;
                     G_ptm = gmtime(&sometimeahead);
-                    strftime(M_expires, 32, "%a, %d %b %Y %X %Z", G_ptm);
+                    strftime(M_expires, 32, "%a, %d %b %Y %T GMT", G_ptm);
                     ALWAYS("New M_expires: %s", M_expires);
                     G_ptm = gmtime(&G_now); /* make sure G_ptm is up to date */
 
@@ -1197,12 +1197,12 @@ static bool init(int argc, char **argv)
 
     /* calculate Expires and Last-Modified header fields for static resources */
 
-    strftime(G_last_modified, 32, "%a, %d %b %Y %X %Z", G_ptm);
+    strftime(G_last_modified, 32, "%a, %d %b %Y %T GMT", G_ptm);
     DBG("Now is: %s\n", G_last_modified);
 
     sometimeahead = G_now + 3600*24*EXPIRES_IN_DAYS;
     G_ptm = gmtime(&sometimeahead);
-    strftime(M_expires, 32, "%a, %d %b %Y %X %Z", G_ptm);
+    strftime(M_expires, 32, "%a, %d %b %Y %T GMT", G_ptm);
     DBG("M_expires: %s\n", M_expires);
 
     G_ptm = gmtime(&G_now); /* reset to today */

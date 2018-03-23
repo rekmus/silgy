@@ -648,7 +648,7 @@ unsigned long   sql_records;
         DBG("keep is ON!");
         sometimeahead = G_now + 3600*24*30; /* 30 days */
         G_ptm = gmtime(&sometimeahead);
-        strftime(conn[ci].cookie_out_l_exp, 32, "%a, %d %b %Y %X %Z", G_ptm);
+        strftime(conn[ci].cookie_out_l_exp, 32, "%a, %d %b %Y %T GMT", G_ptm);
 //      DBG("conn[ci].cookie_out_l_exp: [%s]", conn[ci].cookie_out_l_exp);
         G_ptm = gmtime(&G_now); /* make sure G_ptm is always up to date */
     }

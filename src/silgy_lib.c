@@ -592,7 +592,7 @@ static char str[32];
 struct tm   *ptm;
 
     ptm = gmtime(&epoch);
-    strftime(str, 32, "%a, %d %b %Y %X %Z", ptm);
+    strftime(str, 32, "%a, %d %b %Y %T GMT", ptm);
 //  DBG("time_epoch2http: [%s]", str);
     return str;
 }
