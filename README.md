@@ -342,7 +342,7 @@ OUT("<p>There are %d records in the table.</p>", records);
   
 ### void OUT_BIN(const char \*data, long len)
 Send binary *data* to a browser. Typical usage would be to serve an image from a database.  
-Examples:
+Example:
 ```source.c++
 int show_image(int ci, long user_id, long img_id)
 {
