@@ -475,8 +475,8 @@ Return TRUE if service matches *string*.
 Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
   
 ## Functions
-### void silgy_add_to_static_res(const char \*name, char \*data)
-Add *data* to static resources. Instead of using a file, you may sometimes want to generate CSS or a picture and this function provides a way. Once you've added it, it's visible the same way other statics are.  
+### void silgy_add_to_static_res(const char \*name, char \*src)
+Expose string *src* as a [static resource](https://github.com/silgy/silgy#static-resources). Instead of using a file, you may sometimes want to generate something like CSS. Once you've added it, it's visible the same way other statics are. *src* has to be a 0-terminated string.  
 Example:
 ```source.c++
 static char red[8]="#b40000";
@@ -496,6 +496,8 @@ silgy_add_to_static_res("dsk.css", css_desktop);
 silgy_minify(css_mobile, mob);
 silgy_add_to_static_res("mob.css", css_mobile);
 ```
+### int silgy_minify(char \*dest, const char \*src)
+Minify CSS or JS. Return new length. Example: see [silgy_add_to_static_res()](https://github.com/silgy/silgy#void-silgy_add_to_static_resconst-char-name-char-src).
 ### void silgy_random(char \*dest, int len)
 Generate random string of *len* length and copy it to *dest*. Generated string can contain letters (lower- and upper-case) and digits.
 ### bool silgy_read_param(const char \*param, char \*dest)
