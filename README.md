@@ -87,7 +87,7 @@ For your own good, fresh EC2 instances have a very restricted security policy wi
 Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and **app_process_req()** is your main, called with every browser request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy/blob/master/README.md#hello-world) there to help you get on.  
   
 ## Static Resources
-Static resources are simply the files you want to serve from disk, as opposed to dynamic content that is generated in your code. Statics usually include pictures, css, robots.txt etc.  
+Static resources are simply any content that you rarely change and keep as ordinary disk files, as opposed to dynamic content that is generated in your code, as a unique response to user request. In this regard, Silgy is like any other web server (except it's extremely fast). Statics usually include pictures, css, robots.txt etc.  
   
 Static resources are read into memory on startup from **res** directory. Static resources you want to serve minified (CSS and JS), are read into memory and minified on startup from **resmin** directory.  
   
