@@ -479,8 +479,8 @@ Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.
 Expose string *src* as a [static resource](https://github.com/silgy/silgy#static-resources). Instead of using a file, you may sometimes want to generate something like CSS. Once you've added it, it's visible the same way other statics are. *src* has to be a 0-terminated string.  
 Example:
 ```source.c++
-#define COLOR_RED "#b40508"  // carefully crafted 'red' we want to use across the entire app as well as many times in CSS
-
+#define COLOR_RED "#b40508"  // carefully crafted 'red' we want to use across the entire app
+                             // as well as many times in CSS
 // ...
 
 void create_css()  // called from app_init()
@@ -490,10 +490,10 @@ void create_css()  // called from app_init()
     char dsk_min[2048];
     char mob_min[2048];
 
-    sprintf(dsk, ".w_border {color:%s; border:1px solid grey;}", red);
-    sprintf(mob, ".w_border {color:%s; border:2px solid grey;}", red);
-    sprintf(dsk, " %s .no_border {color:%s; border:0;}", dsk, red);
-    sprintf(mob, " %s .no_border {color:%s; border:0;}", mob, red);
+    sprintf(dsk, ".w_border {color:%s; border:1px solid grey;}", COLOR_RED);
+    sprintf(mob, ".w_border {color:%s; border:2px solid grey;}", COLOR_RED);
+    sprintf(dsk, " %s .no_border {color:%s; border:0;}", dsk, COLOR_RED);
+    sprintf(mob, " %s .no_border {color:%s; border:0;}", mob, COLOR_RED);
     // ...
 
     silgy_minify(dsk_min, dsk);
