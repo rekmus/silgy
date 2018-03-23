@@ -94,7 +94,7 @@ extern "C" {
     void get_byteorder(void);
     time_t db2epoch(const char *str);
     bool sendemail(int ci, const char *to, const char *subject, const char *message);
-    int lib_minify(char *dest, const char *src);
+    int silgy_minify(char *dest, const char *src);
     void add_script(int ci, const char *fname, bool first);
     void add_css(int ci, const char *fname, bool first);
     void date_inc(char *str, int days, int *dow);

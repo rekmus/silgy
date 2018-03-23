@@ -1749,7 +1749,7 @@ struct stat fstat;
                 *(data_tmp+M_stat[i].len) = EOS;
 
                 /* can we use the same buffer again? */
-                M_stat[i].len = lib_minify(data_tmp, data_tmp); /* new length */
+                M_stat[i].len = silgy_minify(data_tmp, data_tmp); /* new length */
             }
 
             /* allocate the final destination */
@@ -3330,19 +3330,28 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 /* --------------------------------------------------------------------------
    Set internal (generated) static resource data & size
 -------------------------------------------------------------------------- */
-void eng_add_to_static_res(const char *name, char *data)
+void silgy_add_to_static_res(const char *name, char *src)
 {
     int i;
 
     i = first_free_stat();
 
     strcpy(M_stat[i].name, name);
-    M_stat[i].data = data;
-    M_stat[i].len = strlen(data);   /* internal are text based */
+
+    M_stat[i].len = strlen(src);   /* internal are text based */
+
+    if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1)) )
+    {
+        ERR("Couldn't allocate %ld bytes for %s!!!", M_stat[i].len+1, M_stat[i].name);
+        return;
+    }
+
+    strcpy(M_stat[i].data, src);
+
     M_stat[i].type = get_res_type(M_stat[i].name);
     M_stat[i].modified = G_now;
 
-    ALWAYS("%s (%ld Bytes)", M_stat[i].name, M_stat[i].len);
+    INF("%s (%ld bytes)", M_stat[i].name, M_stat[i].len);
 
     strcpy(M_stat[++i].name, "-");
 }

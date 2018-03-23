@@ -2040,7 +2040,7 @@ bool sendemail(int ci, const char *to, const char *subject, const char *message)
   add a space after some keywords
   return new length
 -------------------------------------------------------------------------- */
-int lib_minify(char *dest, const char *src)
+int silgy_minify(char *dest, const char *src)
 {
     minify_1(dest, src);
     return minify_2(dest, dest);
