@@ -93,6 +93,8 @@ Static resources are read into memory on startup from **res** directory. Static 
   
 Static resources are handled automatically, you don't have to add anything in your app.  
   
+In addition to placing your statics in res and resmin directories, you can generate text statics from within your code at the start, and add them to the statics using [silgy_add_to_static_res()](https://github.com/silgy/silgy#void-silgy_add_to_static_resconst-char-name-char-src).
+  
 ## Response Header
 Response header is generated automatically, however you can overwrite defaults with a couple of [macros](https://github.com/silgy/silgy/blob/master/README.md#void-res_statusint-code).  
   
@@ -448,6 +450,7 @@ if ( REQ_MOB )
   
 ### bool REQ_BOT
 Return TRUE if request user agent is a bot.  
+Silgy maintains its own internal library of known bots to determine whether request comes from one. If the request comes from a bot, user session is not created. You can use this to assess the more real visits counter.  
 Example:  
 ```source.c++
 if ( !REQ_BOT )
