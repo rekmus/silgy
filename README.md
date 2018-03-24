@@ -440,8 +440,8 @@ if ( REQ_MOB )
     OUT("<meta name=\"viewport\" content=\"width=device-width\">");
 ```
 ### bool REQ_BOT
-Return TRUE if request user agent is a bot.  
-Silgy maintains its own internal library of known bots to determine whether request comes from one. If the request comes from a bot, user session is not created. You can use this to better estimate number of visits to your site.  
+Return TRUE if user agent in a request is a bot.  
+Silgy maintains its own internal library of known bots to determine whether request comes from one. If the request comes from a bot, user session is not created. You can also use this to better estimate number of visits to your site.  
 Example:  
 ```source.c++
 if ( !REQ_BOT )
