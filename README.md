@@ -493,6 +493,7 @@ WAR - only if log level >= 2, writes WARNING: before string
 INF - only if log level >= 3  
 DBG - only if log level >= 4  
 ```
+Log file is created on every start in $SILGYDIR/logs. File name is *YYYYMMDD_HHmm.log* or — if test=1 in config — *YYYYMMDD_HHmm_t.log*. Every midnight new log file is started.  
 Examples:
 ```source.c++
 ALWAYS("Server is starting");
