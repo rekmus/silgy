@@ -493,13 +493,13 @@ WAR - only if log level >= 2, writes WARNING: before string
 INF - only if log level >= 3  
 DBG - only if log level >= 4  
 ```
-Log file is created on every start in $SILGYDIR/logs. File name is *YYYYMMDD_HHmm.log* or — if test=1 in config — *YYYYMMDD_HHmm_t.log*. Every midnight new log file is started.  
+Log file is created on every start in $SILGYDIR/logs. File name contains date and time: *YYYYMMDD_HHmm.log* or — if test=1 in config — *YYYYMMDD_HHmm_t.log*. Every midnight new log file is started.  
 Examples:
 ```source.c++
 ALWAYS("Server is starting");
 DBG("in a while loop, i = %d", i);
 ```
-Note: if log level is set to 4, every call flushes the buffer.  
+If log level is set to 4, there's quite a lot of information logged, including full request and response HTTP headers, and every call flushes the buffer straight away, to help in investigation in case of crash.
 ### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
 Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.  
 Example:
