@@ -340,6 +340,27 @@ OUT("<!DOCTYPE html>");
 OUT("<p>There are %d records in the table.</p>", records);
 ```
   
+### bool QS(const char \*param, QSVAL variable)
+Search query string for *param* and if found, URI-decode it, copy its value to *variable* and return TRUE. Otherwise return FALSE. For POST, PUT and DELETE methods it assumes query string is in payload.  
+QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.  
+Example:  
+```source.c++
+QSVAL qs_firstname;
+
+if ( QS("firstname", qs_firstname) )
+    OUT("<p>Welcome %s!</p>", qs_firstname);
+```
+QS comes in four SQL- and XSS-injection security flavours:  
+  
+QS - default - behaviour depends on [QS_DEF_](https://github.com/silgy/silgy/blob/master/README.md#qs_def_html_escape-qs_def_sql_escape-qs_def_dont_escape) compilation switch (by default it's QS_DEF_HTML_ESCAPE).  
+QS_HTML_ESCAPE - value is HTML-escaped  
+QS_SQL_ESCAPE - value is SQL-escaped  
+QS_DONT_ESCAPE - value is not escaped  
+  
+And the fifth one:  
+  
+QS_RAW - value is not URI-decoded  
+  
 ### void OUT_BIN(const char \*data, long len)
 Send binary *data* to a browser. Typical usage would be to serve an image from a database.  
 Example:
@@ -383,27 +404,6 @@ int show_image(int ci, long user_id, long img_id)
 }
 ```
   
-### bool QS(const char \*param, QSVAL variable)
-Search query string for *param* and if found, URI-decode it, copy its value to *variable* and return TRUE. Otherwise return FALSE. For POST, PUT and DELETE methods it assumes query string is in payload.  
-QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.  
-Example:  
-```source.c++
-QSVAL qs_firstname;
-
-if ( QS("firstname", qs_firstname) )
-    OUT("<p>Welcome %s!</p>", qs_firstname);
-```
-QS comes in four SQL- and XSS-injection security flavours:  
-  
-QS - default - behaviour depends on [QS_DEF_](https://github.com/silgy/silgy/blob/master/README.md#qs_def_html_escape-qs_def_sql_escape-qs_def_dont_escape) compilation switch (by default it's QS_DEF_HTML_ESCAPE).  
-QS_HTML_ESCAPE - value is HTML-escaped  
-QS_SQL_ESCAPE - value is SQL-escaped  
-QS_DONT_ESCAPE - value is not escaped  
-  
-And the fifth one:  
-  
-QS_RAW - value is not URI-decoded  
-  
 ### bool URI(const char \*string)
 Return TRUE if URI matches *string*.  
 Example:
@@ -446,6 +446,14 @@ if ( REQ_MOB )
     OUT("<meta name=\"viewport\" content=\"width=device-width\">");
 ```
   
+### bool REQ_BOT
+Return TRUE if request user agent is a bot.  
+Example:  
+```source.c++
+if ( !REQ_BOT )
+    ++real_visits;
+```
+  
 ### char* REQ_LANG
 User agent primary language code.  
   
@@ -476,6 +484,13 @@ Redirect browser to *string*.
 Example:
 ```source.c++
 RES_LOCATION("login");
+```
+  
+### void RES_CONTENT_DISPOSITION(const char \*string[, ...])
+Add Content-Disposition to response header.  
+Example:
+```source.c++
+RES_CONTENT_DISPOSITION("attachment; filename=\"%s.csv\"", doc_name);
 ```
   
 ### void RES_DONT_CACHE
