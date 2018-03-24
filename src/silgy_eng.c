@@ -936,7 +936,7 @@ static void log_proc_time(int ci)
 
     if ( G_logLevel < LOG_DBG )
     {
-        ALWAYS("[%s] #%ld %s %s  %s  %d  %.3lf ms%s", G_dt+11, conn[ci].req, conn[ci].method, conn[ci].uri, (conn[ci].static_res==NOT_STATIC && !conn[ci].post)?conn[ci].referer:"", conn[ci].status, lib_elapsed(&conn[ci].proc_start), conn[ci].bot?" [bot]":"");
+        ALWAYS("[%s] #%ld %s %s  %s  %d  %.3lf ms%s", G_dt+11, conn[ci].req, conn[ci].method, conn[ci].uri, (conn[ci].static_res==NOT_STATIC && !conn[ci].post)?conn[ci].referer:"", conn[ci].status, lib_elapsed(&conn[ci].proc_start), REQ_BOT?" [bot]":"");
     }
 }
 
@@ -1926,9 +1926,9 @@ static void process_req(int ci)
             ret = OK;
         }
 
-        if ( !LOGGED && conn[ci].auth_level == AUTH_LEVEL_ANONYMOUS && !conn[ci].bot && !conn[ci].head_only )       /* anonymous user session required */
+        if ( !LOGGED && conn[ci].auth_level == AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only )       /* anonymous user session required */
 #else
-        if ( conn[ci].auth_level == AUTH_LEVEL_ANONYMOUS && !conn[ci].bot && !conn[ci].head_only )
+        if ( conn[ci].auth_level == AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only )
 #endif
         {
             if ( !conn[ci].cookie_in_a[0] || !a_usession_ok(ci) )       /* valid anonymous sesid cookie not present */
@@ -2330,7 +2330,7 @@ static void reset_conn(int ci, char conn_state)
     conn[ci].cookie_out_l[0] = EOS;
     conn[ci].cookie_out_l_exp[0] = EOS;
     conn[ci].location[0] = EOS;
-    conn[ci].bot = FALSE;
+    REQ_BOT = FALSE;
     conn[ci].expect100 = FALSE;
     conn[ci].dont_cache = FALSE;
 }
@@ -2613,11 +2613,11 @@ static int parse_req(int ci, long len)
         return 200;
     } */
 
-    DBG("bot = %s", conn[ci].bot?"TRUE":"FALSE");
+    DBG("bot = %s", REQ_BOT?"TRUE":"FALSE");
 
     /* update request counters -------------------------------------------------- */
 
-    if ( conn[ci].bot )
+    if ( REQ_BOT )
         ++G_cnts_today.req_bot;
 
     if ( conn[ci].mobile )
@@ -2729,7 +2729,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
 
         DBG("mobile = %s", conn[ci].mobile?"TRUE":"FALSE");
 
-/*      if ( !conn[ci].bot &&
+/*      if ( !REQ_BOT &&
                 (strstr(uvalue, "ADSBOT")
                 || strstr(uvalue, "BAIDU")
                 || strstr(uvalue, "UPTIMEBOT")
@@ -2749,21 +2749,23 @@ static int set_http_req_val(int ci, const char *label, const char *value)
                 || 0==strcmp(uvalue, "TELESPHOREO")
                 || 0==strcmp(uvalue, "MAGIC BROWSER")) )
         {
-            conn[ci].bot = TRUE;
+            REQ_BOT = TRUE;
         } */
 
-        if ( !conn[ci].bot &&
+        if ( !REQ_BOT &&
                 (strstr(uvalue, "BOT")
                 || strstr(uvalue, "SCAN")
                 || strstr(uvalue, "CRAWLER")
                 || strstr(uvalue, "DOMAINSONO")
                 || strstr(uvalue, "SURDOTLY")
                 || strstr(uvalue, "BAIDU")
+                || strstr(uvalue, "ZGRAB")
                 || 0==strncmp(uvalue, "CURL", 4)
+                || 0==strncmp(uvalue, "BUBING", 6)
                 || 0==strcmp(uvalue, "TELESPHOREO")
                 || 0==strcmp(uvalue, "MAGIC BROWSER")) )
         {
-            conn[ci].bot = TRUE;
+            REQ_BOT = TRUE;
         }
     }
     else if ( 0==strcmp(ulabel, "CONNECTION") )
@@ -2858,8 +2860,8 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     else if ( 0==strcmp(ulabel, "FROM") )
     {
         strcpy(uvalue, upper(value));
-        if ( !conn[ci].bot && (strstr(uvalue, "GOOGLEBOT") || strstr(uvalue, "BINGBOT") || strstr(uvalue, "YANDEX") || strstr(uvalue, "CRAWLER")) )
-            conn[ci].bot = TRUE;
+        if ( !REQ_BOT && (strstr(uvalue, "GOOGLEBOT") || strstr(uvalue, "BINGBOT") || strstr(uvalue, "YANDEX") || strstr(uvalue, "CRAWLER")) )
+            REQ_BOT = TRUE;
     }
     else if ( 0==strcmp(ulabel, "IF-MODIFIED-SINCE") )
     {

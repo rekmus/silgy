@@ -40,7 +40,7 @@
 typedef char                        bool;
 #endif
 
-#define WEB_SERVER_VERSION          "2.4"
+#define WEB_SERVER_VERSION          "2.5"
 
 /* for use with booleans */
 
@@ -74,6 +74,7 @@ typedef char                        bool;
 #define REQ_URI                     conn[ci].uri
 #define REQ_DSK                     !conn[ci].mobile
 #define REQ_MOB                     conn[ci].mobile
+#define REQ_BOT                     conn[ci].bot
 #define REQ_LANG                    conn[ci].lang
 
 #define PROTOCOL                    (conn[ci].secure?"https":"http")
