@@ -18,7 +18,7 @@ Optional step in case you haven't done this yet :)
 ```source.sh
 sudo yum install gcc-c++
 ```
-Optionally, if you're planning to use [HTTPS](https://github.com/silgy/silgy/blob/master/README.md#https):
+Optionally, if you're planning to use [HTTPS](https://github.com/silgy/silgy#https):
 ```source.sh
 sudo yum install openssl-devel
 ```
@@ -244,7 +244,7 @@ myParam2=someOtherValue
 Change the contents to your taste. Note that you can use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy#bool-silgy_read_paramconst-char-param-char-dest).  
   
 ## Compilation Switches
-Because speed is Silgy's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
+Because speed is Silgy's priority, every possible decision is taken at a compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
   
 Add your switches to [m](https://github.com/silgy/silgy/blob/master/src/m) before compilation, i.e.:
 ```
@@ -258,10 +258,10 @@ If defined, the server opens two queues at the start: one for requests, one for 
 There's also a service library, yet to be documented.  
   
 ### BLACKLISTAUTOUPDATE
-Automatically add malicious IPs to file defined in *blockedIPList*.  
+Automatically add malicious IPs to the file defined in *blockedIPList*.  
   
 ### DBMYSQL
-Open MySQL connection at the start and close it at clean up. Use *dbHost*, *dbPort*, *dbName*, *dbUser* and *dbPassword*.  
+Open MySQL connection at the start and close it during clean up. Use *dbHost*, *dbPort*, *dbName*, *dbUser* and *dbPassword*.  
   
 ### DBMYSQLRECONNECT
 [DBMYSQL](https://github.com/silgy/silgy#dbmysql) compilation switch is required.  
