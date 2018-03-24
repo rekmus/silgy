@@ -337,7 +337,6 @@ Example:
 if ( REQ("calc") )
     process_calc(ci);
 ```
-  
 ### void OUT(const char \*string[, ...])
 Send *string* to a browser. Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).  
 Examples:
@@ -345,7 +344,6 @@ Examples:
 OUT("<!DOCTYPE html>");
 OUT("<p>There are %d records in the table.</p>", records);
 ```
-  
 ### bool QS(const char \*param, QSVAL variable)
 Search query string for *param* and if found, URI-decode it, copy its value to *variable* and return TRUE. Otherwise return FALSE. For POST, PUT and DELETE methods it assumes query string is in payload.  
 QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.  
@@ -366,7 +364,6 @@ QS_DONT_ESCAPE - value is not escaped
 And the fifth one:  
   
 QS_RAW - value is not URI-decoded  
-  
 ### void OUT_BIN(const char \*data, long len)
 Send binary *data* to a browser. Typical usage would be to serve an image from a database.  
 Example:
@@ -409,7 +406,6 @@ int show_image(int ci, long user_id, long img_id)
     return OK;
 }
 ```
-  
 ### bool URI(const char \*string)
 Return TRUE if URI matches *string*.  
 Example:
@@ -417,7 +413,6 @@ Example:
 if ( URI("temp/document.pdf") )
     send_pdf(ci);
 ```
-  
 ### bool REQ_METHOD(const char \*string)
 Return TRUE if request method matches *string*.  
 Example:  
@@ -425,25 +420,18 @@ Example:
 if ( REQ_METHOD("OPTIONS") )
     show_options(ci);
 ```
-  
 ### char* REQ_URI
 Request URI.
-  
 ### bool REQ_GET
 Return TRUE if request method is GET.
-  
 ### bool REQ_POST
 Return TRUE if request method is POST.
-  
 ### bool REQ_PUT
 Return TRUE if request method is PUT.
-  
 ### bool REQ_DELETE
 Return TRUE if request method is DELETE.
-  
 ### bool REQ_DSK
 Return TRUE if request user agent is desktop.
-  
 ### bool REQ_MOB
 Return TRUE if request user agent is mobile.  
 Example:  
@@ -451,7 +439,6 @@ Example:
 if ( REQ_MOB )
     OUT("<meta name=\"viewport\" content=\"width=device-width\">");
 ```
-  
 ### bool REQ_BOT
 Return TRUE if request user agent is a bot.  
 Silgy maintains its own internal library of known bots to determine whether request comes from one. If the request comes from a bot, user session is not created. You can use this to assess the more real visits counter.  
@@ -460,10 +447,8 @@ Example:
 if ( !REQ_BOT )
     ++real_visits;
 ```
-  
 ### char* REQ_LANG
 User agent primary language code.  
-  
 ### bool HOST(const char \*string)
 Return TRUE if HTTP request *Host* header matches *string*. Case is ignored.  
 Example:
@@ -471,41 +456,34 @@ Example:
 if ( HOST("example.com") )
     process_example(ci);
 ```
-  
 ### void RES_STATUS(int code)
 Set response status to *code*.  
 Example:
 ```source.c++
 RES_STATUS(501);
 ```
-  
 ### void RES_CONTENT_TYPE(const char \*string)
 Set response content type to *string*.  
 Example:
 ```source.c++
 RES_CONTENT_TYPE("text/plain");
 ```
-  
 ### void RES_LOCATION(const char \*string)
 Redirect browser to *string*.  
 Example:
 ```source.c++
 RES_LOCATION("login");
 ```
-  
 ### void RES_CONTENT_DISPOSITION(const char \*string[, ...])
 Add Content-Disposition to response header.  
 Example:
 ```source.c++
 RES_CONTENT_DISPOSITION("attachment; filename=\"%s.csv\"", doc_name);
 ```
-  
 ### void RES_DONT_CACHE
 Prevent response from being cached by browser.  
-  
 ### void REDIRECT_TO_LANDING
 Redirect browser to landing page.  
-  
 ### void ALWAYS(const char \*str[, ...]), void ERR(const char \*str[, ...]), void WAR(const char \*str[, ...]), void INF(const char \*str[, ...]), void DBG(const char \*str[, ...])
 Write *str* to log, depending on log level set in [conf file](https://github.com/silgy/silgy/blob/master/README.md#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
 ```
@@ -521,21 +499,18 @@ ALWAYS("Server is starting");
 DBG("in a while loop, i = %d", i);
 ```
 Note: if log level is set to 4, every call flushes the buffer.  
-  
 ### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
 Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.  
 Example:
 ```source.c++
 CALL_ASYNC("get_customer", cust_id, 10);
 ```
-  
 ### void CALL_ASYNC_NR(const char \*service, const char \*data)
 Call *service*. Response is not required.  
 Example:
 ```source.c++
 CALL_ASYNC_NR("set_counter", counter);
 ```
-  
 ### bool S(const char \*string)
 Return TRUE if service matches *string*.  
 Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
@@ -613,6 +588,18 @@ silgy_set_auth_level("about", AUTH_LEVEL_NONE);
 silgy_set_auth_level("dashboard", AUTH_LEVEL_LOGGEDIN);
 ```
 ## Engine callbacks
+### void app_done()
+Called once, during termination.
+### bool app_init(int argc, char \*argv[])
+Called once at the beginning, but after server init. Returning *true* means successful initialization. Good place to set authorization levels, generate statics, etc.
+### void app_luses_new(int ci)
+Called when logged in user session is created.
+### int app_process_req(int ci)
+This is the main entry point for Silgy web application logic. *ci* is a connection index, as there can be many connections served asynchronously at the same time. **Always pass ci down the calling stack** as this is required by most macros and functions.
+### void app_uses_init(int ci)
+Called when a new user session is created.
+### void app_uses_reset(int usi)
+Called when user session is closed.
 ### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
 [ASYNC](https://github.com/silgy/silgy#async) compilation switch is required.  
   
