@@ -78,13 +78,13 @@ chmod u+x te
 ```source.sh
 sudo ./te
 ```
-That's it. Your app should now be online. For now, ignore the warnings about configuration file — you can add it [later](https://github.com/silgy/silgy/blob/master/README.md#configuration-file).  
+That's it. Your app should now be online. For now, ignore the warnings about configuration file — you can add it [later](https://github.com/silgy/silgy#configuration-file).  
   
 ### Note for Amazon Web Services (AWS) users
 For your own good, fresh EC2 instances have a very restricted security policy with only SSH port (22) open. If you haven't done so, you need to edit that policy and add HTTP port (80) before AWS lets your browser in.  
   
 ## Where's my program?
-Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and **app_process_req()** is your main, called with every browser request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy/blob/master/README.md#hello-world) there to help you get on.  
+Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and [app_process_req()](https://github.com/silgy/silgy#int-app_process_reqint-ci) is your main, called with every browser request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy#hello-world) there to help you get on.  
   
 ## Static Resources
 Static resources are simply any content that you rarely change and keep as ordinary disk files, as opposed to dynamic content that is generated in your code, as a unique response to user request. In this regard, Silgy is like any other web server (except it's extremely fast). Statics usually include pictures, css, robots.txt etc.  
@@ -96,7 +96,7 @@ Static resources are handled automatically, you don't have to add anything in yo
 In addition to placing your statics in res and resmin directories, you can generate text statics from within your code at the start, and add them to the statics using [silgy_add_to_static_res()](https://github.com/silgy/silgy#void-silgy_add_to_static_resconst-char-name-char-src).
   
 ## Response Header
-Response header is generated automatically, however you can overwrite defaults with a couple of [macros](https://github.com/silgy/silgy/blob/master/README.md#void-res_statusint-code).  
+Response header is generated automatically, however you can overwrite defaults with a couple of [macros](https://github.com/silgy/silgy#void-res_statusint-code).  
   
 ## Hello World
 Simplest Hello World:
@@ -241,7 +241,7 @@ test=0
 myParam1=someValue
 myParam2=someOtherValue
 ```
-Change the contents to your taste. Note that you can use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy/blob/master/README.md#bool-silgy_read_paramconst-char-param-char-dest).  
+Change the contents to your taste. Note that you can use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy#bool-silgy_read_paramconst-char-param-char-dest).  
   
 ## Compilation Switches
 Because speed is Silgy's priority, every possible decision is taken at compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
@@ -253,7 +253,7 @@ g++ silgy_app.cpp silgy_eng.c silgy_lib.c -D HTTPS -D DBMYSQL ...
 ### ASYNC
 Use asynchronous module.  
   
-If defined, the server opens two queues at the start: one for requests, one for responses. Then the app can use [CALL_ASYNC](https://github.com/silgy/silgy/blob/master/README.md#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy/blob/master/README.md#void-call_async_nrconst-char-service-const-char-data-int-timeout) to call the services, and [app_async_done()](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted) will be called when the response arrives.  
+If defined, the server opens two queues at the start: one for requests, one for responses. Then the app can use [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) to call the services, and [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted) will be called when the response arrives.  
   
 There's also a service library, yet to be documented.  
   
@@ -356,7 +356,7 @@ if ( QS("firstname", qs_firstname) )
 ```
 QS comes in four SQL- and XSS-injection security flavours:  
   
-QS - default - behaviour depends on [QS_DEF_](https://github.com/silgy/silgy/blob/master/README.md#qs_def_html_escape-qs_def_sql_escape-qs_def_dont_escape) compilation switch (by default it's QS_DEF_HTML_ESCAPE).  
+QS - default - behaviour depends on [QS_DEF_](https://github.com/silgy/silgy#qs_def_html_escape-qs_def_sql_escape-qs_def_dont_escape) compilation switch (by default it's QS_DEF_HTML_ESCAPE).  
 QS_HTML_ESCAPE - value is HTML-escaped  
 QS_SQL_ESCAPE - value is SQL-escaped  
 QS_DONT_ESCAPE - value is not escaped  
@@ -485,7 +485,7 @@ Prevent response from being cached by browser.
 ### void REDIRECT_TO_LANDING
 Redirect browser to landing page.  
 ### void ALWAYS(const char \*str[, ...]), void ERR(const char \*str[, ...]), void WAR(const char \*str[, ...]), void INF(const char \*str[, ...]), void DBG(const char \*str[, ...])
-Write *str* to log, depending on log level set in [conf file](https://github.com/silgy/silgy/blob/master/README.md#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
+Write *str* to log, depending on log level set in [conf file](https://github.com/silgy/silgy#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
 ```
 ALWAYS - regardless of log level  
 ERR - only if log level >= 1, writes ERROR: before string  
@@ -513,7 +513,7 @@ CALL_ASYNC_NR("set_counter", counter);
 ```
 ### bool S(const char \*string)
 Return TRUE if service matches *string*.  
-Example: see [app_async_done](https://github.com/silgy/silgy/blob/master/README.md#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
+Example: see [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
   
 ## Functions
 ### void silgy_add_to_static_res(const char \*name, char \*src)
@@ -595,7 +595,7 @@ Called once at the beginning, but after server init. Returning *true* means succ
 ### void app_luses_new(int ci)
 Called when logged in user session is created.
 ### int app_process_req(int ci)
-This is the main entry point for Silgy web application logic. *ci* is a connection index, as there can be many connections served asynchronously at the same time. **Always pass ci down the calling stack** as this is required by most macros and functions.
+This is the main entry point for Silgy web application logic. *ci* is a connection index, as there can be many connections served asynchronously at the same time. **Always pass ci down the calling stack** as this is required by most macros and functions. For examples, see [Hello World](https://github.com/silgy/silgy#hello-world).
 ### void app_uses_init(int ci)
 Called when a new user session is created.
 ### void app_uses_reset(int usi)
