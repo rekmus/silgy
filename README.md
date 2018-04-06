@@ -320,7 +320,7 @@ QS_DEF_SQL_ESCAPE|SQL-escape value, i.e. ' will become \\'
 QS_DEF_DONT_ESCAPE|Don't escape value
 
 ### USERS
-Use users module. It provides an API for handling all registered users logic, including common things like i.e. password reset. You need to have DBMYSQL defined as well. (and some tables in the database, specs coming soon)
+Use [users module](https://github.com/silgy/silgy/wiki/USERS-Module). It provides an API for handling all registered users logic, including common things like i.e. password reset. You need to have DBMYSQL defined as well.
 ### USERSBYEMAIL
 [USERS](https://github.com/silgy/silgy#users) compilation switch is required.  
   
