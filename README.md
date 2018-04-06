@@ -320,8 +320,15 @@ QS_DEF_SQL_ESCAPE|SQL-escape value, i.e. ' will become \\'
 QS_DEF_DONT_ESCAPE|Don't escape value
 
 ### USERS
-Use users module. It provides an API for handling all registered users logic, including common things like i.e. password reset. You need to have DBMYSQL defined as well. (and some tables in the database, specs coming soon)  
+Use users module. It provides an API for handling all registered users logic, including common things like i.e. password reset. You need to have DBMYSQL defined as well. (and some tables in the database, specs coming soon)
+### USERSBYEMAIL
+[USERS](https://github.com/silgy/silgy#users) compilation switch is required.  
   
+Use email to authenticate users.
+### USERSBYLOGIN
+[USERS](https://github.com/silgy/silgy#users) compilation switch is required.  
+  
+Use login to authenticate users.
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in Silgy.
 ## Macros
@@ -578,7 +585,7 @@ macro|notes
 AUTH_LEVEL_NONE|No user session is required.
 AUTH_LEVEL_ANONYMOUS|Anonymous user session is required. If there's no valid **as** cookie, anonymous user session is started.
 AUTH_LEVEL_LOGGEDIN|Logged in user session is required. If request does not have valid **ls** cookie, it's redirected to URI defined in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_LOGIN_URI.
-AUTH_LEVEL_ADMIN|Logged in as admin is required.
+AUTH_LEVEL_ADMIN|Logged in as admin is required. If USERSBYLOGIN is used, current user must be "admin" or — if USERSBYEMAIL is used — current user must be equal to APP_ADMIN_EMAIL in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h). Otherwise request will receive 404.
 
 Resources not set with silgy_set_auth_level() get default level specified in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_DEF_AUTH_LEVEL.  
 [Static resources](https://github.com/silgy/silgy#static-resources) always have AUTH_LEVEL_NONE.  
@@ -587,6 +594,7 @@ Example:
 // in app_init()
 silgy_set_auth_level("about", AUTH_LEVEL_NONE);
 silgy_set_auth_level("dashboard", AUTH_LEVEL_LOGGEDIN);
+silgy_set_auth_level("blockIP", AUTH_LEVEL_ADMIN);
 ```
 ## Engine callbacks
 ### void app_done()
