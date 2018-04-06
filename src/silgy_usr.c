@@ -135,7 +135,7 @@ unsigned long   sql_records;
     if ( sanuagent[DB_UAGENT_LEN-1]=='\'' && sanuagent[DB_UAGENT_LEN-2]!='\'' )
         sanuagent[DB_UAGENT_LEN-1] = EOS;
 
-    sprintf(sql_query, "SELECT user_id, created FROM ulogins WHERE sesid='%s' AND uagent='%s'", silgy_sql_esc(conn[ci].cookie_in_l), sanuagent);
+    sprintf(sql_query, "SELECT user_id, created FROM users_logins WHERE sesid='%s' AND uagent='%s'", silgy_sql_esc(conn[ci].cookie_in_l), sanuagent);
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -150,7 +150,7 @@ unsigned long   sql_records;
 
     sql_records = mysql_num_rows(result);
 
-    DBG("ulogins: %lu record(s) found", sql_records);
+    DBG("users_logins: %lu record(s) found", sql_records);
 
     if ( 0 == sql_records )     /* no such session in database */
     {
@@ -177,7 +177,7 @@ unsigned long   sql_records;
 
         mysql_free_result(result);
 
-        sprintf(sql_query, "DELETE FROM ulogins WHERE sesid='%s' AND uagent='%s'", conn[ci].cookie_in_l, sanuagent);
+        sprintf(sql_query, "DELETE FROM users_logins WHERE sesid='%s' AND uagent='%s'", conn[ci].cookie_in_l, sanuagent);
         DBG("sql_query: %s", sql_query);
 
         if ( mysql_query(G_dbconn, sql_query) )
@@ -200,7 +200,7 @@ unsigned long   sql_records;
 
     DBG("Logged in session found in database");
 
-    sprintf(sql_query, "UPDATE ulogins SET last_used='%s' WHERE sesid='%s' AND uagent='%s'", G_dt, conn[ci].cookie_in_l, sanuagent);
+    sprintf(sql_query, "UPDATE users_logins SET last_used='%s' WHERE sesid='%s' AND uagent='%s'", G_dt, conn[ci].cookie_in_l, sanuagent);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -243,7 +243,7 @@ void libusr_close_l_uses(int ci, int usi)
     {
         DBG("Downgrading logged in session to anonymous, usi=%d, sesid [%s]", usi, uses[usi].sesid);
 
-        sprintf(sql_query, "DELETE FROM ulogins WHERE user_id=%ld", uses[usi].uid);
+        sprintf(sql_query, "DELETE FROM users_logins WHERE user_id=%ld", uses[usi].uid);
         DBG("sql_query: %s", sql_query);
 
         if ( mysql_query(G_dbconn, sql_query) )
@@ -618,14 +618,14 @@ unsigned long   sql_records;
     strcpy(sesid, US.sesid);
     DBG("Using current sesid [%s]", sesid);
 
-    /* save new session to ulogins and set the cookie */
+    /* save new session to users_logins and set the cookie */
 
     strncpy(sanuagent, silgy_sql_esc(conn[ci].uagent), DB_UAGENT_LEN);
     sanuagent[DB_UAGENT_LEN] = EOS;
     if ( sanuagent[DB_UAGENT_LEN-1]=='\'' && sanuagent[DB_UAGENT_LEN-2]!='\'' )
         sanuagent[DB_UAGENT_LEN-1] = EOS;
 
-    sprintf(sql_query, "INSERT INTO ulogins (ip,uagent,sesid,user_id,created,last_used) VALUES ('%s','%s','%s',%ld,'%s','%s')", conn[ci].ip, sanuagent, sesid, uid, G_dt, G_dt);
+    sprintf(sql_query, "INSERT INTO users_logins (ip,uagent,sesid,user_id,created,last_used) VALUES ('%s','%s','%s',%ld,'%s','%s')", conn[ci].ip, sanuagent, sesid, uid, G_dt, G_dt);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -1098,7 +1098,7 @@ unsigned long   sql_records;
 
         silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
 
-        sprintf(sql_query, "INSERT INTO presets (user_id,linkkey,created) VALUES (%ld,'%s','%s')", uid, linkkey, G_dt);
+        sprintf(sql_query, "INSERT INTO users_p_resets (user_id,linkkey,created) VALUES (%ld,'%s','%s')", uid, linkkey, G_dt);
         DBG("sql_query: %s", sql_query);
 
         if ( mysql_query(G_dbconn, sql_query) )
@@ -1253,7 +1253,7 @@ unsigned long   sql_records;
     if ( strlen(linkkey) != PASSWD_RESET_KEY_LEN )
         return ERR_LINK_BROKEN;
 
-    sprintf(sql_query, "SELECT user_id, created FROM presets WHERE linkkey='%s'", silgy_sql_esc(linkkey));
+    sprintf(sql_query, "SELECT user_id, created FROM users_p_resets WHERE linkkey='%s'", silgy_sql_esc(linkkey));
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -1268,9 +1268,9 @@ unsigned long   sql_records;
 
     sql_records = mysql_num_rows(result);
 
-    DBG("presets: %lu row(s) found", sql_records);
+    DBG("users_p_resets: %lu row(s) found", sql_records);
 
-    if ( !sql_records )     /* no records with this key in presets -- link broken? */
+    if ( !sql_records )     /* no records with this key in users_p_resets -- link broken? */
     {
         mysql_free_result(result);
         return ERR_LINK_MAY_BE_EXPIRED;
@@ -1354,7 +1354,7 @@ int libusr_sets(int ci, const char *us_key, const char *us_val)
 
     if ( ret == ERR_NOT_FOUND )
     {
-        sprintf(sql_query, "INSERT INTO user_settings (user_id,us_key,us_val) VALUES (%ld,'%s','%s')", US.uid, us_key, us_val);
+        sprintf(sql_query, "INSERT INTO users_settings (user_id,us_key,us_val) VALUES (%ld,'%s','%s')", US.uid, us_key, us_val);
 
         DBG("sql_query: %s", sql_query);
 
@@ -1371,7 +1371,7 @@ int libusr_sets(int ci, const char *us_key, const char *us_val)
     }
     else
     {
-        sprintf(sql_query, "UPDATE user_settings SET us_val='%s' WHERE user_id=%ld AND us_key='%s'", us_val, US.uid, us_key);
+        sprintf(sql_query, "UPDATE users_settings SET us_val='%s' WHERE user_id=%ld AND us_key='%s'", us_val, US.uid, us_key);
 
         DBG("sql_query: %s", sql_query);
 
@@ -1396,7 +1396,7 @@ int libusr_gets(int ci, const char *us_key, char *us_val)
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
 
-    sprintf(sql_query, "SELECT us_val FROM user_settings WHERE user_id=%ld AND us_key='%s'", US.uid, us_key);
+    sprintf(sql_query, "SELECT us_val FROM users_settings WHERE user_id=%ld AND us_key='%s'", US.uid, us_key);
 
     DBG("sql_query: %s", sql_query);
 
@@ -1412,7 +1412,7 @@ unsigned long   sql_records;
 
     sql_records = mysql_num_rows(result);
 
-    DBG("user_settings: %lu record(s) found", sql_records);
+    DBG("users_settings: %lu record(s) found", sql_records);
 
     if ( 0 == sql_records )
     {
