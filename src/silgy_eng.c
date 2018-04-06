@@ -3279,9 +3279,11 @@ void eng_uses_reset(int usi)
     uses[usi].login[0] = EOS;
     uses[usi].email[0] = EOS;
     uses[usi].name[0] = EOS;
+    uses[usi].about[0] = EOS;
     uses[usi].login_tmp[0] = EOS;
     uses[usi].email_tmp[0] = EOS;
     uses[usi].name_tmp[0] = EOS;
+    uses[usi].about_tmp[0] = EOS;
     uses[usi].sesid[0] = EOS;
     uses[usi].ip[0] = EOS;
     uses[usi].uagent[0] = EOS;
