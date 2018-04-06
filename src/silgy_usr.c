@@ -10,25 +10,13 @@
 #include "silgy.h"
 
 
-//libusr_t    M_libusr;
-
-
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
-static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *sesid);
+static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *about, const char *sesid);
 static int user_exists(const char *login);
 static int email_exists(const char *email);
-static int do_login(int ci, long uid, char *plogin, char *pemail, char *pname, long visits, const char *sesid);
+static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_about, long visits, const char *sesid);
 static void doit(char *result1, char *result2, const char *usr, const char *email, const char *src);
-
-
-/* --------------------------------------------------------------------------
-  initialize M_libusr structure from outside
--------------------------------------------------------------------------- */
-//void libusr_init(libusr_t *s)
-//{
-//    M_libusr.auth = s->auth;
-//}
 
 
 /* --------------------------------------------------------------------------
@@ -80,7 +68,7 @@ static bool valid_email(const char *email)
 /* --------------------------------------------------------------------------
    Start new logged in user session
 -------------------------------------------------------------------------- */
-static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *sesid)
+static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *about, const char *sesid)
 {
     DBG("start_new_luses");
 
@@ -98,9 +86,11 @@ static bool start_new_luses(int ci, long uid, const char *login, const char *ema
     strcpy(US.login, login);
     strcpy(US.email, email);
     strcpy(US.name, name);
+    strcpy(US.about, about);
     strcpy(US.login_tmp, login);
     strcpy(US.email_tmp, email);
     strcpy(US.name_tmp, name);
+    strcpy(US.about_tmp, about);
     US.uid = uid;
 
     return TRUE;
@@ -218,7 +208,7 @@ unsigned long   sql_records;
         return ERR_INT_SERVER_ERROR;
     }
 
-    return do_login(ci, uid, NULL, NULL, NULL, 0, conn[ci].cookie_in_l);
+    return do_login(ci, uid, NULL, NULL, NULL, NULL, 0, conn[ci].cookie_in_l);
 }
 
 
@@ -269,9 +259,11 @@ void libusr_close_l_uses(int ci, int usi)
         uses[usi].login[0] = EOS;
         uses[usi].email[0] = EOS;
         uses[usi].name[0] = EOS;
+        uses[usi].about[0] = EOS;
         uses[usi].login_tmp[0] = EOS;
         uses[usi].email_tmp[0] = EOS;
         uses[usi].name_tmp[0] = EOS;
+        uses[usi].about_tmp[0] = EOS;
     }
     else    /* timeout'ed */
     {
@@ -364,7 +356,7 @@ static int email_exists(const char *email)
   log user in -- called either by l_usession_ok or libusr_do_login
   Authentication has already been done prior to calling this
 -------------------------------------------------------------------------- */
-static int do_login(int ci, long uid, char *plogin, char *pemail, char *pname, long visits, const char *sesid)
+static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_about, long visits, const char *sesid)
 {
     char        sql_query[MAX_SQL_QUERY_LEN+1];
     MYSQL_RES   *result;
@@ -373,14 +365,15 @@ unsigned long   sql_records;
     char        login[LOGIN_LEN+1];
     char        email[EMAIL_LEN+1];
     char        name[UNAME_LEN+1];
+    char        about[256];
 
     DBG("do_login");
 
     /* get user record by id */
 
-    if ( !plogin )  /* login from cookie */
+    if ( !p_login )  /* login from cookie */
     {
-        sprintf(sql_query, "SELECT login,email,name,visits FROM users WHERE id=%ld", uid);
+        sprintf(sql_query, "SELECT login,email,name,about,visits FROM users WHERE id=%ld", uid);
         DBG("sql_query: %s", sql_query);
         mysql_query(G_dbconn, sql_query);
         result = mysql_store_result(G_dbconn);
@@ -408,15 +401,17 @@ unsigned long   sql_records;
         strcpy(login, sql_row[0]?sql_row[0]:"");
         strcpy(email, sql_row[1]?sql_row[1]:"");
         strcpy(name, sql_row[2]?sql_row[2]:"");
-        visits = atol(sql_row[3]);
+        strcpy(about, sql_row[3]?sql_row[3]:"");
+        visits = atol(sql_row[4]);
 
         mysql_free_result(result);
     }
     else
     {
-        strcpy(login, plogin);
-        strcpy(email, pemail);
-        strcpy(name, pname);
+        strcpy(login, p_login);
+        strcpy(email, p_email);
+        strcpy(name, p_name);
+        strcpy(about, p_about);
     }
 
     /* admin? */
@@ -426,7 +421,7 @@ unsigned long   sql_records;
 #endif
     /* add record to uses */
 
-    if ( !start_new_luses(ci, uid, login, email, name, sesid) )
+    if ( !start_new_luses(ci, uid, login, email, name, about, sesid) )
         return ERR_SERVER_TOOBUSY;
 
     /* update user record */
@@ -472,6 +467,7 @@ int libusr_do_login(int ci)
     QSVAL       login;
     QSVAL       email;
     char        name[UNAME_LEN+1];
+    char        about[256];
     QSVAL       passwd;
     QSVAL       keep;
     char        ulogin[MAX_VALUE_LEN*2+1];
@@ -502,7 +498,7 @@ unsigned long   sql_records;
         return ERR_INVALID_REQUEST;
     }
     stp_right(email);
-    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,ula_time,ula_cnt,visits,deleted FROM users WHERE UPPER(email)='%s'", upper(email));
+    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,ula_time,ula_cnt,visits,deleted FROM users WHERE UPPER(email)='%s'", upper(email));
 
 #else    /* by login */
 
@@ -513,7 +509,7 @@ unsigned long   sql_records;
     }
     stp_right(login);
     strcpy(ulogin, upper(login));
-    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,ula_time,ula_cnt,visits,deleted FROM users WHERE (UPPER(login)='%s' OR UPPER(email)='%s')", ulogin, ulogin);
+    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,ula_time,ula_cnt,visits,deleted FROM users WHERE (UPPER(login)='%s' OR UPPER(email)='%s')", ulogin, ulogin);
 
 #endif
 
@@ -549,10 +545,11 @@ unsigned long   sql_records;
     strcpy(name, sql_row[3]?sql_row[3]:"");
     strcpy(p1, sql_row[4]);
     strcpy(p2, sql_row[5]);
-    strcpy(ula_time, sql_row[6]?sql_row[6]:"");
-    ula_cnt = atol(sql_row[7]);
-    visits = atol(sql_row[8]);
-    strcpy(deleted, sql_row[9]?sql_row[9]:"N");
+    strcpy(about, sql_row[6]?sql_row[6]:"");
+    strcpy(ula_time, sql_row[7]?sql_row[7]:"");
+    ula_cnt = atol(sql_row[8]);
+    visits = atol(sql_row[9]);
+    strcpy(deleted, sql_row[10]?sql_row[10]:"N");
 
     mysql_free_result(result);
 
@@ -654,7 +651,7 @@ unsigned long   sql_records;
 
     /* finish logging user in */
 
-    return do_login(ci, uid, login, email, name, visits, sesid);
+    return do_login(ci, uid, login, email, name, about, visits, sesid);
 }
 
 
@@ -679,6 +676,7 @@ int libusr_do_create_acc(int ci)
     QSVAL   name;
     QSVAL   passwd;
     QSVAL   rpasswd;
+    QSVAL   about;
     QSVAL   message;
     int     plen;
     char    sql_query[MAX_SQL_QUERY_LEN+1];
@@ -731,6 +729,12 @@ int libusr_do_create_acc(int ci)
         strcpy(US.name, name);
     }
 
+    if ( QS_HTML_ESCAPE("about", about) )
+    {
+        stp_right(about);
+        strcpy(US.about, about);
+    }
+
     /* ----------------------------------------------------------------- */
 
     plen = strlen(passwd);
@@ -773,7 +777,7 @@ int libusr_do_create_acc(int ci)
     doit(str1, str2, login, email[0]?email:STR_005, passwd);
 #endif
 
-    sprintf(sql_query, "INSERT INTO users (id,login,email,name,passwd1,passwd2,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s',0,'%s',0,0,0,'N')", login, email, name, str1, str2, G_dt);
+    sprintf(sql_query, "INSERT INTO users (id,login,email,name,passwd1,passwd2,about,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s','%s',0,'%s',0,0,0,'N')", login, email, name, str1, str2, about, G_dt);
 
     DBG("sql_query: INSERT INTO users (id,login,email,name,...) VALUES (0,'%s','%s','%s',...)", login, email, name);
 
@@ -845,6 +849,7 @@ int libusr_do_save_myacc(int ci)
     QSVAL       name;
     QSVAL       passwd;
     QSVAL       rpasswd;
+    QSVAL       about;
     QSVAL       opasswd;
     QSVAL       uemail_old;
     QSVAL       uemail_new;
@@ -881,16 +886,21 @@ unsigned long   sql_records;
     if ( QS_HTML_ESCAPE("name", name) ) /* optional */
         stp_right(name);
 
+    if ( QS_HTML_ESCAPE("about", about) ) /* optional */
+        stp_right(about);
+
     /* remember form fields */
     /* US.email contains old email */
 
     strcpy(US.login_tmp, login);
     strcpy(US.email_tmp, email);
     strcpy(US.name_tmp, name);
+    strcpy(US.about_tmp, about);
 
     DBG("login_tmp: [%s]", US.login_tmp);
     DBG("email_tmp: [%s]", US.email_tmp);
     DBG("name_tmp: [%s]", US.name_tmp);
+    DBG("about_tmp: [%s]", US.about_tmp);
 
     /* basic validation */
 
@@ -982,7 +992,7 @@ unsigned long   sql_records;
     doit(str1, str2, login, email[0]?email:STR_005, plen?passwd:opasswd);
 #endif
 
-    sprintf(sql_query, "UPDATE users SET login='%s', email='%s', name='%s', passwd1='%s', passwd2='%s' WHERE id=%ld", login, email, name, str1, str2, US.uid);
+    sprintf(sql_query, "UPDATE users SET login='%s', email='%s', name='%s', passwd1='%s', passwd2='%s', about='%s' WHERE id=%ld", login, email, name, str1, str2, about, US.uid);
     DBG("sql_query: UPDATE users SET login='%s', email='%s', name='%s',... WHERE id=%ld", login, email, name, US.uid);
 
     if ( mysql_query(G_dbconn, sql_query) )
@@ -996,6 +1006,7 @@ unsigned long   sql_records;
     strcpy(US.login, US.login_tmp);
     strcpy(US.email, US.email_tmp);
     strcpy(US.name, US.name_tmp);
+    strcpy(US.about, US.about_tmp);
 
     return OK;
 }

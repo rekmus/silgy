@@ -443,9 +443,11 @@ typedef struct {
     char    login[LOGIN_LEN+1];
     char    email[EMAIL_LEN+1];
     char    name[UNAME_LEN+1];
+    char    about[256];
     char    login_tmp[LOGIN_LEN+1];     /* while My Profile isn't saved */
     char    email_tmp[EMAIL_LEN+1];
     char    name_tmp[UNAME_LEN+1];
+    char    about_tmp[256];
     char    sesid[SESID_LEN+1];
     char    ip[INET_ADDRSTRLEN];
     char    uagent[MAX_VALUE_LEN+1];
