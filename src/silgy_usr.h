@@ -66,19 +66,25 @@
 
 /* user authentication */
 
-#define AUTH_BY_LOGIN               1
-#define AUTH_BY_EMAIL               2
+#ifndef USERSBYEMAIL
+#ifndef USERSBYLOGIN
+#define USERSBYLOGIN
+#endif
+#endif
+
+//#define AUTH_BY_LOGIN               1
+//#define AUTH_BY_EMAIL               2
 
 #define LOGGED                      US.logged
 #define ADMIN                       (LOGGED && 0==strcmp(US.login, "admin"))
 
 
-typedef struct {
-    char    auth;
-} libusr_t;
+//typedef struct {
+//    char    auth;
+//} libusr_t;
 
 
-void libusr_init(libusr_t *s);
+//void libusr_init(libusr_t *s);
 int libusr_do_login(int ci);
 int libusr_do_create_acc(int ci);
 int libusr_do_contact(int ci);

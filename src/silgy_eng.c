@@ -1118,6 +1118,14 @@ static bool init(int argc, char **argv)
         ALWAYS("    APP_DEF_AUTH_LEVEL = AUTH_LEVEL_ADMIN");
     ALWAYS("       APP_ADMIN_EMAIL = %s", APP_ADMIN_EMAIL);
     ALWAYS("     APP_CONTACT_EMAIL = %s", APP_CONTACT_EMAIL);
+#ifdef USERS
+    ALWAYS("");
+#ifdef USERSBYEMAIL
+    ALWAYS(" Users' authentication = USERSBYEMAIL");
+#else
+    ALWAYS(" Users' authentication = USERSBYLOGIN");
+#endif
+#endif
     ALWAYS("");
     ALWAYS("           auses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(auses), sizeof(auses)/1024, (double)sizeof(auses)/1024/1024);
     ALWAYS("");
@@ -1912,7 +1920,13 @@ static void process_req(int ci)
                 WAR("Invalid ls cookie");
         }
 
-        if ( !LOGGED && conn[ci].auth_level == AUTH_LEVEL_LOGGEDIN )    /* redirect to login page */
+        if ( conn[ci].auth_level==AUTH_LEVEL_ADMIN && !ADMIN )  /* return not found */
+        {
+            INF("AUTH_LEVEL_ADMIN required, returning 404");
+            ret = ERR_NOT_FOUND;
+            RES_DONT_CACHE;
+        }
+        else if ( conn[ci].auth_level==AUTH_LEVEL_LOGGEDIN && !LOGGED )    /* redirect to login page */
         {
             INF("AUTH_LEVEL_LOGGEDIN required, redirecting to login");
             ret = ERR_REDIRECTION;
@@ -1926,9 +1940,9 @@ static void process_req(int ci)
             ret = OK;
         }
 
-        if ( !LOGGED && conn[ci].auth_level == AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only )       /* anonymous user session required */
+        if ( conn[ci].auth_level==AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only && !LOGGED )    /* anonymous user session required */
 #else
-        if ( conn[ci].auth_level == AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only )
+        if ( conn[ci].auth_level==AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only )
 #endif
         {
             if ( !conn[ci].cookie_in_a[0] || !a_usession_ok(ci) )       /* valid anonymous sesid cookie not present */
