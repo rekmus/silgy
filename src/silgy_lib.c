@@ -2405,7 +2405,7 @@ bool silgy_read_param(const char *param, char *dest)
 {
     char *p;
 
-    DBG("silgy_read_param [%s]", param);
+//    DBG("silgy_read_param [%s]", param);
 
     if ( !M_conf )
     {
@@ -2447,6 +2447,8 @@ bool silgy_read_param(const char *param, char *dest)
         dest[i++] = *p++;
 
     dest[i] = EOS;
+
+    return TRUE;
 }
 
 
