@@ -70,12 +70,14 @@ char        G_last_modified[32];        /* response header field with server's s
 #ifdef DBMYSQL
 MYSQL       *G_dbconn;                  /* database connection */
 #endif
+#ifndef _WIN32
 /* asynchorous processing */
 mqd_t       G_queue_req;                /* request queue */
 mqd_t       G_queue_res;                /* response queue */
 #ifdef ASYNC
 async_res_t ares[MAX_ASYNC];            /* async response array */
 long        G_last_call_id;             /* counter */
+#endif
 #endif
 char        G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
 int         G_blacklist_cnt;            /* M_blacklist length */
@@ -86,8 +88,13 @@ counters_t  G_cnts_day_before;          /* day before's counters */
 /* locals */
 
 static char         *M_pidfile;                 /* pid file name */
+#ifdef _WIN32   /* Windows */
+static SOCKET       M_listening_fd=0;           /* The socket file descriptor for our "listening" socket */
+static SOCKET       M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
+#else
 static int          M_listening_fd=0;           /* The socket file descriptor for our "listening" socket */
 static int          M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
+#endif
 #ifdef HTTPS
 static SSL_CTX      *M_ssl_ctx;
 #endif
@@ -100,6 +107,9 @@ static char         M_expires[32];              /* response header field one mon
 static bool         M_favicon_exists=FALSE;     /* special case statics */
 static bool         M_robots_exists=FALSE;      /* -''- */
 static bool         M_appleicon_exists=FALSE;   /* -''- */
+#ifdef _WIN32   /* Windows */
+WSADATA             wsa;
+#endif 
 
 /* prototypes */
 
@@ -180,6 +190,19 @@ struct timeval  timeout;                    /* Timeout for select */
 
     DBG("Trying socket...");
 
+#ifdef _WIN32   /* Windows */
+
+    DBG("Initialising Winsock...");
+
+    if ( WSAStartup(MAKEWORD(2,2), &wsa) != 0 )
+    {
+        ERR("WSAStartup failed. Error Code = %d", WSAGetLastError());
+        clean_up();
+        return EXIT_FAILURE;
+    }
+
+#endif  /* _WIN32 */
+
     if ( (M_listening_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
     {
         ERR("socket failed, errno = %d (%s)", errno, strerror(errno));
@@ -190,7 +213,11 @@ struct timeval  timeout;                    /* Timeout for select */
     DBG("M_listening_fd = %d", M_listening_fd);
 
     /* So that we can re-bind to it without TIME_WAIT problems */
+#ifdef _WIN32   /* Windows */
+    setsockopt(M_listening_fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse_addr, sizeof(reuse_addr));
+#else
     setsockopt(M_listening_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+#endif 
 
     /* Set socket to non-blocking with our setnonblocking routine */
     setnonblocking(M_listening_fd);
@@ -1215,12 +1242,14 @@ static bool init(int argc, char **argv)
 
     G_ptm = gmtime(&G_now); /* reset to today */
 
+#ifndef _WIN32
     /* handle signals */
 
     signal(SIGINT,  sigdisp);   /* Ctrl-C */
     signal(SIGTERM, sigdisp);
     signal(SIGQUIT, sigdisp);   /* Ctrl-\ */
     signal(SIGTSTP, sigdisp);   /* Ctrl-Z */
+#endif
 
     /* initialize SSL connection */
 
@@ -1297,6 +1326,13 @@ static bool init(int argc, char **argv)
 -------------------------------------------------------------------------- */
 static void setnonblocking(int sock)
 {
+#ifdef _WIN32   /* Windows */
+
+    u_long mode = 1;  // 1 to enable non-blocking socket
+    ioctlsocket(sock, FIONBIO, &mode);
+
+#else   /* Linux / UNIX */
+
     int opts;
 
     opts = fcntl(sock, F_GETFL);
@@ -1314,6 +1350,7 @@ static void setnonblocking(int sock)
         ERR("fcntl(F_SETFL) failed");
         exit(EXIT_FAILURE);
     }
+#endif
 }
 
 
@@ -1371,8 +1408,8 @@ static void build_select_list()
 
 
 /* --------------------------------------------------------------------------
-  handle a brand new connection
-  we've got fd and IP here for conn array
+   Handle a brand new connection
+   we've got fd and IP here for conn array
 -------------------------------------------------------------------------- */
 static void accept_http()
 {
@@ -1400,8 +1437,11 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     }
 
     /* get the remote address */
-
+#ifdef _WIN32   /* Windows */
+    strcpy(remote_addr, inet_ntoa(cli_addr.sin_addr));
+#else
     inet_ntop(AF_INET, &(cli_addr.sin_addr), remote_addr, INET_ADDRSTRLEN);
+#endif
 
     if ( G_blockedIPList[0] && ip_blocked(remote_addr) )
     {
@@ -1442,8 +1482,8 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
 
 /* --------------------------------------------------------------------------
-  handle a brand new connection
-  we've got fd and IP here for conn array
+   Handle a brand new connection
+   we've got fd and IP here for conn array
 -------------------------------------------------------------------------- */
 static void accept_https()
 {
@@ -1473,8 +1513,11 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     }
 
     /* get the remote address */
-
+#ifdef _WIN32   /* Windows */
+    strcpy(remote_addr, inet_ntoa(cli_addr.sin_addr));
+#else
     inet_ntop(AF_INET, &(cli_addr.sin_addr), remote_addr, INET_ADDRSTRLEN);
+#endif
 
     if ( G_blockedIPList[0] && ip_blocked(remote_addr) )
     {
@@ -2978,7 +3021,11 @@ static void clean_up()
     if ( access(M_pidfile, F_OK) != -1 )
     {
         if (G_log) DBG("Removing pid file...");
+#ifdef _WIN32   /* Windows */
+        sprintf(command, "del %s", M_pidfile);
+#else
         sprintf(command, "rm %s", M_pidfile);
+#endif
         system(command);
     }
 
@@ -3577,3 +3624,66 @@ void eng_out_check_realloc_bin(int ci, const char *data, long len)
         eng_out_check_realloc_bin(ci, data, len);       /* call itself! */
     }
 }
+
+
+#ifdef _WIN32   /* Windows */
+/* --------------------------------------------------------------------------
+   Windows port of getpid
+-------------------------------------------------------------------------- */
+int getpid()
+{
+    return GetCurrentProcessId();
+}
+
+
+/* --------------------------------------------------------------------------
+   Windows port of clock_gettime
+   https://stackoverflow.com/questions/5404277/porting-clock-gettime-to-windows
+-------------------------------------------------------------------------- */
+int clock_gettime(int, struct timespec *spec)
+{
+    __int64 wintime; GetSystemTimeAsFileTime((FILETIME*)&wintime);
+    wintime      -= 116444736000000000;           // 1 Jan 1601 to 1 Jan 1970
+    spec->tv_sec  = wintime / 10000000;           // seconds
+    spec->tv_nsec = wintime % 10000000 * 100;     // nano-seconds
+    return 0;
+}
+
+
+#ifndef stpcpy
+/* --------------------------------------------------------------------------
+   Windows port of stpcpy
+-------------------------------------------------------------------------- */
+char *stpcpy(char *dest, const char *src)
+{
+    register char *d=dest;
+    register const char *s=src;
+
+    do
+        *d++ = *s;
+    while (*s++ != '\0');
+
+    return d - 1;
+}
+#endif
+
+
+#ifndef stpncpy
+/* --------------------------------------------------------------------------
+   Windows port of stpcpy
+-------------------------------------------------------------------------- */
+char *stpncpy(char *dest, const char *src, int len)
+{
+    register char *d=dest;
+    register const char *s=src;
+    int count=0;
+
+    do
+        *d++ = *s;
+    while (*s++ != '\0' && ++count<len);
+
+    return d - 1;
+}
+#endif
+
+#endif  /* _WIN32 */

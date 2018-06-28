@@ -8,6 +8,13 @@
 #ifndef SILGY_H
 #define SILGY_H
 
+#ifdef _WIN32   /* Windows */
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#define CLOCK_MONOTONIC 0   /* dummy */
+#undef OUT
+#endif  /* _WIN32 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,12 +22,15 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <errno.h>
+#ifndef _WIN32
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <mqueue.h>
+#endif
+#include <sys/stat.h>
 #include <signal.h>
 #include <dirent.h>
 
@@ -32,7 +42,6 @@
 #ifdef HTTPS
 #include <openssl/ssl.h>
 #endif
-#include <mqueue.h>
 
 #ifdef __cplusplus
 #include <cctype>
@@ -40,7 +49,7 @@
 typedef char                        bool;
 #endif
 
-#define WEB_SERVER_VERSION          "2.5"
+#define WEB_SERVER_VERSION          "3.0"
 
 /* for use with booleans */
 
@@ -539,12 +548,14 @@ extern char     G_last_modified[32];        /* response header field with server
 #ifdef DBMYSQL
 extern MYSQL    *G_dbconn;                  /* database connection */
 #endif
+#ifndef _WIN32
 /* asynchorous processing */
 extern mqd_t    G_queue_req;                /* request queue */
 extern mqd_t    G_queue_res;                /* response queue */
 #ifdef ASYNC
 extern async_res_t ares[MAX_ASYNC];         /* async response array */
 extern long     G_last_call_id;             /* counter */
+#endif
 #endif
 extern char     G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 extern char     G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
@@ -579,6 +590,16 @@ extern "C" {
     void eng_out_check(int ci, const char *str);
     void eng_out_check_realloc(int ci, const char *str);
     void eng_out_check_realloc_bin(int ci, const char *data, long len);
+#ifdef _WIN32   /* Windows */
+    int  getpid(void);
+    int  clock_gettime(int, struct timespec *spec);
+#ifndef stpcpy
+char *stpcpy(char *dest, const char *src);
+#endif 
+#ifndef stpncpy
+char *stpncpy(char *dest, const char *src, int len);
+#endif 
+#endif  /* _WIN32 */
 #ifdef ASYNC_SERVICE
     bool services_start(void);
     void services(const char *service, const char *req, char *res);

@@ -162,6 +162,12 @@ long lib_get_memory()
 
     fclose(file);
 
+#else   /* not Linux */
+
+#ifdef _WIN32   /* Windows */
+
+    /* TODO */
+
 #else   /* UNIX */
 
 struct rusage usage;
@@ -169,7 +175,9 @@ struct rusage usage;
     getrusage(RUSAGE_SELF, &usage);
     result = usage.ru_maxrss;
 
-#endif
+#endif  /* _WIN32 */
+
+#endif  /* __linux__ */
 
     return result;
 }
@@ -2500,6 +2508,7 @@ static char pidfilename[256];
 -------------------------------------------------------------------------- */
 bool lib_shm_create(long bytes)
 {
+#ifndef _WIN32
     key_t key;
 
     /* Create unique key via call to ftok() */
@@ -2528,7 +2537,7 @@ bool lib_shm_create(long bytes)
         perror("shmat");
         return FALSE;
     }
-
+#endif
     return TRUE;
 }
 
@@ -2538,11 +2547,13 @@ bool lib_shm_create(long bytes)
 -------------------------------------------------------------------------- */
 void lib_shm_delete(long bytes)
 {
+#ifndef _WIN32
     if ( lib_shm_create(bytes) )
     {
         shmctl(M_shmid, IPC_RMID, 0);
         printf("Shared memory segment marked for deletion\n");
     }
+#endif
 }
 
 
@@ -2567,8 +2578,20 @@ bool log_start(const char *prefix, bool test)
 
     if ( NULL == (G_log=fopen(ffname, "a")) )
     {
-        printf("ERROR: Couldn't open log file. Make sure SILGYDIR is defined in your environment and there is a `logs' directory there.\n");
-        return FALSE;
+        /* try in current directory */
+
+        sprintf(fname, "%s%d%02d%02d_%02d%02d", fprefix, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
+
+        if ( test )
+            sprintf(ffname, "%s_t.log", fname);
+        else
+            sprintf(ffname, "%s.log", fname);
+
+        if ( NULL == (G_log=fopen(ffname, "a")) )
+        {
+            printf("ERROR: Couldn't open log file. Make sure SILGYDIR is defined in your environment and there is a `logs' directory there.\n");
+            return FALSE;
+        }
     }
 
     if ( fprintf(G_log, "----------------------------------------------------------------------------------------------\n") < 0 )
@@ -2692,7 +2715,10 @@ void log_finish()
 char *lib_convert(char *src, const char *cp_from, const char *cp_to)
 {
 static char dst[1024];
-
+#ifdef _WIN32   /* Windows */
+    /* don't convert for now */
+    strcpy(dst, src);
+#else
     iconv_t cd = iconv_open(cp_to, cp_from);
     if (cd == (iconv_t) -1)
     {
@@ -2718,7 +2744,7 @@ static char dst[1024];
     *out_buf = 0;
 
     iconv_close(cd);
-
+#endif  /* _WIN32 */
     return dst;
 }
 
