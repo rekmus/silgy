@@ -209,7 +209,7 @@ int app_process_req(int ci)
 
         OUT("<p><a href=\"/\">Back to landing page</a></p>");
     }
-    else  // page not foun
+    else  // page not found
     {
         ret = ERR_NOT_FOUND;  // this will return status 404 to the browser
     }
