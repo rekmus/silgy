@@ -8,6 +8,28 @@ Silgy is a simple back-end C++ servlet framework for extremely fast web applicat
 Silgy supports https, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism to use it in microservices architecture.  
   
 Silgy requires Linux/UNIX or Windows computer with C or C++ compiler for development. GCC is recommended (which is known as MinGW on Windows). Production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
+## Quick Start Guide (Windows)
+### 0. Install C++ compiler
+I recommend [MinGW](http://mingw.org):
+### 1. Create project folder, i.e. C:\cpp\silgy_app  
+### 2. [Download Silgy](https://github.com/silgy/silgy/tree/master/src)
+Click **Clone or download** button, then choose ZIP version, open it and unpack **src** folder to your project folder.
+### 3. Open a command line window
+### 4. Go to your project folder (directory)
+and src:
+```source.sh
+cd \cpp\silgy_app\src
+```
+### 5. Compile:
+```source.sh
+m
+```
+### 6. Run:
+```source.sh
+silgy_app
+```
+### 7. Open the browser and navigate to localhost
+
 ## Quick Start Guide (Linux)
 I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php).  
   
