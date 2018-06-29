@@ -1,5 +1,5 @@
 # Silgy
-Silgy is a simple back-end C++ servlet framework for extremely fast web applications and microservices. It contains asynchronous (non-blocking) web engine that allows you to compile and link your logic into one executable that responds immediately to HTTP requests, without creating new thread or — God forbid — process. It's small enough to fit on free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds).  
+Silgy is a simple back-end C++ framework for extremely fast web applications / servlets / microservices. It contains asynchronous (non-blocking) web engine that allows you to compile and link your logic into one executable that responds immediately to HTTP requests, without creating new thread or — God forbid — process. It's small enough to fit on free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds).  
   
 <div align="center">
 <img src="https://minishare.com/show?p=MWPcAbmY&i=2" width=418/>
@@ -7,7 +7,7 @@ Silgy is a simple back-end C++ servlet framework for extremely fast web applicat
 
 Silgy supports https, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism to use it in microservices architecture.  
   
-Silgy requires Linux/UNIX or Windows computer with C or C++ compiler for development. GCC is recommended (which is known as MinGW on Windows). Production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
+Silgy requires Linux/UNIX or Windows computer with C or C++ compiler for development. GCC is recommended (which is known as MinGW on Windows). Fuss-free deployment and cloud vendor independency means that production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 ## Quick Start (Windows)
 ### 0. Install C++ compiler
 I recommend free, open source [MinGW](http://mingw.org).
