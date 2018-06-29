@@ -590,16 +590,6 @@ extern "C" {
     void eng_out_check(int ci, const char *str);
     void eng_out_check_realloc(int ci, const char *str);
     void eng_out_check_realloc_bin(int ci, const char *data, long len);
-#ifdef _WIN32   /* Windows */
-    int  getpid(void);
-    int  clock_gettime(int, struct timespec *spec);
-#ifndef stpcpy
-char *stpcpy(char *dest, const char *src);
-#endif 
-#ifndef stpncpy
-char *stpncpy(char *dest, const char *src, int len);
-#endif 
-#endif  /* _WIN32 */
 #ifdef ASYNC_SERVICE
     bool services_start(void);
     void services(const char *service, const char *req, char *res);

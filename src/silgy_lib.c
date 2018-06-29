@@ -2480,7 +2480,7 @@ static char pidfilename[256];
         WAR("PID file already exists");
         INF("Killing the old process...");
 #ifdef _WIN32   /* Windows */
-        /* open and read process id */
+        /* open the pid file and read process id */
         if ( NULL == (fpid=fopen(pidfilename, "r")) )
         {
             ERR("Couldn't open pid file for reading");
@@ -2500,14 +2500,26 @@ static char pidfilename[256];
         fclose(fpid);
         oldpid[fsize] = EOS;
         DBG("oldpid [%s]", oldpid);
-        msleep(250);
+
+        msleep(100);
+
         sprintf(command, "taskkill /pid %s", oldpid);
 #else
         sprintf(command, "kill `cat %s`", pidfilename);
 #endif
         system(command);
 
-        msleep(250);
+        msleep(100);
+
+        INF("Removing pid file...");
+#ifdef _WIN32   /* Windows */
+        sprintf(command, "del %s", pidfilename);
+#else
+        sprintf(command, "rm %s", pidfilename);
+#endif
+        system(command);
+
+        msleep(100);
     }
 
     /* create a pid file */
@@ -3259,3 +3271,102 @@ void digest_to_hex(const uint8_t digest[SHA1_DIGEST_SIZE], char *output)
     }
     *(c - 1) = '\0';
 }
+
+
+
+
+#ifdef _WIN32   /* Windows */
+/* --------------------------------------------------------------------------
+   Windows port of getpid
+-------------------------------------------------------------------------- */
+int getpid()
+{
+    return GetCurrentProcessId();
+}
+
+
+/* --------------------------------------------------------------------------
+   Windows port of clock_gettime
+   https://stackoverflow.com/questions/5404277/porting-clock-gettime-to-windows
+-------------------------------------------------------------------------- */
+#define exp7           10000000     // 1E+7
+#define exp9         1000000000     // 1E+9
+#define w2ux 116444736000000000     // 1 Jan 1601 to 1 Jan 1970
+
+static void unix_time(struct timespec *spec)
+{
+    __int64 wintime;
+    GetSystemTimeAsFileTime((FILETIME*)&wintime); 
+    wintime -= w2ux;
+    spec->tv_sec = wintime / exp7;                 
+    spec->tv_nsec = wintime % exp7 * 100;
+}
+
+int clock_gettime(int, struct timespec *spec)
+{
+   static  struct timespec startspec;
+   static double ticks2nano;
+   static __int64 startticks, tps=0;
+   __int64 tmp, curticks;
+
+   QueryPerformanceFrequency((LARGE_INTEGER*)&tmp); // some strange system can possibly change freq?
+
+   if ( tps != tmp )
+   {
+       tps = tmp; // init ONCE
+       QueryPerformanceCounter((LARGE_INTEGER*)&startticks);
+       unix_time(&startspec);
+       ticks2nano = (double)exp9 / tps;
+   }
+
+   QueryPerformanceCounter((LARGE_INTEGER*)&curticks);
+   curticks -= startticks;
+   spec->tv_sec = startspec.tv_sec + (curticks / tps);
+   spec->tv_nsec = startspec.tv_nsec + (double)(curticks % tps) * ticks2nano;
+   if ( !(spec->tv_nsec < exp9) )
+   {
+       ++spec->tv_sec;
+       spec->tv_nsec -= exp9;
+   }
+
+   return 0;
+}
+
+
+#ifndef stpcpy
+/* --------------------------------------------------------------------------
+   Windows port of stpcpy
+-------------------------------------------------------------------------- */
+char *stpcpy(char *dest, const char *src)
+{
+    register char *d=dest;
+    register const char *s=src;
+
+    do
+        *d++ = *s;
+    while (*s++ != '\0');
+
+    return d - 1;
+}
+#endif
+
+
+#ifndef stpncpy
+/* --------------------------------------------------------------------------
+   Windows port of stpcpy
+-------------------------------------------------------------------------- */
+char *stpncpy(char *dest, const char *src, int len)
+{
+    register char *d=dest;
+    register const char *s=src;
+    int count=0;
+
+    do
+        *d++ = *s;
+    while (*s++ != '\0' && ++count<len);
+
+    return d - 1;
+}
+#endif
+
+#endif  /* _WIN32 */

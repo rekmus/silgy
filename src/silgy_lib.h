@@ -115,6 +115,17 @@ extern "C" {
     int Base64decode_len(const char * coded_src);
     int Base64decode(char * plain_dst, const char *coded_src);
 
+#ifdef _WIN32   /* Windows */
+    int getpid(void);
+    int clock_gettime(int, struct timespec *spec);
+#ifndef stpcpy
+    char *stpcpy(char *dest, const char *src);
+#endif 
+#ifndef stpncpy
+    char *stpncpy(char *dest, const char *src, int len);
+#endif 
+#endif  /* _WIN32 */
+
 #ifdef __cplusplus
 }   // extern "C"
 #endif
