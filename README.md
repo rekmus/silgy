@@ -17,7 +17,7 @@ I.e. `C:\cpp\silgy_app`
 On the [Silgy project's main page](https://github.com/silgy/silgy/tree/master/src) click **Clone or download** button, then choose ZIP version, open it and unpack **src** folder to your project folder.
 ### 3. Open a command line window
 ### 4. Go to your project folder (directory)
-and src:
+and then src:
 ```source.sh
 cd \cpp\silgy_app\src
 ```
@@ -29,7 +29,7 @@ m
 ```source.sh
 silgy_app
 ```
-### 7. Open the browser and navigate to `localhost`
+### 7. Open browser and navigate to `localhost`
 You should see something like this:
 
 <img src="https://minishare.com/show?p=v1EcflRY&i=2">
