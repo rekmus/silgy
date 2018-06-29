@@ -89,10 +89,10 @@ counters_t  G_cnts_day_before;          /* day before's counters */
 
 static char         *M_pidfile;                 /* pid file name */
 #ifdef _WIN32   /* Windows */
-static SOCKET       M_listening_fd=0;           /* The socket file descriptor for our "listening" socket */
+static SOCKET       M_listening_fd=0;           /* The socket file descriptor for "listening" socket */
 static SOCKET       M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
 #else
-static int          M_listening_fd=0;           /* The socket file descriptor for our "listening" socket */
+static int          M_listening_fd=0;           /* The socket file descriptor for "listening" socket */
 static int          M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
 #endif
 #ifdef HTTPS
@@ -1009,7 +1009,11 @@ static void close_conn(int ci)
     if ( conn[ci].secure )
         SSL_free(conn[ci].ssl);
 #endif
+#ifdef _WIN32   /* Windows */
+    closesocket(conn[ci].fd);
+#else
     close(conn[ci].fd);
+#endif  /* _WIN32 */
     reset_conn(ci, CONN_STATE_DISCONNECTED);
 }
 
@@ -1478,7 +1482,11 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     if ( G_blockedIPList[0] && ip_blocked(remote_addr) )
     {
         ++G_cnts_today.blocked;
+#ifdef _WIN32   /* Windows */
+        closesocket(connection);
+#else
         close(connection);
+#endif  /* _WIN32 */
         return;
     }
 
@@ -1512,7 +1520,11 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 #endif  /* _WIN32 */
         if ( bytes < 36 )
             ERR("write error, bytes = %d of 36", bytes);
+#ifdef _WIN32   /* Windows */
+        closesocket(connection);
+#else
         close(connection);
+#endif  /* _WIN32 */
     }
 }
 
@@ -1558,7 +1570,11 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     if ( G_blockedIPList[0] && ip_blocked(remote_addr) )
     {
         ++G_cnts_today.blocked;
+#ifdef _WIN32   /* Windows */
+        closesocket(connection);
+#else
         close(connection);
+#endif  /* _WIN32 */
         return;
     }
 
@@ -1627,7 +1643,11 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     {
         /* No room left in the queue! */
         WAR("No room left for new client, closing");
+#ifdef _WIN32   /* Windows */
+        closesocket(connection);
+#else
         close(connection);
+#endif  /* _WIN32 */
     }
 #endif
 }

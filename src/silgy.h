@@ -377,7 +377,11 @@ typedef struct {
 
 typedef struct {
     /* what comes in */
+#ifdef _WIN32   /* Windows */
+    SOCKET  fd;                             /* file descriptor */
+#else
     int     fd;                             /* file descriptor */
+#endif  /* _WIN32 */
     bool    secure;                         /* https? */
     char    ip[INET_ADDRSTRLEN];            /* client IP */
     char    pip[INET_ADDRSTRLEN];           /* proxy IP */
