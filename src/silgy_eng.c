@@ -3106,6 +3106,10 @@ static void clean_up()
     }
 #endif
 
+#ifdef _WIN32   /* Windows */
+    WSACleanup();
+#endif  /* _WIN32 */
+
     log_finish();
 }
 
