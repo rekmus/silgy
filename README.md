@@ -32,9 +32,7 @@ silgy_app
 ### 7. Open the browser and navigate to localhost
 You should see something like this:
 
-<div align="center">
 <img src="https://minishare.com/show?p=I6YrjhCE&i=2">
-</div>
 
 ## Quick Start Guide (Linux)
 I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php).  
