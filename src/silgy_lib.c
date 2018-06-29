@@ -2467,6 +2467,7 @@ char *lib_create_pid_file(const char *name)
 {
 static char pidfilename[256];
     FILE    *fpid=NULL;
+    char    command[256];
 
     G_pid = getpid();
 
@@ -2476,8 +2477,37 @@ static char pidfilename[256];
 
     if ( access(pidfilename, F_OK) != -1 )
     {
-        ERR("PID file already exists");
-        return NULL;
+        WAR("PID file already exists");
+        INF("Killing the old process...");
+#ifdef _WIN32   /* Windows */
+        /* open and read process id */
+        if ( NULL == (fpid=fopen(pidfilename, "r")) )
+        {
+            ERR("Couldn't open pid file for reading");
+            return NULL;
+        }
+        fseek(fpid, 0, SEEK_END);     /* determine the file size */
+        int fsize = ftell(fpid);
+        if ( fsize < 1 || fsize > 30 )
+        {
+            fclose(fpid);
+            ERR("Something's wrong with the pid file size (%d bytes)", fsize);
+            return NULL;
+        }
+        rewind(fpid);
+        char oldpid[32];
+        fread(oldpid, fsize, 1, fpid);
+        fclose(fpid);
+        oldpid[fsize] = EOS;
+        DBG("oldpid [%s]", oldpid);
+        msleep(250);
+        sprintf(command, "taskkill /pid %s", oldpid);
+#else
+        sprintf(command, "kill `cat %s`", pidfilename);
+#endif
+        system(command);
+
+        msleep(250);
     }
 
     /* create a pid file */
