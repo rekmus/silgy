@@ -1,3 +1,3 @@
 #!/bin/sh
 
-g++ silgy_app.cpp silgy_eng.c silgy_lib.c -o $SILGYDIR/bin/silgy_app_dev
+g++ silgy_app.cpp silgy_eng.c silgy_lib.c -o $SILGYDIR/bin/silgy_app

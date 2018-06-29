@@ -1,1 +1,2 @@
-silgy_app_dev
+@echo off
+silgy_app
