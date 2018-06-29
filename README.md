@@ -10,8 +10,9 @@ Silgy supports https, anonymous and registered user sessions, binary data upload
 Silgy requires Linux/UNIX or Windows computer with C or C++ compiler for development. GCC is recommended (which is known as MinGW on Windows). Production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 ## Quick Start Guide (Windows)
 ### 0. Install C++ compiler
-I recommend [MinGW](http://mingw.org):
-### 1. Create project folder, i.e. C:\cpp\silgy_app  
+I recommend [MinGW](http://mingw.org).
+### 1. Create project folder
+I.e. `C:\cpp\silgy_app`
 ### 2. [Download Silgy](https://github.com/silgy/silgy/tree/master/src)
 Click **Clone or download** button, then choose ZIP version, open it and unpack **src** folder to your project folder.
 ### 3. Open a command line window
