@@ -11,6 +11,7 @@
 #ifdef _WIN32   /* Windows */
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <psapi.h>
 #define CLOCK_MONOTONIC 0   /* dummy */
 #undef OUT
 #endif  /* _WIN32 */

@@ -166,7 +166,9 @@ long lib_get_memory()
 
 #ifdef _WIN32   /* Windows */
 
-    /* TODO */
+    PROCESS_MEMORY_COUNTERS_EX pmc;
+    GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+    result = pmc.PrivateUsage / 1024;
 
 #else   /* UNIX */
 
@@ -2757,11 +2759,9 @@ void log_finish()
 char *lib_convert(char *src, const char *cp_from, const char *cp_to)
 {
 static char dst[1024];
-#ifdef _WIN32   /* Windows */
-    /* don't convert for now */
-    strcpy(dst, src);
-#else
+
     iconv_t cd = iconv_open(cp_to, cp_from);
+
     if (cd == (iconv_t) -1)
     {
         strcpy(dst, "iconv_open failed");
@@ -2786,7 +2786,7 @@ static char dst[1024];
     *out_buf = 0;
 
     iconv_close(cd);
-#endif  /* _WIN32 */
+
     return dst;
 }
 
