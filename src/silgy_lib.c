@@ -602,7 +602,11 @@ static char str[32];
 struct tm   *ptm;
 
     ptm = gmtime(&epoch);
+#ifdef _WIN32   /* Windows */
+    strftime(str, 32, "%a, %d %b %Y %H:%M:%S GMT", ptm);
+#else
     strftime(str, 32, "%a, %d %b %Y %T GMT", ptm);
+#endif  /* _WIN32 */
 //  DBG("time_epoch2http: [%s]", str);
     return str;
 }
