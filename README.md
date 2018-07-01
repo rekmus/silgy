@@ -4,9 +4,9 @@ Silgy is a simple back-end C++ framework for extremely fast web applications / s
 - **Unbeatable speed** − measured in µ-seconds
 - **Small memory footprint** − 7 MB for demo app
 - **Simple deployment** − only one executable file (or files in gateway/services model)
-- **Cloud vendor independency** − single VM with bare OS (Linux/Windows/UNIX) is sufficient to run high-performance application
+- **Cloud vendor independency** − single VS with bare OS (Linux/Windows/UNIX) is sufficient to run high-performance application
 - **Simple coding** − three main macros do most work
-- **Low TCO** − ~$3 per month for small web application
+- **Low TCO** − ~$3 per month for hosting small web application (AWS t2.micro)
 
 It's small enough to fit on free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds).  
   
