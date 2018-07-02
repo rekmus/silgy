@@ -2169,8 +2169,6 @@ static void gen_response_header(int ci)
 #endif
         }
         HOUT(G_tmp);
-
-        PRINT_HTTP_CONTENT_LEN(0);      /* zero content */
     }
     else if ( conn[ci].status == 304 )      /* not modified since */
     {
@@ -2183,9 +2181,8 @@ static void gen_response_header(int ci)
         {
             PRINT_HTTP_LAST_MODIFIED(time_epoch2http(M_stat[conn[ci].static_res].modified));
         }
-        PRINT_HTTP_CONTENT_LEN(0);      /* zero content */
     }
-    else    /* normal response with content */
+    else if ( conn[ci].status == 200 )  /* normal response with content */
     {
         DBG("Normal response");
 
@@ -2194,29 +2191,29 @@ static void gen_response_header(int ci)
             PRINT_HTTP_VARY_DYN;
             PRINT_HTTP_NO_CACHE;
         }
-        else
+        else    /* static content */
         {
             PRINT_HTTP_VARY_STAT;
+
             if ( conn[ci].static_res == NOT_STATIC )
             {
                 if ( conn[ci].modified )
                     PRINT_HTTP_LAST_MODIFIED(time_epoch2http(conn[ci].modified));
                 else
                     PRINT_HTTP_LAST_MODIFIED(G_last_modified);
+
+                PRINT_HTTP_EXPIRES;
             }
             else    /* static res */
             {
                 PRINT_HTTP_LAST_MODIFIED(time_epoch2http(M_stat[conn[ci].static_res].modified));
             }
-            PRINT_HTTP_EXPIRES;
         }
 
         if ( conn[ci].static_res == NOT_STATIC )
             conn[ci].clen = conn[ci].p_curr_c - conn[ci].out_data;
         else
             conn[ci].clen = M_stat[conn[ci].static_res].len;
-
-        PRINT_HTTP_CONTENT_LEN(conn[ci].clen);
     }
 
     /* Date */
@@ -2226,6 +2223,10 @@ static void gen_response_header(int ci)
     /* Connection */
 
     PRINT_HTTP_CONNECTION(ci);
+
+    /* Content-Length */
+
+    PRINT_HTTP_CONTENT_LEN(conn[ci].clen);
 
     /* Cookie */
 
