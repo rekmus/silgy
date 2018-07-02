@@ -941,7 +941,7 @@ static bool read_conf()
     else    /* no SILGY_CONF -- try default */
     {
         sprintf(conf_path, "%s/bin/silgy.conf", G_appdir);
-        printf("SILGY_CONF not set, trying %s...\n", conf_path);
+//        printf("SILGY_CONF not set, trying %s...\n", conf_path);
         return lib_read_conf(conf_path);
     }
 }
@@ -2125,8 +2125,6 @@ static void gen_response_header(int ci)
 
     conn[ci].p_curr_h = conn[ci].header;
 
-    conn[ci].clen = 0;
-
     PRINT_HTTP_STATUS(conn[ci].status);
 
     if ( conn[ci].status == 301 || conn[ci].status == 303 )     /* redirection */
@@ -2169,10 +2167,13 @@ static void gen_response_header(int ci)
 #endif
         }
         HOUT(G_tmp);
+
+        conn[ci].clen = 0;
     }
     else if ( conn[ci].status == 304 )      /* not modified since */
     {
-        DBG("Not Modified");
+//        DBG("Not Modified");
+
         if ( conn[ci].static_res == NOT_STATIC )
         {
             PRINT_HTTP_LAST_MODIFIED(G_last_modified);
@@ -2181,10 +2182,12 @@ static void gen_response_header(int ci)
         {
             PRINT_HTTP_LAST_MODIFIED(time_epoch2http(M_stat[conn[ci].static_res].modified));
         }
+
+        conn[ci].clen = 0;
     }
     else if ( conn[ci].status == 200 )  /* normal response with content */
     {
-        DBG("Normal response");
+//        DBG("Normal response");
 
         if ( conn[ci].dont_cache )  /* dynamic content */
         {

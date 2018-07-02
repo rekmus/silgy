@@ -61,12 +61,12 @@ void lib_get_app_dir()
     else if ( NULL != (appdir=getenv("HOME")) )
     {
         strcpy(G_appdir, appdir);
-        printf("WARNING: No SILGYDIR defined. Assuming app dir = %s\n", G_appdir);
+        printf("No SILGYDIR defined. Assuming app dir = %s\n", G_appdir);
     }
     else
     {
         strcpy(G_appdir, ".");
-        printf("WARNING: No SILGYDIR defined. Assuming app dir = .\n");
+//        printf("No SILGYDIR defined. Assuming app dir = .\n");
     }
 
     int len = strlen(G_appdir);
@@ -2512,10 +2512,10 @@ static char pidfilename[256];
         sprintf(command, "taskkill /pid %s", oldpid);
 #else
         sprintf(command, "kill `cat %s`", pidfilename);
-#endif
-        system(command);
+#endif  /* _WIN32 */
+//        system(command);
 
-        msleep(100);
+//        msleep(100);
 
         INF("Removing pid file...");
 #ifdef _WIN32   /* Windows */
