@@ -1315,12 +1315,12 @@ void libusr_log_out(int ci)
 static void doit(char *result1, char *result2, const char *login, const char *email, const char *src)
 {
     char    tmp[512];
-    uint8_t digest[SHA1_DIGEST_SIZE];
+    unsigned char digest[SHA1_DIGEST_SIZE];
     int     i, j=0;
 
     sprintf(tmp, "%s%s%s%s", STR_001, upper(login), STR_002, src); /* login */
-    libSHA1(tmp, strlen(tmp), digest);
-    Base64encode(tmp, digest, SHA1_DIGEST_SIZE);
+    libSHA1((unsigned char*)tmp, strlen(tmp), digest);
+    Base64encode(tmp, (char*)digest, SHA1_DIGEST_SIZE);
     for ( i=0; tmp[i] != EOS; ++i ) /* drop non-alphanumeric characters */
     {
         if ( isalnum(tmp[i]) )
@@ -1331,8 +1331,8 @@ static void doit(char *result1, char *result2, const char *login, const char *em
     j = 0;
 
     sprintf(tmp, "%s%s%s%s", STR_003, upper(email), STR_004, src); /* email */
-    libSHA1(tmp, strlen(tmp), digest);
-    Base64encode(tmp, digest, SHA1_DIGEST_SIZE);
+    libSHA1((unsigned char*)tmp, strlen(tmp), digest);
+    Base64encode(tmp, (char*)digest, SHA1_DIGEST_SIZE);
     for ( i=0; tmp[i] != EOS; ++i ) /* drop non-alphanumeric characters */
     {
         if ( isalnum(tmp[i]) )
