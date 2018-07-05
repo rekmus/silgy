@@ -940,9 +940,12 @@ static bool read_conf()
     }
     else    /* no SILGY_CONF -- try default */
     {
-        sprintf(conf_path, "%s/bin/silgy.conf", G_appdir);
+        if ( !lib_read_conf("silgy.conf") )     /* current dir? */
+        {
+            sprintf(conf_path, "%s/bin/silgy.conf", G_appdir);  /* bin? */
 //        printf("SILGY_CONF not set, trying %s...\n", conf_path);
-        return lib_read_conf(conf_path);
+            return lib_read_conf(conf_path);
+        }
     }
 }
 
