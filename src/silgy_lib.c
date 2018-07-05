@@ -2048,21 +2048,23 @@ bool sendemail(int ci, const char *to, const char *subject, const char *message)
 
 
 /* --------------------------------------------------------------------------
-  minify CSS/JS -- new version
-  remove all white spaces and new lines unless in quotes
-  also remove // style comments
-  add a space after some keywords
-  return new length
+   Minify CSS/JS -- new version
+   remove all white spaces and new lines unless in quotes
+   also remove // style comments
+   add a space after some keywords
+   return new length
 -------------------------------------------------------------------------- */
 int silgy_minify(char *dest, const char *src)
 {
-    minify_1(dest, src);
-    return minify_2(dest, dest);
+static char temp[4194304];
+
+    minify_1(temp, src);
+    return minify_2(dest, temp);
 }
 
 
 /* --------------------------------------------------------------------------
-  First pass -- only remove comments
+   First pass -- only remove comments
 -------------------------------------------------------------------------- */
 static void minify_1(char *dest, const char *src)
 {
@@ -2119,7 +2121,7 @@ static void minify_1(char *dest, const char *src)
 
 
 /* --------------------------------------------------------------------------
-  return new length
+   return new length
 -------------------------------------------------------------------------- */
 static int minify_2(char *dest, const char *src)
 {

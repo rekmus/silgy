@@ -1808,6 +1808,7 @@ struct dirent *dirent;
     char    namewpath[256]="";
     FILE    *fd;
     char    *data_tmp=NULL;
+    char    *data_tmp_min=NULL;
 struct stat fstat;
     char    mod_time[32];
 
@@ -1846,7 +1847,11 @@ struct stat fstat;
         else
             sprintf(namewpath, "%s/res/%s", G_appdir, M_stat[i].name);
 
+#ifdef _WIN32   /* Windows */
+        if ( NULL == (fd=fopen(namewpath, "rb")) )
+#else
         if ( NULL == (fd=fopen(namewpath, "r")) )
+#endif  /* _WIN32 */
             ERR("Couldn't open %s", namewpath);
         else
         {
@@ -1865,17 +1870,19 @@ struct stat fstat;
                     closedir(dir);
                     return FALSE;
                 }
-//                else    /* OK */
-//                {
-//                    rewind(fd);
-//                }
+
+                if ( NULL == (data_tmp_min=(char*)malloc(M_stat[i].len+1)) )
+                {
+                    ERR("Couldn't allocate %ld bytes for %s!!!", M_stat[i].len, M_stat[i].name);
+                    fclose(fd);
+                    closedir(dir);
+                    return FALSE;
+                }
 
                 fread(data_tmp, M_stat[i].len, 1, fd);
-//                data_tmp[M_stat[i].len] = EOS;
                 *(data_tmp+M_stat[i].len) = EOS;
 
-                /* can we use the same buffer again? */
-                M_stat[i].len = silgy_minify(data_tmp, data_tmp); /* new length */
+                M_stat[i].len = silgy_minify(data_tmp_min, data_tmp);  /* new length */
             }
 
             /* allocate the final destination */
@@ -1890,9 +1897,11 @@ struct stat fstat;
 
             if ( minify )
             {
-                memcpy(M_stat[i].data, data_tmp, M_stat[i].len+1);
+                memcpy(M_stat[i].data, data_tmp_min, M_stat[i].len+1);
                 free(data_tmp);
+                free(data_tmp_min);
                 data_tmp = NULL;
+                data_tmp_min = NULL;
             }
             else
             {
