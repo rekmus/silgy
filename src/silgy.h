@@ -47,6 +47,7 @@
 #ifdef __cplusplus
 #include <cctype>
 #else
+#include <ctype.h>
 typedef char                        bool;
 #endif
 

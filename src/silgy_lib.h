@@ -117,7 +117,7 @@ extern "C" {
 
 #ifdef _WIN32   /* Windows */
     int getpid(void);
-    int clock_gettime(int, struct timespec *spec);
+    int clock_gettime(int dummy, struct timespec *spec);
 #ifndef stpcpy
     char *stpcpy(char *dest, const char *src);
 #endif 

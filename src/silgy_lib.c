@@ -3306,7 +3306,7 @@ static void unix_time(struct timespec *spec)
     spec->tv_nsec = wintime % exp7 * 100;
 }
 
-int clock_gettime(int, struct timespec *spec)
+int clock_gettime(int dummy, struct timespec *spec)
 {
    static  struct timespec startspec;
    static double ticks2nano;
