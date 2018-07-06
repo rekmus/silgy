@@ -436,7 +436,7 @@ unsigned long   sql_records;
 
     /* init app user session */
 
-    app_luses_new(ci);
+    app_luses_init(ci);
 
 #ifdef USERSBYEMAIL
     INF("User [%s] logged in", US.email);

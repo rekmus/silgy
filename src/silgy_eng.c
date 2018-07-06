@@ -2000,10 +2000,15 @@ static bool open_db()
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return FALSE;
     }
+
 #ifdef DBMYSQLRECONNECT
     my_bool reconnect=1;
     mysql_options(G_dbconn, MYSQL_OPT_RECONNECT, &reconnect);
 #endif
+
+//    unsigned long max_packet=33554432;  /* 32 MB */
+//    mysql_options(G_dbconn, MYSQL_OPT_MAX_ALLOWED_PACKET, &max_packet);
+
     if ( NULL == mysql_real_connect(G_dbconn, G_dbHost[0]?G_dbHost:NULL, G_dbUser, G_dbPassword, G_dbName, G_dbPort, NULL, 0) )
     {
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));

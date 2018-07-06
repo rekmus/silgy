@@ -1999,10 +1999,11 @@ struct tm   t={0};
 
 
 /* --------------------------------------------------------------------------
-  send an email
+   Send an email
 -------------------------------------------------------------------------- */
 bool sendemail(int ci, const char *to, const char *subject, const char *message)
 {
+#ifndef _WIN32
     char    sender[256];
     char    *colon;
     char    comm[256];
@@ -2042,6 +2043,8 @@ bool sendemail(int ci, const char *to, const char *subject, const char *message)
         fwrite("\n.\n", 1, 3, mailpipe);
         pclose(mailpipe);
     }
+
+#endif  /* _WIN32 */
 
     return TRUE;
 }
