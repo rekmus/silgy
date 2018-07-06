@@ -2202,7 +2202,7 @@ static void gen_response_header(int ci)
 
         conn[ci].clen = 0;
     }
-    else if ( conn[ci].status == 200 )  /* normal response with content */
+    else    /* normal response with content: 2xx, 4xx, 5xx */
     {
 //        DBG("Normal response");
 
