@@ -636,7 +636,7 @@ silgy_set_auth_level("blockIP", AUTH_LEVEL_ADMIN);
 Called once, during termination.
 ### bool app_init(int argc, char \*argv[])
 Called once at the beginning, but after server init. Returning *true* means successful initialization. Good place to set authorization levels, generate statics, etc.
-### void app_luses_new(int ci)
+### void app_luses_init(int ci)
 Called when logged in user session is created.
 ### int app_process_req(int ci)
 This is the main entry point for Silgy web application logic. *ci* is a connection index, as there can be many connections served asynchronously at the same time. **Always pass ci down the calling stack** as this is required by most macros and functions. For examples, see [Hello World](https://github.com/silgy/silgy#hello-world).
