@@ -2,11 +2,11 @@
 Silgy is a simple back-end C++ framework for extremely fast web applications / servlets / microservices. It contains asynchronous (non-blocking) web engine that allows you to compile and link your logic into one executable that responds immediately to HTTP requests, without creating new thread or — God forbid — process.
 
 - **Unbeatable speed** − measured in µ-seconds
-- **Small memory footprint** − 7 MB for demo app
-- **Simple deployment** − only one executable file (or files in gateway/services model)
-- **Cloud vendor independency** − single VS with bare OS (Linux/Windows/UNIX) is sufficient to run high-performance application
+- **Safety** − nobody can ever see your application logic
+- **Small memory footprint** − 17 MB for demo app − can be easily recuced for embedded apps
 - **Simple coding** − three main macros do most work
-- **Low TCO** − ~$3 per month for hosting small web application (AWS t2.micro)
+- **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around
+- **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro)
 
 It's small enough to fit on free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds).  
   
@@ -113,8 +113,7 @@ chmod u+x te
 ```source.sh
 sudo ./te
 ```
-That's it. Your app should now be online. For now, ignore the warnings about configuration file — you can add it [later](https://github.com/silgy/silgy#configuration-file).  
-  
+That's it. Your app should now be online.
 ### Note for Amazon Web Services (AWS) users
 For your own good, fresh EC2 instances have a very restricted security policy with only SSH port (22) open. If you haven't done so, you need to edit that policy and add HTTP port (80) before AWS lets your browser in.  
   
