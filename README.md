@@ -1,5 +1,5 @@
 # Silgy
-Silgy is a simple back-end C++ framework for extremely fast web applications / servlets / microservices. It contains asynchronous (non-blocking) web engine that allows you to compile and link your logic into one executable that responds immediately to HTTP requests, without creating new thread or — God forbid — process.
+Silgy is an asynchronous (non-blocking) C/C++ servlet container. It contains ultra fast web engine that allows you to compile and link your logic into one executable that responds immediately to HTTP requests, without creating new thread or — God forbid — process.
 
 - **Unbeatable speed** − measured in µ-seconds
 - **Safety** − nobody can ever see your application logic
@@ -8,16 +8,28 @@ Silgy is a simple back-end C++ framework for extremely fast web applications / s
 - **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around
 - **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro)
 
-It's small enough to fit on free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds).  
+Web application based on Silgy fits in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds).  
   
 <div align="center">
 <img src="https://minishare.com/show?p=MWPcAbmY&i=2" width=418/>
 </div>
 
-Silgy supports https, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism to use it in microservices architecture.  
+## Simplicity
+In silgy_app.cpp:
+```source.c++
+int app_process_req(int ci)
+{
+    OUT("Hello World!");
+    return OK;
+}
+```
+Compile with `m` script, then copy `silgy_app` binary (`silgy_app.exe` on Windows) to your production machine and run. That's it!
+
+## Some more details
+Silgy supports HTTPS, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism using shared memory/POSIX queues (Linux/UNIX).  
   
 Silgy requires Linux/UNIX or Windows computer with C or C++ compiler for development. GCC is recommended (which is known as MinGW on Windows). Fuss-free deployment and cloud vendor independency means that production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
-## Quick Start (Windows)
+## Quick Start Step-by-Step (Windows)
 ### 0. Install C++ compiler
 I recommend free, open source [MinGW](http://mingw.org).
 ### 1. Create project folder
@@ -43,7 +55,7 @@ You should see something like this:
 
 <img src="https://minishare.com/show?p=v1EcflRY&i=2">
 
-## Quick Start (Linux)
+## Quick Start Step-by-Step (Linux)
 I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php).  
   
 I've managed to produce a [step by step video tutorial](https://www.youtube.com/watch?v=OtatIkHQAzs) on how to set Silgy Hello World up on a free AWS EC2 instance. It shows AWS part (creating an instance, assigning public IP address, connecting to it via WinSCP and PuTTY) as well as the below steps.  
