@@ -23,7 +23,7 @@ int app_process_req(int ci)
     return OK;
 }
 ```
-Compile with `m` script, then copy `silgy_app` binary (`silgy_app.exe` on Windows) to your production machine and run. That's it!
+Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows). That's it!
 
 ## Some more details
 Silgy supports HTTPS, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism using shared memory/POSIX queues (Linux/UNIX).  
