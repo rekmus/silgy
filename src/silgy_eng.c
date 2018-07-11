@@ -115,7 +115,7 @@ WSADATA             wsa;
 
 static void set_state(int ci, long bytes);
 static void set_state_sec(int ci, long bytes);
-static bool read_conf(void);
+static void read_conf(void);
 static void respond_to_expect(int ci);
 static void log_proc_time(int ci);
 static void close_conn(int ci);
@@ -911,10 +911,10 @@ static void set_state_sec(int ci, long bytes)
 /* --------------------------------------------------------------------------
    Read & parse conf file and set global parameters
 -------------------------------------------------------------------------- */
-static bool read_conf()
+static void read_conf()
 {
     char    *p_conf_path=NULL;
-    char    conf_path[256];
+    char    conf_path[512];
 
     /* set defaults */
 
@@ -936,15 +936,21 @@ static bool read_conf()
 
     if ( NULL != (p_conf_path=getenv("SILGY_CONF")) )
     {
-        return lib_read_conf(p_conf_path);
+        lib_read_conf(p_conf_path);
     }
     else    /* no SILGY_CONF -- try default */
     {
-        if ( !lib_read_conf("silgy.conf") )     /* current dir? */
+        if ( !lib_read_conf("silgy.conf") )     /* try current dir first */
         {
-            sprintf(conf_path, "%s/bin/silgy.conf", G_appdir);  /* bin? */
-//        printf("SILGY_CONF not set, trying %s...\n", conf_path);
-            return lib_read_conf(conf_path);
+            sprintf(conf_path, "%s/bin/silgy.conf", G_appdir);
+
+            if ( !lib_read_conf(conf_path) && 0==strcmp(G_appdir, ".") )    /* no SILGYDIR explicitly defined */
+            {                                                               /* we're likely in src */
+                strcpy(conf_path, "../bin/silgy.conf");
+
+                if ( lib_read_conf(conf_path) ) /* that worked */
+                    strcpy(G_appdir, "..");     /* change G_appdir */
+            }
         }
     }
 }
@@ -1821,8 +1827,25 @@ struct stat fstat;
 
     if ( (dir=opendir(resdir)) == NULL )
     {
-        WAR("Couldn't open directory %s", resdir);
-        return TRUE;    /* don't panic, just no external resources will be used */
+        /* we may be in src, so try one level up */
+
+        if ( 0==strcmp(G_appdir, ".") )     /* no SILGYDIR explicitly defined */
+        {
+            if ( minify )
+                strcpy(resdir, "../resmin");
+            else
+                strcpy(resdir, "../res");
+
+            if ( (dir=opendir(resdir)) == NULL )
+                return TRUE;    /* don't panic, just no external resources will be used */
+            else
+                strcpy(G_appdir, "..");     /* change G_appdir */
+        }
+        else
+        {
+            WAR("Couldn't open directory %s", resdir);
+            return TRUE;    /* don't panic, just no external resources will be used */
+        }
     }
 
 #ifdef _DIRENT_HAVE_D_TYPE
