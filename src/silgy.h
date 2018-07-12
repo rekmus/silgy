@@ -9,6 +9,8 @@
 #define SILGY_H
 
 #ifdef _WIN32   /* Windows */
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <psapi.h>
@@ -28,6 +30,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/ipc.h>
+#include <netdb.h>
 #include <sys/shm.h>
 #include <mqueue.h>
 #endif
@@ -313,6 +316,8 @@ typedef char                        bool;
 #define CALL_ASYNC(s,d,t)           eng_async_req(ci, s, d, TRUE, t)
 #define CALL_ASYNC_NR(s,d)          eng_async_req(ci, s, d, FALSE, 0)
 
+#define CALL_REST(m,u)              eng_rest_req(ci, m, u)
+
 /* resource / content types */
 
 /* incoming */
@@ -584,6 +589,7 @@ extern "C" {
     void eng_uses_close(int usi);
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
+    bool eng_rest_req(int ci, const char *method, const char *url);
     void silgy_add_to_static_res(const char *name, char *src);
     void eng_send_ajax_msg(int ci, int errcode);
     void eng_block_ip(const char *value, bool autoblocked);

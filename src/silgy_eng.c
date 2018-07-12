@@ -94,7 +94,7 @@ static SOCKET       M_listening_sec_fd=0;       /* The socket file descriptor fo
 #else
 static int          M_listening_fd=0;           /* The socket file descriptor for "listening" socket */
 static int          M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
-#endif
+#endif  /* _WIN32 */
 #ifdef HTTPS
 static SSL_CTX      *M_ssl_ctx;
 #endif
@@ -3511,6 +3511,201 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         conn[ci].conn_state = CONN_STATE_WAITING_FOR_ASYNC;
     }
 #endif
+}
+
+
+/* --------------------------------------------------------------------------
+   REST call
+-------------------------------------------------------------------------- */
+bool eng_rest_req(int ci, const char *method, const char *url)
+{
+#define BUFSIZE       8196
+
+#ifdef _WIN32   /* Windows */
+    SOCKET sockfd;
+#else
+    int sockfd;
+#endif  /* _WIN32 */
+    int conn;
+    int bytes;
+    char buffer[BUFSIZE];
+    static struct sockaddr_in serv_addr;
+    int len;
+
+    INF("restcall %s %s", method, url);
+
+    /* -------------------------------------------------------------------------- */
+    /* parse url                                                                  */
+
+    /* get rid of protocol */
+
+    len = strlen(url);
+
+    if ( len > 6 && url[0]=='h' && url[1]=='t' && url[2]=='t' && url[3]=='p' && url[4]==':' )
+    {
+        url += 7;
+    }
+    else if ( len > 7 && url[0]=='h' && url[1]=='t' && url[2]=='t' && url[3]=='p' && url[4]=='s' && url[5]==':' )
+    {
+        ERR("HTTPS is not currently supported in REST calls");
+        return FALSE;
+    }
+
+    DBG("url [%s]", url);
+
+    char host[256];
+    char port[8];
+    char uri[256];
+    char *colon, *slash;
+
+    colon = strchr(url, ':');
+    slash = strchr(url, '/');
+
+    if ( colon )    /* port specified */
+    {
+        strncpy(host, url, colon-url);
+        host[colon-url] = EOS;
+
+        if ( slash )
+        {
+            strncpy(port, colon+1, slash-colon-1);
+            port[slash-colon-1] = EOS;
+            strcpy(uri, slash+1);
+        }
+        else    /* only host name & port */
+        {
+            strcpy(port, colon+1);
+            uri[0] = EOS;
+        }
+    }
+    else    /* no port specified */
+    {
+        if ( slash )
+        {
+            strncpy(host, url, slash-url);
+            host[slash-url] = EOS;
+            strcpy(uri, slash+1);
+        }
+        else    /* only host name */
+        {
+            strcpy(host, url);
+            uri[0] = EOS;
+        }
+
+        strcpy(port, "80");
+    }
+
+    DBG("host [%s]", host);
+    DBG("port [%s]", port);
+    DBG(" uri [%s]", uri);
+
+//    return FALSE;   /* parsing tests... */
+
+    /* -------------------------------------------------------------------------- */
+
+    DBG("getaddrinfo...");
+
+    struct addrinfo hints;
+    struct addrinfo *result, *rp;
+    int s;
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_family = AF_UNSPEC;        /* Allow IPv4 or IPv6 */
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;        /* For wildcard IP address */
+    hints.ai_protocol = 0;              /* Any protocol */
+
+    if ( (s=getaddrinfo(host, port, &hints, &result)) != 0 )
+    {
+        ERR("getaddrinfo: %s", gai_strerror(s));
+        return FALSE;
+    }
+
+    /* getaddrinfo() returns a list of address structures.
+       Try each address until we successfully connect(2).
+       If socket(2) (or connect(2)) fails, we (close the socket
+       and) try the next address. */
+
+    for ( rp=result; rp!=NULL; rp=rp->ai_next )
+    {
+        sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+        if (sockfd == -1) continue;
+        if ( (conn=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 ) break;
+#ifdef _WIN32   /* Windows */
+        closesocket(sockfd);
+#else
+        close(sockfd);
+#endif  /* _WIN32 */
+    }
+
+    if (rp == NULL)     /* No address succeeded */
+    {
+        ERR("Could not connect");
+        return FALSE;
+    }
+
+    freeaddrinfo(result);   /* No longer needed */
+
+    INF("Connected");
+
+    /* -------------------------------------------------------------------------- */
+
+    INF("Sending request...");
+
+    char *p=buffer;     /* stpcpy is more convenient and faster than strcat */
+
+    p = stpcpy(p, method);
+    p = stpcpy(p, " ");
+    p = stpcpy(p, uri);
+    p = stpcpy(p, " HTTP/1.1\r\n");
+    p = stpcpy(p, "Host: ");
+    p = stpcpy(p, host);
+    p = stpcpy(p, "\r\n");
+    if ( 0!=strcmp(method, "GET") )
+        p = stpcpy(p, "Content-Type: application/json\r\n");
+    p = stpcpy(p, "User-Agent: Silgy\r\n");
+    p = stpcpy(p, "\r\n");
+
+    bytes = send(sockfd, buffer, strlen(buffer), 0);
+
+    if ( bytes < 15 )
+    {
+        ERR("send failed, errno = %d (%s)", errno, strerror(errno));
+        close(conn);
+#ifdef _WIN32   /* Windows */
+        closesocket(sockfd);
+#else
+        close(sockfd);
+#endif  /* _WIN32 */
+        return FALSE;
+    }
+
+    /* -------------------------------------------------------------------------- */
+
+    INF("Reading response...");
+
+    bytes = recv(sockfd, buffer, BUFSIZE-1, 0);
+
+    if ( bytes > 7 && 0==strncmp(buffer, "HTTP/1.1", 8) )
+    {
+        INF("Response OK [%s]", buffer);
+    }
+    else
+    {
+        WAR("Response NOT OK");
+    }
+
+    /* -------------------------------------------------------------------------- */
+
+    close(conn);
+
+#ifdef _WIN32   /* Windows */
+    closesocket(sockfd);
+#else
+    close(sockfd);
+#endif  /* _WIN32 */
+
+    return TRUE;
 }
 
 
