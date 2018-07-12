@@ -3531,6 +3531,7 @@ bool eng_rest_req(int ci, const char *method, const char *url)
     char buffer[BUFSIZE];
     static struct sockaddr_in serv_addr;
     int len;
+    bool endingslash=FALSE;
 
     INF("restcall %s %s", method, url);
 
@@ -3541,9 +3542,23 @@ bool eng_rest_req(int ci, const char *method, const char *url)
 
     len = strlen(url);
 
+    if ( len < 1 )
+    {
+        ERR("url too short (1)");
+        return FALSE;
+    }
+
+    if ( url[len-1] == '/' ) endingslash = TRUE;
+
     if ( len > 6 && url[0]=='h' && url[1]=='t' && url[2]=='t' && url[3]=='p' && url[4]==':' )
     {
         url += 7;
+        len -= 7;
+        if ( len < 1 )
+        {
+            ERR("url too short (2)");
+            return FALSE;
+        }
     }
     else if ( len > 7 && url[0]=='h' && url[1]=='t' && url[2]=='t' && url[3]=='p' && url[4]=='s' && url[5]==':' )
     {
