@@ -25,41 +25,51 @@ int app_process_req(int ci)
 ```
 Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows). That's it!
 
+
 ## Some more details
-Silgy supports HTTPS, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism using shared memory/POSIX queues (Linux/UNIX).  
-  
+Silgy supports HTTPS, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism using shared memory/POSIX queues (Linux/UNIX).
+
 Silgy requires Linux/UNIX or Windows computer with C or C++ compiler for development. GCC is recommended (which is known as MinGW on Windows). Fuss-free deployment and cloud vendor independency means that production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
+
 ## Step-by-Step on Windows
+
 ### 0. Install C++ compiler
 I recommend free, open source [MinGW](http://mingw.org).
+
 ### 1. Create project folder
 I.e. `C:\cpp\silgy_app`
+
 ### 2. Download Silgy
 On the [Silgy project's main page](https://github.com/silgy/silgy/tree/master/src) click **Clone or download** button, then choose ZIP version, open it and unpack **src** folder to your project folder.
+
 ### 3. Open a command line window
+
 ### 4. Go to your project folder (directory)
 and then src:
 ```source.sh
 cd \cpp\silgy_app\src
 ```
+
 ### 5. Compile:
 ```source.sh
 m
 ```
+
 ### 6. Run:
 ```source.sh
 silgy_app
 ```
+
 ### 7. Open browser and navigate to `localhost`
 You should see something like this:
 
 <img src="https://minishare.com/show?p=v1EcflRY&i=2">
 
 ## Step-by-Step on Linux
-I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php).  
-  
-I've managed to produce a [step by step video tutorial](https://www.youtube.com/watch?v=OtatIkHQAzs) on how to set Silgy Hello World up on a free AWS EC2 instance. It shows AWS part (creating an instance, assigning public IP address, connecting to it via WinSCP and PuTTY) as well as the below steps.  
-  
+I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php).
+
+I've managed to produce a [step by step video tutorial](https://www.youtube.com/watch?v=OtatIkHQAzs) on how to set Silgy Hello World up on a free AWS EC2 instance. It shows AWS part (creating an instance, assigning public IP address, connecting to it via WinSCP and PuTTY) as well as the below steps.
+
 ### 0. Install C++ compiler
 ```source.sh
 sudo yum install gcc-c++
@@ -72,17 +82,19 @@ Optionally, if you're planning to use MySQL:
 ```source.sh
 sudo yum install mysql-devel
 ```
+
 ### 1. In your $HOME, create a project directory, i.e. web:  
 ```source.sh
 mkdir web
 ```
+
 ### 2. Set SILGYDIR environment variable to your project directory
 If you use bash, that would be in .bash_profile in your home directory:
 ```source.sh
 export SILGYDIR=/home/ec2-user/web
 ```
-Then you need to either restart your shell session or execute above command.  
-  
+Then you need to either restart your shell session or execute above command.
+
 ### 3. Add SILGYDIR to sudoers
 Without it sudo won't see it.
 ```source.sh
@@ -96,8 +108,8 @@ and add a new line like this:
 ```
 Defaults    env_keep += "SILGYDIR"
 ```
-(If you don't know **vi** editor yet, here is a [cheat sheet](http://www.atmos.albany.edu/daes/atmclasses/atm350/vi_cheat_sheet.pdf).)  
-  
+(If you don't know **vi** editor yet, here is a [cheat sheet](http://www.atmos.albany.edu/daes/atmclasses/atm350/vi_cheat_sheet.pdf).)
+
 ### 4. In your project directory, create some others:
 ```source.sh
 cd web
@@ -107,42 +119,54 @@ mkdir res      # static resources like pictures, html-s, robots.txt etc.
 mkdir resmin   # resources to be minified (CSS and JS)
 mkdir logs     # peek there if there's something wrong
 ```
+
 ### 5. Throw all the files from [src](https://github.com/silgy/silgy/tree/master/src) directory here to your src.
-If you are on Windows, click **Clone or download** button, then choose ZIP version, unpack it locally and copy content of **src** to your instance — I use WinSCP for this.  
-  
+If you are on Windows, click **Clone or download** button, then choose ZIP version, unpack it locally and copy content of **src** to your instance — I use WinSCP for this.
+
 Back to terminal window and **m** and **te** scripts must have executable flag:
 ```source.sh
 cd src
 chmod u+x m
 chmod u+x te
 ```
+
 ### 6. Compile:
 ```source.sh
 ./m
 ```
+
 ### 7. Run:
 ```source.sh
-sudo ./te
+sudo ./silgy_app
 ```
 That's it. Your app should now be online.
+
+In a 'no-hung-up mode' you'll be able to exit terminal after starting the app:
+```source.sh
+sudo nohup ./silgy_app &
+```
+or you can just use scripts provided in [bin](https://github.com/silgy/silgy/tree/master/bin) directory: [silgystart](https://github.com/silgy/silgy/blob/master/bin/silgystart) and [silgystop](https://github.com/silgy/silgy/blob/master/bin/silgystop).
+
+There will also be a daemon mode in the near future.
+
 ### Note for Amazon Web Services (AWS) users
-For your own good, fresh EC2 instances have a very restricted security policy with only SSH port (22) open. If you haven't done so, you need to edit that policy and add HTTP port (80) before AWS lets your browser in.  
-  
+For your own good, fresh EC2 instances have a very restricted security policy with only SSH port (22) open. If you haven't done so, you need to edit that policy and add HTTP port (80) before AWS lets your browser in.
+
 ## Where's my program?
-Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and [app_process_req()](https://github.com/silgy/silgy#int-app_process_reqint-ci) is your main, called with every browser request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy#hello-world) there to help you get on.  
-  
+Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and [app_process_req()](https://github.com/silgy/silgy#int-app_process_reqint-ci) is your main, called with every browser request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy#hello-world) there to help you get on.
+
 ## Static Resources
-Static resources are simply any content that you rarely change and keep as ordinary disk files, as opposed to dynamic content that is generated in your code, as a unique response to user request. In this regard, Silgy is like any other web server (except it's extremely fast). Statics usually include pictures, css, robots.txt etc.  
-  
-Static resources are read into memory on startup from **res** directory. Static resources you want to serve minified (CSS and JS), are read into memory and minified on startup from **resmin** directory.  
-  
-Static resources are handled automatically, you don't have to add anything in your app.  
-  
+Static resources are simply any content that you rarely change and keep as ordinary disk files, as opposed to dynamic content that is generated in your code, as a unique response to user request. In this regard, Silgy is like any other web server (except it's extremely fast). Statics usually include pictures, css, robots.txt etc.
+
+Static resources are read into memory on startup from **res** directory. Static resources you want to serve minified (CSS and JS), are read into memory and minified on startup from **resmin** directory.
+
+Static resources are handled automatically, you don't have to add anything in your app.
+
 In addition to placing your statics in res and resmin directories, you can generate text statics from within your code at the start, and add them to the statics using [silgy_add_to_static_res()](https://github.com/silgy/silgy#void-silgy_add_to_static_resconst-char-name-char-src).
-  
+
 ## Response Header
-Response header is generated automatically, however you can overwrite defaults with a couple of [macros](https://github.com/silgy/silgy#void-res_statusint-code).  
-  
+Response header is generated automatically, however you can overwrite defaults with a couple of [macros](https://github.com/silgy/silgy#void-res_statusint-code).
+
 ## Hello World
 Simplest Hello World:
 ```source.c++
@@ -152,7 +176,7 @@ int app_process_req(int ci)
     return OK;
 }
 ```
-  
+
 Simple HTML with 2 pages:
 ```source.c++
 int app_process_req(int ci)
@@ -185,7 +209,7 @@ int app_process_req(int ci)
     return OK;
 }
 ```
-  
+
 And this is a tad extended Hello World example to demonstrate query string handling:
 ```source.c++
 int app_process_req(int ci)
@@ -239,7 +263,7 @@ int app_process_req(int ci)
     return ret;
 }
 ```
-  
+
 ## Configuration File
 By default Silgy server starts listening on the port 80. As long as you use the same computer for development and production, you need a way to test your application with different port, since only one process can listen on the port 80. Also, if you want to use [HTTPS](https://github.com/silgy/silgy#https), you will need to pass your certificate file path. You can set these and some more in a configuration file. Default name is silgy.conf and you can overwrite this with SILGY_CONF environment variable. Create a new file in $SILGYDIR/bin and paste the below:
 ```
@@ -286,49 +310,51 @@ test=0
 myParam1=someValue
 myParam2=someOtherValue
 ```
-Change the contents to your taste. Note that you can use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy#bool-silgy_read_paramconst-char-param-char-dest).  
-  
+Change the contents to your taste. Note that you can use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy#bool-silgy_read_paramconst-char-param-char-dest).
+
 ## Compilation Switches
-Because speed is Silgy's priority, every possible decision is taken at a compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.  
-  
+Because speed is Silgy's priority, every possible decision is taken at a compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.
+
 Add your switches to [m](https://github.com/silgy/silgy/blob/master/src/m) before compilation, i.e.:
 ```
 g++ silgy_app.cpp silgy_eng.c silgy_lib.c -D HTTPS -D DBMYSQL ...
 ```
+
 ### ASYNC
-Use asynchronous module.  
-  
-If defined, the server opens two queues at the start: one for requests, one for responses. Then the app can use [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) to call the services, and [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted) will be called when the response arrives.  
-  
-There's also a service library, yet to be documented.  
-  
+Use asynchronous module.
+
+If defined, the server opens two queues at the start: one for requests, one for responses. Then the app can use [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) to call the services, and [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted) will be called when the response arrives.
+
+There's also a service library, yet to be documented.
+
 ### BLACKLISTAUTOUPDATE
-Automatically add malicious IPs to the file defined in *blockedIPList*.  
-  
+Automatically add malicious IPs to the file defined in *blockedIPList*.
+
 ### DBMYSQL
-Open MySQL connection at the start and close it during clean up. Use *dbHost*, *dbPort*, *dbName*, *dbUser* and *dbPassword*.  
-  
+Open MySQL connection at the start and close it during clean up. Use *dbHost*, *dbPort*, *dbName*, *dbUser* and *dbPassword*.
+
 ### DBMYSQLRECONNECT
-[DBMYSQL](https://github.com/silgy/silgy#dbmysql) compilation switch is required.  
-  
-Open MySQL connection with auto-reconnect option. I recommend not to use this option at the beginning, until you're familiar with MySQL settings, for reconnect happens quietly and without you knowing, this may be impacting your app's performance. However, if you know what [wait_timeout](https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_wait_timeout) is and you know how often you may expect those quiet reconnects, by all means — use it.  
-  
+[DBMYSQL](https://github.com/silgy/silgy#dbmysql) compilation switch is required.
+
+Open MySQL connection with auto-reconnect option. I recommend not to use this option at the beginning, until you're familiar with MySQL settings, for reconnect happens quietly and without you knowing, this may be impacting your app's performance. However, if you know what [wait_timeout](https://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_wait_timeout) is and you know how often you may expect those quiet reconnects, by all means — use it.
+
 ### DOMAINONLY
-Always redirect to APP_DOMAIN.  
-  
+Always redirect to APP_DOMAIN.
+
 ### HTTPS
-Use HTTPS. Both ports will be open and listened to.  
-  
+Use HTTPS. Both ports will be open and listened to.
+
 1. If you haven't done so, install OpenSSL:
 ```
 sudo yum install openssl-devel
 ```
-2. Get a certificate and set *certFile*, *keyFile* and optionally *certChainFile* in config. [Let's Encrypt](https://letsencrypt.org/) is a good place to get one for free. Their certs are accepted by all popular browsers.  
-  
+2. Get a certificate and set *certFile*, *keyFile* and optionally *certChainFile* in config. [Let's Encrypt](https://letsencrypt.org/) is a good place to get one for free. Their certs are accepted by all popular browsers.
+
 3. Add -D HTTPS and OpenSSL libraries to [m](https://github.com/silgy/silgy/blob/master/src/m), so it would look like this:
 ```
 g++ silgy_app.cpp silgy_eng.c silgy_lib.c -D HTTPS -o $SILGYDIR/bin/silgy_app_dev -lssl -lcrypto
 ```
+
 ### MEM_SMALL, MEM_MEDIUM, MEM_BIG, MEM_HUGE
 Sets the memory model.
 
@@ -339,13 +365,13 @@ MEM_MEDIUM|500|100|2GB
 MEM_BIG|2500|500|4GB
 MEM_HUGE|10000|2000|>4GB
 
-When all the connections or sessions are taken, the next request will receive status 503.  
-  
+When all the connections or sessions are taken, the next request will receive status 503.
+
 Note that memory requirements heavily depend on your application profile, particularily on how much data you want to store in each user session. Current memory usage is printed at the beginning and at the end of each log file, like this:
 ```
 Memory: 13 216 kB (12.91 MB / 0.01 GB)
 ```
-  
+
 ### OUTCHECKREALLOC, OUTCHECK, OUTFAST
 Sets the [OUT](https://github.com/silgy/silgy#void-outconst-char-string-) and [OUT_BIN](https://github.com/silgy/silgy#void-out_binconst-char-data-long-len) mode. Initially, all the output buffers are of OUT_BUFSIZE size (currently 256 kB) and they may or may not be resized if necessary.
 
@@ -366,17 +392,22 @@ QS_DEF_DONT_ESCAPE|Don't escape value
 
 ### USERS
 Use [users module](https://github.com/silgy/silgy/wiki/USERS-Module). It provides an API for handling all registered users logic, including common things like i.e. password reset. You need to have DBMYSQL defined as well.
+
 ### USERSBYEMAIL
-[USERS](https://github.com/silgy/silgy#users) compilation switch is required.  
-  
+[USERS](https://github.com/silgy/silgy#users) compilation switch is required.
+
 Use email to authenticate users.
+
 ### USERSBYLOGIN
-[USERS](https://github.com/silgy/silgy#users) compilation switch is required.  
-  
+[USERS](https://github.com/silgy/silgy#users) compilation switch is required.
+
 Use login to authenticate users.
+
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in Silgy.
+
 ## Macros
+
 ### bool REQ(const char \*string)
 Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
 ```
