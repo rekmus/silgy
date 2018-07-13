@@ -316,7 +316,11 @@ typedef char                        bool;
 #define CALL_ASYNC(s,d,t)           eng_async_req(ci, s, d, TRUE, t)
 #define CALL_ASYNC_NR(s,d)          eng_async_req(ci, s, d, FALSE, 0)
 
-#define CALL_REST(m,u)              eng_rest_req(ci, m, u)
+#define REST_SET_STR(n,v)           eng_rest_add(ci, n, v, 0, JSON_STRING)
+#define REST_SET_NUM(n,v)           eng_rest_add(ci, n, NULL, v, JSON_NUMBER)
+#define REST_SET_BOOL(n,v)          eng_rest_add(ci, n, NULL, v, JSON_BOOL)
+#define REST_CALL(m,u)              eng_rest_req(ci, m, u)
+#define REST_RESET                  US.rest_cnt = 0
 
 /* resource / content types */
 
@@ -446,7 +450,6 @@ typedef struct {
     int     ssl_err;
     char    auth_level;                     /* required authorization level */
     int     usi;                            /* user session index */
-//  bool    ajax;                           /* for AJAX response set content type = plain text */
     int     static_res;                     /* static resource index in M_stat */
     time_t  last_activity;
     bool    bot;
@@ -455,7 +458,21 @@ typedef struct {
 } conn_t;
 
 
-/* user session (~1kB) */
+#define JSON_STRING         0
+#define JSON_NUMBER         1
+#define JSON_BOOL           2
+#define JSON_MAX_FIELDS     30
+
+/* JSON record */
+
+typedef struct {
+    char    name[32];
+    char    value[256];
+    char    type;
+} json_t;
+
+
+/* user session */
 
 typedef struct {
     bool    logged;
@@ -475,6 +492,8 @@ typedef struct {
     char    lang[8];
     time_t  last_activity;
     char    additional[64];         /* password reset key */
+    json_t  rest_fld[JSON_MAX_FIELDS];
+    int     rest_cnt;
 } usession_t;
 
 
@@ -590,6 +609,7 @@ extern "C" {
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
     bool eng_rest_req(int ci, const char *method, const char *url);
+    bool eng_rest_add(int ci, const char *name, const char *str_value, long num_value, char type);
     void silgy_add_to_static_res(const char *name, char *src);
     void eng_send_ajax_msg(int ci, int errcode);
     void eng_block_ip(const char *value, bool autoblocked);

@@ -3459,6 +3459,7 @@ void eng_uses_reset(int usi)
     uses[usi].referer[0] = EOS;
     uses[usi].lang[0] = EOS;
     uses[usi].additional[0] = EOS;
+    uses[usi].rest_cnt = 0;
 }
 
 
@@ -3526,7 +3527,7 @@ bool eng_rest_req(int ci, const char *method, const char *url)
 #else
     int sockfd;
 #endif  /* _WIN32 */
-    int conn;
+    int connection;
     int bytes;
     char buffer[BUFSIZE];
     static struct sockaddr_in serv_addr;
@@ -3645,7 +3646,7 @@ bool eng_rest_req(int ci, const char *method, const char *url)
     {
         sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (sockfd == -1) continue;
-        if ( (conn=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 ) break;
+        if ( (connection=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 ) break;
 #ifdef _WIN32   /* Windows */
         closesocket(sockfd);
 #else
@@ -3669,6 +3670,8 @@ bool eng_rest_req(int ci, const char *method, const char *url)
 
     char *p=buffer;     /* stpcpy is more convenient and faster than strcat */
 
+    /* header */
+
     p = stpcpy(p, method);
     p = stpcpy(p, " ");
     p = stpcpy(p, uri);
@@ -3678,15 +3681,39 @@ bool eng_rest_req(int ci, const char *method, const char *url)
     p = stpcpy(p, "\r\n");
     if ( 0!=strcmp(method, "GET") )
         p = stpcpy(p, "Content-Type: application/json\r\n");
+    p = stpcpy(p, "Connection: close\r\n");
     p = stpcpy(p, "User-Agent: Silgy\r\n");
     p = stpcpy(p, "\r\n");
+
+    /* body */
+
+    if ( 0!=strcmp(method, "GET") )
+    {
+        p = stpcpy(p, "{");
+
+        int i;
+
+        for ( i=0; i<US.rest_cnt; ++i )
+        {
+            if ( US.rest_fld[i].type == JSON_STRING )
+                sprintf(G_tmp, "\"%s\": \"%s\"%s\n", US.rest_fld[i].name, US.rest_fld[i].value, i<US.rest_cnt-1?",":"");
+            else
+                sprintf(G_tmp, "\"%s\": %s%s\n", US.rest_fld[i].name, US.rest_fld[i].value, i<US.rest_cnt-1?",":"");
+
+            p = stpcpy(p, G_tmp);
+        }
+
+        p = stpcpy(p, "}");
+    }
+
+    *p = EOS;
 
     bytes = send(sockfd, buffer, strlen(buffer), 0);
 
     if ( bytes < 15 )
     {
         ERR("send failed, errno = %d (%s)", errno, strerror(errno));
-        close(conn);
+        close(connection);
 #ifdef _WIN32   /* Windows */
         closesocket(sockfd);
 #else
@@ -3712,13 +3739,50 @@ bool eng_rest_req(int ci, const char *method, const char *url)
 
     /* -------------------------------------------------------------------------- */
 
-    close(conn);
+    close(connection);
 
 #ifdef _WIN32   /* Windows */
     closesocket(sockfd);
 #else
     close(sockfd);
 #endif  /* _WIN32 */
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Add value to a JSON REST buffer
+-------------------------------------------------------------------------- */
+bool eng_rest_add(int ci, const char *name, const char *str_value, long num_value, char type)
+{
+    if ( US.rest_cnt >= JSON_MAX_FIELDS ) return FALSE;
+
+    strncpy(US.rest_fld[US.rest_cnt].name, name, 31);
+    US.rest_fld[US.rest_cnt].name[31] = EOS;
+
+    if ( type == JSON_STRING )
+    {
+        strncpy(US.rest_fld[US.rest_cnt].value, str_value, 255);
+        US.rest_fld[US.rest_cnt].value[255] = EOS;
+    }
+    else if ( type == JSON_BOOL )
+    {
+        if ( num_value )
+            strcpy(US.rest_fld[US.rest_cnt].value, "true");
+        else
+            strcpy(US.rest_fld[US.rest_cnt].value, "false");
+    }
+    else
+    {
+        char tmp[64];
+        sscanf(tmp, "%ld", num_value);
+        strcpy(US.rest_fld[US.rest_cnt].value, tmp);
+    }
+
+    US.rest_fld[US.rest_cnt].type = type;
+
+    ++US.rest_cnt;
 
     return TRUE;
 }
