@@ -147,6 +147,7 @@ static void clean_up(void);
 static void sigdisp(int sig);
 static void gen_page_msg(int ci, int msg);
 static bool init_ssl(void);
+static int rest_get_i(int ci, const char *name);
 
 
 /* --------------------------------------------------------------------------
@@ -3724,67 +3725,191 @@ bool eng_rest_req(int ci, const char *method, const char *url)
 
     /* -------------------------------------------------------------------------- */
 
+    REST_RESET;
+
+    /* -------------------------------------------------------------------------- */
+
     INF("Reading response...");
 
     bytes = recv(sockfd, buffer, BUFSIZE-1, 0);
 
-    if ( bytes > 7 && 0==strncmp(buffer, "HTTP/1.1", 8) )
-    {
-        INF("Response OK [%s]", buffer);
-    }
-    else
-    {
-        WAR("Response NOT OK");
-    }
+    DBG("...twice");
 
-    /* -------------------------------------------------------------------------- */
+    bytes += recv(sockfd, buffer+bytes, BUFSIZE-bytes-1, 0);
 
     close(connection);
-
 #ifdef _WIN32   /* Windows */
     closesocket(sockfd);
 #else
     close(sockfd);
 #endif  /* _WIN32 */
 
+    /* -------------------------------------------------------------------------- */
+    /* parse the response                                                         */
+
+    /* HTTP/1.1 200 OK <== 15 chars */
+
+    char status[4];
+
+    if ( bytes > 14 && 0==strncmp(buffer, "HTTP/1.", 7) )
+    {
+        buffer[bytes] = EOS;
+//        DBG("Got %d bytes of response [%s]", bytes, buffer);
+        INF("Got %d bytes of response", bytes);
+        strncpy(status, buffer+9, 3);
+        status[3] = EOS;
+        INF("Response status: %s", status);
+    }
+    else
+    {
+        ERR("No or incomplete response");
+        return FALSE;
+    }
+
+    if ( 0 != strcmp(status, "200") )
+    {
+        ERR("status != 200");
+        return FALSE;
+    }
+
+    char *body;
+
+    /* skip HTTP header */
+
+    if ( !(body=strstr(buffer, "\r\n\r\n")) )
+    {
+        INF("No response body found");
+        return TRUE;
+    }
+
+    body += 4;
+
+//    DBG("Response body [%s]", body);
+
+    /* -------------------------------------------------------------------------- */
+
+    while ( *body )
+    {
+//        if ( *body=='h' ) DBG("This is h");
+        ++body;
+    }
+
     return TRUE;
 }
 
 
 /* --------------------------------------------------------------------------
-   Add value to a JSON REST buffer
+   Add/set value to a JSON REST buffer
 -------------------------------------------------------------------------- */
 bool eng_rest_add(int ci, const char *name, const char *str_value, long num_value, char type)
 {
-    if ( US.rest_cnt >= JSON_MAX_FIELDS ) return FALSE;
+    int i;
 
-    strncpy(US.rest_fld[US.rest_cnt].name, name, 31);
-    US.rest_fld[US.rest_cnt].name[31] = EOS;
+    i = rest_get_i(ci, name);
+
+    if ( i==-1 )    /* not present */
+    {
+        if ( US.rest_cnt >= JSON_MAX_FIELDS ) return FALSE;
+        i = US.rest_cnt;
+        ++US.rest_cnt;
+    }
+
+    strncpy(US.rest_fld[i].name, name, 31);
+    US.rest_fld[i].name[31] = EOS;
 
     if ( type == JSON_STRING )
     {
-        strncpy(US.rest_fld[US.rest_cnt].value, str_value, 255);
-        US.rest_fld[US.rest_cnt].value[255] = EOS;
+        strncpy(US.rest_fld[i].value, str_value, 255);
+        US.rest_fld[i].value[255] = EOS;
     }
     else if ( type == JSON_BOOL )
     {
         if ( num_value )
-            strcpy(US.rest_fld[US.rest_cnt].value, "true");
+            strcpy(US.rest_fld[i].value, "true");
         else
-            strcpy(US.rest_fld[US.rest_cnt].value, "false");
+            strcpy(US.rest_fld[i].value, "false");
     }
     else
     {
         char tmp[64];
         sscanf(tmp, "%ld", num_value);
-        strcpy(US.rest_fld[US.rest_cnt].value, tmp);
+        strcpy(US.rest_fld[i].value, tmp);
     }
 
-    US.rest_fld[US.rest_cnt].type = type;
-
-    ++US.rest_cnt;
+    US.rest_fld[i].type = type;
 
     return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get index from JSON REST buffer
+-------------------------------------------------------------------------- */
+static int rest_get_i(int ci, const char *name)
+{
+    int i;
+
+    for ( i=0; i<US.rest_cnt; ++i )
+        if ( 0==strcmp(US.rest_fld[i].name, name) )
+            return i;
+
+    return -1;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get value from JSON REST buffer
+-------------------------------------------------------------------------- */
+bool eng_rest_get(int ci, const char *name, char *str_value, long *num_value, char type)
+{
+    int i;
+
+    for ( i=0; i<US.rest_cnt; ++i )
+    {
+        if ( 0==strcmp(US.rest_fld[i].name, name) )
+        {
+            if ( type == JSON_STRING && US.rest_fld[i].type == JSON_STRING )
+            {
+                strcpy(str_value, US.rest_fld[i].value);
+                return TRUE;
+            }
+            else if ( type == JSON_NUMBER && US.rest_fld[i].type == JSON_NUMBER )
+            {
+                *num_value = atol(US.rest_fld[i].value);
+                return TRUE;
+            }
+            else if ( type == JSON_BOOL && US.rest_fld[i].type == JSON_BOOL )
+            {
+                if ( US.rest_fld[i].value[0] == 't' )
+                    *num_value = 1;
+                else
+                    *num_value = 0;
+                return TRUE;
+            }
+            else if ( type == JSON_STRING && US.rest_fld[i].type == JSON_NUMBER )
+            {
+                strcpy(str_value, US.rest_fld[i].value);
+                return TRUE;
+            }
+            else if ( type == JSON_STRING && US.rest_fld[i].type == JSON_BOOL )
+            {
+                strcpy(str_value, US.rest_fld[i].value);
+                return TRUE;
+            }
+            else if ( type == JSON_BOOL && US.rest_fld[i].type == JSON_STRING )
+            {
+                if ( 0==strcmp(US.rest_fld[i].value, "true") )
+                    *num_value = 1;
+                else
+                    *num_value = 0;
+                return TRUE;
+            }
+
+            return FALSE;   /* types don't match or couldn't convert */
+        }
+    }
+
+    return FALSE;   /* no such field */
 }
 
 

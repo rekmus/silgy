@@ -320,6 +320,9 @@ typedef char                        bool;
 #define REST_SET_NUM(n,v)           eng_rest_add(ci, n, NULL, v, JSON_NUMBER)
 #define REST_SET_BOOL(n,v)          eng_rest_add(ci, n, NULL, v, JSON_BOOL)
 #define REST_CALL(m,u)              eng_rest_req(ci, m, u)
+#define REST_GET_STR(n,v)           eng_rest_get(ci, n, v, NULL, JSON_STRING)
+#define REST_GET_NUM(n,v)           eng_rest_get(ci, n, NULL, v, JSON_NUMBER)
+#define REST_GET_BOOL(n,v)          eng_rest_get(ci, n, NULL, v, JSON_BOOL)
 #define REST_RESET                  US.rest_cnt = 0
 
 /* resource / content types */
@@ -610,6 +613,7 @@ extern "C" {
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
     bool eng_rest_req(int ci, const char *method, const char *url);
     bool eng_rest_add(int ci, const char *name, const char *str_value, long num_value, char type);
+    bool eng_rest_get(int ci, const char *name, char *str_value, long *num_value, char type);
     void silgy_add_to_static_res(const char *name, char *src);
     void eng_send_ajax_msg(int ci, int errcode);
     void eng_block_ip(const char *value, bool autoblocked);
