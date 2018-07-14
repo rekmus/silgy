@@ -1,14 +1,19 @@
 # Silgy
-Silgy is an asynchronous (non-blocking) C/C++ servlet container. It contains ultra fast web engine that allows you to compile and link your logic into one executable that responds immediately to HTTP requests, without creating new thread or — God forbid — process.
+Silgy is an asynchronous (non-blocking) HTTP(S) server engine with C/C++ servlet entry point. It allows you to compile and link your logic into one executable that responds immediately to HTTP requests, without creating new thread or — God forbid — process.
 
-- **Unbeatable speed** − measured in µ-seconds
-- **Safety** − nobody can ever see your application logic
+- **Lightning fast** − speed measured in µ-seconds
+- **Safe** − nobody can ever see your application logic
 - **Small memory footprint** − 17 MB for demo app − can be easily reduced for embedded apps
-- **Simple coding** − three main macros do most of work
+- **Simple coding** − three main macros do most of work, easy to understand for beginner programmers
+- **All-In-One** − no need to install external modules, Silgy source already contains all the logic required to run the application
 - **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around
 - **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro)
 
-Web application based on Silgy fits in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds).  
+Silgy is written in ANSI C in order to support as many platforms and compilers as possible.
+
+It aims to be All-In-One solution for writing typical web application, including HTTPS and handling anonymous and registered user sessions. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues. Macros [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) make it as simple as possible.
+
+Web applications like [Budgeter](https://budgeter.org) or [minishare](https://minishare.com) based on Silgy, fit in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds). Even with the network latency [it's still visible](https://tools.pingdom.com/#!/bu4p3i/https://budgeter.org).
   
 <div align="center">
 <img src="https://minishare.com/show?p=MWPcAbmY&i=2" width=418/>
