@@ -13,7 +13,7 @@ Silgy is written in ANSI C in order to support as many platforms and compilers a
 
 It aims to be All-In-One solution for writing typical web application, including HTTPS and handling anonymous and registered user sessions. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues. Macros [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) make it as simple as possible.
 
-Web applications like [Budgeter](https://budgeter.org) or [minishare](https://minishare.com) based on Silgy, fit in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds). Even with the network latency [it's still visible](https://tools.pingdom.com/#!/bu4p3i/https://budgeter.org).
+Web applications like [Budgeter](https://budgeter.org) or [minishare](https://minishare.com) based on Silgy, fit in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds). Even with the network latency [it still shows](https://tools.pingdom.com/#!/bu4p3i/https://budgeter.org).
   
 <div align="center">
 <img src="https://minishare.com/show?p=MWPcAbmY&i=2" width=418/>
@@ -28,7 +28,7 @@ int app_process_req(int ci)
     return OK;
 }
 ```
-Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows). That's it, your application is listening on the port 80.
+Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows). That's it, your application is now listening on the port 80 :)
 
 ## Some more details
 Silgy supports HTTPS, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism using shared memory/POSIX queues (Linux/UNIX).
