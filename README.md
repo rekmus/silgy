@@ -44,7 +44,7 @@ Silgy supports HTTPS, anonymous and registered user sessions, binary data upload
 
 Silgy requires Linux/UNIX or Windows computer with C or C++ compiler for development. GCC is recommended (which is known as MinGW on Windows). Fuss-free deployment and cloud vendor independency means that production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 
-## Tradeoffs / priorities
+## Priorities / tradeoffs
 Every project on Earth has them. So you'd better know.
 
 1. *Speed*. Usually whenever I get to choose between speed and code duplication, I choose speed.
