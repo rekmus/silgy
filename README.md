@@ -49,7 +49,7 @@ Every project on Earth has them. So you'd better know.
 
 1. *Speed*. Usually whenever I get to choose between speed and code duplication, I choose speed.
 
-2. *Speed*. Usually whenever I get to choose between speed and saving memory, I choose speed. So there are mostly statics, stack and arrays, only a few mallocs.
+2. *Speed*. Usually whenever I get to choose between speed and saving memory, I choose speed. So there are mostly statics, stack and arrays, only a few of mallocs.
 
 3. *User code simplicity*. Usually whenever I get to choose between versatility and simplicity, I choose simplicity. 99.999% of applications do not require 10 levels of nesting in JSON. If you do need this, there is selection of [libraries](http://json.org/) to choose from, or you're a beginner like every programmer once was, and you still need to sweat your way to simple and clean code.
 
