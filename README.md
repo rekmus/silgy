@@ -28,8 +28,7 @@ int app_process_req(int ci)
     return OK;
 }
 ```
-Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows). That's it!
-
+Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows). That's it, your application is listening on the port 80.
 
 ## Some more details
 Silgy supports HTTPS, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism using shared memory/POSIX queues (Linux/UNIX).
