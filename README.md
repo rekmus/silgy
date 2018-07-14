@@ -10,13 +10,13 @@ In Silgy you just compile and link your logic into one executable that responds 
 
 I repeat: all the web applications should be written in Silgy.
 
-- **Lightning fast** − speed measured in µ-seconds
-- **Safe** − nobody can ever see your application logic
-- **Small memory footprint** − 17 MB for demo app − can be easily reduced for embedded apps
-- **Simple coding** − three main macros do most of work, easy to understand even for a beginner programmer
-- **All-In-One** − no need to install external modules; Silgy source already contains all the logic required to run the application
-- **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around
-- **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro)
+- **Lightning fast** − speed measured in µ-seconds.
+- **Safe** − nobody can ever see your application logic.
+- **Small memory footprint** − 17 MB for demo app − can be easily reduced for embedded apps.
+- **Simple coding** − three main macros do most of work, easy to understand even for a beginner programmer.
+- **All-In-One** − no need to install external modules; Silgy source already contains all the logic required to run the application.
+- **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around.
+- **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro), not even mentioning planet-friendliness.
 
 Silgy is written in ANSI C in order to support as many platforms and compilers as possible.
 
