@@ -1,11 +1,18 @@
 # Silgy
-Silgy is an asynchronous (non-blocking) HTTP(S) server engine with C/C++ servlet entry point. It allows you to compile and link your logic into one executable that responds immediately to HTTP requests, without creating new thread or — God forbid — process.
+
+In 1995, when I landed my first computer job, my PC had an Intel 286 processor and 1 MB of RAM. Disks had spinning plates, nobody heard of SSD. Our office had Novell file server. And whatever we'd do, programs responded **immediately**. Fast forward to 2018 and my PC has Intel i5 processor and 8 GB of RAM. Everyone can download GCC for free and there's Stackoverflow.com. And guess what? Typical web application in my intranet is **much slower**.
+
+That's why I've written Silgy. I think all the web applications in the world should be written in it. World would be much better off.
+
+In Silgy you just compile and link your logic into one executable that responds immediately to HTTP requests, without creating a new thread or — God forbid — process. No layers, no dependencies, no layers, translations, layers, converters, layers...
+
+I repeat: all the web applications should be written in Silgy.
 
 - **Lightning fast** − speed measured in µ-seconds
 - **Safe** − nobody can ever see your application logic
 - **Small memory footprint** − 17 MB for demo app − can be easily reduced for embedded apps
-- **Simple coding** − three main macros do most of work, easy to understand for beginner programmers
-- **All-In-One** − no need to install external modules, Silgy source already contains all the logic required to run the application
+- **Simple coding** − three main macros do most of work, easy to understand for beginner programmer
+- **All-In-One** − no need to install external modules; Silgy source already contains all the logic required to run the application
 - **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around
 - **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro)
 
