@@ -1,6 +1,8 @@
 # Silgy
 
-In 1995, when I landed my first computer job, my PC had an Intel 286 processor and 1 MB of RAM. Disks had spinning plates, nobody heard of SSD. Our office had Novell file server. And whatever we'd do, programs responded **immediately**. Fast forward to 2018 and my PC has Intel i5 processor and 8 GB of RAM. Everyone can download GCC for free and there's Stackoverflow.com. And guess what? Typical web application in my intranet is **much slower**.
+In 1995, when I landed my first computer job, my PC had an Intel 286 processor and 1 MB of RAM. Disks had spinning plates, nobody heard of SSD. Our office had Novell file server. And whatever we'd do, programs responded **immediately**.
+
+Fast forward to 2018 and my PC has Intel i5 processor and 8 GB of RAM. Everyone can download GCC for free and there's Stackoverflow.com. And guess what? Web applications doing the same things in my intranet now are **painfully slow**.
 
 That's why I've written Silgy. I think all the web applications in the world should be written in it. World would be much better off.
 
@@ -41,6 +43,19 @@ Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows).
 Silgy supports HTTPS, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism using shared memory/POSIX queues (Linux/UNIX).
 
 Silgy requires Linux/UNIX or Windows computer with C or C++ compiler for development. GCC is recommended (which is known as MinGW on Windows). Fuss-free deployment and cloud vendor independency means that production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
+
+## Tradeoffs / priorities
+Every project on Earth has them. So you'd better know.
+
+1. *Speed*. Usually whenever I get to choose between speed and code duplication, I choose speed.
+
+2. *Speed*. Usually whenever I get to choose between speed and saving memory, I choose speed. So there are mostly statics, stack and arrays, only a few mallocs.
+
+3. *User code simplicity*. Usually whenever I get to choose between versatility and simplicity, I choose simplicity. 99.999% of applications do not require 10 levels of nesting in JSON. If you do need this, there is selection of [libraries](http://json.org/) to choose from, or you're a beginner like every programmer once was, and you still need to sweat your way to simple and clean code.
+
+4. *Independency*. I try to include everything I think a typical web application may need in Silgy engine. If there are external libraries, I try to use most ubiquitous and generic ones, like i.e. OpenSSL and link statically. Of course you may prefer to add any library you want and link dynamically if you prefer, there's nothing in Silgy that prevents you from doing so.
+
+5. *What does deployment mean?* If you've written your app in Silgy, it means copying executable file to production machine which has nothing but operating system installed. OK, add jpegs and css. Oh — wait a minute — you prefer to learn [how to develop on Kubernetes](https://kubernetes.io/blog/2018/05/01/developing-on-kubernetes/) first, because everyone talks so cool about it... Then I can't help you. I'm actually learning it but only because my organization handles tens or hundreds of thousands requests per second, we have money for servers, development teams, admin teams and my boss made me. If you're Google or Amazon then you definitely need to have something. There is also a [hundred or so](https://en.wikipedia.org/wiki/List_of_build_automation_software) of other build automation software. Good luck in choosing the right one. I tried to make Silgy app not needing this at all.
 
 ## Step-by-Step on Windows
 
