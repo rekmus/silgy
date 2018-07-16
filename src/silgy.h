@@ -324,8 +324,8 @@ typedef char                        bool;
 #define REST_GET_NUM(n,v)           eng_rest_get(ci, n, NULL, v, JSON_NUMBER)
 #define REST_GET_BOOL(n,v)          eng_rest_get(ci, n, NULL, v, JSON_BOOL)
 #define REST_RESET                  US.rest_cnt = 0
-#define REST_DBG                    eng_log_rest_buffer_dbg(ci)
-#define REST_INF                    eng_log_rest_buffer_inf(ci)
+#define REST_LOG_DBG                eng_log_rest_buffer_dbg(ci)
+#define REST_LOG_INF                eng_log_rest_buffer_inf(ci)
 
 /* resource / content types */
 
