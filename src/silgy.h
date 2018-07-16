@@ -324,6 +324,8 @@ typedef char                        bool;
 #define REST_GET_NUM(n,v)           eng_rest_get(ci, n, NULL, v, JSON_NUMBER)
 #define REST_GET_BOOL(n,v)          eng_rest_get(ci, n, NULL, v, JSON_BOOL)
 #define REST_RESET                  US.rest_cnt = 0
+#define REST_DBG                    eng_log_rest_buffer_dbg(ci)
+#define REST_INF                    eng_log_rest_buffer_inf(ci)
 
 /* resource / content types */
 
@@ -612,6 +614,8 @@ extern "C" {
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
     bool eng_rest_req(int ci, const char *method, const char *url);
+    void eng_log_rest_buffer_dbg(int ci);
+    void eng_log_rest_buffer_inf(int ci);
     bool eng_rest_add(int ci, const char *name, const char *str_value, long num_value, char type);
     bool eng_rest_get(int ci, const char *name, char *str_value, long *num_value, char type);
     void silgy_add_to_static_res(const char *name, char *src);

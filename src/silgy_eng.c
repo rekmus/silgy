@@ -3697,9 +3697,9 @@ bool eng_rest_req(int ci, const char *method, const char *url)
         for ( i=0; i<US.rest_cnt; ++i )
         {
             if ( US.rest_fld[i].type == JSON_STRING )
-                sprintf(G_tmp, "\"%s\": \"%s\"%s\n", US.rest_fld[i].name, US.rest_fld[i].value, i<US.rest_cnt-1?",":"");
+                sprintf(G_tmp, "\"%s\":\"%s\"%s", US.rest_fld[i].name, US.rest_fld[i].value, i<US.rest_cnt-1?",":"");
             else
-                sprintf(G_tmp, "\"%s\": %s%s\n", US.rest_fld[i].name, US.rest_fld[i].value, i<US.rest_cnt-1?",":"");
+                sprintf(G_tmp, "\"%s\":%s%s", US.rest_fld[i].name, US.rest_fld[i].value, i<US.rest_cnt-1?",":"");
 
             p = stpcpy(p, G_tmp);
         }
@@ -3784,17 +3784,117 @@ bool eng_rest_req(int ci, const char *method, const char *url)
 
     body += 4;
 
+    /* -------------------------------------------------------------------------- */
+    /* we expect JSON response in body                                            */
+
 //    DBG("Response body [%s]", body);
 
-    /* -------------------------------------------------------------------------- */
+    /* parse the response as fast as possible */
+
+    /* it took me three days trying to choose from existing JSON libraries
+       and the next three days to write the code below */
+
+    len = bytes - (body - buffer);
+    DBG("Real response content length = %d", len);
+
+    char key[32];
+    char value[256];
+    int j=0;
+    char now_key=1, now_value=0, is_string=0;
 
     while ( *body )
     {
-//        if ( *body=='h' ) DBG("This is h");
+        if ( !now_value )
+            while ( *body && (*body==' ' || *body=='\t' || *body=='\r' || *body=='\n' || *body=='{') ) ++body;
+
+        if ( now_key )
+            while ( *body && *body=='"' ) ++body;
+
+        if ( now_key && *body==':' )  /* end of key */
+        {
+//            if ( j > 31 ) j = 31;
+            key[j] = EOS;
+            j = 0;
+            now_key = 0;
+
+            while ( *body && (*body==' ' || *body=='\t') ) ++body;
+
+            if ( *body=='"' )
+            {
+                is_string = 1;
+                ++body;
+            }
+            else
+                is_string = 0;
+        }
+        else if ( now_value && *body==',' || *body=='}' || (is_string && *body=='"') )  /* end of value */
+        {
+//            if ( j > 255 ) j = 255;
+            value[j] = EOS;
+            j = 0;
+
+            if ( is_string )
+                REST_SET_STR(key, value);
+            else
+                REST_SET_NUM(key, atol(value));
+            now_value = 0;
+
+            now_key = 1;
+        }
+        else
+        {
+            if ( now_key )
+            {
+                if ( j < 30 )
+                    key[j++] = *body;
+            }
+            else    /* value */
+            {
+                if ( j < 254 )
+                    value[j++] = *body;
+            }
+        }
+
+        if ( !*body ) break;
+
         ++body;
     }
 
     return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Log JSON REST buffer
+-------------------------------------------------------------------------- */
+void eng_log_rest_buffer_dbg(int ci)
+{
+    int i;
+
+    DBG("-------------------------------------------------------------------------------");
+    DBG("REST buffer:");
+
+    for ( i=0; i<US.rest_cnt; ++i )
+        DBG("%s [%s]", US.rest_fld[i].name, US.rest_fld[i].value);
+
+    DBG("-------------------------------------------------------------------------------");
+}
+
+
+/* --------------------------------------------------------------------------
+   Log JSON REST buffer
+-------------------------------------------------------------------------- */
+void eng_log_rest_buffer_inf(int ci)
+{
+    int i;
+
+    INF("-------------------------------------------------------------------------------");
+    INF("REST buffer:");
+
+    for ( i=0; i<US.rest_cnt; ++i )
+        INF("%s [%s]", US.rest_fld[i].name, US.rest_fld[i].value);
+
+    INF("-------------------------------------------------------------------------------");
 }
 
 
