@@ -2120,7 +2120,7 @@ bool lib_json_set(JSON *json, const char *name, const char *str_value, long num_
 
 
 /* --------------------------------------------------------------------------
-   Get value from JSON REST buffer
+   Get value from JSON buffer
 -------------------------------------------------------------------------- */
 bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type)
 {
@@ -2165,6 +2165,102 @@ bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value
                 else
                     *num_value = 0;
                 return TRUE;
+            }
+
+            return FALSE;   /* types don't match or couldn't convert */
+        }
+    }
+
+    return FALSE;   /* no such field */
+}
+
+
+/* --------------------------------------------------------------------------
+   Get value from JSON buffer
+-------------------------------------------------------------------------- */
+char *lib_json_get_str(JSON *json, const char *name)
+{
+static char dst[256];
+    int     i;
+
+    for ( i=0; i<json->cnt; ++i )
+    {
+        if ( 0==strcmp(json->rec[i].name, name) )
+        {
+            if ( json->rec[i].type == JSON_STRING )
+            {
+                strcpy(dst, json->rec[i].value);
+                return dst;
+            }
+            else if ( json->rec[i].type == JSON_NUMBER )
+            {
+                strcpy(dst, json->rec[i].value);
+                return dst;
+            }
+            else if ( json->rec[i].type == JSON_BOOL )
+            {
+                strcpy(dst, json->rec[i].value);
+                return dst;
+            }
+
+            dst[0] = EOS;
+            return dst;   /* types don't match or couldn't convert */
+        }
+    }
+
+    dst[0] = EOS;
+    return dst;   /* no such field */
+}
+
+
+/* --------------------------------------------------------------------------
+   Get value from JSON buffer
+-------------------------------------------------------------------------- */
+long lib_json_get_num(JSON *json, const char *name)
+{
+    int i;
+
+    for ( i=0; i<json->cnt; ++i )
+    {
+        if ( 0==strcmp(json->rec[i].name, name) )
+        {
+            if ( json->rec[i].type == JSON_NUMBER )
+            {
+                return atol(json->rec[i].value);
+            }
+
+            return 0;   /* types don't match or couldn't convert */
+        }
+    }
+
+    return 0;   /* no such field */
+}
+
+
+/* --------------------------------------------------------------------------
+   Get value from JSON buffer
+-------------------------------------------------------------------------- */
+bool lib_json_get_bool(JSON *json, const char *name)
+{
+    int i;
+
+    for ( i=0; i<json->cnt; ++i )
+    {
+        if ( 0==strcmp(json->rec[i].name, name) )
+        {
+            if ( json->rec[i].type == JSON_BOOL )
+            {
+                if ( json->rec[i].value[0] == 't' )
+                    return TRUE;
+                else
+                    return FALSE;
+            }
+            else if ( json->rec[i].type == JSON_STRING )
+            {
+                if ( 0==strcmp(json->rec[i].value, "true") )
+                    return TRUE;
+                else
+                    return FALSE;
             }
 
             return FALSE;   /* types don't match or couldn't convert */

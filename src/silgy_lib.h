@@ -83,9 +83,9 @@ typedef json_buf_t JSON;
 #define JSON_SET_NUM(j,n,v)         lib_json_set(&j, n, NULL, v, JSON_NUMBER)
 #define JSON_SET_BOOL(j,n,v)        lib_json_set(&j, n, NULL, v, JSON_BOOL)
 
-#define JSON_GET_STR(j,n,v)         lib_json_set(&j, n, v, NULL, JSON_STRING)
-#define JSON_GET_NUM(j,n,v)         lib_json_set(&j, n, NULL, v, JSON_NUMBER)
-#define JSON_GET_BOOL(j,n,v)        lib_json_set(&j, n, NULL, v, JSON_BOOL)
+#define JSON_GET_STR(j,n)           lib_json_get_str(&j, n)
+#define JSON_GET_NUM(j,n)           lib_json_get_num(&j, n)
+#define JSON_GET_BOOL(j,n)          lib_json_get_bool(&j, n)
 
 #define JSON_RESET(j)               j.cnt = 0
 
@@ -142,6 +142,9 @@ extern "C" {
     void lib_json_from_string(JSON *json, const char *src);
     bool lib_json_set(JSON *json, const char *name, const char *str_value, long num_value, char type);
     bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type);
+    char *lib_json_get_str(JSON *json, const char *name);
+    long lib_json_get_num(JSON *json, const char *name);
+    bool lib_json_get_bool(JSON *json, const char *name);
     void lib_log_rest_buffer_dbg(JSON *json);
     void lib_log_rest_buffer_inf(JSON *json);
     void get_byteorder(void);
