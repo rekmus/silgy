@@ -1864,6 +1864,318 @@ void msleep(long n)
 
 
 /* --------------------------------------------------------------------------
+   Get index from JSON buffer
+-------------------------------------------------------------------------- */
+static int json_get_i(JSON *json, const char *name)
+{
+    int i;
+
+    for ( i=0; i<json->cnt; ++i )
+        if ( 0==strcmp(json->rec[i].name, name) )
+            return i;
+
+    return -1;
+}
+
+
+/* --------------------------------------------------------------------------
+   Convert Silgy JSON format to JSON string
+-------------------------------------------------------------------------- */
+char *lib_json_to_string(JSON *json)
+{
+static char dst[JSON_BUFSIZE];
+    char    *p=dst;
+    int     i;
+
+    p = stpcpy(p, "{");
+
+    for ( i=0; i<json->cnt; ++i )
+    {
+        if ( json->rec[i].type == JSON_STRING )
+        {
+            p = stpcpy(p, "\"");
+            p = stpcpy(p, json->rec[i].value);
+            p = stpcpy(p, "\"");
+        }
+        else if ( json->rec[i].type == JSON_NUMBER || json->rec[i].type == JSON_BOOL )
+        {
+            p = stpcpy(p, json->rec[i].value);
+        }
+
+        if ( i < json->cnt-1 )
+            p = stpcpy(p, ",");
+    }
+
+    p = stpcpy(p, "}");
+
+    *p = EOS;
+
+    return dst;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get JSON element as a string
+-------------------------------------------------------------------------- */
+static char *get_json_elem(JSON *json, int i)
+{
+static char retbuf[1024];
+
+/*    if ( US.rest_fld[JSON_MAX_ELEMS*level+i].type == JSON_STRING )
+    {
+        sprintf(retbuf, "\"%s\"", US.rest_fld[JSON_MAX_ELEMS*level+i].value);
+        return retbuf;
+    }
+    else if ( US.rest_fld[JSON_MAX_ELEMS*level+i].type == JSON_RECORD )
+    {
+        if ( level >= JSON_MAX_LEVELS )
+        {
+            retbuf[0] = EOS;
+        }
+        else
+        {
+            sprintf(retbuf, "{\"%s\":%s}", US.rest_fld[JSON_MAX_ELEMS*level+i].name, get_json_elem(ci, i, level+1));
+        }
+        return retbuf;
+    } */
+//    else    /* number or bool */
+/*    {
+        strcpy(retbuf, US.rest_fld[JSON_MAX_ELEMS*level+i].value);
+        return retbuf;
+    } */
+}
+
+
+/* --------------------------------------------------------------------------
+   Get array element as a string from JSON REST buffer
+-------------------------------------------------------------------------- */
+char *get_json_array_elem(const char *name, int index)
+{
+}
+
+
+/* --------------------------------------------------------------------------
+   Get record as a string from JSON REST buffer
+-------------------------------------------------------------------------- */
+char *get_json_record(const char *name)
+{
+}
+
+
+/* --------------------------------------------------------------------------
+   Copy JSON string to Silgy JSON format
+-------------------------------------------------------------------------- */
+void lib_json_from_string(JSON *json, const char *src)
+{
+    char key[32];
+    char value[256];
+    char now_key=1, now_value=0, is_string=0, is_array=0;
+
+    int j = 0;
+
+    while ( *src )
+    {
+        if ( !now_value )
+            while ( *src && (*src==' ' || *src=='\t' || *src=='\r' || *src=='\n' || *src=='{') ) ++src;
+
+        if ( now_key )
+            while ( *src && *src=='"' ) ++src;
+
+        if ( now_key && *src==':' )  /* end of key */
+        {
+//            if ( j > 31 ) j = 31;
+            key[j] = EOS;
+            j = 0;
+            now_key = 0;
+
+            while ( *src && (*src==' ' || *src=='\t') ) ++src;
+
+            if ( *src=='"' )
+            {
+                is_string = 1;
+                ++src;
+            }
+            else
+                is_string = 0;
+
+            if ( *src=='[' )
+            {
+                is_array = 1;
+                ++src;
+            }
+            else
+                is_array = 0;
+        }
+        else if ( now_value && *src==',' || *src=='}' || (is_string && *src=='"') )  /* end of value */
+        {
+//            if ( j > 255 ) j = 255;
+            value[j] = EOS;
+            j = 0;
+
+            if ( is_string )
+                JSON_SET_STR(*json, key, value);
+            else
+                JSON_SET_NUM(*json, key, atol(value));
+            now_value = 0;
+
+            now_key = 1;
+        }
+        else
+        {
+            if ( now_key )
+            {
+                if ( j < 30 )
+                    key[j++] = *src;
+            }
+            else    /* value */
+            {
+                if ( j < 254 )
+                    value[j++] = *src;
+            }
+        }
+
+        if ( !*src ) break;
+
+        ++src;
+    }
+}
+
+
+/* --------------------------------------------------------------------------
+   Log JSON REST buffer
+-------------------------------------------------------------------------- */
+void lib_json_log_dbg(JSON *json)
+{
+    int i;
+
+    DBG("-------------------------------------------------------------------------------");
+    DBG("REST buffer:");
+
+    for ( i=0; i<json->cnt; ++i )
+        DBG("%s [%s]", json->rec[i].name, json->rec[i].value);
+
+    DBG("-------------------------------------------------------------------------------");
+}
+
+
+/* --------------------------------------------------------------------------
+   Log JSON REST buffer
+-------------------------------------------------------------------------- */
+void lib_json_log_inf(JSON *json)
+{
+    int i;
+
+    INF("-------------------------------------------------------------------------------");
+    INF("REST buffer:");
+
+    for ( i=0; i<json->cnt; ++i )
+        INF("%s [%s]", json->rec[i].name, json->rec[i].value);
+
+    INF("-------------------------------------------------------------------------------");
+}
+
+
+/* --------------------------------------------------------------------------
+   Add/set value to a JSON REST buffer
+-------------------------------------------------------------------------- */
+bool lib_json_set(JSON *json, const char *name, const char *str_value, long num_value, char type)
+{
+    int i;
+
+    i = json_get_i(json, name);
+
+    if ( i==-1 )    /* not present */
+    {
+        if ( json->cnt >= JSON_MAX_ELEMS ) return FALSE;
+        i = json->cnt;
+        ++json->cnt;
+    }
+
+    strncpy(json->rec[i].name, name, 31);
+    json->rec[i].name[31] = EOS;
+
+    if ( type == JSON_STRING )
+    {
+        strncpy(json->rec[i].value, str_value, 255);
+        json->rec[i].value[255] = EOS;
+    }
+    else if ( type == JSON_BOOL )
+    {
+        if ( num_value )
+            strcpy(json->rec[i].value, "true");
+        else
+            strcpy(json->rec[i].value, "false");
+    }
+    else
+    {
+        char tmp[64];
+        sscanf(tmp, "%ld", num_value);
+        strcpy(json->rec[i].value, tmp);
+    }
+
+    json->rec[i].type = type;
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get value from JSON REST buffer
+-------------------------------------------------------------------------- */
+bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type)
+{
+    int i;
+
+    for ( i=0; i<json->cnt; ++i )
+    {
+        if ( 0==strcmp(json->rec[i].name, name) )
+        {
+            if ( type == JSON_STRING && json->rec[i].type == JSON_STRING )
+            {
+                strcpy(str_value, json->rec[i].value);
+                return TRUE;
+            }
+            else if ( type == JSON_NUMBER && json->rec[i].type == JSON_NUMBER )
+            {
+                *num_value = atol(json->rec[i].value);
+                return TRUE;
+            }
+            else if ( type == JSON_BOOL && json->rec[i].type == JSON_BOOL )
+            {
+                if ( json->rec[i].value[0] == 't' )
+                    *num_value = 1;
+                else
+                    *num_value = 0;
+                return TRUE;
+            }
+            else if ( type == JSON_STRING && json->rec[i].type == JSON_NUMBER )
+            {
+                strcpy(str_value, json->rec[i].value);
+                return TRUE;
+            }
+            else if ( type == JSON_STRING && json->rec[i].type == JSON_BOOL )
+            {
+                strcpy(str_value, json->rec[i].value);
+                return TRUE;
+            }
+            else if ( type == JSON_BOOL && json->rec[i].type == JSON_STRING )
+            {
+                if ( 0==strcmp(json->rec[i].value, "true") )
+                    *num_value = 1;
+                else
+                    *num_value = 0;
+                return TRUE;
+            }
+
+            return FALSE;   /* types don't match or couldn't convert */
+        }
+    }
+
+    return FALSE;   /* no such field */
+}
+
+
+/* --------------------------------------------------------------------------
    Check system's endianness
 -------------------------------------------------------------------------- */
 void get_byteorder()

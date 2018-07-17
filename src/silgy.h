@@ -316,16 +316,8 @@ typedef char                        bool;
 #define CALL_ASYNC(s,d,t)           eng_async_req(ci, s, d, TRUE, t)
 #define CALL_ASYNC_NR(s,d)          eng_async_req(ci, s, d, FALSE, 0)
 
-#define REST_SET_STR(n,v)           eng_rest_add(ci, n, v, 0, JSON_STRING)
-#define REST_SET_NUM(n,v)           eng_rest_add(ci, n, NULL, v, JSON_NUMBER)
-#define REST_SET_BOOL(n,v)          eng_rest_add(ci, n, NULL, v, JSON_BOOL)
-#define REST_CALL(m,u)              eng_rest_req(ci, m, u)
-#define REST_GET_STR(n,v)           eng_rest_get(ci, n, v, NULL, JSON_STRING)
-#define REST_GET_NUM(n,v)           eng_rest_get(ci, n, NULL, v, JSON_NUMBER)
-#define REST_GET_BOOL(n,v)          eng_rest_get(ci, n, NULL, v, JSON_BOOL)
-#define REST_RESET                  US.rest_cnt = 0
-#define REST_LOG_DBG                eng_log_rest_buffer_dbg(ci)
-#define REST_LOG_INF                eng_log_rest_buffer_inf(ci)
+#define REST_CALL(req,res,m,u)      eng_rest_req(ci, &req, &res, m, u)
+
 
 /* resource / content types */
 
@@ -463,20 +455,6 @@ typedef struct {
 } conn_t;
 
 
-#define JSON_STRING         0
-#define JSON_NUMBER         1
-#define JSON_BOOL           2
-#define JSON_MAX_FIELDS     30
-
-/* JSON record */
-
-typedef struct {
-    char    name[32];
-    char    value[256];
-    char    type;
-} json_t;
-
-
 /* user session */
 
 typedef struct {
@@ -497,7 +475,7 @@ typedef struct {
     char    lang[8];
     time_t  last_activity;
     char    additional[64];         /* password reset key */
-    json_t  rest_fld[JSON_MAX_FIELDS];
+//    json_t  rest_fld[JSON_MAX_ELEMS*JSON_MAX_LEVELS];
     int     rest_cnt;
 } usession_t;
 
@@ -602,6 +580,18 @@ extern counters_t G_cnts_day_before;        /* day before's counters */
 extern char     *G_shm_segptr;              /* SHM pointer */
 
 
+
+#include "silgy_lib.h"
+
+#ifdef USERS
+#include "silgy_usr.h"
+#endif
+
+#include "silgy_app.h"
+
+
+
+
 /* public engine functions */
 
 #ifdef __cplusplus
@@ -613,11 +603,7 @@ extern "C" {
     void eng_uses_close(int usi);
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
-    bool eng_rest_req(int ci, const char *method, const char *url);
-    void eng_log_rest_buffer_dbg(int ci);
-    void eng_log_rest_buffer_inf(int ci);
-    bool eng_rest_add(int ci, const char *name, const char *str_value, long num_value, char type);
-    bool eng_rest_get(int ci, const char *name, char *str_value, long *num_value, char type);
+    bool eng_rest_req(int ci, JSON *json_req, JSON *json_res, const char *method, const char *url);
     void silgy_add_to_static_res(const char *name, char *src);
     void eng_send_ajax_msg(int ci, int errcode);
     void eng_block_ip(const char *value, bool autoblocked);
@@ -639,14 +625,6 @@ extern "C" {
 }   /* extern "C" */
 #endif
 
-
-#include "silgy_lib.h"
-
-#ifdef USERS
-#include "silgy_usr.h"
-#endif
-
-#include "silgy_app.h"
 
 
 #endif  /* SILGY_H */

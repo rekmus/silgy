@@ -147,7 +147,7 @@ static void clean_up(void);
 static void sigdisp(int sig);
 static void gen_page_msg(int ci, int msg);
 static bool init_ssl(void);
-static int rest_get_i(int ci, const char *name);
+static int json_get_i(int ci, JSON *json, const char *name);
 
 
 /* --------------------------------------------------------------------------
@@ -3519,10 +3519,8 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 /* --------------------------------------------------------------------------
    REST call
 -------------------------------------------------------------------------- */
-bool eng_rest_req(int ci, const char *method, const char *url)
+bool eng_rest_req(int ci, JSON *json_req, JSON *json_res, const char *method, const char *url)
 {
-#define BUFSIZE       8196
-
 #ifdef _WIN32   /* Windows */
     SOCKET sockfd;
 #else
@@ -3530,9 +3528,9 @@ bool eng_rest_req(int ci, const char *method, const char *url)
 #endif  /* _WIN32 */
     int connection;
     int bytes;
-    char buffer[BUFSIZE];
+static char buffer[JSON_BUFSIZE];
     static struct sockaddr_in serv_addr;
-    int len;
+    int len, i, j;
     bool endingslash=FALSE;
 
     INF("restcall %s %s", method, url);
@@ -3688,24 +3686,8 @@ bool eng_rest_req(int ci, const char *method, const char *url)
 
     /* body */
 
-    if ( 0!=strcmp(method, "GET") )
-    {
-        p = stpcpy(p, "{");
-
-        int i;
-
-        for ( i=0; i<US.rest_cnt; ++i )
-        {
-            if ( US.rest_fld[i].type == JSON_STRING )
-                sprintf(G_tmp, "\"%s\":\"%s\"%s", US.rest_fld[i].name, US.rest_fld[i].value, i<US.rest_cnt-1?",":"");
-            else
-                sprintf(G_tmp, "\"%s\":%s%s", US.rest_fld[i].name, US.rest_fld[i].value, i<US.rest_cnt-1?",":"");
-
-            p = stpcpy(p, G_tmp);
-        }
-
-        p = stpcpy(p, "}");
-    }
+    if ( json_req )
+        p = stpcpy(p, JSON_TO_STRING(json_req));
 
     *p = EOS;
 
@@ -3725,17 +3707,13 @@ bool eng_rest_req(int ci, const char *method, const char *url)
 
     /* -------------------------------------------------------------------------- */
 
-    REST_RESET;
-
-    /* -------------------------------------------------------------------------- */
-
     INF("Reading response...");
 
-    bytes = recv(sockfd, buffer, BUFSIZE-1, 0);
+    bytes = recv(sockfd, buffer, JSON_BUFSIZE-1, 0);
 
     DBG("...twice");
 
-    bytes += recv(sockfd, buffer+bytes, BUFSIZE-bytes-1, 0);
+    bytes += recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0);
 
     close(connection);
 #ifdef _WIN32   /* Windows */
@@ -3797,219 +3775,9 @@ bool eng_rest_req(int ci, const char *method, const char *url)
     len = bytes - (body - buffer);
     DBG("Real response content length = %d", len);
 
-    char key[32];
-    char value[256];
-    int j=0;
-    char now_key=1, now_value=0, is_string=0;
-
-    while ( *body )
-    {
-        if ( !now_value )
-            while ( *body && (*body==' ' || *body=='\t' || *body=='\r' || *body=='\n' || *body=='{') ) ++body;
-
-        if ( now_key )
-            while ( *body && *body=='"' ) ++body;
-
-        if ( now_key && *body==':' )  /* end of key */
-        {
-//            if ( j > 31 ) j = 31;
-            key[j] = EOS;
-            j = 0;
-            now_key = 0;
-
-            while ( *body && (*body==' ' || *body=='\t') ) ++body;
-
-            if ( *body=='"' )
-            {
-                is_string = 1;
-                ++body;
-            }
-            else
-                is_string = 0;
-        }
-        else if ( now_value && *body==',' || *body=='}' || (is_string && *body=='"') )  /* end of value */
-        {
-//            if ( j > 255 ) j = 255;
-            value[j] = EOS;
-            j = 0;
-
-            if ( is_string )
-                REST_SET_STR(key, value);
-            else
-                REST_SET_NUM(key, atol(value));
-            now_value = 0;
-
-            now_key = 1;
-        }
-        else
-        {
-            if ( now_key )
-            {
-                if ( j < 30 )
-                    key[j++] = *body;
-            }
-            else    /* value */
-            {
-                if ( j < 254 )
-                    value[j++] = *body;
-            }
-        }
-
-        if ( !*body ) break;
-
-        ++body;
-    }
+    JSON_FROM_STRING(json_res, body);
 
     return TRUE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Log JSON REST buffer
--------------------------------------------------------------------------- */
-void eng_log_rest_buffer_dbg(int ci)
-{
-    int i;
-
-    DBG("-------------------------------------------------------------------------------");
-    DBG("REST buffer:");
-
-    for ( i=0; i<US.rest_cnt; ++i )
-        DBG("%s [%s]", US.rest_fld[i].name, US.rest_fld[i].value);
-
-    DBG("-------------------------------------------------------------------------------");
-}
-
-
-/* --------------------------------------------------------------------------
-   Log JSON REST buffer
--------------------------------------------------------------------------- */
-void eng_log_rest_buffer_inf(int ci)
-{
-    int i;
-
-    INF("-------------------------------------------------------------------------------");
-    INF("REST buffer:");
-
-    for ( i=0; i<US.rest_cnt; ++i )
-        INF("%s [%s]", US.rest_fld[i].name, US.rest_fld[i].value);
-
-    INF("-------------------------------------------------------------------------------");
-}
-
-
-/* --------------------------------------------------------------------------
-   Add/set value to a JSON REST buffer
--------------------------------------------------------------------------- */
-bool eng_rest_add(int ci, const char *name, const char *str_value, long num_value, char type)
-{
-    int i;
-
-    i = rest_get_i(ci, name);
-
-    if ( i==-1 )    /* not present */
-    {
-        if ( US.rest_cnt >= JSON_MAX_FIELDS ) return FALSE;
-        i = US.rest_cnt;
-        ++US.rest_cnt;
-    }
-
-    strncpy(US.rest_fld[i].name, name, 31);
-    US.rest_fld[i].name[31] = EOS;
-
-    if ( type == JSON_STRING )
-    {
-        strncpy(US.rest_fld[i].value, str_value, 255);
-        US.rest_fld[i].value[255] = EOS;
-    }
-    else if ( type == JSON_BOOL )
-    {
-        if ( num_value )
-            strcpy(US.rest_fld[i].value, "true");
-        else
-            strcpy(US.rest_fld[i].value, "false");
-    }
-    else
-    {
-        char tmp[64];
-        sscanf(tmp, "%ld", num_value);
-        strcpy(US.rest_fld[i].value, tmp);
-    }
-
-    US.rest_fld[i].type = type;
-
-    return TRUE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get index from JSON REST buffer
--------------------------------------------------------------------------- */
-static int rest_get_i(int ci, const char *name)
-{
-    int i;
-
-    for ( i=0; i<US.rest_cnt; ++i )
-        if ( 0==strcmp(US.rest_fld[i].name, name) )
-            return i;
-
-    return -1;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get value from JSON REST buffer
--------------------------------------------------------------------------- */
-bool eng_rest_get(int ci, const char *name, char *str_value, long *num_value, char type)
-{
-    int i;
-
-    for ( i=0; i<US.rest_cnt; ++i )
-    {
-        if ( 0==strcmp(US.rest_fld[i].name, name) )
-        {
-            if ( type == JSON_STRING && US.rest_fld[i].type == JSON_STRING )
-            {
-                strcpy(str_value, US.rest_fld[i].value);
-                return TRUE;
-            }
-            else if ( type == JSON_NUMBER && US.rest_fld[i].type == JSON_NUMBER )
-            {
-                *num_value = atol(US.rest_fld[i].value);
-                return TRUE;
-            }
-            else if ( type == JSON_BOOL && US.rest_fld[i].type == JSON_BOOL )
-            {
-                if ( US.rest_fld[i].value[0] == 't' )
-                    *num_value = 1;
-                else
-                    *num_value = 0;
-                return TRUE;
-            }
-            else if ( type == JSON_STRING && US.rest_fld[i].type == JSON_NUMBER )
-            {
-                strcpy(str_value, US.rest_fld[i].value);
-                return TRUE;
-            }
-            else if ( type == JSON_STRING && US.rest_fld[i].type == JSON_BOOL )
-            {
-                strcpy(str_value, US.rest_fld[i].value);
-                return TRUE;
-            }
-            else if ( type == JSON_BOOL && US.rest_fld[i].type == JSON_STRING )
-            {
-                if ( 0==strcmp(US.rest_fld[i].value, "true") )
-                    *num_value = 1;
-                else
-                    *num_value = 0;
-                return TRUE;
-            }
-
-            return FALSE;   /* types don't match or couldn't convert */
-        }
-    }
-
-    return FALSE;   /* no such field */
 }
 
 

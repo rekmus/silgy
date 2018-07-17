@@ -46,6 +46,54 @@ typedef char                    QSVAL[QSBUF];
 //typedef struct QSVAL          { char x[QSBUF]; } QSVAL;
 
 
+/* JSON */
+
+#define JSON_STRING         0
+#define JSON_NUMBER         1
+#define JSON_BOOL           2
+#define JSON_ARRAY          3
+#define JSON_RECORD         4
+#define JSON_MAX_ELEMS      30
+#define JSON_MAX_LEVELS     3
+
+/* JSON record */
+
+typedef struct {
+    char    name[32];
+    char    value[256];
+    char    type;
+} json_rec_t;
+
+/* JSON buffer */
+
+typedef struct {
+    int         cnt;
+    json_rec_t  rec[JSON_MAX_ELEMS];
+} json_buf_t;
+
+typedef json_buf_t JSON;
+
+
+#define JSON_BUFSIZE                32784
+
+#define JSON_TO_STRING(j)           lib_json_to_string(j)
+#define JSON_FROM_STRING(j,s)       lib_json_from_string(j, s)
+
+#define JSON_SET_STR(j,n,v)         lib_json_set(&j, n, v, 0, JSON_STRING)
+#define JSON_SET_NUM(j,n,v)         lib_json_set(&j, n, NULL, v, JSON_NUMBER)
+#define JSON_SET_BOOL(j,n,v)        lib_json_set(&j, n, NULL, v, JSON_BOOL)
+
+#define JSON_GET_STR(j,n,v)         lib_json_set(&j, n, v, NULL, JSON_STRING)
+#define JSON_GET_NUM(j,n,v)         lib_json_set(&j, n, NULL, v, JSON_NUMBER)
+#define JSON_GET_BOOL(j,n,v)        lib_json_set(&j, n, NULL, v, JSON_BOOL)
+
+#define JSON_RESET(j)               j.cnt = 0
+
+#define JSON_LOG_DBG(j)             lib_json_log_dbg(j)
+#define JSON_LOG_INF(j)             lib_json_log_inf(j)
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -90,6 +138,12 @@ extern "C" {
     char *nospaces(char *dst, const char *src);
     void silgy_random(char *dest, int len);
     void msleep(long n);
+    char *lib_json_to_string(JSON *json);
+    void lib_json_from_string(JSON *json, const char *src);
+    bool lib_json_set(JSON *json, const char *name, const char *str_value, long num_value, char type);
+    bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type);
+    void lib_log_rest_buffer_dbg(JSON *json);
+    void lib_log_rest_buffer_inf(JSON *json);
     void get_byteorder(void);
     time_t db2epoch(const char *str);
     bool sendemail(int ci, const char *to, const char *subject, const char *message);
