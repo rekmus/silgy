@@ -3767,11 +3767,6 @@ static char buffer[JSON_BUFSIZE];
 
 //    DBG("Response body [%s]", body);
 
-    /* parse the response as fast as possible */
-
-    /* it took me three days trying to choose from existing JSON libraries
-       and the next three days to write the code below */
-
     len = bytes - (body - buffer);
     DBG("Real response content length = %d", len);
 
