@@ -3691,7 +3691,7 @@ static char buffer[JSON_BUFSIZE];
 
     *p = EOS;
 
-    DBG("After JSON_TO_STRING [%s]", buffer);
+//    DBG("After JSON_TO_STRING [%s]", buffer);
 
     bytes = send(sockfd, buffer, strlen(buffer), 0);
 
