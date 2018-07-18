@@ -3566,7 +3566,7 @@ static char buffer[JSON_BUFSIZE];
         return FALSE;
     }
 
-    DBG("url [%s]", url);
+//    DBG("url [%s]", url);
 
     char host[256];
     char port[8];
@@ -3590,7 +3590,8 @@ static char buffer[JSON_BUFSIZE];
         else    /* only host name & port */
         {
             strcpy(port, colon+1);
-            uri[0] = EOS;
+            uri[0] = '/';
+            uri[1] = EOS;
         }
     }
     else    /* no port specified */
@@ -3604,7 +3605,8 @@ static char buffer[JSON_BUFSIZE];
         else    /* only host name */
         {
             strcpy(host, url);
-            uri[0] = EOS;
+            uri[0] = '/';
+            uri[1] = EOS;
         }
 
         strcpy(port, "80");
@@ -3667,7 +3669,7 @@ static char buffer[JSON_BUFSIZE];
 
     INF("Sending request...");
 
-    char *p=buffer;     /* stpcpy is more convenient and faster than strcat */
+    char *p=buffer;     /* stpcpy is faster than strcat */
 
     /* header */
 
@@ -3678,20 +3680,30 @@ static char buffer[JSON_BUFSIZE];
     p = stpcpy(p, "Host: ");
     p = stpcpy(p, host);
     p = stpcpy(p, "\r\n");
-    if ( 0!=strcmp(method, "GET") )
+
+    if ( 0 != strcmp(method, "GET") )
+    {
         p = stpcpy(p, "Content-Type: application/json\r\n");
+        strcpy(G_tmp, JSON_TO_STRING(*json_req));
+        char tmp[64];
+        sprintf(tmp, "Content-Length: %d\r\n", strlen(G_tmp));
+        p = stpcpy(p, tmp);
+    }
+
     p = stpcpy(p, "Connection: close\r\n");
     p = stpcpy(p, "User-Agent: Silgy\r\n");
     p = stpcpy(p, "\r\n");
 
     /* body */
 
-    if ( json_req )
-        p = stpcpy(p, JSON_TO_STRING(*json_req));
+    if ( 0 != strcmp(method, "GET") )
+        p = stpcpy(p, G_tmp);
 
     *p = EOS;
 
-//    DBG("After JSON_TO_STRING [%s]", buffer);
+//    DBG("------------------------------------------------------------");
+//    DBG(buffer);
+//    DBG("------------------------------------------------------------");
 
     bytes = send(sockfd, buffer, strlen(buffer), 0);
 
