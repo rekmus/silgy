@@ -49,12 +49,16 @@ typedef char                    QSVAL[QSBUF];
 /* JSON */
 
 #define JSON_STRING         0
-#define JSON_NUMBER         1
-#define JSON_BOOL           2
-#define JSON_ARRAY          3
-#define JSON_RECORD         4
+#define JSON_INTEGER        1
+#define JSON_FLOAT          2
+#define JSON_BOOL           3
+#define JSON_ARRAY          4
+#define JSON_RECORD         5
 #define JSON_MAX_ELEMS      30
 #define JSON_MAX_LEVELS     3
+
+#define JSON_MAX_JSONS      1000
+
 
 /* JSON record */
 
@@ -79,18 +83,21 @@ typedef json_buf_t JSON;
 #define JSON_TO_STRING(j)           lib_json_to_string(j)
 #define JSON_FROM_STRING(j,s)       lib_json_from_string(j, s)
 
-#define JSON_SET_STR(j,n,v)         lib_json_set(&j, n, v, 0, JSON_STRING)
-#define JSON_SET_NUM(j,n,v)         lib_json_set(&j, n, NULL, v, JSON_NUMBER)
-#define JSON_SET_BOOL(j,n,v)        lib_json_set(&j, n, NULL, v, JSON_BOOL)
+#define JSON_SET_STR(j,n,v)         lib_json_set(&j, n, v, 0, 0, JSON_STRING)
+#define JSON_SET_INT(j,n,v)         lib_json_set(&j, n, NULL, v, 0, JSON_INTEGER)
+#define JSON_SET_FLOAT(j,n,v)       lib_json_set(&j, n, NULL, 0, v, JSON_FLOAT)
+#define JSON_SET_BOOL(j,n,v)        lib_json_set(&j, n, NULL, v, 0, JSON_BOOL)
+#define JSON_SET_RECORD(j,n,v)      lib_json_set_record(&j, n, &v)
 
 #define JSON_GET_STR(j,n)           lib_json_get_str(&j, n)
-#define JSON_GET_NUM(j,n)           lib_json_get_num(&j, n)
+#define JSON_GET_INT(j,n)           lib_json_get_int(&j, n)
+#define JSON_GET_FLOAT(j,n)         lib_json_get_float(&j, n)
 #define JSON_GET_BOOL(j,n)          lib_json_get_bool(&j, n)
 
 #define JSON_RESET(j)               j.cnt = 0
 
-#define JSON_LOG_DBG(j)             lib_json_log_dbg(j)
-#define JSON_LOG_INF(j)             lib_json_log_inf(j)
+#define JSON_LOG_DBG(j)             lib_json_log_dbg(&j)
+#define JSON_LOG_INF(j)             lib_json_log_inf(&j)
 
 
 
@@ -140,13 +147,15 @@ extern "C" {
     void msleep(long n);
     char *lib_json_to_string(JSON *json);
     void lib_json_from_string(JSON *json, const char *src);
-    bool lib_json_set(JSON *json, const char *name, const char *str_value, long num_value, char type);
+    bool lib_json_set(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type);
+    bool lib_json_set_record(JSON *json, const char *name, JSON *json_sub);
     bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type);
     char *lib_json_get_str(JSON *json, const char *name);
-    long lib_json_get_num(JSON *json, const char *name);
+    long lib_json_get_int(JSON *json, const char *name);
+    double lib_json_get_float(JSON *json, const char *name);
     bool lib_json_get_bool(JSON *json, const char *name);
-    void lib_log_rest_buffer_dbg(JSON *json);
-    void lib_log_rest_buffer_inf(JSON *json);
+    void lib_json_log_dbg(JSON *json);
+    void lib_json_log_inf(JSON *json);
     void get_byteorder(void);
     time_t db2epoch(const char *str);
     bool sendemail(int ci, const char *to, const char *subject, const char *message);

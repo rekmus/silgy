@@ -36,6 +36,10 @@ static char M_dsep='.';             /* decimal separator */
 
 static int  M_shmid;                /* SHM id */
 
+//static uintptr_t M_jsons[JSON_MAX_JSONS];
+static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers */
+static int M_jsons_cnt=0;
+
 static char *uri_decode(char *src, int srclen, char *dest, int maxlen);
 static char *uri_decode_html_esc(char *src, int srclen, char *dest, int maxlen);
 static char *uri_decode_sql_esc(char *src, int srclen, char *dest, int maxlen);
@@ -1868,7 +1872,33 @@ void msleep(long n)
 -------------------------------------------------------------------------- */
 static int json_get_i(JSON *json, const char *name)
 {
-    int i;
+    int     i;
+
+#ifndef FAST_JSON   /* otherwise u need to call JSON_RESET before using JSON type */
+
+    bool    initialized=0;
+
+    for ( i=0; i<M_jsons_cnt; ++i )
+    {
+        if ( M_jsons[i] == json )
+        {
+            initialized = 1;
+            break;
+        }
+    }
+
+    if ( !initialized )
+    {
+        if ( M_jsons_cnt >= JSON_MAX_JSONS )
+            M_jsons_cnt = 0;
+
+        M_jsons[M_jsons_cnt] = json;
+        ++M_jsons_cnt;
+        json->cnt = 0;
+    }
+    else
+
+#endif /* FAST_JSON */
 
     for ( i=0; i<json->cnt; ++i )
         if ( 0==strcmp(json->rec[i].name, name) )
@@ -1891,15 +1921,23 @@ static char dst[JSON_BUFSIZE];
 
     for ( i=0; i<json->cnt; ++i )
     {
+        p = stpcpy(p, "\"");
+        p = stpcpy(p, json->rec[i].name);
+        p = stpcpy(p, "\":");
+
         if ( json->rec[i].type == JSON_STRING )
         {
             p = stpcpy(p, "\"");
             p = stpcpy(p, json->rec[i].value);
             p = stpcpy(p, "\"");
         }
-        else if ( json->rec[i].type == JSON_NUMBER || json->rec[i].type == JSON_BOOL )
+        else if ( json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_BOOL )
         {
             p = stpcpy(p, json->rec[i].value);
+        }
+        else if ( json->rec[i].type == JSON_RECORD )
+        {
+            p = stpcpy(p, "{}");
         }
 
         if ( i < json->cnt-1 )
@@ -2014,8 +2052,15 @@ void lib_json_from_string(JSON *json, const char *src)
 
             if ( is_string )
                 JSON_SET_STR(*json, key, value);
+            else if ( value[0]=='t' )
+                JSON_SET_BOOL(*json, key, 1);
+            else if ( value[0]=='f' )
+                JSON_SET_BOOL(*json, key, 0);
+            else if ( strchr(value, '.') )
+                JSON_SET_FLOAT(*json, key, atof(value));
             else
-                JSON_SET_NUM(*json, key, atol(value));
+                JSON_SET_INT(*json, key, atol(value));
+
             now_value = 0;
 
             now_key = 1;
@@ -2049,7 +2094,7 @@ void lib_json_log_dbg(JSON *json)
     int i;
 
     DBG("-------------------------------------------------------------------------------");
-    DBG("REST buffer:");
+    DBG("JSON record:");
 
     for ( i=0; i<json->cnt; ++i )
         DBG("%s [%s]", json->rec[i].name, json->rec[i].value);
@@ -2066,7 +2111,7 @@ void lib_json_log_inf(JSON *json)
     int i;
 
     INF("-------------------------------------------------------------------------------");
-    INF("REST buffer:");
+    INF("JSON record:");
 
     for ( i=0; i<json->cnt; ++i )
         INF("%s [%s]", json->rec[i].name, json->rec[i].value);
@@ -2078,7 +2123,7 @@ void lib_json_log_inf(JSON *json)
 /* --------------------------------------------------------------------------
    Add/set value to a JSON REST buffer
 -------------------------------------------------------------------------- */
-bool lib_json_set(JSON *json, const char *name, const char *str_value, long num_value, char type)
+bool lib_json_set(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type)
 {
     int i;
 
@@ -2101,19 +2146,46 @@ bool lib_json_set(JSON *json, const char *name, const char *str_value, long num_
     }
     else if ( type == JSON_BOOL )
     {
-        if ( num_value )
+        if ( int_value )
             strcpy(json->rec[i].value, "true");
         else
             strcpy(json->rec[i].value, "false");
     }
-    else
+    else if ( type == JSON_INTEGER )
     {
-        char tmp[64];
-        sscanf(tmp, "%ld", num_value);
-        strcpy(json->rec[i].value, tmp);
+        sprintf(json->rec[i].value, "%ld", int_value);
+    }
+    else    /* float */
+    {
+        snprintf(json->rec[i].value, 256, "%f", flo_value);
     }
 
     json->rec[i].type = type;
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Insert value into JSON buffer
+-------------------------------------------------------------------------- */
+bool lib_json_set_record(JSON *json, const char *name, JSON *json_sub)
+{
+    int i;
+
+    i = json_get_i(json, name);
+
+    if ( i==-1 )    /* not present */
+    {
+        if ( json->cnt >= JSON_MAX_ELEMS ) return FALSE;
+        i = json->cnt;
+        ++json->cnt;
+    }
+
+    strncpy(json->rec[i].name, name, 31);
+    json->rec[i].name[31] = EOS;
+
+    json->rec[i].type = JSON_RECORD;
 
     return TRUE;
 }
@@ -2135,7 +2207,7 @@ bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value
                 strcpy(str_value, json->rec[i].value);
                 return TRUE;
             }
-            else if ( type == JSON_NUMBER && json->rec[i].type == JSON_NUMBER )
+            else if ( type == JSON_INTEGER && json->rec[i].type == JSON_INTEGER )
             {
                 *num_value = atol(json->rec[i].value);
                 return TRUE;
@@ -2148,7 +2220,7 @@ bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value
                     *num_value = 0;
                 return TRUE;
             }
-            else if ( type == JSON_STRING && json->rec[i].type == JSON_NUMBER )
+            else if ( type == JSON_STRING && (json->rec[i].type == JSON_INTEGER || json->rec[i].type == JSON_FLOAT) )
             {
                 strcpy(str_value, json->rec[i].value);
                 return TRUE;
@@ -2187,17 +2259,7 @@ static char dst[256];
     {
         if ( 0==strcmp(json->rec[i].name, name) )
         {
-            if ( json->rec[i].type == JSON_STRING )
-            {
-                strcpy(dst, json->rec[i].value);
-                return dst;
-            }
-            else if ( json->rec[i].type == JSON_NUMBER )
-            {
-                strcpy(dst, json->rec[i].value);
-                return dst;
-            }
-            else if ( json->rec[i].type == JSON_BOOL )
+            if ( json->rec[i].type==JSON_STRING || json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_BOOL )
             {
                 strcpy(dst, json->rec[i].value);
                 return dst;
@@ -2216,7 +2278,7 @@ static char dst[256];
 /* --------------------------------------------------------------------------
    Get value from JSON buffer
 -------------------------------------------------------------------------- */
-long lib_json_get_num(JSON *json, const char *name)
+long lib_json_get_int(JSON *json, const char *name)
 {
     int i;
 
@@ -2224,9 +2286,33 @@ long lib_json_get_num(JSON *json, const char *name)
     {
         if ( 0==strcmp(json->rec[i].name, name) )
         {
-            if ( json->rec[i].type == JSON_NUMBER )
+            if ( json->rec[i].type == JSON_INTEGER )
             {
                 return atol(json->rec[i].value);
+            }
+
+            return 0;   /* types don't match or couldn't convert */
+        }
+    }
+
+    return 0;   /* no such field */
+}
+
+
+/* --------------------------------------------------------------------------
+   Get value from JSON buffer
+-------------------------------------------------------------------------- */
+double lib_json_get_float(JSON *json, const char *name)
+{
+    int i;
+
+    for ( i=0; i<json->cnt; ++i )
+    {
+        if ( 0==strcmp(json->rec[i].name, name) )
+        {
+            if ( json->rec[i].type == JSON_FLOAT )
+            {
+                return atof(json->rec[i].value);
             }
 
             return 0;   /* types don't match or couldn't convert */
