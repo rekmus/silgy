@@ -1910,6 +1910,50 @@ static int json_get_i(JSON *json, const char *name)
 
 /* --------------------------------------------------------------------------
    Convert Silgy JSON format to JSON string
+   Recurrency-able
+-------------------------------------------------------------------------- */
+static void json_to_string(char *dst, JSON *json)
+{
+    char    *p=dst;
+    int     i;
+
+    p = stpcpy(p, "{");
+
+    for ( i=0; i<json->cnt; ++i )
+    {
+        p = stpcpy(p, "\"");
+        p = stpcpy(p, json->rec[i].name);
+        p = stpcpy(p, "\":");
+
+        if ( json->rec[i].type == JSON_STRING )
+        {
+            p = stpcpy(p, "\"");
+            p = stpcpy(p, json->rec[i].value);
+            p = stpcpy(p, "\"");
+        }
+        else if ( json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_BOOL )
+        {
+            p = stpcpy(p, json->rec[i].value);
+        }
+        else if ( json->rec[i].type == JSON_RECORD )
+        {
+            char tmp[8192];
+            json_to_string(tmp, (JSON*)atol(json->rec[i].value));
+            p = stpcpy(p, tmp);
+        }
+
+        if ( i < json->cnt-1 )
+            p = stpcpy(p, ",");
+    }
+
+    p = stpcpy(p, "}");
+
+    *p = EOS;
+}
+
+
+/* --------------------------------------------------------------------------
+   Convert Silgy JSON format to JSON string
 -------------------------------------------------------------------------- */
 char *lib_json_to_string(JSON *json)
 {
@@ -1937,7 +1981,9 @@ static char dst[JSON_BUFSIZE];
         }
         else if ( json->rec[i].type == JSON_RECORD )
         {
-            p = stpcpy(p, "{}");
+            char tmp[8192];
+            json_to_string(tmp, (JSON*)atol(json->rec[i].value));
+            p = stpcpy(p, tmp);
         }
 
         if ( i < json->cnt-1 )
@@ -2184,6 +2230,10 @@ bool lib_json_set_record(JSON *json, const char *name, JSON *json_sub)
 
     strncpy(json->rec[i].name, name, 31);
     json->rec[i].name[31] = EOS;
+
+    /* store sub-record address as a text in value */
+
+    sprintf(json->rec[i].value, "%ld", json_sub);
 
     json->rec[i].type = JSON_RECORD;
 
