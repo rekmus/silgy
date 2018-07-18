@@ -316,7 +316,7 @@ typedef char                        bool;
 #define CALL_ASYNC(s,d,t)           eng_async_req(ci, s, d, TRUE, t)
 #define CALL_ASYNC_NR(s,d)          eng_async_req(ci, s, d, FALSE, 0)
 
-#define REST_CALL(req,res,m,u)      eng_rest_req(ci, &req, &res, m, u)
+#define CALL_REST(req,res,m,u)      eng_rest_req(ci, &req, &res, m, u)
 
 
 /* resource / content types */
