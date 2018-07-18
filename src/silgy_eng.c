@@ -3570,7 +3570,7 @@ static char buffer[JSON_BUFSIZE];
 
     char host[256];
     char port[8];
-    char uri[256];
+    char uri[MAX_URI_LEN+1];
     char *colon, *slash;
 
     colon = strchr(url, ':');
@@ -3610,9 +3610,9 @@ static char buffer[JSON_BUFSIZE];
         strcpy(port, "80");
     }
 
-    DBG("host [%s]", host);
+/*    DBG("host [%s]", host);
     DBG("port [%s]", port);
-    DBG(" uri [%s]", uri);
+    DBG(" uri [%s]", uri); */
 
 //    return FALSE;   /* parsing tests... */
 
