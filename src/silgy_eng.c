@@ -3687,7 +3687,7 @@ static char buffer[JSON_BUFSIZE];
     /* body */
 
     if ( json_req )
-        p = stpcpy(p, JSON_TO_STRING(json_req));
+        p = stpcpy(p, JSON_TO_STRING(*json_req));
 
     *p = EOS;
 
@@ -3772,7 +3772,7 @@ static char buffer[JSON_BUFSIZE];
     len = bytes - (body - buffer);
     DBG("Real response content length = %d", len);
 
-    JSON_FROM_STRING(json_res, body);
+    JSON_FROM_STRING(*json_res, body);
 
     return TRUE;
 }

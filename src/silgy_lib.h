@@ -80,8 +80,8 @@ typedef json_buf_t JSON;
 
 #define JSON_BUFSIZE                32784
 
-#define JSON_TO_STRING(j)           lib_json_to_string(j)
-#define JSON_FROM_STRING(j,s)       lib_json_from_string(j, s)
+#define JSON_TO_STRING(j)           lib_json_to_string(&j)
+#define JSON_FROM_STRING(j,s)       lib_json_from_string(&j, s)
 
 #define JSON_SET_STR(j,n,v)         lib_json_set(&j, n, v, 0, 0, JSON_STRING)
 #define JSON_SET_INT(j,n,v)         lib_json_set(&j, n, NULL, v, 0, JSON_INTEGER)
@@ -93,6 +93,7 @@ typedef json_buf_t JSON;
 #define JSON_GET_INT(j,n)           lib_json_get_int(&j, n)
 #define JSON_GET_FLOAT(j,n)         lib_json_get_float(&j, n)
 #define JSON_GET_BOOL(j,n)          lib_json_get_bool(&j, n)
+#define JSON_GET_RECORD(j,n,v)      lib_json_get_record(&j, n, &v)
 
 #define JSON_RESET(j)               j.cnt = 0
 
@@ -154,6 +155,7 @@ extern "C" {
     long lib_json_get_int(JSON *json, const char *name);
     double lib_json_get_float(JSON *json, const char *name);
     bool lib_json_get_bool(JSON *json, const char *name);
+    bool lib_json_get_record(JSON *json, const char *name, JSON *json_sub);
     void lib_json_log_dbg(JSON *json);
     void lib_json_log_inf(JSON *json);
     void get_byteorder(void);

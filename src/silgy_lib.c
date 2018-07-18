@@ -36,9 +36,10 @@ static char M_dsep='.';             /* decimal separator */
 
 static int  M_shmid;                /* SHM id */
 
-//static uintptr_t M_jsons[JSON_MAX_JSONS];
 static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers */
 static int M_jsons_cnt=0;
+static JSON M_json_pool[100];
+static int M_json_pool_cnt=0;
 
 static char *uri_decode(char *src, int srclen, char *dest, int maxlen);
 static char *uri_decode_html_esc(char *src, int srclen, char *dest, int maxlen);
@@ -2047,15 +2048,147 @@ char *get_json_record(const char *name)
 
 
 /* --------------------------------------------------------------------------
+   Get record as a string from JSON REST buffer
+-------------------------------------------------------------------------- */
+static char *get_json_closing_bracket(const char *src)
+{
+    int i=0, subs=0;
+
+    while ( src[i] )
+    {
+        if ( src[i]=='{' )
+        {
+            ++subs;
+        }
+        else if ( src[i]=='}' )
+        {
+            if ( !subs )
+            {
+                return (char*)src+i;
+            }
+            else
+                subs--;
+        }
+
+        ++i;
+    }
+
+    return NULL;
+}
+
+
+/* --------------------------------------------------------------------------
+   Copy JSON string to Silgy JSON format
+-------------------------------------------------------------------------- */
+static void json_from_string(JSON *json, const char *src, int len)
+{
+    int     i=0, j=0;
+    char    key[32];
+    char    value[256];
+    char    now_key=1, now_value=0, is_string=0, is_record=0, is_array=0;
+
+    for ( i=0; i<len; ++i )
+    {
+        if ( !now_value )
+            while ( i<len && (src[i]==' ' || src[i]=='\t' || src[i]=='\r' || src[i]=='\n' || src[i]=='{') ) ++i;
+
+        if ( now_key )
+            while ( i<len && src[i]=='"' ) ++i;
+
+        if ( now_key && src[i]==':' )  /* end of key */
+        {
+            key[j] = EOS;
+            j = 0;
+            now_key = 0;
+
+            while ( i<len && (src[i]==' ' || src[i]=='\t') ) ++i;
+
+            if ( src[i]=='"' )
+            {
+                is_string = 1;
+                is_record = 0;
+                is_array = 0;
+                ++i;
+            }
+            else if ( src[i]=='{' )
+            {
+                is_string = 0;
+                is_record = 1;
+                is_array = 0;
+                ++i;
+                if ( M_json_pool_cnt < 100 )
+                {
+                    JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
+                    char *closing;
+                    if ( (closing=get_json_closing_bracket(src+i)) )
+                    {
+                        json_from_string(&M_json_pool[M_json_pool_cnt], src+i, closing-src+i);
+                        ++M_json_pool_cnt;
+                    }
+                }
+            }
+            else if ( src[i]=='[' )
+            {
+                is_string = 0;
+                is_record = 0;
+                is_array = 1;
+                ++i;
+            }
+            else
+            {
+                is_string = 0;
+                is_record = 0;
+                is_array = 0;
+            }
+
+            now_value = 1;
+        }
+        else if ( now_value && src[i]==',' || src[i]=='}' || (is_string && src[i]=='"') )  /* end of value */
+        {
+            value[j] = EOS;
+            j = 0;
+
+            if ( is_string )
+                JSON_SET_STR(*json, key, value);
+            else if ( value[0]=='t' )
+                JSON_SET_BOOL(*json, key, 1);
+            else if ( value[0]=='f' )
+                JSON_SET_BOOL(*json, key, 0);
+            else if ( strchr(value, '.') )
+                JSON_SET_FLOAT(*json, key, atof(value));
+            else
+                JSON_SET_INT(*json, key, atol(value));
+
+            now_value = 0;
+
+            now_key = 1;
+        }
+        else
+        {
+            if ( now_key )
+            {
+                if ( j < 30 )
+                    key[j++] = src[i];
+            }
+            else    /* value */
+            {
+                if ( j < 254 )
+                    value[j++] = src[i];
+            }
+        }
+    }
+}
+
+
+/* --------------------------------------------------------------------------
    Copy JSON string to Silgy JSON format
 -------------------------------------------------------------------------- */
 void lib_json_from_string(JSON *json, const char *src)
 {
-    char key[32];
-    char value[256];
-    char now_key=1, now_value=0, is_string=0, is_array=0;
-
-    int j = 0;
+    int     i=0, j=0;
+    char    key[32];
+    char    value[256];
+    char    now_key=1, now_value=0, is_string=0, is_record=0, is_array=0;
 
     while ( *src )
     {
@@ -2067,7 +2200,6 @@ void lib_json_from_string(JSON *json, const char *src)
 
         if ( now_key && *src==':' )  /* end of key */
         {
-//            if ( j > 31 ) j = 31;
             key[j] = EOS;
             j = 0;
             now_key = 0;
@@ -2077,22 +2209,45 @@ void lib_json_from_string(JSON *json, const char *src)
             if ( *src=='"' )
             {
                 is_string = 1;
+                is_record = 0;
+                is_array = 0;
                 ++src;
             }
-            else
-                is_string = 0;
-
-            if ( *src=='[' )
+            else if ( *src=='{' )
             {
+                is_string = 0;
+                is_record = 1;
+                is_array = 0;
+                ++src;
+                if ( M_json_pool_cnt < 100 )
+                {
+                    JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
+                    char *closing;
+                    if ( (closing=get_json_closing_bracket(src)) )
+                    {
+                        json_from_string(&M_json_pool[M_json_pool_cnt], src, closing-src);
+                        ++M_json_pool_cnt;
+                    }
+                }
+            }
+            else if ( *src=='[' )
+            {
+                is_string = 0;
+                is_record = 0;
                 is_array = 1;
                 ++src;
             }
             else
+            {
+                is_string = 0;
+                is_record = 0;
                 is_array = 0;
+            }
+
+            now_value = 1;
         }
         else if ( now_value && *src==',' || *src=='}' || (is_string && *src=='"') )  /* end of value */
         {
-//            if ( j > 255 ) j = 255;
             value[j] = EOS;
             j = 0;
 
@@ -2397,6 +2552,31 @@ bool lib_json_get_bool(JSON *json, const char *name)
                     return TRUE;
                 else
                     return FALSE;
+            }
+
+            return FALSE;   /* types don't match or couldn't convert */
+        }
+    }
+
+    return FALSE;   /* no such field */
+}
+
+
+/* --------------------------------------------------------------------------
+   Get value from JSON buffer
+-------------------------------------------------------------------------- */
+bool lib_json_get_record(JSON *json, const char *name, JSON *json_sub)
+{
+    int i;
+
+    for ( i=0; i<json->cnt; ++i )
+    {
+        if ( 0==strcmp(json->rec[i].name, name) )
+        {
+            if ( json->rec[i].type == JSON_RECORD )
+            {
+                json_sub = (JSON*)atol(json->rec[i].value);
+                return TRUE;
             }
 
             return FALSE;   /* types don't match or couldn't convert */
