@@ -3746,11 +3746,13 @@ static char buffer[JSON_BUFSIZE];
         return FALSE;
     }
 
-    if ( 0 != strcmp(status, "200") )
+    DBG("Got response [%s]", buffer);
+
+/*    if ( 0 != strcmp(status, "200") )
     {
         ERR("status != 200");
         return FALSE;
-    }
+    } */
 
     char *body;
 
@@ -3772,7 +3774,8 @@ static char buffer[JSON_BUFSIZE];
     len = bytes - (body - buffer);
     DBG("Real response content length = %d", len);
 
-    JSON_FROM_STRING(*json_res, body);
+    if ( len )
+        JSON_FROM_STRING(*json_res, body);
 
     return TRUE;
 }
