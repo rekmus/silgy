@@ -3734,7 +3734,7 @@ static char buffer[JSON_BUFSIZE];
         int current_bytes = recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0);
         DBG("current_bytes = %d", current_bytes);
 
-        if ( current_bytes && bytes < JSON_BUFSIZE-current_bytes )
+        if ( current_bytes && bytes < JSON_BUFSIZE-current_bytes-1 )
             bytes += current_bytes;
         else
             break;
