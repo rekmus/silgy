@@ -1896,7 +1896,7 @@ static int json_get_i(JSON *json, const char *name)
 {
     int     i;
 
-#ifndef FAST_JSON   /* otherwise u need to call JSON_RESET before using JSON type */
+#ifndef FAST_JSON   /* in FAST_JSON u need to call JSON_RESET after declaring JSON variable */
 
     bool    initialized=0;
 
@@ -1932,7 +1932,7 @@ static int json_get_i(JSON *json, const char *name)
 
 /* --------------------------------------------------------------------------
    Convert Silgy JSON format to JSON string
-   Recurrency-able
+   Reentrant version
 -------------------------------------------------------------------------- */
 static void json_to_string(char *dst, JSON *json)
 {
@@ -1962,6 +1962,9 @@ static void json_to_string(char *dst, JSON *json)
             char tmp[8192];
             json_to_string(tmp, (JSON*)atol(json->rec[i].value));
             p = stpcpy(p, tmp);
+        }
+        else if ( json->rec[i].type == JSON_ARRAY )
+        {
         }
 
         if ( i < json->cnt-1 )
@@ -2006,6 +2009,9 @@ static char dst[JSON_BUFSIZE];
             char tmp[8192];
             json_to_string(tmp, (JSON*)atol(json->rec[i].value));
             p = stpcpy(p, tmp);
+        }
+        else if ( json->rec[i].type == JSON_ARRAY )
+        {
         }
 
         if ( i < json->cnt-1 )
@@ -2108,6 +2114,7 @@ static char *get_json_closing_bracket(const char *src)
 
 /* --------------------------------------------------------------------------
    Copy JSON string to Silgy JSON format
+   len instead of EOS
 -------------------------------------------------------------------------- */
 static void json_from_string(JSON *json, const char *src, int len)
 {
@@ -2119,32 +2126,32 @@ static void json_from_string(JSON *json, const char *src, int len)
     for ( i=0; i<len; ++i )
     {
         if ( !now_value )
-            while ( i<len && (src[i]==' ' || src[i]=='\t' || src[i]=='\r' || src[i]=='\n' || src[i]=='{') ) ++i;
-
-        if ( now_key )
-            while ( i<len && src[i]=='"' ) ++i;
+            while ( i<len && (src[i]==' ' || src[i]=='\t' || src[i]=='\r' || src[i]=='\n' || src[i]==',' || src[i]=='{' || src[i]=='[' || src[i]=='"') ) ++i;
 
         if ( now_key && src[i]==':' )  /* end of key */
         {
-            key[j] = EOS;
+            if ( j > 0 && key[j-1]=='"' )
+                key[j-1] = EOS;
+            else
+                key[j] = EOS;
             j = 0;
             now_key = 0;
 
+            ++i;  /* skip ':' */
+
             while ( i<len && (src[i]==' ' || src[i]=='\t') ) ++i;
 
-            if ( src[i]=='"' )
+            if ( src[i]=='"' )    /* JSON_STRING */
             {
                 is_string = 1;
                 is_record = 0;
                 is_array = 0;
-                ++i;
             }
-            else if ( src[i]=='{' )
+            else if ( src[i]=='{' )     /* JSON_RECORD */
             {
                 is_string = 0;
                 is_record = 1;
                 is_array = 0;
-                ++i;
                 if ( M_json_pool_cnt < 100 )
                 {
                     JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
@@ -2153,26 +2160,32 @@ static void json_from_string(JSON *json, const char *src, int len)
                     {
                         json_from_string(&M_json_pool[M_json_pool_cnt], src+i, closing-src+i);
                         ++M_json_pool_cnt;
+                        i += closing-src-i;
+                    }
+                    else    /* syntax error */
+                    {
+                        ERR("No closing bracket in JSON");
+                        break;
                     }
                 }
             }
-            else if ( src[i]=='[' )
+            else if ( src[i]=='[' )     /* JSON_ARRAY */
             {
                 is_string = 0;
                 is_record = 0;
                 is_array = 1;
-                ++i;
             }
-            else
+            else    /* number */
             {
                 is_string = 0;
                 is_record = 0;
                 is_array = 0;
+                i--;
             }
 
             now_value = 1;
         }
-        else if ( now_value && src[i]==',' || src[i]=='}' || (is_string && src[i]=='"') )  /* end of value */
+        else if ( now_value && ((is_string && src[i]=='"') || src[i]==',' || src[i]=='}') )  /* end of value */
         {
             value[j] = EOS;
             j = 0;
@@ -2225,33 +2238,44 @@ void lib_json_from_string(JSON *json, const char *src)
 
     while ( *src )
     {
-        if ( !now_value )
-            while ( *src && (*src==' ' || *src=='\t' || *src=='\r' || *src=='\n' || *src=='{') ) ++src;
+#ifdef DUMP
+        DBG("src [%s]", src);
+#endif /* DUMP */
 
-        if ( now_key )
-            while ( *src && *src=='"' ) ++src;
+        if ( !now_value )
+            while ( *src==' ' || *src=='\t' || *src=='\r' || *src=='\n' || *src==',' || *src=='{' || *src=='[' || *src=='"' ) ++src;
 
         if ( now_key && *src==':' )  /* end of key */
         {
-            key[j] = EOS;
+#ifdef DUMP
+            DBG("now_key");
+#endif /* DUMP */
+            if ( j > 0 && key[j-1]=='"' )
+                key[j-1] = EOS;
+            else
+                key[j] = EOS;
             j = 0;
             now_key = 0;
 
-            while ( *src && (*src==' ' || *src=='\t') ) ++src;
+            DBG("key [%s]", key);
 
-            if ( *src=='"' )
+            ++src;  /* skip ':' */
+
+            while ( *src==' ' || *src=='\t' ) ++src;
+
+            if ( *src=='"' )    /* JSON_STRING */
             {
+                DBG("is_string");
                 is_string = 1;
                 is_record = 0;
                 is_array = 0;
-                ++src;
             }
-            else if ( *src=='{' )
+            else if ( *src=='{' )     /* JSON_RECORD */
             {
+                DBG("is_record");
                 is_string = 0;
                 is_record = 1;
                 is_array = 0;
-                ++src;
                 if ( M_json_pool_cnt < 100 )
                 {
                     JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
@@ -2260,29 +2284,42 @@ void lib_json_from_string(JSON *json, const char *src)
                     {
                         json_from_string(&M_json_pool[M_json_pool_cnt], src, closing-src);
                         ++M_json_pool_cnt;
+                        src = closing;
+                    }
+                    else    /* syntax error */
+                    {
+                        ERR("No closing bracket in JSON");
+                        break;
                     }
                 }
             }
-            else if ( *src=='[' )
+            else if ( *src=='[' )     /* JSON_ARRAY */
             {
+                DBG("is_array");
                 is_string = 0;
                 is_record = 0;
                 is_array = 1;
-                ++src;
             }
-            else
+            else    /* number */
             {
+                DBG("number");
                 is_string = 0;
                 is_record = 0;
                 is_array = 0;
+                src--;
             }
 
             now_value = 1;
         }
-        else if ( now_value && *src==',' || *src=='}' || (is_string && *src=='"') )  /* end of value */
+        else if ( now_value && ((is_string && *src=='"') || *src==',' || *src=='}') )  /* end of value */
         {
+#ifdef DUMP
+            DBG("now_value");
+#endif /* DUMP */
             value[j] = EOS;
             j = 0;
+
+            DBG("value [%s]", value);
 
             if ( is_string )
                 JSON_SET_STR(*json, key, value);
@@ -2301,13 +2338,22 @@ void lib_json_from_string(JSON *json, const char *src)
         }
         else
         {
+#ifdef DUMP
+            DBG("else");
+#endif /* DUMP */
             if ( now_key )
             {
+#ifdef DUMP
+                DBG("now_key");
+#endif /* DUMP */
                 if ( j < 30 )
                     key[j++] = *src;
             }
             else    /* value */
             {
+#ifdef DUMP
+                DBG("now_value");
+#endif /* DUMP */
                 if ( j < 254 )
                     value[j++] = *src;
             }
