@@ -931,11 +931,15 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 {
 #ifndef ASYNC_SERVICE
     int     fnamelen;
-    char    *p, *p2, *p3;
+    char    *p, *equals, *ampersand;
     int     len1;       /* fieldname len */
     int     len2;       /* value len */
     char    *querystring;
     int     vallen;
+
+#ifdef DUMP
+    DBG("get_qs_param_raw, fieldname [%s], maxlen = %d", fieldname, maxlen);
+#endif
 
     fnamelen = strlen(fieldname);
 
@@ -953,38 +957,49 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
     if ( !conn[ci].post )
         ++querystring;      /* skip the question mark */
 
+#ifdef DUMP
+    DBG("get_qs_param_raw before loop");
+#endif
+
     for ( p=querystring; *p!=EOS; )
     {
-        p2 = strchr(p, '=');    /* end of field name */
-        p3 = strchr(p, '&');    /* end of value */
+        equals = strchr(p, '=');    /* end of field name */
+        ampersand = strchr(p, '&');    /* end of value */
 
-        if ( p3 != NULL )   /* more than one field */
-            len2 = p3 - p;
-        else            /* only one field in URI */
-            len2 = strlen(p);
-
-        if ( p2 == NULL || p3 != NULL && p2 > p3 )
+        if ( ampersand )   /* more than one field */
         {
-            /* no '=' present in this field */
-            p3 += len2;
+            len2 = ampersand - p;
+        }
+        else    /* no ampersand ==> only one field */
+        {
+            if ( !equals )
+                return FALSE;
+            else
+                len2 = strlen(p);
+        }
+
+        if ( !equals || (ampersand && equals>ampersand) )
+        {
+            /* no '=' present in this field, move to next */
+            ampersand += len2;
             continue;
         }
 
-        len1 = p2 - p;  /* field name length */
+        len1 = equals - p;  /* field name length */
 
         if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
         {
             /* found it */
-
+#ifdef DUMP
+            DBG("get_qs_param_raw equals+1: [%s]", equals+1);
+#endif
             if ( retbuf )
             {
-//                DBG("get_qs_param_raw p2+1: [%s]", p2+1);
-
                 vallen = len2 - len1 - 1;
                 if ( vallen > maxlen )
                     vallen = maxlen;
 
-                strncpy(retbuf, p2+1, vallen);
+                strncpy(retbuf, equals+1, vallen);
                 retbuf[vallen] = EOS;
             }
 
@@ -1000,7 +1015,13 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
     /* not found */
 
     if ( retbuf ) retbuf[0] = EOS;
+
+#endif /* ASYNC_SERVICE */
+
+#ifdef DUMP
+    DBG("get_qs_param_raw returning FALSE");
 #endif
+
     return FALSE;
 }
 

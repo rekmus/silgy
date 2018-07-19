@@ -457,7 +457,9 @@ struct timeval  timeout;                    /* Timeout for select */
 
                             if ( conn[i].conn_state != CONN_STATE_READING_DATA )
                             {
-//                              DBG("Trying SSL_read from fd=%d", conn[i].fd);
+#ifdef DUMP
+                                DBG("Trying SSL_read from fd=%d", conn[i].fd);
+#endif /* DUMP */
                                 bytes = SSL_read(conn[i].ssl, conn[i].in, IN_BUFSIZE-1);
                                 if ( bytes > 1 )
                                     conn[i].in[bytes] = EOS;
@@ -471,8 +473,10 @@ struct timeval  timeout;                    /* Timeout for select */
                             }
                             else    /* POST */
                             {
-//                              DBG("state == CONN_STATE_READING_DATA");
-//                              DBG("Trying to read %ld bytes of POST data from fd=%d", conn[i].clen-conn[i].was_read, conn[i].fd);
+#ifdef DUMP
+                                DBG("state == CONN_STATE_READING_DATA");
+                                DBG("Trying to read %ld bytes of POST data from fd=%d", conn[i].clen-conn[i].was_read, conn[i].fd);
+#endif /* DUMP */
                                 bytes = SSL_read(conn[i].ssl, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read);
                                 if ( bytes > 0 )
                                     conn[i].was_read += bytes;
@@ -486,8 +490,10 @@ struct timeval  timeout;                    /* Timeout for select */
 
                             if ( conn[i].conn_state == CONN_STATE_CONNECTED )
                             {
-//                              DBG("state == CONN_STATE_CONNECTED");
-//                              DBG("Trying read from fd=%d", conn[i].fd);
+#ifdef DUMP
+                                DBG("state == CONN_STATE_CONNECTED");
+                                DBG("Trying read from fd=%d", conn[i].fd);
+#endif /* DUMP */
 #ifdef _WIN32   /* Windows */
                                 bytes = recv(conn[i].fd, conn[i].in, IN_BUFSIZE-1, 0);
 #else
@@ -500,8 +506,10 @@ struct timeval  timeout;                    /* Timeout for select */
                             }
                             else if ( conn[i].conn_state == CONN_STATE_READING_DATA )   /* POST */
                             {
-//                              DBG("state == CONN_STATE_READING_DATA");
-//                              DBG("Trying to read %ld bytes of POST data from fd=%d", conn[i].clen-conn[i].was_read, conn[i].fd);
+#ifdef DUMP
+                                DBG("state == CONN_STATE_READING_DATA");
+                                DBG("Trying to read %ld bytes of POST data from fd=%d", conn[i].clen-conn[i].was_read, conn[i].fd);
+#endif /* DUMP */
 #ifdef _WIN32   /* Windows */
                                 bytes = recv(conn[i].fd, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read, 0);
 #else
@@ -551,20 +559,23 @@ struct timeval  timeout;                    /* Timeout for select */
 
                             if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER )
                             {
-//                              DBG("state == CONN_STATE_READY_TO_SEND_HEADER");
-//                              DBG("Trying to write %ld bytes to fd=%d", strlen(conn[i].header), conn[i].fd);
+#ifdef DUMP
+                                DBG("state == CONN_STATE_READY_TO_SEND_HEADER");
+                                DBG("Trying to write %ld bytes to fd=%d", strlen(conn[i].header), conn[i].fd);
+#endif /* DUMP */
                                 bytes = SSL_write(conn[i].ssl, conn[i].header, strlen(conn[i].header));
                                 set_state_sec(i, bytes);
                             }
                             else if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY || conn[i].conn_state == CONN_STATE_SENDING_BODY)
                             {
-//                              DBG("state == %s", conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
-//                              DBG("Trying to write %ld bytes to fd=%d", conn[i].clen, conn[i].fd);
+#ifdef DUMP
+                                DBG("state == %s", conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
+                                DBG("Trying to write %ld bytes to fd=%d", conn[i].clen, conn[i].fd);
+#endif /* DUMP */
                                 if ( conn[i].static_res == NOT_STATIC )
                                     bytes = SSL_write(conn[i].ssl, conn[i].out_data, conn[i].clen);
                                 else
                                     bytes = SSL_write(conn[i].ssl, M_stat[conn[i].static_res].data, conn[i].clen);
-//                              conn[i].data_sent += bytes;
                                 set_state_sec(i, bytes);
                             }
                         }
@@ -575,8 +586,10 @@ struct timeval  timeout;                    /* Timeout for select */
 
                             if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER )
                             {
-//                              DBG("state == CONN_STATE_READY_TO_SEND_HEADER");
-//                              DBG("Trying to write %ld bytes to fd=%d", strlen(conn[i].header), conn[i].fd);
+#ifdef DUMP
+                                DBG("state == CONN_STATE_READY_TO_SEND_HEADER");
+                                DBG("Trying to write %ld bytes to fd=%d", strlen(conn[i].header), conn[i].fd);
+#endif /* DUMP */
 #ifdef _WIN32   /* Windows */
                                 bytes = send(conn[i].fd, conn[i].header, strlen(conn[i].header), 0);
 #else
@@ -587,8 +600,10 @@ struct timeval  timeout;                    /* Timeout for select */
                             }
                             else if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY || conn[i].conn_state == CONN_STATE_SENDING_BODY)
                             {
-//                              DBG("state == %s", conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
-//                              DBG("Trying to write %ld bytes to fd=%d", conn[i].clen-conn[i].data_sent, conn[i].fd);
+#ifdef DUMP
+                                DBG("state == %s", conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
+                                DBG("Trying to write %ld bytes to fd=%d", conn[i].clen-conn[i].data_sent, conn[i].fd);
+#endif /* DUMP */
                                 if ( conn[i].static_res == NOT_STATIC )
                                 {
 #ifdef _WIN32   /* Windows */
@@ -1212,6 +1227,11 @@ static bool init(int argc, char **argv)
     ALWAYS("");
     ALWAYS("----------------------------------------------------------------------------------------------");
     ALWAYS("");
+
+#ifdef DUMP
+    WAR("DUMP is enabled, this file may grow big quickly!");
+    ALWAYS("");
+#endif
 
     /* custom init
        Among others, that may contain generating statics, like css and js */
@@ -3526,7 +3546,7 @@ bool eng_rest_req(int ci, JSON *json_req, JSON *json_res, const char *method, co
     int sockfd;
 #endif  /* _WIN32 */
     int connection;
-    int bytes;
+    long bytes;
 static char buffer[JSON_BUFSIZE];
     static struct sockaddr_in serv_addr;
     int len, i, j;
@@ -3589,8 +3609,7 @@ static char buffer[JSON_BUFSIZE];
         else    /* only host name & port */
         {
             strcpy(port, colon+1);
-            uri[0] = '/';
-            uri[1] = EOS;
+            uri[0] = EOS;
         }
     }
     else    /* no port specified */
@@ -3604,8 +3623,7 @@ static char buffer[JSON_BUFSIZE];
         else    /* only host name */
         {
             strcpy(host, url);
-            uri[0] = '/';
-            uri[1] = EOS;
+            uri[0] = EOS;
         }
 
         strcpy(port, "80");
@@ -3646,7 +3664,6 @@ static char buffer[JSON_BUFSIZE];
     {
         sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (sockfd == -1) continue;
-        setnonblocking(sockfd);
         if ( (connection=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 ) break;
 #ifdef _WIN32   /* Windows */
         closesocket(sockfd);
@@ -3665,6 +3682,9 @@ static char buffer[JSON_BUFSIZE];
 
     DBG("Connected");
 
+    DBG("Setting to non-blocking...");
+    setnonblocking(sockfd);
+
     /* -------------------------------------------------------------------------- */
 
     DBG("Sending request...");
@@ -3674,7 +3694,7 @@ static char buffer[JSON_BUFSIZE];
     /* header */
 
     p = stpcpy(p, method);
-    p = stpcpy(p, " ");
+    p = stpcpy(p, " /");
     p = stpcpy(p, uri);
     p = stpcpy(p, " HTTP/1.1\r\n");
     p = stpcpy(p, "Host: ");
@@ -3724,17 +3744,18 @@ static char buffer[JSON_BUFSIZE];
     DBG("Reading response...");
 
     bytes = recv(sockfd, buffer, JSON_BUFSIZE-1, 0);
-    DBG("read %d bytes", bytes);
+    DBG("read %ld bytes", bytes);
 
-    while ( bytes )     /* try while there's something to read */
+    while ( bytes > 0 )     /* try while there's something to read */
     {
-        msleep(10);
+        msleep(100);
         DBG("trying again");
 
-        int current_bytes = recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0);
-        DBG("current_bytes = %d", current_bytes);
+        long current_bytes = recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0);
+        DBG("current_bytes = %ld", current_bytes);
 
-        if ( current_bytes && bytes < JSON_BUFSIZE-current_bytes-1 )
+//        if ( current_bytes && bytes < JSON_BUFSIZE-current_bytes-1 )
+        if ( current_bytes > 0 )
             bytes += current_bytes;
         else
             break;
