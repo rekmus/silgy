@@ -3460,7 +3460,6 @@ void eng_uses_reset(int usi)
     uses[usi].referer[0] = EOS;
     uses[usi].lang[0] = EOS;
     uses[usi].additional[0] = EOS;
-    uses[usi].rest_cnt = 0;
 }
 
 
@@ -3533,7 +3532,7 @@ static char buffer[JSON_BUFSIZE];
     int len, i, j;
     bool endingslash=FALSE;
 
-    INF("restcall %s %s", method, url);
+    DBG("restcall %s %s", method, url);
 
     /* -------------------------------------------------------------------------- */
     /* parse url                                                                  */
@@ -3647,6 +3646,7 @@ static char buffer[JSON_BUFSIZE];
     {
         sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (sockfd == -1) continue;
+        setnonblocking(sockfd);
         if ( (connection=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 ) break;
 #ifdef _WIN32   /* Windows */
         closesocket(sockfd);
@@ -3663,11 +3663,11 @@ static char buffer[JSON_BUFSIZE];
 
     freeaddrinfo(result);   /* No longer needed */
 
-    INF("Connected");
+    DBG("Connected");
 
     /* -------------------------------------------------------------------------- */
 
-    INF("Sending request...");
+    DBG("Sending request...");
 
     char *p=buffer;     /* stpcpy is faster than strcat */
 
@@ -3721,13 +3721,24 @@ static char buffer[JSON_BUFSIZE];
 
     /* -------------------------------------------------------------------------- */
 
-    INF("Reading response...");
+    DBG("Reading response...");
 
     bytes = recv(sockfd, buffer, JSON_BUFSIZE-1, 0);
+    DBG("read %d bytes", bytes);
 
-    DBG("...twice");
+    while ( bytes )     /* try while there's something to read */
+    {
+        msleep(10);
+        DBG("trying again");
 
-    bytes += recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0);
+        int current_bytes = recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0);
+        DBG("current_bytes = %d", current_bytes);
+
+        if ( current_bytes && bytes < JSON_BUFSIZE-current_bytes )
+            bytes += current_bytes;
+        else
+            break;
+    }
 
     close(connection);
 #ifdef _WIN32   /* Windows */

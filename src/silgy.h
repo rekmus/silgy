@@ -475,8 +475,6 @@ typedef struct {
     char    lang[8];
     time_t  last_activity;
     char    additional[64];         /* password reset key */
-//    json_t  rest_fld[JSON_MAX_ELEMS*JSON_MAX_LEVELS];
-    int     rest_cnt;
 } usession_t;
 
 
