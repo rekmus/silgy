@@ -2211,6 +2211,10 @@ void lib_json_from_string(JSON *json, const char *src)
     char    value[256];
     char    now_key=1, now_value=0, is_string=0, is_record=0, is_array=0;
 
+    while ( *src && *src != '{' ) ++src;
+
+    if ( !*src ) return;
+
     while ( *src )
     {
         if ( !now_value )

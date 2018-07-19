@@ -109,7 +109,10 @@ static bool         M_robots_exists=FALSE;      /* -''- */
 static bool         M_appleicon_exists=FALSE;   /* -''- */
 #ifdef _WIN32   /* Windows */
 WSADATA             wsa;
-#endif 
+#endif
+static rest_header_t M_rest_headers[REST_MAX_HEADERS];
+static int M_rest_headers_cnt=0;
+
 
 /* prototypes */
 
@@ -3536,6 +3539,69 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
 
 /* --------------------------------------------------------------------------
+   REST call -- reset request headers
+-------------------------------------------------------------------------- */
+void eng_rest_headers_reset()
+{
+    M_rest_headers_cnt = 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   REST call -- set request header value
+-------------------------------------------------------------------------- */
+void eng_rest_header_set(const char *key, const char *value)
+{
+    int i;
+
+    for ( i=0; i<M_rest_headers_cnt; ++i )
+    {
+        if ( M_rest_headers[i].key[0]==EOS )
+        {
+            strncpy(M_rest_headers[M_rest_headers_cnt].key, key, 63);
+            M_rest_headers[M_rest_headers_cnt].key[63] = EOS;
+            strncpy(M_rest_headers[i].value, value, 255);
+            M_rest_headers[i].value[255] = EOS;
+            return;
+        }
+        else if ( 0==strcmp(M_rest_headers[i].key, key) )
+        {
+            strncpy(M_rest_headers[i].value, value, 255);
+            M_rest_headers[i].value[255] = EOS;
+            return;
+        }
+    }
+
+    if ( M_rest_headers_cnt >= REST_MAX_HEADERS ) return;
+
+    strncpy(M_rest_headers[M_rest_headers_cnt].key, key, 63);
+    M_rest_headers[M_rest_headers_cnt].key[63] = EOS;
+    strncpy(M_rest_headers[M_rest_headers_cnt].value, value, 255);
+    M_rest_headers[M_rest_headers_cnt].value[255] = EOS;
+    ++M_rest_headers_cnt;
+}
+
+
+/* --------------------------------------------------------------------------
+   REST call -- unset request header value
+-------------------------------------------------------------------------- */
+void eng_rest_header_unset(const char *key)
+{
+    int i;
+
+    for ( i=0; i<M_rest_headers_cnt; ++i )
+    {
+        if ( 0==strcmp(M_rest_headers[i].key, key) )
+        {
+            M_rest_headers[i].key[0] = EOS;
+            M_rest_headers[i].value[0] = EOS;
+            return;
+        }
+    }
+}
+
+
+/* --------------------------------------------------------------------------
    REST call
 -------------------------------------------------------------------------- */
 bool eng_rest_req(int ci, JSON *json_req, JSON *json_res, const char *method, const char *url)
@@ -3710,6 +3776,17 @@ static char buffer[JSON_BUFSIZE];
         p = stpcpy(p, tmp);
     }
 
+    for ( i=0; i<M_rest_headers_cnt; ++i )
+    {
+        if ( M_rest_headers[i].key[0] )
+        {
+            p = stpcpy(p, M_rest_headers[i].key);
+            p = stpcpy(p, ": ");
+            p = stpcpy(p, M_rest_headers[i].value);
+            p = stpcpy(p, "\r\n");
+        }
+    }
+
     p = stpcpy(p, "Connection: close\r\n");
     p = stpcpy(p, "User-Agent: Silgy\r\n");
     p = stpcpy(p, "\r\n");
@@ -3797,7 +3874,7 @@ static char buffer[JSON_BUFSIZE];
         return FALSE;
     }
 
-    DBG("Got response [%s]", buffer);
+//    DBG("Got response [%s]", buffer);
 
 /*    if ( 0 != strcmp(status, "200") )
     {

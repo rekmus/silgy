@@ -316,6 +316,18 @@ typedef char                        bool;
 #define CALL_ASYNC(s,d,t)           eng_async_req(ci, s, d, TRUE, t)
 #define CALL_ASYNC_NR(s,d)          eng_async_req(ci, s, d, FALSE, 0)
 
+
+/* REST calls */
+
+typedef struct {
+    char    key[64];
+    char    value[256];
+} rest_header_t;
+
+#define REST_MAX_HEADERS            100
+#define REST_HEADERS_RESET          eng_rest_headers_reset()
+#define REST_HEADER_SET(k,v)        eng_rest_header_set(k, v)
+#define REST_HEADER_UNSET(k,v)      eng_rest_header_unset(k)
 #define CALL_REST(req,res,m,u)      eng_rest_req(ci, &req, &res, m, u)
 
 
@@ -601,6 +613,9 @@ extern "C" {
     void eng_uses_close(int usi);
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
+    void eng_rest_headers_reset(void);
+    void eng_rest_header_set(const char *key, const char *value);
+    void eng_rest_header_unset(const char *key);
     bool eng_rest_req(int ci, JSON *json_req, JSON *json_res, const char *method, const char *url);
     void silgy_add_to_static_res(const char *name, char *src);
     void eng_send_ajax_msg(int ci, int errcode);
