@@ -1231,7 +1231,7 @@ static bool init(int argc, char **argv)
 #ifdef DUMP
     WAR("DUMP is enabled, this file may grow big quickly!");
     ALWAYS("");
-#endif
+#endif /* DUMP */
 
     /* custom init
        Among others, that may contain generating statics, like css and js */
@@ -3552,7 +3552,7 @@ static char buffer[JSON_BUFSIZE];
     int len, i, j;
     bool endingslash=FALSE;
 
-    DBG("restcall %s %s", method, url);
+    DBG("eng_rest_req [%s] [%s]", method, url);
 
     /* -------------------------------------------------------------------------- */
     /* parse url                                                                  */
@@ -3682,8 +3682,8 @@ static char buffer[JSON_BUFSIZE];
 
     DBG("Connected");
 
-    DBG("Setting to non-blocking...");
-    setnonblocking(sockfd);
+//    DBG("Setting to non-blocking...");
+//    setnonblocking(sockfd);
 
     /* -------------------------------------------------------------------------- */
 
@@ -3721,9 +3721,11 @@ static char buffer[JSON_BUFSIZE];
 
     *p = EOS;
 
-//    DBG("------------------------------------------------------------");
-//    DBG(buffer);
-//    DBG("------------------------------------------------------------");
+#ifdef DUMP
+    DBG("------------------------------------------------------------");
+    DBG("eng_rest_req buffer [%s]", buffer);
+    DBG("------------------------------------------------------------");
+#endif /* DUMP */
 
     bytes = send(sockfd, buffer, strlen(buffer), 0);
 
@@ -3744,6 +3746,8 @@ static char buffer[JSON_BUFSIZE];
     DBG("Reading response...");
 
     bytes = recv(sockfd, buffer, JSON_BUFSIZE-1, 0);
+    if ( bytes <= 0 )
+        ERR("recv failed, errno = %d (%s)", errno, strerror(errno));
     DBG("read %ld bytes", bytes);
 
     while ( bytes > 0 )     /* try while there's something to read */
@@ -3778,8 +3782,11 @@ static char buffer[JSON_BUFSIZE];
     if ( bytes > 14 && 0==strncmp(buffer, "HTTP/1.", 7) )
     {
         buffer[bytes] = EOS;
-//        DBG("Got %d bytes of response [%s]", bytes, buffer);
-        INF("Got %d bytes of response", bytes);
+#ifdef DUMP
+        DBG("Got %d bytes of response [%s]", bytes, buffer);
+#else
+        DBG("Got %d bytes of response", bytes);
+#endif /* DUMP */
         strncpy(status, buffer+9, 3);
         status[3] = EOS;
         INF("Response status: %s", status);
