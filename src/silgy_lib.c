@@ -38,7 +38,7 @@ static int  M_shmid;                /* SHM id */
 
 static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers */
 static int M_jsons_cnt=0;
-static JSON M_json_pool[100];
+static JSON M_json_pool[JSON_POOL_SIZE];
 static int M_json_pool_cnt=0;
 
 static char *uri_decode(char *src, int srclen, char *dest, int maxlen);
@@ -2123,7 +2123,15 @@ static void json_from_string(JSON *json, const char *src, int len)
     char    value[256];
     char    now_key=1, now_value=0, is_string=0, is_record=0, is_array=0;
 
-    for ( i=0; i<len; ++i )
+#ifdef DUMP
+    strncpy(G_tmp, src, len);
+    G_tmp[len] = EOS;
+    DBG("json_from_string [%s]", G_tmp);
+#endif /* DUMP */
+
+    while ( i<len && src[i] != '{' ) ++i;
+
+    for ( i; i<len; ++i )
     {
         if ( !now_value )
             while ( i<len && (src[i]==' ' || src[i]=='\t' || src[i]=='\r' || src[i]=='\n' || src[i]==',' || src[i]=='{' || src[i]=='[' || src[i]=='"') ) ++i;
@@ -2146,15 +2154,17 @@ static void json_from_string(JSON *json, const char *src, int len)
                 is_string = 1;
                 is_record = 0;
                 is_array = 0;
+                now_value = 1;
             }
             else if ( src[i]=='{' )     /* JSON_RECORD */
             {
                 is_string = 0;
                 is_record = 1;
                 is_array = 0;
-                if ( M_json_pool_cnt < 100 )
+                if ( M_json_pool_cnt < JSON_POOL_SIZE )
                 {
-                    JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
+//                    JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
+                    JSON_SET_RECORD(*json, key, M_json_pool[M_json_pool_cnt]);
                     char *closing;
                     if ( (closing=get_json_closing_bracket(src+i)) )
                     {
@@ -2168,12 +2178,14 @@ static void json_from_string(JSON *json, const char *src, int len)
                         break;
                     }
                 }
+                now_key = 1;
             }
             else if ( src[i]=='[' )     /* JSON_ARRAY */
             {
                 is_string = 0;
                 is_record = 0;
                 is_array = 1;
+                now_key = 1;
             }
             else    /* number */
             {
@@ -2181,6 +2193,7 @@ static void json_from_string(JSON *json, const char *src, int len)
                 is_record = 0;
                 is_array = 0;
                 i--;
+                now_value = 1;
             }
 
             now_value = 1;
@@ -2238,53 +2251,54 @@ void lib_json_from_string(JSON *json, const char *src)
 
     while ( *src )
     {
-#ifdef DUMP
-        DBG("src [%s]", src);
-#endif /* DUMP */
-
         if ( !now_value )
             while ( *src==' ' || *src=='\t' || *src=='\r' || *src=='\n' || *src==',' || *src=='{' || *src=='[' || *src=='"' ) ++src;
 
         if ( now_key && *src==':' )  /* end of key */
         {
-#ifdef DUMP
-            DBG("now_key");
-#endif /* DUMP */
             if ( j > 0 && key[j-1]=='"' )
                 key[j-1] = EOS;
             else
                 key[j] = EOS;
             j = 0;
             now_key = 0;
-
+#ifdef DUMP
             DBG("key [%s]", key);
-
+#endif
             ++src;  /* skip ':' */
 
             while ( *src==' ' || *src=='\t' ) ++src;
 
             if ( *src=='"' )    /* JSON_STRING */
             {
+#ifdef DUMP
                 DBG("is_string");
+#endif
                 is_string = 1;
                 is_record = 0;
                 is_array = 0;
+                now_value = 1;
             }
             else if ( *src=='{' )     /* JSON_RECORD */
             {
+#ifdef DUMP
                 DBG("is_record");
+#endif
                 is_string = 0;
                 is_record = 1;
                 is_array = 0;
-                if ( M_json_pool_cnt < 100 )
+                if ( M_json_pool_cnt < JSON_POOL_SIZE )
                 {
-                    JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
+//                    JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
+                    JSON_SET_RECORD(*json, key, M_json_pool[M_json_pool_cnt]);
                     char *closing;
                     if ( (closing=get_json_closing_bracket(src)) )
                     {
+//                        DBG("closing-src = %d", closing-src);
                         json_from_string(&M_json_pool[M_json_pool_cnt], src, closing-src);
                         ++M_json_pool_cnt;
                         src = closing;
+//                        DBG("src [%s]", src);
                     }
                     else    /* syntax error */
                     {
@@ -2292,35 +2306,37 @@ void lib_json_from_string(JSON *json, const char *src)
                         break;
                     }
                 }
+                now_key = 1;
             }
             else if ( *src=='[' )     /* JSON_ARRAY */
             {
+#ifdef DUMP
                 DBG("is_array");
+#endif
                 is_string = 0;
                 is_record = 0;
                 is_array = 1;
+                now_key = 1;
             }
             else    /* number */
             {
+#ifdef DUMP
                 DBG("number");
+#endif
                 is_string = 0;
                 is_record = 0;
                 is_array = 0;
                 src--;
+                now_value = 1;
             }
-
-            now_value = 1;
         }
         else if ( now_value && ((is_string && *src=='"') || *src==',' || *src=='}') )  /* end of value */
         {
-#ifdef DUMP
-            DBG("now_value");
-#endif /* DUMP */
             value[j] = EOS;
             j = 0;
-
+#ifdef DUMP
             DBG("value [%s]", value);
-
+#endif
             if ( is_string )
                 JSON_SET_STR(*json, key, value);
             else if ( value[0]=='t' )
@@ -2338,22 +2354,13 @@ void lib_json_from_string(JSON *json, const char *src)
         }
         else
         {
-#ifdef DUMP
-            DBG("else");
-#endif /* DUMP */
             if ( now_key )
             {
-#ifdef DUMP
-                DBG("now_key");
-#endif /* DUMP */
                 if ( j < 30 )
                     key[j++] = *src;
             }
             else    /* value */
             {
-#ifdef DUMP
-                DBG("now_value");
-#endif /* DUMP */
                 if ( j < 254 )
                     value[j++] = *src;
             }
@@ -2367,7 +2374,7 @@ void lib_json_from_string(JSON *json, const char *src)
 
 
 /* --------------------------------------------------------------------------
-   Log JSON REST buffer
+   Log JSON buffer
 -------------------------------------------------------------------------- */
 void lib_json_log_dbg(JSON *json)
 {
@@ -2384,7 +2391,7 @@ void lib_json_log_dbg(JSON *json)
 
 
 /* --------------------------------------------------------------------------
-   Log JSON REST buffer
+   Log JSON buffer
 -------------------------------------------------------------------------- */
 void lib_json_log_inf(JSON *json)
 {
@@ -2642,26 +2649,33 @@ bool lib_json_get_bool(JSON *json, const char *name)
 
 
 /* --------------------------------------------------------------------------
-   Get value from JSON buffer
+   Get (copy) value from JSON buffer
+   How to change it to returning pointer without confusing beginners?
+   It would be better performing without copying all the fields
 -------------------------------------------------------------------------- */
 bool lib_json_get_record(JSON *json, const char *name, JSON *json_sub)
 {
     int i;
 
+    DBG("lib_json_get_record");
+
     for ( i=0; i<json->cnt; ++i )
     {
         if ( 0==strcmp(json->rec[i].name, name) )
         {
+//            DBG("lib_json_get_record, found [%s]", name);
             if ( json->rec[i].type == JSON_RECORD )
             {
-                json_sub = (JSON*)atol(json->rec[i].value);
+                memcpy(json_sub, (JSON*)atol(json->rec[i].value), sizeof(JSON));
                 return TRUE;
             }
 
+//            DBG("lib_json_get_record, types of [%s] don't match", name);
             return FALSE;   /* types don't match or couldn't convert */
         }
     }
 
+//    DBG("lib_json_get_record, [%s] not found", name);
     return FALSE;   /* no such field */
 }
 
