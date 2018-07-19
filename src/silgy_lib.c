@@ -2073,15 +2073,23 @@ char *get_json_record(const char *name)
 -------------------------------------------------------------------------- */
 static char *get_json_closing_bracket(const char *src)
 {
-    int i=0, subs=0;
+    int     i=0, subs=0;
+    char    in_quotes=0;
 
     while ( src[i] )
     {
-        if ( src[i]=='{' )
+        if ( src[i]=='"' )
+        {
+            if ( in_quotes )
+                in_quotes = 0;
+            else
+                in_quotes = 1;
+        }
+        else if ( !in_quotes && src[i]=='{' )
         {
             ++subs;
         }
-        else if ( src[i]=='}' )
+        else if ( !in_quotes && src[i]=='}' )
         {
             if ( !subs )
             {
