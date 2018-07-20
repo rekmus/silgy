@@ -91,7 +91,7 @@ typedef json_buf_t JSON;
 #define JSON_SET_FLOAT(j,n,v)       lib_json_set(&j, n, NULL, 0, v, JSON_FLOAT)
 #define JSON_SET_BOOL(j,n,v)        lib_json_set(&j, n, NULL, v, 0, JSON_BOOL)
 #define JSON_SET_RECORD(j,n,v)      lib_json_set_record(&j, n, &v)
-#define JSON_SET_ARRAY(j,n,v)       lib_json_set_array(&j, n, v)
+#define JSON_SET_ARRAY(j,n,v,r)     lib_json_set_array(&j, n, v, r)
 
 #define JSON_GET_STR(j,n)           lib_json_get_str(&j, n)
 #define JSON_GET_INT(j,n)           lib_json_get_int(&j, n)
@@ -155,7 +155,7 @@ extern "C" {
     void lib_json_from_string(JSON *json, const char *src, int len, int level);
     bool lib_json_set(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type);
     bool lib_json_set_record(JSON *json, const char *name, JSON *json_sub);
-    bool lib_json_set_array(JSON *json, const char *name, JSON *json_array);
+    bool lib_json_set_array(JSON *json, const char *name, JSON *json_array, int records);
     bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type);
     char *lib_json_get_str(JSON *json, const char *name);
     long lib_json_get_int(JSON *json, const char *name);

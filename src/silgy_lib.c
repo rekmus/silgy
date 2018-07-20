@@ -2282,11 +2282,11 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                     char *closing;
                     if ( (closing=get_json_closing_bracket(src+i)) )
                     {
-                        DBG("closing [%s], len=%d", closing, closing-(src+i));
+//                        DBG("closing [%s], len=%d", closing, closing-(src+i));
                         lib_json_from_string(&M_json_pool[M_json_pool_cnt[level]], src+i, closing-(src+i)+1, level+1);
                         ++M_json_pool_cnt[level];
                         i += closing-(src+i);
-                        DBG("after closing record bracket [%s]", src+i);
+//                        DBG("after closing record bracket [%s]", src+i);
                     }
                     else    /* syntax error */
                     {
@@ -2306,15 +2306,15 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 is_array = 1;
                 if ( level < JSON_MAX_LEVELS-1 && M_json_pool_cnt[level] < JSON_POOL_SIZE )
                 {
-//                    JSON_SET_ARRAY(*json, key, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
+                    JSON_SET_ARRAY(*json, key, &M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], 1);
                     char *closing;
                     if ( (closing=get_json_closing_square_bracket(src+i)) )
                     {
-                        DBG("closing [%s], len=%d", closing, closing-(src+i));
+//                        DBG("closing [%s], len=%d", closing, closing-(src+i));
                         lib_json_from_string(&M_json_pool[M_json_pool_cnt[level]], src+i, closing-(src+i)+1, level+1);
                         ++M_json_pool_cnt[level];
                         i += closing-(src+i);
-                        DBG("after closing array bracket [%s]", src+i);
+//                        DBG("after closing array bracket [%s]", src+i);
                     }
                     else    /* syntax error */
                     {
@@ -2489,7 +2489,7 @@ bool lib_json_set_record(JSON *json, const char *name, JSON *json_sub)
 /* --------------------------------------------------------------------------
    Insert value into JSON buffer
 -------------------------------------------------------------------------- */
-bool lib_json_set_array(JSON *json, const char *name, JSON *json_array)
+bool lib_json_set_array(JSON *json, const char *name, JSON *json_array, int records)
 {
     int i;
 
@@ -2503,8 +2503,6 @@ bool lib_json_set_array(JSON *json, const char *name, JSON *json_array)
         i = json->cnt;
         ++json->cnt;
     }
-
-    int records = sizeof(json_array)/sizeof(JSON);
 
     DBG("records = %d", records);
 
