@@ -2243,7 +2243,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
 #endif
             ++i;  /* skip ':' */
 
-            while ( i<len && (src[i]==' ' || src[i]=='\t') ) ++i;
+            while ( i<len && (src[i]==' ' || src[i]=='\t' || src[i]=='\r' || src[i]=='\n') ) ++i;
 
             if ( src[i]=='"' )    /* JSON_STRING */
             {
@@ -2323,7 +2323,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
 
             now_value = 1;
         }
-        else if ( now_value && ((is_string && src[i]=='"') || src[i]==',' || src[i]=='}') )  /* end of value */
+        else if ( now_value && ((is_string && src[i]=='"') || src[i]==',' || src[i]=='\r' || src[i]=='\n' || src[i]=='}') )  /* end of value */
         {
             value[j] = EOS;
             j = 0;
