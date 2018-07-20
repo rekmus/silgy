@@ -54,6 +54,7 @@ typedef char                    QSVAL[QSBUF];
 #define JSON_BOOL           3
 #define JSON_RECORD         4
 #define JSON_ARRAY          5
+
 #define JSON_MAX_ELEMS      30
 #define JSON_MAX_LEVELS     3
 
@@ -82,7 +83,7 @@ typedef json_buf_t JSON;
 #define JSON_BUFSIZE                32784
 
 #define JSON_TO_STRING(j)           lib_json_to_string(&j)
-#define JSON_FROM_STRING(j,s)       lib_json_from_string(&j, s)
+#define JSON_FROM_STRING(j,s)       lib_json_from_string(&j, s, 0, 0)
 
 #define JSON_SET_STR(j,n,v)         lib_json_set(&j, n, v, 0, 0, JSON_STRING)
 #define JSON_SET_INT(j,n,v)         lib_json_set(&j, n, NULL, v, 0, JSON_INTEGER)
@@ -148,7 +149,7 @@ extern "C" {
     void silgy_random(char *dest, int len);
     void msleep(long n);
     char *lib_json_to_string(JSON *json);
-    void lib_json_from_string(JSON *json, const char *src);
+    void lib_json_from_string(JSON *json, const char *src, int len, int level);
     bool lib_json_set(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type);
     bool lib_json_set_record(JSON *json, const char *name, JSON *json_sub);
     bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type);

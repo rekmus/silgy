@@ -3903,7 +3903,7 @@ static char buffer[JSON_BUFSIZE];
     DBG("Real response content length = %d", len);
 
     if ( len )
-        JSON_FROM_STRING(*json_res, body);
+        lib_json_from_string(json_res, body, len, 0);
 
     return TRUE;
 }

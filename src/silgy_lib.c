@@ -38,8 +38,8 @@ static int  M_shmid;                /* SHM id */
 
 static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers */
 static int M_jsons_cnt=0;
-static JSON M_json_pool[JSON_POOL_SIZE];
-static int M_json_pool_cnt=0;
+static JSON M_json_pool[JSON_POOL_SIZE*JSON_MAX_LEVELS];
+static int M_json_pool_cnt[JSON_MAX_LEVELS]={0};
 
 static char *uri_decode(char *src, int srclen, char *dest, int maxlen);
 static char *uri_decode_html_esc(char *src, int srclen, char *dest, int maxlen);
@@ -2075,7 +2075,7 @@ char *get_json_record(const char *name)
 
 
 /* --------------------------------------------------------------------------
-   Get record as a string from JSON REST buffer
+   Find matching closing bracket in JSON string
 -------------------------------------------------------------------------- */
 static char *get_json_closing_bracket(const char *src)
 {
@@ -2113,20 +2113,59 @@ static char *get_json_closing_bracket(const char *src)
 
 
 /* --------------------------------------------------------------------------
-   Copy JSON string to Silgy JSON format
-   len instead of EOS
+   Find matching closing square bracket in JSON string
 -------------------------------------------------------------------------- */
-static void json_from_string(JSON *json, const char *src, int len)
+static char *get_json_closing_sqare_bracket(const char *src)
+{
+    int     i=0, subs=0;
+    char    in_quotes=0;
+
+    while ( src[i] )
+    {
+        if ( src[i]=='"' )
+        {
+            if ( in_quotes )
+                in_quotes = 0;
+            else
+                in_quotes = 1;
+        }
+        else if ( !in_quotes && src[i]=='[' )
+        {
+            ++subs;
+        }
+        else if ( !in_quotes && src[i]==']' )
+        {
+            if ( !subs )
+            {
+                return (char*)src+i;
+            }
+            else
+                subs--;
+        }
+
+        ++i;
+    }
+
+    return NULL;
+}
+
+
+/* --------------------------------------------------------------------------
+   Copy JSON string to Silgy JSON format
+-------------------------------------------------------------------------- */
+void lib_json_from_string(JSON *json, const char *src, int len, int level)
 {
     int     i=0, j=0;
     char    key[32];
     char    value[256];
     char    now_key=1, now_value=0, is_string=0, is_record=0, is_array=0;
 
+    if ( len == 0 ) len = strlen(src);
+
 #ifdef DUMP
     strncpy(G_tmp, src, len);
     G_tmp[len] = EOS;
-    DBG("json_from_string [%s]", G_tmp);
+    DBG("lib_json_from_string [%s]", G_tmp);
 #endif /* DUMP */
 
     while ( i<len && src[i] != '{' ) ++i;
@@ -2144,13 +2183,18 @@ static void json_from_string(JSON *json, const char *src, int len)
                 key[j] = EOS;
             j = 0;
             now_key = 0;
-
+#ifdef DUMP
+            DBG("key [%s]", key);
+#endif
             ++i;  /* skip ':' */
 
             while ( i<len && (src[i]==' ' || src[i]=='\t') ) ++i;
 
             if ( src[i]=='"' )    /* JSON_STRING */
             {
+#ifdef DUMP
+                DBG("is_string");
+#endif
                 is_string = 1;
                 is_record = 0;
                 is_array = 0;
@@ -2158,19 +2202,23 @@ static void json_from_string(JSON *json, const char *src, int len)
             }
             else if ( src[i]=='{' )     /* JSON_RECORD */
             {
+#ifdef DUMP
+                DBG("is_record");
+#endif
                 is_string = 0;
                 is_record = 1;
                 is_array = 0;
-                if ( M_json_pool_cnt < JSON_POOL_SIZE )
+                if ( level < JSON_MAX_LEVELS-1 && M_json_pool_cnt[level] < JSON_POOL_SIZE )
                 {
 //                    JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
-                    JSON_SET_RECORD(*json, key, M_json_pool[M_json_pool_cnt]);
+//                    JSON_SET_RECORD(*json, key, M_json_pool[M_json_pool_cnt]);
+                    JSON_SET_RECORD(*json, key, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
                     char *closing;
                     if ( (closing=get_json_closing_bracket(src+i)) )
                     {
-                        json_from_string(&M_json_pool[M_json_pool_cnt], src+i, closing-src+i);
-                        ++M_json_pool_cnt;
-                        i += closing-src-i;
+                        lib_json_from_string(&M_json_pool[M_json_pool_cnt[level]], src+i, closing-src+i, level+1);
+                        ++M_json_pool_cnt[level];
+                        i += closing-src+i;
                     }
                     else    /* syntax error */
                     {
@@ -2182,6 +2230,9 @@ static void json_from_string(JSON *json, const char *src, int len)
             }
             else if ( src[i]=='[' )     /* JSON_ARRAY */
             {
+#ifdef DUMP
+                DBG("is_array");
+#endif
                 is_string = 0;
                 is_record = 0;
                 is_array = 1;
@@ -2189,6 +2240,9 @@ static void json_from_string(JSON *json, const char *src, int len)
             }
             else    /* number */
             {
+#ifdef DUMP
+                DBG("number");
+#endif
                 is_string = 0;
                 is_record = 0;
                 is_array = 0;
@@ -2202,7 +2256,9 @@ static void json_from_string(JSON *json, const char *src, int len)
         {
             value[j] = EOS;
             j = 0;
-
+#ifdef DUMP
+            DBG("value [%s]", value);
+#endif
             if ( is_string )
                 JSON_SET_STR(*json, key, value);
             else if ( value[0]=='t' )
@@ -2231,144 +2287,6 @@ static void json_from_string(JSON *json, const char *src, int len)
                     value[j++] = src[i];
             }
         }
-    }
-}
-
-
-/* --------------------------------------------------------------------------
-   Copy JSON string to Silgy JSON format
--------------------------------------------------------------------------- */
-void lib_json_from_string(JSON *json, const char *src)
-{
-    int     i=0, j=0;
-    char    key[32];
-    char    value[256];
-    char    now_key=1, now_value=0, is_string=0, is_record=0, is_array=0;
-
-    while ( *src && *src != '{' ) ++src;
-
-    if ( !*src ) return;
-
-    while ( *src )
-    {
-        if ( !now_value )
-            while ( *src==' ' || *src=='\t' || *src=='\r' || *src=='\n' || *src==',' || *src=='{' || *src=='[' || *src=='"' ) ++src;
-
-        if ( now_key && *src==':' )  /* end of key */
-        {
-            if ( j > 0 && key[j-1]=='"' )
-                key[j-1] = EOS;
-            else
-                key[j] = EOS;
-            j = 0;
-            now_key = 0;
-#ifdef DUMP
-            DBG("key [%s]", key);
-#endif
-            ++src;  /* skip ':' */
-
-            while ( *src==' ' || *src=='\t' ) ++src;
-
-            if ( *src=='"' )    /* JSON_STRING */
-            {
-#ifdef DUMP
-                DBG("is_string");
-#endif
-                is_string = 1;
-                is_record = 0;
-                is_array = 0;
-                now_value = 1;
-            }
-            else if ( *src=='{' )     /* JSON_RECORD */
-            {
-#ifdef DUMP
-                DBG("is_record");
-#endif
-                is_string = 0;
-                is_record = 1;
-                is_array = 0;
-                if ( M_json_pool_cnt < JSON_POOL_SIZE )
-                {
-//                    JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
-                    JSON_SET_RECORD(*json, key, M_json_pool[M_json_pool_cnt]);
-                    char *closing;
-                    if ( (closing=get_json_closing_bracket(src)) )
-                    {
-//                        DBG("closing-src = %d", closing-src);
-                        json_from_string(&M_json_pool[M_json_pool_cnt], src, closing-src);
-                        ++M_json_pool_cnt;
-                        src = closing;
-//                        DBG("src [%s]", src);
-                    }
-                    else    /* syntax error */
-                    {
-                        ERR("No closing bracket in JSON");
-                        break;
-                    }
-                }
-                now_key = 1;
-            }
-            else if ( *src=='[' )     /* JSON_ARRAY */
-            {
-#ifdef DUMP
-                DBG("is_array");
-#endif
-                is_string = 0;
-                is_record = 0;
-                is_array = 1;
-                now_key = 1;
-            }
-            else    /* number */
-            {
-#ifdef DUMP
-                DBG("number");
-#endif
-                is_string = 0;
-                is_record = 0;
-                is_array = 0;
-                src--;
-                now_value = 1;
-            }
-        }
-        else if ( now_value && ((is_string && *src=='"') || *src==',' || *src=='}') )  /* end of value */
-        {
-            value[j] = EOS;
-            j = 0;
-#ifdef DUMP
-            DBG("value [%s]", value);
-#endif
-            if ( is_string )
-                JSON_SET_STR(*json, key, value);
-            else if ( value[0]=='t' )
-                JSON_SET_BOOL(*json, key, 1);
-            else if ( value[0]=='f' )
-                JSON_SET_BOOL(*json, key, 0);
-            else if ( strchr(value, '.') )
-                JSON_SET_FLOAT(*json, key, atof(value));
-            else
-                JSON_SET_INT(*json, key, atol(value));
-
-            now_value = 0;
-
-            now_key = 1;
-        }
-        else
-        {
-            if ( now_key )
-            {
-                if ( j < 30 )
-                    key[j++] = *src;
-            }
-            else    /* value */
-            {
-                if ( j < 254 )
-                    value[j++] = *src;
-            }
-        }
-
-        if ( !*src ) break;
-
-        ++src;
     }
 }
 
