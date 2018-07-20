@@ -1978,21 +1978,45 @@ static void json_to_string(char *dst, JSON *json)
 
 
 /* --------------------------------------------------------------------------
-   Convert Silgy JSON format to JSON string
+   Add indent
 -------------------------------------------------------------------------- */
-char *lib_json_to_string(JSON *json)
+static char *json_indent(int level)
 {
-static char dst[JSON_BUFSIZE];
+#define JSON_PRETTY_INDENT "    "
+
+static char dst[256];
+    int     i;
+
+    dst[0] = EOS;
+
+    for ( i=0; i<level; ++i )
+        strcat(dst, JSON_PRETTY_INDENT);
+
+    return dst;
+}
+
+
+/* --------------------------------------------------------------------------
+   Convert Silgy JSON format to JSON string
+   Reentrant version
+-------------------------------------------------------------------------- */
+static void json_to_string_pretty(char *dst, JSON *json, int level)
+{
     char    *p=dst;
     int     i;
 
-    p = stpcpy(p, "{");
+    p = stpcpy(p, "{\n");
 
     for ( i=0; i<json->cnt; ++i )
     {
+        /* key */
+
+        p = stpcpy(p, json_indent(level));
         p = stpcpy(p, "\"");
         p = stpcpy(p, json->rec[i].name);
-        p = stpcpy(p, "\":");
+        p = stpcpy(p, "\": ");
+
+        /* value */
 
         if ( json->rec[i].type == JSON_STRING )
         {
@@ -2006,21 +2030,52 @@ static char dst[JSON_BUFSIZE];
         }
         else if ( json->rec[i].type == JSON_RECORD )
         {
+            p = stpcpy(p, "\n");
+            p = stpcpy(p, json_indent(level));
             char tmp[8192];
-            json_to_string(tmp, (JSON*)atol(json->rec[i].value));
+            json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), level+1);
             p = stpcpy(p, tmp);
         }
         else if ( json->rec[i].type == JSON_ARRAY )
         {
+            p = stpcpy(p, "\n");
+            p = stpcpy(p, json_indent(level));
         }
 
         if ( i < json->cnt-1 )
             p = stpcpy(p, ",");
+
+        p = stpcpy(p, "\n");
     }
 
+    p = stpcpy(p, json_indent(level-1));
     p = stpcpy(p, "}");
 
     *p = EOS;
+}
+
+
+/* --------------------------------------------------------------------------
+   Convert Silgy JSON format to JSON string
+-------------------------------------------------------------------------- */
+char *lib_json_to_string(JSON *json)
+{
+static char dst[JSON_BUFSIZE];
+
+    json_to_string(dst, json);
+
+    return dst;
+}
+
+
+/* --------------------------------------------------------------------------
+   Convert Silgy JSON format to JSON string
+-------------------------------------------------------------------------- */
+char *lib_json_to_string_pretty(JSON *json)
+{
+static char dst[JSON_BUFSIZE];
+
+    json_to_string_pretty(dst, json, 1);
 
     return dst;
 }
@@ -2115,7 +2170,7 @@ static char *get_json_closing_bracket(const char *src)
 /* --------------------------------------------------------------------------
    Find matching closing square bracket in JSON string
 -------------------------------------------------------------------------- */
-static char *get_json_closing_sqare_bracket(const char *src)
+static char *get_json_closing_square_bracket(const char *src)
 {
     int     i=0, subs=0;
     char    in_quotes=0;
@@ -2236,6 +2291,22 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 is_string = 0;
                 is_record = 0;
                 is_array = 1;
+                if ( level < JSON_MAX_LEVELS-1 && M_json_pool_cnt[level] < JSON_POOL_SIZE )
+                {
+//                    JSON_SET_ARRAY(*json, key, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
+                    char *closing;
+                    if ( (closing=get_json_closing_square_bracket(src+i)) )
+                    {
+                        lib_json_from_string(&M_json_pool[M_json_pool_cnt[level]], src+i, closing-src+i, level+1);
+                        ++M_json_pool_cnt[level];
+                        i += closing-src+i;
+                    }
+                    else    /* syntax error */
+                    {
+                        ERR("No closing bracket in JSON");
+                        break;
+                    }
+                }
                 now_key = 1;
             }
             else    /* number */
