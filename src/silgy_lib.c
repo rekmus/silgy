@@ -1934,12 +1934,12 @@ static int json_get_i(JSON *json, const char *name)
    Convert Silgy JSON format to JSON string
    Reentrant version
 -------------------------------------------------------------------------- */
-static void json_to_string(char *dst, JSON *json)
+static void json_to_string(char *dst, JSON *json, bool array)
 {
     char    *p=dst;
     int     i;
 
-    p = stpcpy(p, "{");
+    p = stpcpy(p, array?"[":"{");
 
     for ( i=0; i<json->cnt; ++i )
     {
@@ -1960,18 +1960,21 @@ static void json_to_string(char *dst, JSON *json)
         else if ( json->rec[i].type == JSON_RECORD )
         {
             char tmp[8192];
-            json_to_string(tmp, (JSON*)atol(json->rec[i].value));
+            json_to_string(tmp, (JSON*)atol(json->rec[i].value), FALSE);
             p = stpcpy(p, tmp);
         }
         else if ( json->rec[i].type == JSON_ARRAY )
         {
+            char tmp[8192];
+            json_to_string(tmp, (JSON*)atol(json->rec[i].value), TRUE);
+            p = stpcpy(p, tmp);
         }
 
         if ( i < json->cnt-1 )
             p = stpcpy(p, ",");
     }
 
-    p = stpcpy(p, "}");
+    p = stpcpy(p, array?"]":"}");
 
     *p = EOS;
 }
@@ -2000,12 +2003,12 @@ static char dst[256];
    Convert Silgy JSON format to JSON string
    Reentrant version
 -------------------------------------------------------------------------- */
-static void json_to_string_pretty(char *dst, JSON *json, int level)
+static void json_to_string_pretty(char *dst, JSON *json, bool array, int level)
 {
     char    *p=dst;
     int     i;
 
-    p = stpcpy(p, "{\n");
+    p = stpcpy(p, array?"[\n":"{\n");
 
     for ( i=0; i<json->cnt; ++i )
     {
@@ -2033,13 +2036,16 @@ static void json_to_string_pretty(char *dst, JSON *json, int level)
             p = stpcpy(p, "\n");
             p = stpcpy(p, json_indent(level));
             char tmp[8192];
-            json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), level+1);
+            json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), FALSE, level+1);
             p = stpcpy(p, tmp);
         }
         else if ( json->rec[i].type == JSON_ARRAY )
         {
             p = stpcpy(p, "\n");
             p = stpcpy(p, json_indent(level));
+            char tmp[8192];
+            json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), TRUE, level+1);
+            p = stpcpy(p, tmp);
         }
 
         if ( i < json->cnt-1 )
@@ -2049,7 +2055,7 @@ static void json_to_string_pretty(char *dst, JSON *json, int level)
     }
 
     p = stpcpy(p, json_indent(level-1));
-    p = stpcpy(p, "}");
+    p = stpcpy(p, array?"]":"}");
 
     *p = EOS;
 }
@@ -2062,7 +2068,7 @@ char *lib_json_to_string(JSON *json)
 {
 static char dst[JSON_BUFSIZE];
 
-    json_to_string(dst, json);
+    json_to_string(dst, json, FALSE);
 
     return dst;
 }
@@ -2075,7 +2081,7 @@ char *lib_json_to_string_pretty(JSON *json)
 {
 static char dst[JSON_BUFSIZE];
 
-    json_to_string_pretty(dst, json, 1);
+    json_to_string_pretty(dst, json, FALSE, 1);
 
     return dst;
 }
@@ -2134,8 +2140,12 @@ char *get_json_record(const char *name)
 -------------------------------------------------------------------------- */
 static char *get_json_closing_bracket(const char *src)
 {
-    int     i=0, subs=0;
-    char    in_quotes=0;
+    int     i=1, subs=0;
+    bool    in_quotes=0;
+
+#ifdef DUMP
+//    DBG("get_json_closing_bracket [%s]", src);
+#endif /* DUMP */
 
     while ( src[i] )
     {
@@ -2146,16 +2156,14 @@ static char *get_json_closing_bracket(const char *src)
             else
                 in_quotes = 1;
         }
-        else if ( !in_quotes && src[i]=='{' )
+        else if ( src[i]=='{' && !in_quotes )
         {
             ++subs;
         }
-        else if ( !in_quotes && src[i]=='}' )
+        else if ( src[i]=='}' && !in_quotes )
         {
-            if ( !subs )
-            {
+            if ( subs<1 )
                 return (char*)src+i;
-            }
             else
                 subs--;
         }
@@ -2172,8 +2180,12 @@ static char *get_json_closing_bracket(const char *src)
 -------------------------------------------------------------------------- */
 static char *get_json_closing_square_bracket(const char *src)
 {
-    int     i=0, subs=0;
-    char    in_quotes=0;
+    int     i=1, subs=0;
+    bool    in_quotes=0;
+
+#ifdef DUMP
+//    DBG("get_json_closing_square_bracket [%s]", src);
+#endif /* DUMP */
 
     while ( src[i] )
     {
@@ -2184,16 +2196,14 @@ static char *get_json_closing_square_bracket(const char *src)
             else
                 in_quotes = 1;
         }
-        else if ( !in_quotes && src[i]=='[' )
+        else if ( src[i]=='[' && !in_quotes )
         {
             ++subs;
         }
-        else if ( !in_quotes && src[i]==']' )
+        else if ( src[i]==']' && !in_quotes )
         {
-            if ( !subs )
-            {
+            if ( subs<1 )
                 return (char*)src+i;
-            }
             else
                 subs--;
         }
@@ -2218,9 +2228,10 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
     if ( len == 0 ) len = strlen(src);
 
 #ifdef DUMP
-    strncpy(G_tmp, src, len);
-    G_tmp[len] = EOS;
-    DBG("lib_json_from_string [%s]", G_tmp);
+    char tmp[8192];
+    strncpy(tmp, src, len);
+    tmp[len] = EOS;
+    DBG("lib_json_from_string [%s]", tmp);
 #endif /* DUMP */
 
     while ( i<len && src[i] != '{' ) ++i;
@@ -2228,7 +2239,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
     for ( i; i<len; ++i )
     {
         if ( !now_value )
-            while ( i<len && (src[i]==' ' || src[i]=='\t' || src[i]=='\r' || src[i]=='\n' || src[i]==',' || src[i]=='{' || src[i]=='[' || src[i]=='"') ) ++i;
+            while ( i<len && (src[i]==' ' || src[i]=='\t' || src[i]=='\r' || src[i]=='\n' || src[i]==',' || src[i]=='{' || src[i]=='[' || src[i]=='}' || src[i]==']' || src[i]=='"') ) ++i;
 
         if ( now_key && src[i]==':' )  /* end of key */
         {
@@ -2265,19 +2276,21 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 is_array = 0;
                 if ( level < JSON_MAX_LEVELS-1 && M_json_pool_cnt[level] < JSON_POOL_SIZE )
                 {
-//                    JSON_SET_INT(*json, key, (long)&M_json_pool[M_json_pool_cnt]);
-//                    JSON_SET_RECORD(*json, key, M_json_pool[M_json_pool_cnt]);
+                    /* save the pointer first */
                     JSON_SET_RECORD(*json, key, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
+                    /* fill in the destination */
                     char *closing;
                     if ( (closing=get_json_closing_bracket(src+i)) )
                     {
-                        lib_json_from_string(&M_json_pool[M_json_pool_cnt[level]], src+i, closing-src+i, level+1);
+                        DBG("closing [%s], len=%d", closing, closing-(src+i));
+                        lib_json_from_string(&M_json_pool[M_json_pool_cnt[level]], src+i, closing-(src+i)+1, level+1);
                         ++M_json_pool_cnt[level];
-                        i += closing-src+i;
+                        i += closing-(src+i);
+                        DBG("after closing record bracket [%s]", src+i);
                     }
                     else    /* syntax error */
                     {
-                        ERR("No closing bracket in JSON");
+                        ERR("No closing bracket in JSON record");
                         break;
                     }
                 }
@@ -2297,13 +2310,15 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                     char *closing;
                     if ( (closing=get_json_closing_square_bracket(src+i)) )
                     {
-                        lib_json_from_string(&M_json_pool[M_json_pool_cnt[level]], src+i, closing-src+i, level+1);
+                        DBG("closing [%s], len=%d", closing, closing-(src+i));
+                        lib_json_from_string(&M_json_pool[M_json_pool_cnt[level]], src+i, closing-(src+i)+1, level+1);
                         ++M_json_pool_cnt[level];
-                        i += closing-src+i;
+                        i += closing-(src+i);
+                        DBG("after closing array bracket [%s]", src+i);
                     }
                     else    /* syntax error */
                     {
-                        ERR("No closing bracket in JSON");
+                        ERR("No closing square bracket in JSON array");
                         break;
                     }
                 }
@@ -2320,8 +2335,6 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 i--;
                 now_value = 1;
             }
-
-            now_value = 1;
         }
         else if ( now_value && ((is_string && src[i]=='"') || src[i]==',' || src[i]=='\r' || src[i]=='\n' || src[i]=='}') )  /* end of value */
         {
@@ -2449,6 +2462,8 @@ bool lib_json_set_record(JSON *json, const char *name, JSON *json_sub)
 {
     int i;
 
+    DBG("lib_json_set_record");
+
     i = json_get_i(json, name);
 
     if ( i==-1 )    /* not present */
@@ -2466,6 +2481,41 @@ bool lib_json_set_record(JSON *json, const char *name, JSON *json_sub)
     sprintf(json->rec[i].value, "%ld", json_sub);
 
     json->rec[i].type = JSON_RECORD;
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Insert value into JSON buffer
+-------------------------------------------------------------------------- */
+bool lib_json_set_array(JSON *json, const char *name, JSON *json_array)
+{
+    int i;
+
+    DBG("lib_json_set_array");
+
+    i = json_get_i(json, name);
+
+    if ( i==-1 )    /* not present */
+    {
+        if ( json->cnt >= JSON_MAX_ELEMS ) return FALSE;
+        i = json->cnt;
+        ++json->cnt;
+    }
+
+    int records = sizeof(json_array)/sizeof(JSON);
+
+    DBG("records = %d", records);
+
+    strncpy(json->rec[i].name, name, 31);
+    json->rec[i].name[31] = EOS;
+
+    /* store sub-record address as a text in value */
+
+    sprintf(json->rec[i].value, "%ld %d", json_array, records);
+
+    json->rec[i].type = JSON_ARRAY;
 
     return TRUE;
 }
