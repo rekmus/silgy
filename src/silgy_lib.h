@@ -68,7 +68,6 @@ typedef struct {
     char    name[32];
     char    value[256];
     char    type;
-    int     index;  /* for arrays */
 } json_rec_t;
 
 /* JSON buffer */

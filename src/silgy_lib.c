@@ -1890,14 +1890,11 @@ void msleep(long n)
 
 
 /* --------------------------------------------------------------------------
-   Get index from JSON buffer
+   Implicitly init JSON buffer
 -------------------------------------------------------------------------- */
-static int json_get_i(JSON *json, const char *name)
+static void json_init(JSON *json)
 {
     int     i;
-
-#ifndef FAST_JSON   /* in FAST_JSON u need to call JSON_RESET after declaring JSON variable */
-
     bool    initialized=0;
 
     for ( i=0; i<M_jsons_cnt; ++i )
@@ -1918,53 +1915,18 @@ static int json_get_i(JSON *json, const char *name)
         ++M_jsons_cnt;
         json->cnt = 0;
     }
-    else
-
-#endif /* FAST_JSON */
-
-    for ( i=0; i<json->cnt; ++i )
-        if ( 0==strcmp(json->rec[i].name, name) )
-            return i;
-
-    return -1;
 }
 
 
 /* --------------------------------------------------------------------------
    Get index from JSON buffer
 -------------------------------------------------------------------------- */
-static int json_get_ii(JSON *json, int index)
+static int json_get_i(JSON *json, const char *name)
 {
     int     i;
 
-#ifndef FAST_JSON   /* in FAST_JSON u need to call JSON_RESET after declaring JSON variable */
-
-    bool    initialized=0;
-
-    for ( i=0; i<M_jsons_cnt; ++i )
-    {
-        if ( M_jsons[i] == json )
-        {
-            initialized = 1;
-            break;
-        }
-    }
-
-    if ( !initialized )
-    {
-        if ( M_jsons_cnt >= JSON_MAX_JSONS )
-            M_jsons_cnt = 0;
-
-        M_jsons[M_jsons_cnt] = json;
-        ++M_jsons_cnt;
-        json->cnt = 0;
-    }
-    else
-
-#endif /* FAST_JSON */
-
     for ( i=0; i<json->cnt; ++i )
-        if ( json->rec[i].index == index )
+        if ( 0==strcmp(json->rec[i].name, name) )
             return i;
 
     return -1;
@@ -2486,23 +2448,27 @@ void lib_json_log_inf(JSON *json)
 -------------------------------------------------------------------------- */
 bool lib_json_add(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type, int i)
 {
-    if ( name )
-        i = json_get_i(json, name);
-//    else    /* array element -- find by index */
-//        i = json_get_ii(json, index);
+#ifndef FAST_JSON   /* in FAST_JSON u need to call JSON_RESET after declaring JSON variable */
+    json_init(json);
+#endif /* FAST_JSON */
 
-    if ( i==-1 )    /* not present */
+    if ( name )
     {
-        if ( json->cnt >= JSON_MAX_ELEMS ) return FALSE;
-        i = json->cnt;
-        ++json->cnt;
-        if ( name )
+        i = json_get_i(json, name);
+
+        if ( i==-1 )    /* not present -- append new */
         {
+            if ( json->cnt >= JSON_MAX_ELEMS ) return FALSE;
+            i = json->cnt;
+            ++json->cnt;
             strncpy(json->rec[i].name, name, 31);
             json->rec[i].name[31] = EOS;
         }
-//        else
-//            json->rec[i].index = index;
+    }
+    else    /* array */
+    {
+        if ( i >= JSON_MAX_ELEMS ) return FALSE;
+        json->cnt = i + 1;
     }
 
     if ( type == JSON_STRING )
@@ -2541,9 +2507,13 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
 
     DBG("lib_json_add_record (%s)", is_array?"ARRAY":"RECORD");
 
+#ifndef FAST_JSON   /* in FAST_JSON u need to call JSON_RESET after declaring JSON variable */
+    json_init(json);
+#endif /* FAST_JSON */
+
     i = json_get_i(json, name);
 
-    if ( i==-1 )    /* not present */
+    if ( i==-1 )    /* not present -- append new */
     {
         if ( json->cnt >= JSON_MAX_ELEMS ) return FALSE;
         i = json->cnt;
