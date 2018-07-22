@@ -2597,8 +2597,16 @@ static char dst[256];
 
     if ( !name )    /* array elem */
     {
-        strcpy(dst, json->rec[i].value);
-        return dst;
+        if ( json->rec[i].type==JSON_STRING || json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_BOOL )
+        {
+            strcpy(dst, json->rec[i].value);
+            return dst;
+        }
+        else    /* types don't match */
+        {
+            dst[0] = EOS;
+            return dst;   /* types don't match or couldn't convert */
+        }
     }
     
     for ( i=0; i<json->cnt; ++i )
@@ -2624,9 +2632,15 @@ static char dst[256];
 /* --------------------------------------------------------------------------
    Get value from JSON buffer
 -------------------------------------------------------------------------- */
-long lib_json_get_int(JSON *json, const char *name)
+long lib_json_get_int(JSON *json, const char *name, int i)
 {
-    int i;
+    if ( !name )    /* array elem */
+    {
+        if ( json->rec[i].type == JSON_INTEGER )
+            return atol(json->rec[i].value);
+        else    /* types don't match */
+            return 0;
+    }
 
     for ( i=0; i<json->cnt; ++i )
     {
@@ -2648,9 +2662,15 @@ long lib_json_get_int(JSON *json, const char *name)
 /* --------------------------------------------------------------------------
    Get value from JSON buffer
 -------------------------------------------------------------------------- */
-double lib_json_get_float(JSON *json, const char *name)
+double lib_json_get_float(JSON *json, const char *name, int i)
 {
-    int i;
+    if ( !name )    /* array elem */
+    {
+        if ( json->rec[i].type == JSON_FLOAT )
+            return atof(json->rec[i].value);
+        else    /* types don't match */
+            return 0;
+    }
 
     for ( i=0; i<json->cnt; ++i )
     {
@@ -2672,9 +2692,29 @@ double lib_json_get_float(JSON *json, const char *name)
 /* --------------------------------------------------------------------------
    Get value from JSON buffer
 -------------------------------------------------------------------------- */
-bool lib_json_get_bool(JSON *json, const char *name)
+bool lib_json_get_bool(JSON *json, const char *name, int i)
 {
-    int i;
+    if ( !name )    /* array elem */
+    {
+        if ( json->rec[i].type == JSON_BOOL )
+        {
+            if ( json->rec[i].value[0] == 't' )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else if ( json->rec[i].type == JSON_STRING )
+        {
+            if ( 0==strcmp(json->rec[i].value, "true") )
+                return TRUE;
+            else
+                return FALSE;
+        }
+        else    /* types don't match */
+        {
+            return FALSE;
+        }
+    }
 
     for ( i=0; i<json->cnt; ++i )
     {
