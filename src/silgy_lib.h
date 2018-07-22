@@ -82,9 +82,11 @@ typedef json_buf_t JSON;
 
 #define JSON_BUFSIZE                32784
 
+
 #define JSON_TO_STRING(j)           lib_json_to_string(&j)
 #define JSON_TO_STRING_PRETTY(j)    lib_json_to_string_pretty(&j)
 #define JSON_FROM_STRING(j,s)       lib_json_from_string(&j, s, 0, 0, FALSE)
+
 
 #define JSON_ADD_STR(j,n,v)         lib_json_add(&j, n, v, 0, 0, JSON_STRING, -1)
 #define JSON_ADD_ARRAY_STR(j,i,v)   lib_json_add(&j, NULL, v, 0, 0, JSON_STRING, i)
@@ -96,11 +98,16 @@ typedef json_buf_t JSON;
 
 #define JSON_ADD_ARRAY(j,n,v)       lib_json_add_record(&j, n, &v, TRUE)
 
+
 #define JSON_GET_STR(j,n)           lib_json_get_str(&j, n)
 #define JSON_GET_INT(j,n)           lib_json_get_int(&j, n)
 #define JSON_GET_FLOAT(j,n)         lib_json_get_float(&j, n)
 #define JSON_GET_BOOL(j,n)          lib_json_get_bool(&j, n)
+
 #define JSON_GET_RECORD(j,n,v)      lib_json_get_record(&j, n, &v)
+
+#define JSON_GET_ARRAY(j,n,v)       lib_json_get_record(&j, n, &v)
+
 
 #define JSON_RESET(j)               j.cnt = 0
 
