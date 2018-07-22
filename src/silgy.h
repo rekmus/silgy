@@ -48,6 +48,7 @@
 #endif
 
 #ifdef __cplusplus
+#include <iostream>
 #include <cctype>
 #else
 #include <ctype.h>
@@ -119,7 +120,7 @@ typedef char                        bool;
 #ifdef NOSTPCPY /* alas! */
 
     #define HOUT(s)                     (strcpy(conn[ci].p_curr_h, s), conn[ci].p_curr_h += strlen(s))
-    #define OUTS(s)                     (strcpy(conn[ci].p_curr_c, s), conn[ci].p_curr_c += strlen(s))
+    #define OUTSS(s)                    (strcpy(conn[ci].p_curr_c, s), conn[ci].p_curr_c += strlen(s))
     #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
 
 #else   /* faster */
@@ -127,14 +128,14 @@ typedef char                        bool;
     #define HOUT(s)                     (conn[ci].p_curr_h = stpcpy(conn[ci].p_curr_h, s))
 
     #ifdef OUTFAST
-        #define OUTS(s)                     (conn[ci].p_curr_c = stpcpy(conn[ci].p_curr_c, s))
+        #define OUTSS(s)                    (conn[ci].p_curr_c = stpcpy(conn[ci].p_curr_c, s))
         #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
     #else
         #ifdef OUTCHECK
-            #define OUTS(s)                     eng_out_check(ci, s)
+            #define OUTSS(s)                    eng_out_check(ci, s)
             #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
         #else   /* OUTCHECKREALLOC */
-            #define OUTS(s)                     eng_out_check_realloc(ci, s)
+            #define OUTSS(s)                    eng_out_check_realloc(ci, s)
             #define OUT_BIN(data, len)          eng_out_check_realloc_bin(ci, data, len)
         #endif
     #endif  /* OUTFAST */
@@ -142,11 +143,10 @@ typedef char                        bool;
 #endif  /* NOSTPCPY */
 
 
-#define OUTM(s, ...)                (sprintf(G_tmp, s, __VA_ARGS__), OUTS(G_tmp))   /* OUT with multiple args */
+#define OUTM(s, ...)                (sprintf(G_tmp, s, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
 
 #define CHOOSE_OUT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME          /* single or multiple? */
-#define OUT(...)                    CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTS)(__VA_ARGS__)
-
+#define OUT(...)                    CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
 
 /* HTTP header -- resets respbuf! */
 #define PRINT_HTTP_STATUS(st)       (sprintf(G_tmp, "HTTP/1.1 %d %s\r\n", st, get_http_descr(st)), HOUT(G_tmp))

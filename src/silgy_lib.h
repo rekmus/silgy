@@ -68,6 +68,7 @@ typedef struct {
     char    name[32];
     char    value[256];
     char    type;
+    int     index;  /* for arrays */
 } json_rec_t;
 
 /* JSON buffer */
@@ -84,14 +85,17 @@ typedef json_buf_t JSON;
 
 #define JSON_TO_STRING(j)           lib_json_to_string(&j)
 #define JSON_TO_STRING_PRETTY(j)    lib_json_to_string_pretty(&j)
-#define JSON_FROM_STRING(j,s)       lib_json_from_string(&j, s, 0, 0)
+#define JSON_FROM_STRING(j,s)       lib_json_from_string(&j, s, 0, 0, FALSE)
 
-#define JSON_SET_STR(j,n,v)         lib_json_set(&j, n, v, 0, 0, JSON_STRING)
-#define JSON_SET_INT(j,n,v)         lib_json_set(&j, n, NULL, v, 0, JSON_INTEGER)
-#define JSON_SET_FLOAT(j,n,v)       lib_json_set(&j, n, NULL, 0, v, JSON_FLOAT)
-#define JSON_SET_BOOL(j,n,v)        lib_json_set(&j, n, NULL, v, 0, JSON_BOOL)
-#define JSON_SET_RECORD(j,n,v)      lib_json_set_record(&j, n, &v)
-#define JSON_SET_ARRAY(j,n,v,r)     lib_json_set_array(&j, n, v, r)
+#define JSON_ADD_STR(j,n,v)         lib_json_add(&j, n, v, 0, 0, JSON_STRING, -1)
+#define JSON_ADD_ARRAY_STR(j,i,v)   lib_json_add(&j, NULL, v, 0, 0, JSON_STRING, i)
+#define JSON_ADD_INT(j,n,v)         lib_json_add(&j, n, NULL, v, 0, JSON_INTEGER, -1)
+#define JSON_ADD_FLOAT(j,n,v)       lib_json_add(&j, n, NULL, 0, v, JSON_FLOAT, -1)
+#define JSON_ADD_BOOL(j,n,v)        lib_json_add(&j, n, NULL, v, 0, JSON_BOOL, -1)
+
+#define JSON_ADD_RECORD(j,n,v)      lib_json_add_record(&j, n, &v, FALSE)
+
+#define JSON_ADD_ARRAY(j,n,v)       lib_json_add_record(&j, n, &v, TRUE)
 
 #define JSON_GET_STR(j,n)           lib_json_get_str(&j, n)
 #define JSON_GET_INT(j,n)           lib_json_get_int(&j, n)
@@ -152,10 +156,10 @@ extern "C" {
     void msleep(long n);
     char *lib_json_to_string(JSON *json);
     char *lib_json_to_string_pretty(JSON *json);
-    void lib_json_from_string(JSON *json, const char *src, int len, int level);
-    bool lib_json_set(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type);
-    bool lib_json_set_record(JSON *json, const char *name, JSON *json_sub);
-    bool lib_json_set_array(JSON *json, const char *name, JSON *json_array, int records);
+    void lib_json_from_string(JSON *json, const char *src, int len, int level, bool inside_array);
+    bool lib_json_add(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type, int i);
+    bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_array);
+    bool lib_json_add_array_elem(JSON *json, const char *name, const char *elem, int index);
     bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type);
     char *lib_json_get_str(JSON *json, const char *name);
     long lib_json_get_int(JSON *json, const char *name);
