@@ -91,15 +91,19 @@ typedef json_buf_t JSON;
 #define JSON_ADD_STR(j,n,v)         lib_json_add(&j, n, v, 0, 0, JSON_STRING, -1)
 #define JSON_ADD_ARRAY_STR(j,i,v)   lib_json_add(&j, NULL, v, 0, 0, JSON_STRING, i)
 #define JSON_ADD_INT(j,n,v)         lib_json_add(&j, n, NULL, v, 0, JSON_INTEGER, -1)
+#define JSON_ADD_ARRAY_INT(j,i,v)   lib_json_add(&j, NULL, NULL, v, 0, JSON_INTEGER, i)
 #define JSON_ADD_FLOAT(j,n,v)       lib_json_add(&j, n, NULL, 0, v, JSON_FLOAT, -1)
+#define JSON_ADD_ARRAY_FLOAT(j,i,v) lib_json_add(&j, NULL, NULL, 0, v, JSON_FLOAT, i)
 #define JSON_ADD_BOOL(j,n,v)        lib_json_add(&j, n, NULL, v, 0, JSON_BOOL, -1)
+#define JSON_ADD_ARRAY_BOOL(j,i,v)  lib_json_add(&j, NULL, NULL, v, 0, JSON_BOOL, i)
 
 #define JSON_ADD_RECORD(j,n,v)      lib_json_add_record(&j, n, &v, FALSE)
 
 #define JSON_ADD_ARRAY(j,n,v)       lib_json_add_record(&j, n, &v, TRUE)
 
 
-#define JSON_GET_STR(j,n)           lib_json_get_str(&j, n)
+#define JSON_GET_STR(j,n)           lib_json_get_str(&j, n, -1)
+#define JSON_GET_ARRAY_STR(j,i)     lib_json_get_str(&j, NULL, i)
 #define JSON_GET_INT(j,n)           lib_json_get_int(&j, n)
 #define JSON_GET_FLOAT(j,n)         lib_json_get_float(&j, n)
 #define JSON_GET_BOOL(j,n)          lib_json_get_bool(&j, n)
@@ -110,6 +114,7 @@ typedef json_buf_t JSON;
 
 
 #define JSON_RESET(j)               j.cnt = 0
+#define JSON_COUNT(j)               j.cnt
 
 #define JSON_LOG_DBG(j)             lib_json_log_dbg(&j)
 #define JSON_LOG_INF(j)             lib_json_log_inf(&j)
@@ -167,7 +172,7 @@ extern "C" {
     bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_array);
     bool lib_json_add_array_elem(JSON *json, const char *name, const char *elem, int index);
     bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type);
-    char *lib_json_get_str(JSON *json, const char *name);
+    char *lib_json_get_str(JSON *json, const char *name, int i);
     long lib_json_get_int(JSON *json, const char *name);
     double lib_json_get_float(JSON *json, const char *name);
     bool lib_json_get_bool(JSON *json, const char *name);

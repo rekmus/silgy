@@ -2366,13 +2366,13 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level, bool 
                 if ( is_string )
                     JSON_ADD_ARRAY_STR(*json, i, value);
                 else if ( value[0]=='t' )
-                    JSON_ADD_BOOL(*json, key, 1);
+                    JSON_ADD_ARRAY_BOOL(*json, i, 1);
                 else if ( value[0]=='f' )
-                    JSON_ADD_BOOL(*json, key, 0);
+                    JSON_ADD_ARRAY_BOOL(*json, i, 0);
                 else if ( strchr(value, '.') )
-                    JSON_ADD_FLOAT(*json, key, atof(value));
+                    JSON_ADD_ARRAY_FLOAT(*json, i, atof(value));
                 else
-                    JSON_ADD_INT(*json, key, atol(value));
+                    JSON_ADD_ARRAY_INT(*json, i, atol(value));
             }
             else
             {
@@ -2591,11 +2591,16 @@ bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value
 /* --------------------------------------------------------------------------
    Get value from JSON buffer
 -------------------------------------------------------------------------- */
-char *lib_json_get_str(JSON *json, const char *name)
+char *lib_json_get_str(JSON *json, const char *name, int i)
 {
 static char dst[256];
-    int     i;
 
+    if ( !name )    /* array elem */
+    {
+        strcpy(dst, json->rec[i].value);
+        return dst;
+    }
+    
     for ( i=0; i<json->cnt; ++i )
     {
         if ( 0==strcmp(json->rec[i].name, name) )
