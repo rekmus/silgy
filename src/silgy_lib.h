@@ -85,7 +85,7 @@ typedef json_buf_t JSON;
 
 #define JSON_TO_STRING(j)           lib_json_to_string(&j)
 #define JSON_TO_STRING_PRETTY(j)    lib_json_to_string_pretty(&j)
-#define JSON_FROM_STRING(j,s)       lib_json_from_string(&j, s, 0, 0, FALSE, FALSE)
+#define JSON_FROM_STRING(j,s)       lib_json_from_string(&j, s, 0, 0)
 
 
 #define JSON_ADD_STR(j,n,v)         lib_json_add(&j, n, v, 0, 0, JSON_STRING, -1)
@@ -113,9 +113,11 @@ typedef json_buf_t JSON;
 #define JSON_GET_BOOL(j,n)          lib_json_get_bool(&j, n, -1)
 #define JSON_GET_ARRAY_BOOL(j,i)    lib_json_get_bool(&j, NULL, i)
 
-#define JSON_GET_RECORD(j,n,v)      lib_json_get_record(&j, n, &v)
+#define JSON_GET_RECORD(j,n,v)      lib_json_get_record(&j, n, &v, -1)
+#define JSON_GET_ARRAY_RECORD(j,i,v) lib_json_get_record(&j, NULL, &v, i)
 
-#define JSON_GET_ARRAY(j,n,v)       lib_json_get_record(&j, n, &v)
+#define JSON_GET_ARRAY(j,n,v)       lib_json_get_record(&j, n, &v, -1)
+#define JSON_GET_ARRAY_ARRAY(j,i,v) lib_json_get_record(&j, NULL, &v, i)
 
 
 #define JSON_RESET(j)               j.cnt = 0
@@ -172,7 +174,7 @@ extern "C" {
     void msleep(long n);
     char *lib_json_to_string(JSON *json);
     char *lib_json_to_string_pretty(JSON *json);
-    void lib_json_from_string(JSON *json, const char *src, int len, int level, bool will_be_inside_array, bool inside_array);
+    void lib_json_from_string(JSON *json, const char *src, int len, int level);
     bool lib_json_add(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type, int i);
     bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_array, int i);
     bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type);
@@ -180,7 +182,7 @@ extern "C" {
     long lib_json_get_int(JSON *json, const char *name, int i);
     double lib_json_get_float(JSON *json, const char *name, int i);
     bool lib_json_get_bool(JSON *json, const char *name, int i);
-    bool lib_json_get_record(JSON *json, const char *name, JSON *json_sub);
+    bool lib_json_get_record(JSON *json, const char *name, JSON *json_sub, int i);
     void lib_json_log_dbg(JSON *json, const char *name);
     void lib_json_log_inf(JSON *json, const char *name);
     void get_byteorder(void);
