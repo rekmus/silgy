@@ -55,11 +55,11 @@ typedef char                    QSVAL[QSBUF];
 #define JSON_RECORD         4
 #define JSON_ARRAY          5
 
-#define JSON_MAX_ELEMS      30
+#define JSON_MAX_ELEMS      50      /* in one JSON struct */
 #define JSON_MAX_LEVELS     4
 
-#define JSON_MAX_JSONS      1000
-#define JSON_POOL_SIZE      100
+#define JSON_MAX_JSONS      1000    /* size of the array used for auto-initializing JSON variables */
+#define JSON_POOL_SIZE      100     /* for storing sub-JSONs */
 
 
 /* JSON record */

@@ -1969,13 +1969,13 @@ static void json_to_string(char *dst, JSON *json, bool array)
         }
         else if ( json->rec[i].type == JSON_RECORD )
         {
-            char tmp[8192];
+            char tmp[32784];
             json_to_string(tmp, (JSON*)atol(json->rec[i].value), FALSE);
             p = stpcpy(p, tmp);
         }
         else if ( json->rec[i].type == JSON_ARRAY )
         {
-            char tmp[8192];
+            char tmp[32784];
             json_to_string(tmp, (JSON*)atol(json->rec[i].value), TRUE);
             p = stpcpy(p, tmp);
         }
@@ -2049,7 +2049,7 @@ static void json_to_string_pretty(char *dst, JSON *json, bool array, int level)
         {
             p = stpcpy(p, "\n");
             p = stpcpy(p, json_indent(level));
-            char tmp[8192];
+            char tmp[32784];
             json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), FALSE, level+1);
             p = stpcpy(p, tmp);
         }
@@ -2057,7 +2057,7 @@ static void json_to_string_pretty(char *dst, JSON *json, bool array, int level)
         {
             p = stpcpy(p, "\n");
             p = stpcpy(p, json_indent(level));
-            char tmp[8192];
+            char tmp[32784];
             json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), TRUE, level+1);
             p = stpcpy(p, tmp);
         }
@@ -2098,54 +2098,6 @@ static char dst[JSON_BUFSIZE];
     json_to_string_pretty(dst, json, FALSE, 1);
 
     return dst;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get JSON element as a string
--------------------------------------------------------------------------- */
-static char *get_json_elem(JSON *json, int i)
-{
-static char retbuf[1024];
-
-/*    if ( US.rest_fld[JSON_MAX_ELEMS*level+i].type == JSON_STRING )
-    {
-        sprintf(retbuf, "\"%s\"", US.rest_fld[JSON_MAX_ELEMS*level+i].value);
-        return retbuf;
-    }
-    else if ( US.rest_fld[JSON_MAX_ELEMS*level+i].type == JSON_RECORD )
-    {
-        if ( level >= JSON_MAX_LEVELS )
-        {
-            retbuf[0] = EOS;
-        }
-        else
-        {
-            sprintf(retbuf, "{\"%s\":%s}", US.rest_fld[JSON_MAX_ELEMS*level+i].name, get_json_elem(ci, i, level+1));
-        }
-        return retbuf;
-    } */
-//    else    /* number or bool */
-/*    {
-        strcpy(retbuf, US.rest_fld[JSON_MAX_ELEMS*level+i].value);
-        return retbuf;
-    } */
-}
-
-
-/* --------------------------------------------------------------------------
-   Get array element as a string from JSON REST buffer
--------------------------------------------------------------------------- */
-char *get_json_array_elem(const char *name, int index)
-{
-}
-
-
-/* --------------------------------------------------------------------------
-   Get record as a string from JSON REST buffer
--------------------------------------------------------------------------- */
-char *get_json_record(const char *name)
-{
 }
 
 
@@ -2238,7 +2190,6 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level, bool 
     char    key[32];
     char    value[256];
     char    now_key=1, now_value=0, is_string=0, is_record=0, is_array=0;
-//static int  index[JSON_MAX_LEVELS];
 
     if ( len == 0 ) len = strlen(src);
 
@@ -2529,62 +2480,6 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
     json->rec[i].type = is_array?JSON_ARRAY:JSON_RECORD;
 
     return TRUE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get value from JSON buffer
--------------------------------------------------------------------------- */
-bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type)
-{
-    int i;
-
-    for ( i=0; i<json->cnt; ++i )
-    {
-        if ( 0==strcmp(json->rec[i].name, name) )
-        {
-            if ( type == JSON_STRING && json->rec[i].type == JSON_STRING )
-            {
-                strcpy(str_value, json->rec[i].value);
-                return TRUE;
-            }
-            else if ( type == JSON_INTEGER && json->rec[i].type == JSON_INTEGER )
-            {
-                *num_value = atol(json->rec[i].value);
-                return TRUE;
-            }
-            else if ( type == JSON_BOOL && json->rec[i].type == JSON_BOOL )
-            {
-                if ( json->rec[i].value[0] == 't' )
-                    *num_value = 1;
-                else
-                    *num_value = 0;
-                return TRUE;
-            }
-            else if ( type == JSON_STRING && (json->rec[i].type == JSON_INTEGER || json->rec[i].type == JSON_FLOAT) )
-            {
-                strcpy(str_value, json->rec[i].value);
-                return TRUE;
-            }
-            else if ( type == JSON_STRING && json->rec[i].type == JSON_BOOL )
-            {
-                strcpy(str_value, json->rec[i].value);
-                return TRUE;
-            }
-            else if ( type == JSON_BOOL && json->rec[i].type == JSON_STRING )
-            {
-                if ( 0==strcmp(json->rec[i].value, "true") )
-                    *num_value = 1;
-                else
-                    *num_value = 0;
-                return TRUE;
-            }
-
-            return FALSE;   /* types don't match or couldn't convert */
-        }
-    }
-
-    return FALSE;   /* no such field */
 }
 
 
