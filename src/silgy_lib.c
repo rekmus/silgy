@@ -2198,11 +2198,6 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
     {
         json->cnt = 0;
 
-        for ( i=0; i<JSON_MAX_LEVELS; ++i )
-            M_json_pool_cnt[i] = 0;
-
-        i = 0;
-
         while ( i<len && src[i] != '{' ) ++i;   /* skip junk if there's any */
 
         if ( src[i] != '{' )    /* no opening bracket */
@@ -2232,11 +2227,6 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
     DBG("lib_json_from_string level %d [%s]", level, tmp);
 #endif /* DUMP */
 
-/*    if ( inside_array )
-    {
-        now_value = 1;
-    } */
-
     for ( i; i<len; ++i )
     {
         if ( !now_key && !now_value )
@@ -2249,17 +2239,15 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 j = 0;
                 ++i;    /* skip '"' */
             }
-/*            else if ( src[i]==',' )
-            {
-                if ( inside_array )
-                    now_value = 1;
-            } */
         }
 
-        if ( (now_key && src[i]=='"') || (inside_array && !now_value) )      /* end of key */
+        if ( (now_key && src[i]=='"') || (inside_array && !now_value && (index==-1 || src[i]==',')) )      /* end of key */
         {
+            DBG("second if");
             if ( inside_array )
             {
+                if ( src[i]==',' ) ++i;    /* skip ',' */
+
                 ++index;
             }
             else
@@ -2287,7 +2275,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
 
             if ( i==len )
             {
-                ERR("JSON syntax error -- no value after name");
+                ERR("JSON syntax error -- expected value");
                 return;
             }
 
@@ -2310,8 +2298,10 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
 #endif
                 type = JSON_RECORD;
 
-                if ( level < JSON_MAX_LEVELS-1 && M_json_pool_cnt[level] < JSON_POOL_SIZE )
+                if ( level < JSON_MAX_LEVELS-1 )
                 {
+                    if ( M_json_pool_cnt[level] >= JSON_POOL_SIZE ) M_json_pool_cnt[level] = 0;   /* overwrite previous ones */
+
                     /* save the pointer first as a parent record */
                     if ( inside_array )
                         JSON_ADD_ARRAY_RECORD(*json, index, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
@@ -2322,7 +2312,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                     if ( (closing=get_json_closing_bracket(src+i)) )
                     {
 //                        DBG("closing [%s], len=%d", closing, closing-(src+i));
-                        lib_json_from_string(&M_json_pool[M_json_pool_cnt[level]], src+i, closing-(src+i)+1, level+1);
+                        lib_json_from_string(&M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], src+i, closing-(src+i)+1, level+1);
                         ++M_json_pool_cnt[level];
                         i += closing-(src+i);
 //                        DBG("after closing record bracket [%s]", src+i);
@@ -2341,8 +2331,10 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
 #endif
                 type = JSON_ARRAY;
 
-                if ( level < JSON_MAX_LEVELS-1 && M_json_pool_cnt[level] < JSON_POOL_SIZE )
+                if ( level < JSON_MAX_LEVELS-1 )
                 {
+                    if ( M_json_pool_cnt[level] >= JSON_POOL_SIZE ) M_json_pool_cnt[level] = 0;   /* overwrite previous ones */
+
                     /* save the pointer first as a parent record */
                     if ( inside_array )
                         JSON_ADD_ARRAY_ARRAY(*json, index, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
@@ -2353,7 +2345,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                     if ( (closing=get_json_closing_square_bracket(src+i)) )
                     {
 //                        DBG("closing [%s], len=%d", closing, closing-(src+i));
-                        lib_json_from_string(&M_json_pool[M_json_pool_cnt[level]], src+i, closing-(src+i)+1, level+1);
+                        lib_json_from_string(&M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], src+i, closing-(src+i)+1, level+1);
                         ++M_json_pool_cnt[level];
                         i += closing-(src+i);
 //                        DBG("after closing array bracket [%s]", src+i);
@@ -2582,6 +2574,7 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
 
     if ( name )
     {
+        DBG("name [%s]", name);
         i = json_get_i(json, name);
 
         if ( i==-1 )    /* not present -- append new */
@@ -2595,6 +2588,7 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
     }
     else    /* array */
     {
+        DBG("index = %d", i);
         if ( i >= JSON_MAX_ELEMS ) return FALSE;
         json->cnt = i + 1;
     }
