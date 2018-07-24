@@ -1906,14 +1906,14 @@ static void json_auto_init(JSON *json)
         }
     }
 
-    if ( !initialized )
+    if ( !initialized )     /* recognize it by the address */
     {
         if ( M_jsons_cnt >= JSON_MAX_JSONS )
             M_jsons_cnt = 0;
 
         M_jsons[M_jsons_cnt] = json;
         ++M_jsons_cnt;
-        json->cnt = 0;  /* it should rather be JSON_RESET(json); */
+        JSON_RESET((*json));
     }
 }
 
@@ -2202,11 +2202,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
 
     if ( level == 0 )   /* reset counters */
     {
-#ifndef FAST_JSON
-        json_auto_init(json);
-#else
-        JSON_RESET(json);
-#endif /* FAST_JSON */
+        JSON_RESET((*json));
 
         while ( i<len && src[i] != '{' ) ++i;   /* skip junk if there's any */
 
@@ -2320,6 +2316,8 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 {
                     if ( M_json_pool_cnt[level] >= JSON_POOL_SIZE ) M_json_pool_cnt[level] = 0;   /* overwrite previous ones */
 
+                    JSON_RESET(M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
+
                     /* save the pointer first as a parent record */
                     if ( inside_array )
                         JSON_ADD_ARRAY_RECORD(*json, index, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
@@ -2352,6 +2350,8 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 if ( level < JSON_MAX_LEVELS-1 )
                 {
                     if ( M_json_pool_cnt[level] >= JSON_POOL_SIZE ) M_json_pool_cnt[level] = 0;   /* overwrite previous ones */
+
+                    JSON_RESET(M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
 
                     /* save the pointer first as a parent record */
                     if ( inside_array )
