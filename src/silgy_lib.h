@@ -74,6 +74,7 @@ typedef struct {
 
 typedef struct {
     int         cnt;
+    char        array;
     json_rec_t  rec[JSON_MAX_ELEMS];
 } json_buf_t;
 
