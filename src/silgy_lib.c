@@ -2047,16 +2047,22 @@ static void json_to_string_pretty(char *dst, JSON *json, bool array, int level)
         }
         else if ( json->rec[i].type == JSON_RECORD )
         {
-            p = stpcpy(p, "\n");
-            p = stpcpy(p, json_indent(level));
+            if ( !array || i > 0 )
+            {
+                p = stpcpy(p, "\n");
+                p = stpcpy(p, json_indent(level));
+            }
             char tmp[32784];
             json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), FALSE, level+1);
             p = stpcpy(p, tmp);
         }
         else if ( json->rec[i].type == JSON_ARRAY )
         {
-            p = stpcpy(p, "\n");
-            p = stpcpy(p, json_indent(level));
+            if ( !array || i > 0 )
+            {
+                p = stpcpy(p, "\n");
+                p = stpcpy(p, json_indent(level));
+            }
             char tmp[32784];
             json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), TRUE, level+1);
             p = stpcpy(p, tmp);
@@ -2214,7 +2220,6 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
     }
     else if ( src[i]=='[' )     /* array */
     {
-        DBG("inside_array");
         inside_array = 1;
         ++i;    /* skip '[' */
         index = -1;
@@ -2243,7 +2248,6 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
 
         if ( (now_key && src[i]=='"') || (inside_array && !now_value && (index==-1 || src[i]==',')) )      /* end of key */
         {
-            DBG("second if");
             if ( inside_array )
             {
                 if ( src[i]==',' ) ++i;    /* skip ',' */
@@ -2416,8 +2420,8 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 value[j++] = src[i];
         }
 
-//        if ( !now_value && src[i] == '}' )
-//            break;
+        if ( src[i]=='}' && !now_value && level==0 )
+            break;
     }
 }
 
@@ -2574,7 +2578,9 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
 
     if ( name )
     {
+#ifdef DUMP
         DBG("name [%s]", name);
+#endif
         i = json_get_i(json, name);
 
         if ( i==-1 )    /* not present -- append new */
@@ -2588,7 +2594,9 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
     }
     else    /* array */
     {
+#ifdef DUMP
         DBG("index = %d", i);
+#endif
         if ( i >= JSON_MAX_ELEMS ) return FALSE;
         json->cnt = i + 1;
     }
