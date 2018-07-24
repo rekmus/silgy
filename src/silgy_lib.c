@@ -1913,8 +1913,21 @@ static void json_auto_init(JSON *json)
 
         M_jsons[M_jsons_cnt] = json;
         ++M_jsons_cnt;
-        JSON_RESET((*json));
+        lib_json_reset(json);
     }
+}
+
+
+/* --------------------------------------------------------------------------
+   Reset JSON object
+-------------------------------------------------------------------------- */
+void lib_json_reset(JSON *json)
+{
+#ifdef DUMP
+    DBG("lib_json_reset");
+#endif
+    json->cnt = 0;
+    json->array = 0;
 }
 
 
@@ -2200,9 +2213,9 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
 
     if ( len == 0 ) len = strlen(src);
 
-    if ( level == 0 )   /* reset counters */
+    if ( level == 0 )
     {
-        JSON_RESET((*json));
+        lib_json_reset(json);
 
         while ( i<len && src[i] != '{' ) ++i;   /* skip junk if there's any */
 
@@ -2316,7 +2329,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 {
                     if ( M_json_pool_cnt[level] >= JSON_POOL_SIZE ) M_json_pool_cnt[level] = 0;   /* overwrite previous ones */
 
-                    JSON_RESET(M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
+                    lib_json_reset(&M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
 
                     /* save the pointer first as a parent record */
                     if ( inside_array )
@@ -2351,7 +2364,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 {
                     if ( M_json_pool_cnt[level] >= JSON_POOL_SIZE ) M_json_pool_cnt[level] = 0;   /* overwrite previous ones */
 
-                    JSON_RESET(M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
+                    lib_json_reset(&M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
 
                     /* save the pointer first as a parent record */
                     if ( inside_array )
@@ -2532,7 +2545,7 @@ void lib_json_log_inf(JSON *json, const char *name)
 bool lib_json_add(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type, int i)
 {
 #ifndef FAST_JSON   /* in FAST_JSON u need to call JSON_RESET after declaring JSON variable */
-    json_auto_init(json);
+//    json_auto_init(json);
 #endif /* FAST_JSON */
 
     if ( name )
@@ -2553,7 +2566,7 @@ bool lib_json_add(JSON *json, const char *name, const char *str_value, long int_
     {
         if ( i >= JSON_MAX_ELEMS-1 ) return FALSE;
         json->array = TRUE;
-        json->cnt = i + 1;
+        if ( json->cnt < i+1 ) json->cnt = i + 1;
     }
 
     if ( type == JSON_STRING )
@@ -2591,7 +2604,7 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
     DBG("lib_json_add_record (%s)", is_array?"ARRAY":"RECORD");
 
 #ifndef FAST_JSON   /* in FAST_JSON u need to call JSON_RESET after declaring JSON variable */
-    json_auto_init(json);
+//    json_auto_init(json);
 #endif /* FAST_JSON */
 
     if ( name )
@@ -2618,7 +2631,7 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
 #endif
         if ( i >= JSON_MAX_ELEMS-1 ) return FALSE;
         json->array = TRUE;
-        json->cnt = i + 1;
+        if ( json->cnt < i+1 ) json->cnt = i + 1;
     }
 
     /* store sub-record address as a text in value */
