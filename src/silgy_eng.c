@@ -3726,10 +3726,27 @@ static char buffer[JSON_BUFSIZE];
        If socket(2) (or connect(2)) fails, we (close the socket
        and) try the next address. */
 
+    DBG("Trying to connect...");
+
     for ( rp=result; rp!=NULL; rp=rp->ai_next )
     {
+#ifdef DUMP
+        DBG("In a loop");
+#endif
         sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (sockfd == -1) continue;
+#ifdef DUMP
+        DBG("socket succeeded");
+#endif
+
+//        DBG("Setting socket to non-blocking...");
+#ifdef _WIN32   /* Windows */
+//        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char*)rp->ai_addr, rp->ai_addrlen);
+#else
+//        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, rp->ai_addr, rp->ai_addrlen);
+#endif 
+//        setnonblocking(sockfd);
+
         if ( (connection=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 ) break;
 #ifdef _WIN32   /* Windows */
         closesocket(sockfd);
@@ -3747,9 +3764,6 @@ static char buffer[JSON_BUFSIZE];
     freeaddrinfo(result);   /* No longer needed */
 
     DBG("Connected");
-
-//    DBG("Setting to non-blocking...");
-//    setnonblocking(sockfd);
 
     /* -------------------------------------------------------------------------- */
 
