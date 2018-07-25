@@ -79,13 +79,13 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
     {
         FD_ZERO(&readfds);
         FD_SET(sock, &readfds);
-        socks = select(0, &readfds, NULL, NULL, &timeout);
+        socks = select(sock+1, &readfds, NULL, NULL, &timeout);
     }
     else    /* WRITE or CONNECT */
     {
         FD_ZERO(&writefds);
         FD_SET(sock, &writefds);
-        socks = select(0, NULL, &writefds, NULL, &timeout);
+        socks = select(sock+1, NULL, &writefds, NULL, &timeout);
     }
 
 
@@ -96,7 +96,7 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
     }
     else if ( socks == 0 )
     {
-        DBG("lib_finish_with_timeout timeouted");
+        WAR("lib_finish_with_timeout timeouted");
         return -1;
     }
     else
