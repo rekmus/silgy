@@ -3760,7 +3760,11 @@ static char buffer[JSON_BUFSIZE];
 #endif  /* _WIN32 */
             ERR("sockerr = %d", sockerr);
 
+#ifdef _WIN32   /* Windows */
             if ( sockerr == WSAEWOULDBLOCK )    /* connect not finished yet */
+#else
+            if ( sockerr == EWOULDBLOCK )    /* connect not finished yet */
+#endif  /* _WIN32 */
             {
                 if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, 0, CALL_REST_TIMEOUT) == 0 )
                     break;
