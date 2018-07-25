@@ -46,6 +46,11 @@ typedef char                    QSVAL[QSBUF];
 //typedef struct QSVAL          { char x[QSBUF]; } QSVAL;
 
 
+#define CONNECT 0
+#define READ    1
+#define WRITE   2
+
+
 /* JSON */
 
 #define JSON_STRING         0
@@ -132,6 +137,7 @@ typedef json_buf_t JSON;
 #ifdef __cplusplus
 extern "C" {
 #endif
+    int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int msec);
     void lib_get_app_dir(void);
     double lib_elapsed(struct timespec *start);
     long lib_get_memory(void);
@@ -172,7 +178,7 @@ extern "C" {
     bool strdigits(const char *src);
     char *nospaces(char *dst, const char *src);
     void silgy_random(char *dest, int len);
-    void msleep(long n);
+    void msleep(int msec);
     void lib_json_reset(JSON *json);
     char *lib_json_to_string(JSON *json);
     char *lib_json_to_string_pretty(JSON *json);

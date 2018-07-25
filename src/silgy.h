@@ -333,6 +333,7 @@ typedef struct {
 #define REST_HEADER_SET(k,v)        eng_rest_header_set(k, v)
 #define REST_HEADER_UNSET(k,v)      eng_rest_header_unset(k)
 #define CALL_REST(req,res,m,u)      eng_rest_req(ci, &req, &res, m, u)
+#define CALL_REST_TIMEOUT           500     /* in ms -- to avoid blocking */
 
 
 /* resource / content types */

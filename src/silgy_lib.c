@@ -55,6 +55,65 @@ static void get_byteorder64(void);
 
 
 /* --------------------------------------------------------------------------
+   Finish socket operation with timeout
+-------------------------------------------------------------------------- */
+int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int msec)
+{
+    struct timeval  timeout;
+    fd_set          readfds;
+    fd_set          writefds;
+    int             socks=0;
+
+    if ( msec < 1000 )
+    {
+        timeout.tv_sec = 0;
+        timeout.tv_usec = msec*1000;
+    }
+    else    /* 1000 ms or more */
+    {
+        timeout.tv_sec = msec/1000;
+        timeout.tv_usec = (msec-((int)(msec/1000)*1000))*1000;
+    }
+
+    if ( readwrite == READ )
+    {
+        FD_ZERO(&readfds);
+        FD_SET(sock, &readfds);
+        socks = select(0, &readfds, NULL, NULL, &timeout);
+    }
+    else    /* WRITE or CONNECT */
+    {
+        FD_ZERO(&writefds);
+        FD_SET(sock, &writefds);
+        socks = select(0, NULL, &writefds, NULL, &timeout);
+    }
+
+
+    if ( socks < 0 )
+    {
+        ERR("select failed, errno = %d (%s)", errno, strerror(errno));
+        return -1;
+    }
+    else if ( socks == 0 )
+    {
+        DBG("lib_finish_with_timeout timeouted");
+        return -1;
+    }
+    else
+    {
+        DBG("lib_finish_with_timeout OK");
+
+        if ( readwrite == READ )
+            return recv(sock, buffer, len, 0);
+        else if ( readwrite == WRITE )
+            return send(sock, buffer, len, 0);
+
+        return 0;   /* for CONNECT */
+    }
+}
+
+
+/* --------------------------------------------------------------------------
    Set G_appdir
 -------------------------------------------------------------------------- */
 void lib_get_app_dir()
@@ -1882,11 +1941,26 @@ static unsigned long req=0;
   sleep for n miliseconds
   n must be less than 1 second (< 1000)!
 -------------------------------------------------------------------------- */
-void msleep(long n)
+void msleep(int msec)
 {
     struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = n * 1000;
+
+    if ( msec < 1000 )
+    {
+        tv.tv_sec = 0;
+        tv.tv_usec = msec*1000;
+    }
+    else    /* 1000 ms or more */
+    {
+        tv.tv_sec = msec/1000;
+        tv.tv_usec = (msec-((int)(msec/1000)*1000))*1000;
+    }
+
+/*    DBG("-----------------------");
+    DBG("msec = %d", msec);
+    DBG("tv.tv_sec = %d", tv.tv_sec);
+    DBG("tv.tv_usec = %d", tv.tv_usec); */
+
     select(0, NULL, NULL, NULL, &tv);
 }
 

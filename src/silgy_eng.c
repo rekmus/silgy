@@ -167,7 +167,7 @@ unsigned long   hit=0;
     char        remote_addr[INET_ADDRSTRLEN]=""; /* remote address */
     int         reuse_addr=1;               /* Used so we can re-bind to our port while a previous connection is still in TIME_WAIT state */
 struct timeval  timeout;                    /* Timeout for select */
-    int         readsocks=0;                /* Number of sockets ready for reading */
+    int         readsocks=0;                /* Number of sockets ready for I/O */
     int         i=0;                        /* Current item in conn_sockets for for loops */
     int         time_elapsed=0;             /* time unit, currently 250 ms */
     time_t      sometimeahead;
@@ -3608,6 +3608,7 @@ bool eng_rest_req(int ci, JSON *json_req, JSON *json_res, const char *method, co
 {
 #ifdef _WIN32   /* Windows */
     SOCKET sockfd;
+    int winErr;
 #else
     int sockfd;
 #endif  /* _WIN32 */
@@ -3728,6 +3729,8 @@ static char buffer[JSON_BUFSIZE];
 
     DBG("Trying to connect...");
 
+    int sockerr;
+
     for ( rp=result; rp!=NULL; rp=rp->ai_next )
     {
 #ifdef DUMP
@@ -3739,15 +3742,31 @@ static char buffer[JSON_BUFSIZE];
         DBG("socket succeeded");
 #endif
 
-//        DBG("Setting socket to non-blocking...");
-#ifdef _WIN32   /* Windows */
-//        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char*)rp->ai_addr, rp->ai_addrlen);
-#else
-//        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, rp->ai_addr, rp->ai_addrlen);
-#endif 
-//        setnonblocking(sockfd);
+        DBG("Setting socket to non-blocking...");
+        setnonblocking(sockfd);
+        
+        /* ------------------------------------------------------------------------------------------ */
 
-        if ( (connection=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 ) break;
+        if ( (connection=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 )
+        {
+            break;  /* immediate success */
+        }
+        else
+        {
+#ifdef _WIN32   /* Windows */
+            sockerr = WSAGetLastError();
+#else
+            sockerr = errno;
+#endif  /* _WIN32 */
+            ERR("sockerr = %d", sockerr);
+
+            if ( sockerr == WSAEWOULDBLOCK )    /* connect not finished yet */
+            {
+                if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, 0, CALL_REST_TIMEOUT) == 0 )
+                    break;
+            }
+        }
+
 #ifdef _WIN32   /* Windows */
         closesocket(sockfd);
 #else
@@ -3755,9 +3774,15 @@ static char buffer[JSON_BUFSIZE];
 #endif  /* _WIN32 */
     }
 
-    if (rp == NULL)     /* No address succeeded */
+    if ( rp == NULL )     /* No address succeeded */
     {
         ERR("Could not connect");
+#ifdef _WIN32   /* Windows */
+        wchar_t *s = NULL;
+        FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, winErr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&s, 0, NULL);
+        ERR("Error: %d (%S)", winErr, s);
+        LocalFree(s);
+#endif  /* _WIN32 */
         return FALSE;
     }
 
@@ -3822,14 +3847,19 @@ static char buffer[JSON_BUFSIZE];
 
     if ( bytes < 15 )
     {
-        ERR("send failed, errno = %d (%s)", errno, strerror(errno));
-        close(connection);
+        bytes += lib_finish_with_timeout(sockfd, WRITE, buffer+bytes, strlen(buffer)-bytes, CALL_REST_TIMEOUT);
+        
+        if ( bytes < 15 )
+        {
+            ERR("send failed, errno = %d (%s)", errno, strerror(errno));
+            close(connection);
 #ifdef _WIN32   /* Windows */
-        closesocket(sockfd);
+            closesocket(sockfd);
 #else
-        close(sockfd);
+            close(sockfd);
 #endif  /* _WIN32 */
-        return FALSE;
+            return FALSE;
+        }
     }
 
     /* -------------------------------------------------------------------------- */
@@ -3837,8 +3867,15 @@ static char buffer[JSON_BUFSIZE];
     DBG("Reading response...");
 
     bytes = recv(sockfd, buffer, JSON_BUFSIZE-1, 0);
+
     if ( bytes <= 0 )
-        ERR("recv failed, errno = %d (%s)", errno, strerror(errno));
+    {
+        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, CALL_REST_TIMEOUT);
+
+        if ( bytes <= 0 )
+            ERR("recv failed, errno = %d (%s)", errno, strerror(errno));
+    }
+
     DBG("read %ld bytes", bytes);
 
     while ( bytes > 0 )     /* try while there's something to read */
