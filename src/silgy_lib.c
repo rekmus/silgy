@@ -36,8 +36,10 @@ static char M_dsep='.';             /* decimal separator */
 
 static int  M_shmid;                /* SHM id */
 
-static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers */
+#ifdef AUTO_INIT_EXPERIMENT
+static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers for auto-init */
 static int M_jsons_cnt=0;
+#endif /* AUTO_INIT_EXPERIMENT */
 static JSON M_json_pool[JSON_POOL_SIZE*JSON_MAX_LEVELS];    /* for lib_json_from_string */
 static int M_json_pool_cnt[JSON_MAX_LEVELS]={0};
 
@@ -1889,6 +1891,7 @@ void msleep(long n)
 }
 
 
+#ifdef AUTO_INIT_EXPERIMENT
 /* --------------------------------------------------------------------------
    Implicitly init JSON buffer
 -------------------------------------------------------------------------- */
@@ -1916,6 +1919,7 @@ static void json_auto_init(JSON *json)
         lib_json_reset(json);
     }
 }
+#endif /* AUTO_INIT_EXPERIMENT */
 
 
 /* --------------------------------------------------------------------------
@@ -2544,9 +2548,9 @@ void lib_json_log_inf(JSON *json, const char *name)
 -------------------------------------------------------------------------- */
 bool lib_json_add(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type, int i)
 {
-#ifndef FAST_JSON   /* in FAST_JSON u need to call JSON_RESET after declaring JSON variable */
-//    json_auto_init(json);
-#endif /* FAST_JSON */
+#ifdef AUTO_INIT_EXPERIMENT
+    json_auto_init(json);
+#endif
 
     if ( name )
     {
@@ -2603,9 +2607,9 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
 {
     DBG("lib_json_add_record (%s)", is_array?"ARRAY":"RECORD");
 
-#ifndef FAST_JSON   /* in FAST_JSON u need to call JSON_RESET after declaring JSON variable */
-//    json_auto_init(json);
-#endif /* FAST_JSON */
+#ifdef AUTO_INIT_EXPERIMENT
+    json_auto_init(json);
+#endif
 
     if ( name )
     {
