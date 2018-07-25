@@ -55,7 +55,9 @@
 typedef char                        bool;
 #endif
 
-#define WEB_SERVER_VERSION          "3.2"
+
+#define WEB_SERVER_VERSION          "3.3"
+
 
 /* for use with booleans */
 
@@ -99,7 +101,9 @@ typedef char                        bool;
 #ifndef MEM_MEDIUM
 #ifndef MEM_BIG
 #ifndef MEM_HUGE
+#ifndef MEM_SMALL
 #define MEM_SMALL   /* default memory model */
+#endif
 #endif
 #endif
 #endif
