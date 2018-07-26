@@ -3612,7 +3612,7 @@ void eng_rest_header_unset(const char *key)
 /* --------------------------------------------------------------------------
    REST call
 -------------------------------------------------------------------------- */
-bool eng_rest_req(int ci, JSON *json_req, JSON *json_res, const char *method, const char *url)
+bool eng_rest_req(int ci, void *req, void *res, const char *method, const char *url, bool json)
 {
 #ifdef _WIN32   /* Windows */
     SOCKET sockfd;
@@ -3803,10 +3803,13 @@ static char buffer[JSON_BUFSIZE];
 
     if ( 0 != strcmp(method, "GET") )
     {
-        p = stpcpy(p, "Content-Type: application/json\r\n");
-        strcpy(G_tmp, JSON_TO_STRING(*json_req));
+        if ( json )     /* JSON -> string conversion */
+        {
+            p = stpcpy(p, "Content-Type: application/json\r\n");
+            strcpy(G_tmp, lib_json_to_string((JSON*)req));
+        }
         char tmp[64];
-        sprintf(tmp, "Content-Length: %d\r\n", strlen(G_tmp));
+        sprintf(tmp, "Content-Length: %d\r\n", strlen(json?G_tmp:(char*)req));
         p = stpcpy(p, tmp);
     }
 
@@ -3822,13 +3825,15 @@ static char buffer[JSON_BUFSIZE];
     }
 
     p = stpcpy(p, "Connection: close\r\n");
+#ifndef NO_IDENTITY
     p = stpcpy(p, "User-Agent: Silgy\r\n");
+#endif
     p = stpcpy(p, "\r\n");
 
     /* body */
 
     if ( 0 != strcmp(method, "GET") )
-        p = stpcpy(p, G_tmp);
+        p = stpcpy(p, json?G_tmp:(char*)req);
 
     *p = EOS;
 
@@ -3873,7 +3878,6 @@ static char buffer[JSON_BUFSIZE];
 
     if ( bytes > 0 )     /* there may be payload sent as a second write on the other side */
     {
-//        msleep(100);
         DBG("trying again");
 
         long current_bytes;
@@ -3948,7 +3952,12 @@ static char buffer[JSON_BUFSIZE];
     DBG("Real response content length = %d", len);
 
     if ( len )
-        lib_json_from_string(json_res, body, len, 0);
+    {
+        if ( json )
+            lib_json_from_string((JSON*)res, body, len, 0);
+        else
+            strcpy((char*)res, buffer);
+    }
 
     return TRUE;
 }

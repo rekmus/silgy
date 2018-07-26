@@ -332,7 +332,13 @@ typedef struct {
 #define REST_HEADERS_RESET          eng_rest_headers_reset()
 #define REST_HEADER_SET(k,v)        eng_rest_header_set(k, v)
 #define REST_HEADER_UNSET(k,v)      eng_rest_header_unset(k)
-#define CALL_REST(req,res,m,u)      eng_rest_req(ci, &req, &res, m, u)
+
+#define CALL_REST_RAW(req,res,m,u)  eng_rest_req(ci, &req, &res, m, u, FALSE)
+#define CALL_REST_JSON(req,res,m,u) eng_rest_req(ci, &req, &res, m, u, TRUE)
+/* aliases */
+#define CALL_REST_HTTP(req,res,m,u) CALL_REST_RAW(req,res,m,u)
+#define CALL_REST(req,res,m,u)      CALL_REST_JSON(req,res,m,u)
+
 #define CALL_REST_DEFAULT_TIMEOUT   500     /* in ms -- to avoid blocking */
 
 
@@ -622,7 +628,7 @@ extern "C" {
     void eng_rest_headers_reset(void);
     void eng_rest_header_set(const char *key, const char *value);
     void eng_rest_header_unset(const char *key);
-    bool eng_rest_req(int ci, JSON *json_req, JSON *json_res, const char *method, const char *url);
+    bool eng_rest_req(int ci, void *req, void *res, const char *method, const char *url, bool json);
     void silgy_add_to_static_res(const char *name, char *src);
     void eng_send_ajax_msg(int ci, int errcode);
     void eng_block_ip(const char *value, bool autoblocked);
