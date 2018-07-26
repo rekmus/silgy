@@ -17,6 +17,7 @@
 FILE        *G_log=NULL;            /* log file handle */
 char        G_logLevel=0;           /* log level */
 char        G_appdir[256]=".";      /* application root dir */
+int         G_RESTTimeout=CALL_REST_DEFAULT_TIMEOUT;
 char        G_test=0;               /* test run */
 int         G_pid=0;                /* pid */
 time_t      G_now=0;                /* current time (GMT) */
@@ -59,10 +60,25 @@ static void get_byteorder64(void);
 -------------------------------------------------------------------------- */
 int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int msec)
 {
+    int             sockerr;
     struct timeval  timeout;
     fd_set          readfds;
     fd_set          writefds;
     int             socks=0;
+
+#ifdef _WIN32   /* Windows */
+    sockerr = WSAGetLastError();
+//    ERR("sockerr = %d", sockerr);
+    if ( sockerr != WSAEWOULDBLOCK )
+#else
+    sockerr = errno;
+//    ERR("sockerr = %d (%s)", sockerr, strerror(sockerr));
+    if ( sockerr != EWOULDBLOCK && sockerr != EINPROGRESS )
+#endif  /* _WIN32 */
+    {
+        ERR("lib_finish_with_timeout -- This is not EWOULDBLOCK nor EINPROGRESS");
+        return -1;
+    }
 
     if ( msec < 1000 )
     {

@@ -948,6 +948,7 @@ static void read_conf()
     G_dbUser[0] = EOS;
     G_dbPassword[0] = EOS;
     G_blockedIPList[0] = EOS;
+    G_RESTTimeout = CALL_REST_DEFAULT_TIMEOUT;
     G_test = 0;
 
     /* get the conf file path & name */
@@ -1120,6 +1121,11 @@ static bool init(int argc, char **argv)
     INF("");
 #endif
 
+#ifdef _WIN32
+    INF("This is Windows");
+    INF("");
+#endif
+
     ALWAYS("G_appdir [%s]", G_appdir);
     ALWAYS("logLevel = %d", G_logLevel);
     ALWAYS("httpPort = %d", G_httpPort);
@@ -1127,6 +1133,7 @@ static bool init(int argc, char **argv)
     ALWAYS("G_dbHost [%s]", G_dbHost);
     ALWAYS("G_dbPort = %d", G_dbPort);
     ALWAYS("G_dbName [%s]", G_dbName);
+    ALWAYS("G_RESTTimeout = %d", G_RESTTimeout);
     ALWAYS("G_test = %d", G_test);
 
     /* pid file --------------------------------------------------------------------------- */
@@ -3366,6 +3373,8 @@ void eng_set_param(const char *label, const char *value)
         strcpy(G_dbPassword, value);
     else if ( PARAM("blockedIPList") )
         strcpy(G_blockedIPList, value);
+    else if ( PARAM("RESTTimeout") )
+        G_RESTTimeout = atoi(value);
     else if ( PARAM("test") )
         G_test = atoi(value);
 }
@@ -3752,24 +3761,9 @@ static char buffer[JSON_BUFSIZE];
         {
             break;  /* immediate success */
         }
-        else
+        else if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, 0, G_RESTTimeout) == 0 )
         {
-#ifdef _WIN32   /* Windows */
-            sockerr = WSAGetLastError();
-#else
-            sockerr = errno;
-#endif  /* _WIN32 */
-            ERR("sockerr = %d (%s)", sockerr, strerror(sockerr));
-
-#ifdef _WIN32   /* Windows */
-            if ( sockerr==WSAEWOULDBLOCK )    /* connect not finished yet */
-#else
-            if ( sockerr==EWOULDBLOCK || sockerr==EINPROGRESS )    /* connect not finished yet */
-#endif  /* _WIN32 */
-            {
-                if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, 0, CALL_REST_TIMEOUT) == 0 )
-                    break;
-            }
+            break;  /* success within timeout */
         }
 
 #ifdef _WIN32   /* Windows */
@@ -3852,7 +3846,7 @@ static char buffer[JSON_BUFSIZE];
 
     if ( bytes < 15 )
     {
-        bytes += lib_finish_with_timeout(sockfd, WRITE, buffer+bytes, strlen(buffer)-bytes, CALL_REST_TIMEOUT);
+        bytes += lib_finish_with_timeout(sockfd, WRITE, buffer+bytes, strlen(buffer)-bytes, G_RESTTimeout);
         
         if ( bytes < 15 )
         {
@@ -3871,11 +3865,9 @@ static char buffer[JSON_BUFSIZE];
 
     DBG("Reading response...");
 
-    bytes = recv(sockfd, buffer, JSON_BUFSIZE-1, 0);
-
-    if ( bytes <= 0 )
+    if ( (bytes=recv(sockfd, buffer, JSON_BUFSIZE-1, 0)) == -1 )
     {
-        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, CALL_REST_TIMEOUT);
+        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, G_RESTTimeout);
 
         if ( bytes <= 0 )
             ERR("recv failed, errno = %d (%s)", errno, strerror(errno));
@@ -3883,19 +3875,20 @@ static char buffer[JSON_BUFSIZE];
 
     DBG("read %ld bytes", bytes);
 
-    while ( bytes > 0 )     /* try while there's something to read */
+    if ( bytes > 0 )     /* there may be payload sent as a second write on the other side */
     {
-        msleep(100);
+//        msleep(100);
         DBG("trying again");
 
-        long current_bytes = recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0);
-        DBG("current_bytes = %ld", current_bytes);
+        long current_bytes;
 
-//        if ( current_bytes && bytes < JSON_BUFSIZE-current_bytes-1 )
-        if ( current_bytes > 0 )
-            bytes += current_bytes;
-        else
-            break;
+        if ( (current_bytes=recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0)) == -1 )
+        {
+            current_bytes = lib_finish_with_timeout(sockfd, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, G_RESTTimeout);
+
+            if ( current_bytes > 0 )
+                bytes += current_bytes;
+        }
     }
 
     close(connection);

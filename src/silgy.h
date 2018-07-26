@@ -333,7 +333,7 @@ typedef struct {
 #define REST_HEADER_SET(k,v)        eng_rest_header_set(k, v)
 #define REST_HEADER_UNSET(k,v)      eng_rest_header_unset(k)
 #define CALL_REST(req,res,m,u)      eng_rest_req(ci, &req, &res, m, u)
-#define CALL_REST_TIMEOUT           500     /* in ms -- to avoid blocking */
+#define CALL_REST_DEFAULT_TIMEOUT   500     /* in ms -- to avoid blocking */
 
 
 /* resource / content types */
@@ -555,6 +555,7 @@ extern char     G_dbName[128];
 extern char     G_dbUser[128];
 extern char     G_dbPassword[128];
 extern char     G_blockedIPList[256];
+extern int      G_RESTTimeout;
 extern char     G_test;
 /* end of config params */
 extern int      G_pid;                      /* pid */
