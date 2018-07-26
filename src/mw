@@ -1,3 +1,9 @@
 #!/bin/sh
 
-gcc silgy_watcher.c silgy_lib.c -s -O3 -D ASYNC_SERVICE -o $SILGYDIR/bin/silgy_watcher
+echo Making silgy_watcher...
+
+gcc silgy_watcher.c silgy_lib.c \
+-s -O3 \
+-D ASYNC_SERVICE \
+-o $SILGYDIR/bin/silgy_watcher \
+-static

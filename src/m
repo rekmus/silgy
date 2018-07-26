@@ -1,3 +1,8 @@
 #!/bin/sh
 
-g++ silgy_app.cpp silgy_eng.c silgy_lib.c -o $SILGYDIR/bin/silgy_app
+echo Making silgy_app...
+
+g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
+-D MEM_SMALL \
+-o $SILGYDIR/bin/silgy_app \
+-static
