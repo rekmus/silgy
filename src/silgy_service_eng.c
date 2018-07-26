@@ -104,8 +104,8 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        if ( mq_receive(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, 0) != -1 )	/* there's a response in the queue */
-        {																			/* add it to ares array */
+        if ( mq_receive(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, 0) != -1 )
+        {
             DBG("Message received");
             DBG("ci = %d, service [%s], call_id = %ld", req.ci, req.service, req.call_id);
             res.call_id = req.call_id;
