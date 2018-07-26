@@ -28,6 +28,8 @@ int main(int argc, char *argv[])
 {
     char config[256];
 
+    G_pid = getpid();
+
     /* set G_appdir ------------------------------------------------------ */
 
     lib_get_app_dir();

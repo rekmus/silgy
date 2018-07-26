@@ -310,7 +310,8 @@ typedef char                        bool;
 #define ASYNC_STATE_RECEIVED        '2'
 #define ASYNC_STATE_TIMEOUTED       '3'
 #define ASYNC_REQ_MSG_SIZE          1024            /* async message size */
-#define ASYNC_RES_MSG_SIZE          16384           /* async message size */
+#define ASYNC_RES_MSG_SIZE          8192            /* async message size */
+//#define ASYNC_RES_MSG_SIZE          16384           /* async message size */
 //#define ASYNC_RES_MSG_SIZE            32768           /* async message size */
 //#define ASYNC_RES_MSG_SIZE            102400          /* async message size -- 100 kB */
 #define ASYNC_REQ_QUEUE             "/silgy_req"    /* request queue name */

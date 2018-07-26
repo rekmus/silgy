@@ -527,12 +527,16 @@ struct timeval  timeout;                    /* Timeout for select */
                     /* --------------------------------------------------------------------------------------- */
                     if ( FD_ISSET(conn[i].fd, &M_writefds) )        /* ready for outgoing data */
                     {
-//                      DBG("fd=%d is ready for outgoing data", conn[i].fd);
-
+#ifdef DUMP
+//                        DBG("fd=%d is ready for outgoing data, conn_state = %c", conn[i].fd, conn[i].conn_state);
+#endif
                         /* async processing */
 #ifdef ASYNC
                         if ( conn[i].conn_state == CONN_STATE_WAITING_FOR_ASYNC )
                         {
+#ifdef DUMP
+//                            DBG("state == CONN_STATE_WAITING_FOR_ASYNC");
+#endif
                             for ( j=0; j<MAX_ASYNC; ++j )
                             {
                                 if ( (ares[j].state==ASYNC_STATE_RECEIVED || ares[j].state==ASYNC_STATE_TIMEOUTED) && ares[j].ci == i )
@@ -673,6 +677,9 @@ struct timeval  timeout;                    /* Timeout for select */
 
                         /* process request */
                         process_req(i);
+#ifdef ASYNC
+                        if ( conn[i].conn_state != CONN_STATE_WAITING_FOR_ASYNC )
+#endif
                         gen_response_header(i);
                     }
                 }
@@ -1055,8 +1062,8 @@ static void close_conn(int ci)
 
 
 /* --------------------------------------------------------------------------
-  engine init
-  return TRUE if success
+   Engine init
+   Return TRUE if success
 -------------------------------------------------------------------------- */
 static bool init(int argc, char **argv)
 {
@@ -1086,10 +1093,6 @@ static bool init(int argc, char **argv)
     G_dbconn = NULL;
 #endif
 
-    /* command line arguments */
-
-    /* nothing here anymore -- everything's gone to the conf file */
-
     /* app root dir */
 
     lib_get_app_dir();      // set G_appdir
@@ -1097,6 +1100,14 @@ static bool init(int argc, char **argv)
     /* read the config file or set defaults */
 
     read_conf();
+
+    /* command line arguments */
+
+    if ( argc > 1 )
+    {
+        G_httpPort = atoi(argv[1]);
+        printf("Will be listening on the port %d...\n", G_httpPort);
+    }
 
     /* init time variables */
 
@@ -1128,7 +1139,14 @@ static bool init(int argc, char **argv)
 
     ALWAYS("G_appdir [%s]", G_appdir);
     ALWAYS("logLevel = %d", G_logLevel);
-    ALWAYS("httpPort = %d", G_httpPort);
+    if ( argc > 1 )
+    {
+        ALWAYS("----------------------------------------------------------------------------------------------");
+        WAR("httpPort = %d -- overwritten by a command line argument", G_httpPort);
+        ALWAYS("----------------------------------------------------------------------------------------------");
+    }
+    else
+        ALWAYS("httpPort = %d", G_httpPort);
     ALWAYS("httpsPort = %d", G_httpsPort);
     ALWAYS("G_dbHost [%s]", G_dbHost);
     ALWAYS("G_dbPort = %d", G_dbPort);
@@ -1386,7 +1404,7 @@ static bool init(int argc, char **argv)
 
     struct mq_attr attr;
 
-    attr.mq_maxmsg = 100;
+    attr.mq_maxmsg = 10;
     attr.mq_msgsize = ASYNC_REQ_MSG_SIZE;
     attr.mq_flags = 0;
     attr.mq_curmsgs = 0;
@@ -1413,7 +1431,7 @@ static bool init(int argc, char **argv)
 
 
 /* --------------------------------------------------------------------------
-  set socket as non-blocking
+   Set socket as non-blocking
 -------------------------------------------------------------------------- */
 static void setnonblocking(int sock)
 {
@@ -2363,7 +2381,9 @@ static void gen_response_header(int ci)
 
     DBG("Response status: %d", conn[ci].status);
 
-//  DBG("Changing state to CONN_STATE_READY_TO_SEND_HEADER");
+#ifdef DUMP     /* low-level tests */
+    DBG("Changing state to CONN_STATE_READY_TO_SEND_HEADER");
+#endif
     conn[ci].conn_state = CONN_STATE_READY_TO_SEND_HEADER;
 
     DBG("\nResponse header:\n\n[%s]\n", conn[ci].header);
@@ -3667,8 +3687,8 @@ static char buffer[JSON_BUFSIZE];
     char uri[MAX_URI_LEN+1];
     char *colon, *slash;
 
-    colon = strchr(url, ':');
-    slash = strchr(url, '/');
+    colon = strchr((char*)url, ':');
+    slash = strchr((char*)url, '/');
 
     if ( colon )    /* port specified */
     {
