@@ -67,18 +67,29 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
     int             socks=0;
 
 #ifdef _WIN32   /* Windows */
+
     sockerr = WSAGetLastError();
-//    ERR("sockerr = %d", sockerr);
+
     if ( sockerr != WSAEWOULDBLOCK )
-#else
-    sockerr = errno;
-//    ERR("sockerr = %d (%s)", sockerr, strerror(sockerr));
-    if ( sockerr != EWOULDBLOCK && sockerr != EINPROGRESS )
-#endif  /* _WIN32 */
     {
-        ERR("lib_finish_with_timeout -- This is not EWOULDBLOCK nor EINPROGRESS");
+        wchar_t *s = NULL;
+        FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, sockerr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&s, 0, NULL);
+        ERR("%d (%S)", sockerr, s);
+        LocalFree(s);
         return -1;
     }
+
+#else
+
+    sockerr = errno;
+
+    if ( sockerr != EWOULDBLOCK && sockerr != EINPROGRESS )
+    {
+        ERR("sockerr = %d (%s)", sockerr, strerror(sockerr));
+        return -1;
+    }
+
+#endif  /* _WIN32 */
 
     if ( msec < 1000 )
     {

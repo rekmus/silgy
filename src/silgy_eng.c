@@ -3752,7 +3752,9 @@ static char buffer[JSON_BUFSIZE];
 
         /* Windows timeout option is a s**t */
 
+#ifdef DUMP
         DBG("Setting socket to non-blocking...");
+#endif
         setnonblocking(sockfd);
 
         /* ------------------------------------------------------------------------------------------ */
@@ -3776,12 +3778,6 @@ static char buffer[JSON_BUFSIZE];
     if ( rp == NULL )     /* No address succeeded */
     {
         ERR("Could not connect");
-#ifdef _WIN32   /* Windows */
-        wchar_t *s = NULL;
-        FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, winErr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&s, 0, NULL);
-        ERR("Error: %d (%S)", winErr, s);
-        LocalFree(s);
-#endif  /* _WIN32 */
         return FALSE;
     }
 
