@@ -110,8 +110,6 @@ static bool         M_appleicon_exists=FALSE;   /* -''- */
 #ifdef _WIN32   /* Windows */
 WSADATA             wsa;
 #endif
-static rest_header_t M_rest_headers[REST_MAX_HEADERS];
-static int M_rest_headers_cnt=0;
 
 
 /* prototypes */
@@ -123,7 +121,6 @@ static void respond_to_expect(int ci);
 static void log_proc_time(int ci);
 static void close_conn(int ci);
 static bool init(int argc, char **argv);
-static void setnonblocking(int sock);
 static void build_select_list(void);
 static void accept_http();
 static void accept_https();
@@ -222,8 +219,8 @@ struct timeval  timeout;                    /* Timeout for select */
     setsockopt(M_listening_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
 #endif 
 
-    /* Set socket to non-blocking with our setnonblocking routine */
-    setnonblocking(M_listening_fd);
+    /* Set socket to non-blocking with our lib_setnonblocking routine */
+    lib_setnonblocking(M_listening_fd);
 
     /* bind socket to a port */
 
@@ -269,8 +266,8 @@ struct timeval  timeout;                    /* Timeout for select */
     /* So that we can re-bind to it without TIME_WAIT problems */
     setsockopt(M_listening_sec_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
 
-    /* Set socket to non-blocking with our setnonblocking routine */
-    setnonblocking(M_listening_sec_fd);
+    /* Set socket to non-blocking with our lib_setnonblocking routine */
+    lib_setnonblocking(M_listening_sec_fd);
 
     /* bind socket to a port */
 
@@ -1431,40 +1428,7 @@ static bool init(int argc, char **argv)
 
 
 /* --------------------------------------------------------------------------
-   Set socket as non-blocking
--------------------------------------------------------------------------- */
-static void setnonblocking(int sock)
-{
-#ifdef _WIN32   /* Windows */
-
-    u_long mode = 1;  // 1 to enable non-blocking socket
-    ioctlsocket(sock, FIONBIO, &mode);
-
-#else   /* Linux / UNIX */
-
-    int opts;
-
-    opts = fcntl(sock, F_GETFL);
-
-    if (opts < 0)
-    {
-        ERR("fcntl(F_GETFL) failed");
-        exit(EXIT_FAILURE);
-    }
-
-    opts = (opts | O_NONBLOCK);
-
-    if (fcntl(sock, F_SETFL, opts) < 0)
-    {
-        ERR("fcntl(F_SETFL) failed");
-        exit(EXIT_FAILURE);
-    }
-#endif
-}
-
-
-/* --------------------------------------------------------------------------
-  build select list
+   Build select list
 -------------------------------------------------------------------------- */
 static void build_select_list()
 {
@@ -1563,7 +1527,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
         return;
     }
 
-    setnonblocking(connection);
+    lib_setnonblocking(connection);
 
     /* find a free slot in conn */
 
@@ -1651,7 +1615,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
         return;
     }
 
-    setnonblocking(connection);
+    lib_setnonblocking(connection);
 
     /* find a free slot in conn */
 
@@ -3563,423 +3527,6 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         conn[ci].conn_state = CONN_STATE_WAITING_FOR_ASYNC;
     }
 #endif
-}
-
-
-/* --------------------------------------------------------------------------
-   REST call -- reset request headers
--------------------------------------------------------------------------- */
-void eng_rest_headers_reset()
-{
-    M_rest_headers_cnt = 0;
-}
-
-
-/* --------------------------------------------------------------------------
-   REST call -- set request header value
--------------------------------------------------------------------------- */
-void eng_rest_header_set(const char *key, const char *value)
-{
-    int i;
-
-    for ( i=0; i<M_rest_headers_cnt; ++i )
-    {
-        if ( M_rest_headers[i].key[0]==EOS )
-        {
-            strncpy(M_rest_headers[M_rest_headers_cnt].key, key, 63);
-            M_rest_headers[M_rest_headers_cnt].key[63] = EOS;
-            strncpy(M_rest_headers[i].value, value, 255);
-            M_rest_headers[i].value[255] = EOS;
-            return;
-        }
-        else if ( 0==strcmp(M_rest_headers[i].key, key) )
-        {
-            strncpy(M_rest_headers[i].value, value, 255);
-            M_rest_headers[i].value[255] = EOS;
-            return;
-        }
-    }
-
-    if ( M_rest_headers_cnt >= REST_MAX_HEADERS ) return;
-
-    strncpy(M_rest_headers[M_rest_headers_cnt].key, key, 63);
-    M_rest_headers[M_rest_headers_cnt].key[63] = EOS;
-    strncpy(M_rest_headers[M_rest_headers_cnt].value, value, 255);
-    M_rest_headers[M_rest_headers_cnt].value[255] = EOS;
-    ++M_rest_headers_cnt;
-}
-
-
-/* --------------------------------------------------------------------------
-   REST call -- unset request header value
--------------------------------------------------------------------------- */
-void eng_rest_header_unset(const char *key)
-{
-    int i;
-
-    for ( i=0; i<M_rest_headers_cnt; ++i )
-    {
-        if ( 0==strcmp(M_rest_headers[i].key, key) )
-        {
-            M_rest_headers[i].key[0] = EOS;
-            M_rest_headers[i].value[0] = EOS;
-            return;
-        }
-    }
-}
-
-
-/* --------------------------------------------------------------------------
-   REST call
--------------------------------------------------------------------------- */
-bool eng_rest_req(int ci, void *req, void *res, const char *method, const char *url, bool json)
-{
-#ifdef _WIN32   /* Windows */
-    SOCKET sockfd;
-    int winErr;
-#else
-    int sockfd;
-#endif  /* _WIN32 */
-    int connection;
-    long bytes;
-static char buffer[JSON_BUFSIZE];
-    static struct sockaddr_in serv_addr;
-    int len, i, j;
-    bool endingslash=FALSE;
-
-    DBG("eng_rest_req [%s] [%s]", method, url);
-
-    /* -------------------------------------------------------------------------- */
-    /* parse url                                                                  */
-
-    /* get rid of protocol */
-
-    len = strlen(url);
-
-    if ( len < 1 )
-    {
-        ERR("url too short (1)");
-        return FALSE;
-    }
-
-    if ( url[len-1] == '/' ) endingslash = TRUE;
-
-    if ( len > 6 && url[0]=='h' && url[1]=='t' && url[2]=='t' && url[3]=='p' && url[4]==':' )
-    {
-        url += 7;
-        len -= 7;
-        if ( len < 1 )
-        {
-            ERR("url too short (2)");
-            return FALSE;
-        }
-    }
-    else if ( len > 7 && url[0]=='h' && url[1]=='t' && url[2]=='t' && url[3]=='p' && url[4]=='s' && url[5]==':' )
-    {
-        ERR("HTTPS is not currently supported in REST calls");
-        return FALSE;
-    }
-
-//    DBG("url [%s]", url);
-
-    char host[256];
-    char port[8];
-    char uri[MAX_URI_LEN+1];
-    char *colon, *slash;
-
-    colon = strchr((char*)url, ':');
-    slash = strchr((char*)url, '/');
-
-    if ( colon )    /* port specified */
-    {
-        strncpy(host, url, colon-url);
-        host[colon-url] = EOS;
-
-        if ( slash )
-        {
-            strncpy(port, colon+1, slash-colon-1);
-            port[slash-colon-1] = EOS;
-            strcpy(uri, slash+1);
-        }
-        else    /* only host name & port */
-        {
-            strcpy(port, colon+1);
-            uri[0] = EOS;
-        }
-    }
-    else    /* no port specified */
-    {
-        if ( slash )
-        {
-            strncpy(host, url, slash-url);
-            host[slash-url] = EOS;
-            strcpy(uri, slash+1);
-        }
-        else    /* only host name */
-        {
-            strcpy(host, url);
-            uri[0] = EOS;
-        }
-
-        strcpy(port, "80");
-    }
-
-/*    DBG("host [%s]", host);
-    DBG("port [%s]", port);
-    DBG(" uri [%s]", uri); */
-
-//    return FALSE;   /* parsing tests... */
-
-    /* -------------------------------------------------------------------------- */
-
-    DBG("getaddrinfo...");
-
-    struct addrinfo hints;
-    struct addrinfo *result, *rp;
-    int s;
-
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_UNSPEC;        /* Allow IPv4 or IPv6 */
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE;        /* For wildcard IP address */
-    hints.ai_protocol = 0;              /* Any protocol */
-
-    if ( (s=getaddrinfo(host, port, &hints, &result)) != 0 )
-    {
-        ERR("getaddrinfo: %s", gai_strerror(s));
-        return FALSE;
-    }
-
-    /* getaddrinfo() returns a list of address structures.
-       Try each address until we successfully connect(2).
-       If socket(2) (or connect(2)) fails, we (close the socket
-       and) try the next address. */
-
-    DBG("Trying to connect...");
-
-    int sockerr;
-
-    for ( rp=result; rp!=NULL; rp=rp->ai_next )
-    {
-#ifdef DUMP
-        DBG("In a loop");
-#endif
-        sockfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        if (sockfd == -1) continue;
-#ifdef DUMP
-        DBG("socket succeeded");
-#endif
-
-        /* Windows timeout option is a s**t */
-
-#ifdef DUMP
-        DBG("Setting socket to non-blocking...");
-#endif
-        setnonblocking(sockfd);
-
-        /* ------------------------------------------------------------------------------------------ */
-
-        if ( (connection=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 )
-        {
-            break;  /* immediate success */
-        }
-        else if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, 0, G_RESTTimeout) == 0 )
-        {
-            break;  /* success within timeout */
-        }
-
-#ifdef _WIN32   /* Windows */
-        closesocket(sockfd);
-#else
-        close(sockfd);
-#endif  /* _WIN32 */
-    }
-
-    if ( rp == NULL )     /* No address succeeded */
-    {
-        ERR("Could not connect");
-        return FALSE;
-    }
-
-    freeaddrinfo(result);   /* No longer needed */
-
-    DBG("Connected");
-
-    /* -------------------------------------------------------------------------- */
-
-    DBG("Sending request...");
-
-    char *p=buffer;     /* stpcpy is faster than strcat */
-
-    /* header */
-
-    p = stpcpy(p, method);
-    p = stpcpy(p, " /");
-    p = stpcpy(p, uri);
-    p = stpcpy(p, " HTTP/1.1\r\n");
-    p = stpcpy(p, "Host: ");
-    p = stpcpy(p, host);
-    p = stpcpy(p, "\r\n");
-
-    if ( 0 != strcmp(method, "GET") )
-    {
-        if ( json )     /* JSON -> string conversion */
-        {
-            p = stpcpy(p, "Content-Type: application/json\r\n");
-            strcpy(G_tmp, lib_json_to_string((JSON*)req));
-        }
-        char tmp[64];
-        sprintf(tmp, "Content-Length: %d\r\n", strlen(json?G_tmp:(char*)req));
-        p = stpcpy(p, tmp);
-    }
-
-    for ( i=0; i<M_rest_headers_cnt; ++i )
-    {
-        if ( M_rest_headers[i].key[0] )
-        {
-            p = stpcpy(p, M_rest_headers[i].key);
-            p = stpcpy(p, ": ");
-            p = stpcpy(p, M_rest_headers[i].value);
-            p = stpcpy(p, "\r\n");
-        }
-    }
-
-    p = stpcpy(p, "Connection: close\r\n");
-#ifndef NO_IDENTITY
-    p = stpcpy(p, "User-Agent: Silgy\r\n");
-#endif
-    p = stpcpy(p, "\r\n");
-
-    /* body */
-
-    if ( 0 != strcmp(method, "GET") )
-        p = stpcpy(p, json?G_tmp:(char*)req);
-
-    *p = EOS;
-
-#ifdef DUMP
-    DBG("------------------------------------------------------------");
-    DBG("eng_rest_req buffer [%s]", buffer);
-    DBG("------------------------------------------------------------");
-#endif /* DUMP */
-
-    bytes = send(sockfd, buffer, strlen(buffer), 0);
-
-    if ( bytes < 15 )
-    {
-        bytes += lib_finish_with_timeout(sockfd, WRITE, buffer+bytes, strlen(buffer)-bytes, G_RESTTimeout);
-        
-        if ( bytes < 15 )
-        {
-            ERR("send failed, errno = %d (%s)", errno, strerror(errno));
-            close(connection);
-#ifdef _WIN32   /* Windows */
-            closesocket(sockfd);
-#else
-            close(sockfd);
-#endif  /* _WIN32 */
-            return FALSE;
-        }
-    }
-
-    /* -------------------------------------------------------------------------- */
-
-    DBG("Reading response...");
-
-    if ( (bytes=recv(sockfd, buffer, JSON_BUFSIZE-1, 0)) == -1 )
-    {
-        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, G_RESTTimeout);
-
-        if ( bytes <= 0 )
-            ERR("recv failed, errno = %d (%s)", errno, strerror(errno));
-    }
-
-    DBG("read %ld bytes", bytes);
-
-    if ( bytes > 0 )     /* there may be payload sent as a second write on the other side */
-    {
-        DBG("trying again");
-
-        long current_bytes;
-
-        if ( (current_bytes=recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0)) == -1 )
-        {
-            current_bytes = lib_finish_with_timeout(sockfd, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, G_RESTTimeout);
-
-            if ( current_bytes > 0 )
-                bytes += current_bytes;
-        }
-    }
-
-    close(connection);
-#ifdef _WIN32   /* Windows */
-    closesocket(sockfd);
-#else
-    close(sockfd);
-#endif  /* _WIN32 */
-
-    /* -------------------------------------------------------------------------- */
-    /* parse the response                                                         */
-
-    /* HTTP/1.1 200 OK <== 15 chars */
-
-    char status[4];
-
-    if ( bytes > 14 && 0==strncmp(buffer, "HTTP/1.", 7) )
-    {
-        buffer[bytes] = EOS;
-#ifdef DUMP
-        DBG("Got %d bytes of response [%s]", bytes, buffer);
-#else
-        DBG("Got %d bytes of response", bytes);
-#endif /* DUMP */
-        strncpy(status, buffer+9, 3);
-        status[3] = EOS;
-        INF("Response status: %s", status);
-    }
-    else
-    {
-        ERR("No or incomplete response");
-        return FALSE;
-    }
-
-//    DBG("Got response [%s]", buffer);
-
-/*    if ( 0 != strcmp(status, "200") )
-    {
-        ERR("status != 200");
-        return FALSE;
-    } */
-
-    char *body;
-
-    /* skip HTTP header */
-
-    if ( !(body=strstr(buffer, "\r\n\r\n")) )
-    {
-        INF("No response body found");
-        return TRUE;
-    }
-
-    body += 4;
-
-    /* -------------------------------------------------------------------------- */
-    /* we expect JSON response in body                                            */
-
-//    DBG("Response body [%s]", body);
-
-    len = bytes - (body - buffer);
-    DBG("Real response content length = %d", len);
-
-    if ( len )
-    {
-        if ( json )
-            lib_json_from_string((JSON*)res, body, len, 0);
-        else
-            strcpy((char*)res, buffer);
-    }
-
-    return TRUE;
 }
 
 

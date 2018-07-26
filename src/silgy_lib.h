@@ -51,6 +51,30 @@ typedef char                    QSVAL[QSBUF];
 #define WRITE   2
 
 
+
+/* REST calls */
+
+typedef struct {
+    char    key[64];
+    char    value[256];
+} rest_header_t;
+
+
+#define REST_MAX_HEADERS            100
+#define REST_HEADERS_RESET          lib_rest_headers_reset()
+#define REST_HEADER_SET(k,v)        lib_rest_header_set(k, v)
+#define REST_HEADER_UNSET(k,v)      lib_rest_header_unset(k)
+
+#define CALL_REST_RAW(req,res,m,u)  lib_rest_req(req, res, m, u, FALSE)
+#define CALL_REST_JSON(req,res,m,u) lib_rest_req(&req, &res, m, u, TRUE)
+/* aliases */
+#define CALL_REST_HTTP(req,res,m,u) CALL_REST_RAW(req,res,m,u)
+#define CALL_REST(req,res,m,u)      CALL_REST_JSON(req,res,m,u)
+
+#define CALL_REST_DEFAULT_TIMEOUT   500     /* in ms -- to avoid blocking */
+
+
+
 /* JSON */
 
 #define JSON_STRING         0
@@ -137,6 +161,11 @@ typedef json_buf_t JSON;
 #ifdef __cplusplus
 extern "C" {
 #endif
+    void lib_setnonblocking(int sock);
+    void lib_rest_headers_reset(void);
+    void lib_rest_header_set(const char *key, const char *value);
+    void lib_rest_header_unset(const char *key);
+    bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json);
     int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int msec);
     void lib_get_app_dir(void);
     double lib_elapsed(struct timespec *start);

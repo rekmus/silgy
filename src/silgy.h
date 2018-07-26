@@ -56,7 +56,7 @@ typedef char                        bool;
 #endif
 
 
-#define WEB_SERVER_VERSION          "3.3"
+#define WEB_SERVER_VERSION          "3.4"
 
 
 /* for use with booleans */
@@ -311,36 +311,12 @@ typedef char                        bool;
 #define ASYNC_STATE_TIMEOUTED       '3'
 #define ASYNC_REQ_MSG_SIZE          1024            /* async message size */
 #define ASYNC_RES_MSG_SIZE          8192            /* async message size */
-//#define ASYNC_RES_MSG_SIZE          16384           /* async message size */
-//#define ASYNC_RES_MSG_SIZE            32768           /* async message size */
-//#define ASYNC_RES_MSG_SIZE            102400          /* async message size -- 100 kB */
 #define ASYNC_REQ_QUEUE             "/silgy_req"    /* request queue name */
 #define ASYNC_RES_QUEUE             "/silgy_res"    /* response queue name */
 #define ASYNC_MAX_TIMEOUT           1800            /* in seconds ==> 30 minutes */
 #define S(s)                        (0==strcmp(service,s))
 #define CALL_ASYNC(s,d,t)           eng_async_req(ci, s, d, TRUE, t)
 #define CALL_ASYNC_NR(s,d)          eng_async_req(ci, s, d, FALSE, 0)
-
-
-/* REST calls */
-
-typedef struct {
-    char    key[64];
-    char    value[256];
-} rest_header_t;
-
-#define REST_MAX_HEADERS            100
-#define REST_HEADERS_RESET          eng_rest_headers_reset()
-#define REST_HEADER_SET(k,v)        eng_rest_header_set(k, v)
-#define REST_HEADER_UNSET(k,v)      eng_rest_header_unset(k)
-
-#define CALL_REST_RAW(req,res,m,u)  eng_rest_req(ci, &req, &res, m, u, FALSE)
-#define CALL_REST_JSON(req,res,m,u) eng_rest_req(ci, &req, &res, m, u, TRUE)
-/* aliases */
-#define CALL_REST_HTTP(req,res,m,u) CALL_REST_RAW(req,res,m,u)
-#define CALL_REST(req,res,m,u)      CALL_REST_JSON(req,res,m,u)
-
-#define CALL_REST_DEFAULT_TIMEOUT   500     /* in ms -- to avoid blocking */
 
 
 /* resource / content types */
@@ -626,10 +602,6 @@ extern "C" {
     void eng_uses_close(int usi);
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
-    void eng_rest_headers_reset(void);
-    void eng_rest_header_set(const char *key, const char *value);
-    void eng_rest_header_unset(const char *key);
-    bool eng_rest_req(int ci, void *req, void *res, const char *method, const char *url, bool json);
     void silgy_add_to_static_res(const char *name, char *src);
     void eng_send_ajax_msg(int ci, int errcode);
     void eng_block_ip(const char *value, bool autoblocked);
