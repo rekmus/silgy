@@ -642,9 +642,9 @@ extern "C" {
     void eng_out_check_realloc(int ci, const char *str);
     void eng_out_check_realloc_bin(int ci, const char *data, long len);
 #ifdef ASYNC_SERVICE
-    bool services_start(void);
-    void services(const char *service, const char *req, char *res);
-    void services_stop(void);
+    bool service_init(void);
+    void service_app_process_req(const char *service, const char *req, char *res);
+    void service_done(void);
 #endif
 #ifdef __cplusplus
 }   /* extern "C" */

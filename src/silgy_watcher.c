@@ -26,9 +26,11 @@ int main(int argc, char *argv[])
     char buffer[BUFSIZE];
     static struct sockaddr_in serv_addr;
 
-    lib_get_app_dir();      // set G_appdir
+    /* set G_appdir ------------------------------------------------------ */
 
-    /* init time variables */
+    lib_get_app_dir();
+
+    /* init time variables ----------------------------------------------- */
 
     G_now = time(NULL);
     G_ptm = gmtime(&G_now);
@@ -37,12 +39,12 @@ int main(int argc, char *argv[])
     sprintf(config, "%s/bin/silgy_watcher.conf", G_appdir);
     lib_read_conf(config);
 
-    /* start log */
+    /* start log --------------------------------------------------------- */
 
     if ( G_logLevel && !log_start("watch", G_test) )
         return -1;
 
-    /* -------------------------------------------------------------------------- */
+    /* ------------------------------------------------------------------- */
 
     INF("Trying to connect...");
 
@@ -63,12 +65,12 @@ int main(int argc, char *argv[])
         INF("Restarting...");
         restart();
         log_finish();
-        return 0;
+        return EXIT_SUCCESS;
     }
 
     INF("Connected");
 
-    /* -------------------------------------------------------------------------- */
+    /* ------------------------------------------------------------------- */
 
     INF("Sending request...");
 
@@ -88,10 +90,10 @@ int main(int argc, char *argv[])
         close(conn);
         close(sockfd);
         log_finish();
-        return 0;
+        return EXIT_SUCCESS;
     }
 
-    /* -------------------------------------------------------------------------- */
+    /* ------------------------------------------------------------------- */
 
     INF("Reading response...");
 
@@ -107,14 +109,14 @@ int main(int argc, char *argv[])
         restart();
     }
 
-    /* -------------------------------------------------------------------------- */
+    /* ------------------------------------------------------------------- */
 
     close(conn);
     close(sockfd);
 
     log_finish();
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 

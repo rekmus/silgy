@@ -3209,7 +3209,7 @@ static void clean_up()
 -------------------------------------------------------------------------- */
 static void sigdisp(int sig)
 {
-    DBG("Exiting due to receiving signal: %d", sig);
+    INF("Exiting due to receiving signal: %d", sig);
     clean_up();
     exit(1);
 }

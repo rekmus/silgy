@@ -1,0 +1,9 @@
+#!/bin/sh
+
+echo Making silgy_service...
+
+g++ silgy_service.cpp silgy_service_eng.c silgy_lib.c \
+-s -O3 \
+-D ASYNC_SERVICE \
+-o $SILGYDIR/bin/silgy_service \
+-static

@@ -15,7 +15,7 @@
 /* globals */
 
 FILE        *G_log=NULL;            /* log file handle */
-char        G_logLevel=0;           /* log level */
+char        G_logLevel=4;           /* log level */
 char        G_appdir[256]=".";      /* application root dir */
 int         G_RESTTimeout=CALL_REST_DEFAULT_TIMEOUT;
 char        G_test=0;               /* test run */
@@ -3732,39 +3732,44 @@ void lib_shm_delete(long bytes)
 
 
 /* --------------------------------------------------------------------------
-  start a log. uses global G_log as file handler
+   Start a log. uses global G_log as file handler
 -------------------------------------------------------------------------- */
 bool log_start(const char *prefix, bool test)
 {
     char    fprefix[64]="";     /* formatted prefix */
     char    fname[512];         /* file name */
     char    ffname[512];        /* full file name */
+    char    fffname[512];       /* full file name with path */
 
     if ( prefix && prefix[0] )
         sprintf(fprefix, "%s_", prefix);
 
-    sprintf(fname, "%s/logs/%s%d%02d%02d_%02d%02d", G_appdir, fprefix, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
+    sprintf(fname, "%s%d%02d%02d_%02d%02d", fprefix, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
 
     if ( test )
         sprintf(ffname, "%s_t.log", fname);
     else
         sprintf(ffname, "%s.log", fname);
 
-    if ( NULL == (G_log=fopen(ffname, "a")) )
+    /* first try in ../logs ---------------------------------------------- */
+
+    sprintf(fffname, "../logs/%s", ffname);
+
+    if ( NULL == (G_log=fopen(fffname, "a")) )
     {
-        /* try in current directory */
+        /* try in SILGYDIR ----------------------------------------------- */
 
-        sprintf(fname, "%s%d%02d%02d_%02d%02d", fprefix, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
+        sprintf(fffname, "%s/logs/%s", G_appdir, ffname);
 
-        if ( test )
-            sprintf(ffname, "%s_t.log", fname);
-        else
-            sprintf(ffname, "%s.log", fname);
-
-        if ( NULL == (G_log=fopen(ffname, "a")) )
+        if ( NULL == (G_log=fopen(fffname, "a")) )
         {
-            printf("ERROR: Couldn't open log file. Make sure SILGYDIR is defined in your environment and there is a `logs' directory there.\n");
-            return FALSE;
+            /* try in current directory ---------------------------------- */
+
+            if ( NULL == (G_log=fopen(ffname, "a")) )
+            {
+                printf("ERROR: Couldn't open log file.\n");
+                return FALSE;
+            }
         }
     }
 
