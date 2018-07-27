@@ -98,6 +98,7 @@ typedef char                        bool;
 #define COLON_POSITION              (conn[ci].secure?5:4)
 
 /* defaults */
+
 #ifndef MEM_MEDIUM
 #ifndef MEM_BIG
 #ifndef MEM_HUGE
@@ -121,6 +122,7 @@ typedef char                        bool;
 #endif
 
 /* generate output as fast as possible */
+
 #ifdef NOSTPCPY /* alas! */
 
     #define HOUT(s)                     (strcpy(conn[ci].p_curr_h, s), conn[ci].p_curr_h += strlen(s))
@@ -361,6 +363,9 @@ typedef char                        bool;
 #define RES_CONTENT_DISPOSITION(s, ...) eng_set_res_content_disposition(ci, s, ##__VA_ARGS__)
 
 #define REDIRECT_TO_LANDING         sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host)
+
+#define OUT_HTML_HEADER             eng_out_html_header(ci)
+#define OUT_HTML_FOOTER             eng_out_html_footer(ci)
 
 
 /* HTTP status */
@@ -614,6 +619,8 @@ extern "C" {
     void eng_out_check(int ci, const char *str);
     void eng_out_check_realloc(int ci, const char *str);
     void eng_out_check_realloc_bin(int ci, const char *data, long len);
+    void eng_out_html_header(int ci);
+    void eng_out_html_footer(int ci);
 #ifdef ASYNC_SERVICE
     bool service_init(void);
     void service_app_process_req(const char *service, const char *req, char *res);

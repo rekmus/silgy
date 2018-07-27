@@ -3200,7 +3200,7 @@ static void sigdisp(int sig)
 
 
 /* --------------------------------------------------------------------------
-  generic message page
+   Generic message page
 -------------------------------------------------------------------------- */
 static void gen_page_msg(int ci, int msg)
 {
@@ -3214,14 +3214,18 @@ static void gen_page_msg(int ci, int msg)
 
     OUT("<!DOCTYPE html>");
     OUT("<html>");
-    OUT("<head><title>Web Server Message</title></head>");
-    OUT("<body>%s</body>", str);
+    OUT("<head>");
+    OUT("<title>%s</title>", APP_WEBSITE);
+    if ( REQ_MOB )  // if mobile request
+        OUT("<meta name=\"viewport\" content=\"width=device-width\">");
+    OUT("</head>");
+    OUT("<body><p>%s</p></body>", str);
     OUT("</html>");
 }
 
 
 /* --------------------------------------------------------------------------
-  init SSL
+   Init SSL
 -------------------------------------------------------------------------- */
 static bool init_ssl()
 {
@@ -3759,4 +3763,30 @@ void eng_out_check_realloc_bin(int ci, const char *data, long len)
         INF("Reallocated output buffer for ci=%d, new size = %ld bytes", ci, conn[ci].out_data_allocated);
         eng_out_check_realloc_bin(ci, data, len);       /* call itself! */
     }
+}
+
+
+/* --------------------------------------------------------------------------
+   Output standard HTML header
+-------------------------------------------------------------------------- */
+void eng_out_html_header(int ci)
+{
+    OUT("<!DOCTYPE html>");
+    OUT("<html>");
+    OUT("<head>");
+    OUT("<title>%s</title>", APP_WEBSITE);
+    if ( REQ_MOB )  // if mobile request
+        OUT("<meta name=\"viewport\" content=\"width=device-width\">");
+    OUT("</head>");
+    OUT("<body>");
+}
+
+
+/* --------------------------------------------------------------------------
+   Output standard HTML footer
+-------------------------------------------------------------------------- */
+void eng_out_html_footer(int ci)
+{
+    OUT("</body>");
+    OUT("</html>");
 }
