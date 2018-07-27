@@ -2890,9 +2890,9 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
 
                     /* save the pointer first as a parent record */
                     if ( inside_array )
-                        JSON_ADD_ARRAY_RECORD(*json, index, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
+                        lib_json_add_record(json, NULL, &M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], FALSE, index);
                     else
-                        JSON_ADD_RECORD(*json, key, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
+                        lib_json_add_record(json, key, &M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], FALSE, -1);
                     /* fill in the destination (children) */
                     char *closing;
                     if ( (closing=get_json_closing_bracket(src+i)) )
@@ -2925,9 +2925,9 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
 
                     /* save the pointer first as a parent record */
                     if ( inside_array )
-                        JSON_ADD_ARRAY_ARRAY(*json, index, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
+                        lib_json_add_record(json, NULL, &M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], TRUE, index);
                     else
-                        JSON_ADD_ARRAY(*json, key, M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
+                        lib_json_add_record(json, key, &M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], TRUE, -1);
                     /* fill in the destination (children) */
                     char *closing;
                     if ( (closing=get_json_closing_square_bracket(src+i)) )
@@ -2967,28 +2967,28 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
             if ( inside_array )
             {
                 if ( type==JSON_STRING )
-                    JSON_ADD_ARRAY_STR(*json, index, value);
+                    lib_json_add(json, NULL, value, 0, 0, JSON_STRING, index);
                 else if ( value[0]=='t' )
-                    JSON_ADD_ARRAY_BOOL(*json, index, 1);
+                    lib_json_add(json, NULL, NULL, 1, 0, JSON_BOOL, index);
                 else if ( value[0]=='f' )
-                    JSON_ADD_ARRAY_BOOL(*json, index, 0);
+                    lib_json_add(json, NULL, NULL, 0, 0, JSON_BOOL, index);
                 else if ( strchr(value, '.') )
-                    JSON_ADD_ARRAY_FLOAT(*json, index, atof(value));
+                    lib_json_add(json, NULL, NULL, 0, atof(value), JSON_FLOAT, index);
                 else
-                    JSON_ADD_ARRAY_INT(*json, index, atol(value));
+                    lib_json_add(json, NULL, NULL, atol(value), 0, JSON_INTEGER, index);
             }
             else
             {
                 if ( type==JSON_STRING )
-                    JSON_ADD_STR(*json, key, value);
+                    lib_json_add(json, key, value, 0, 0, JSON_STRING, -1);
                 else if ( value[0]=='t' )
-                    JSON_ADD_BOOL(*json, key, 1);
+                    lib_json_add(json, key, NULL, 1, 0, JSON_BOOL, -1);
                 else if ( value[0]=='f' )
-                    JSON_ADD_BOOL(*json, key, 0);
+                    lib_json_add(json, key, NULL, 0, 0, JSON_BOOL, -1);
                 else if ( strchr(value, '.') )
-                    JSON_ADD_FLOAT(*json, key, atof(value));
+                    lib_json_add(json, key, NULL, 0, atof(value), JSON_FLOAT, -1);
                 else
-                    JSON_ADD_INT(*json, key, atol(value));
+                    lib_json_add(json, key, NULL, atol(value), 0, JSON_INTEGER, -1);
             }
 
             now_value = 0;
