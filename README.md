@@ -581,9 +581,11 @@ Example:
 RES_CONTENT_DISPOSITION("attachment; filename=\"%s.csv\"", doc_name);
 ```
 ### void RES_DONT_CACHE
-Prevent response from being cached by browser.  
+Prevent response from being cached by browser.
+
 ### void REDIRECT_TO_LANDING
-Redirect browser to landing page.  
+Redirect browser to landing page.
+
 ### void ALWAYS(const char \*str[, ...]), void ERR(const char \*str[, ...]), void WAR(const char \*str[, ...]), void INF(const char \*str[, ...]), void DBG(const char \*str[, ...])
 Write *str* to log, depending on log level set in [conf file](https://github.com/silgy/silgy#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
 ```
@@ -600,25 +602,32 @@ ALWAYS("Server is starting");
 DBG("in a while loop, i = %d", i);
 ```
 If log level is set to 4, there's quite a lot of information logged, including full request and response HTTP headers, and every call flushes the buffer straight away, to help in investigation in case of crash.
+
 ### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
-Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.  
+Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.
+
 Example:
 ```source.c++
 CALL_ASYNC("get_customer", cust_id, 10);
 ```
+
 ### void CALL_ASYNC_NR(const char \*service, const char \*data)
-Call *service*. Response is not required.  
+Call *service*. Response is not required.
+
 Example:
 ```source.c++
 CALL_ASYNC_NR("set_counter", counter);
 ```
+
 ### bool S(const char \*string)
 Return TRUE if service matches *string*.  
-Example: see [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).  
-  
+Example: see [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).
+
 ## Functions
+
 ### void silgy_add_to_static_res(const char \*name, char \*src)
-Expose string *src* as a [static resource](https://github.com/silgy/silgy#static-resources). Instead of using a file, you may sometimes want to generate something like CSS. Once you've added it, it's visible the same way other statics are. *src* has to be a 0-terminated string.  
+Expose string *src* as a [static resource](https://github.com/silgy/silgy#static-resources). Instead of using a file, you may sometimes want to generate something like CSS. Once you've added it, it's visible the same way other statics are. *src* has to be a 0-terminated string.
+
 Example:
 ```source.c++
 #define COLOR_RED "#b40508"  // carefully crafted 'red' we want to use across the entire app
@@ -648,18 +657,25 @@ void create_css()  // called from app_init()
     silgy_add_to_static_res("mob.css", mob_min);
 }
 ```
+
 ### char \*silgy_html_esc(const char \*str)
 HTML-escape *str*, return pointer to a new string. Max length is 64 kB.
+
 ### char \*silgy_html_unesc(const char \*str)
 HTML-unescape *str*, return pointer to a new string. Max length is 64 kB.
+
 ### char \*silgy_sql_esc(const char \*str)
 SQL-escape *str*, return pointer to a new string. Max length is 64 kB.
+
 ### int silgy_minify(char \*dest, const char \*src)
 Minify CSS or JS. Return new length. Example: see [silgy_add_to_static_res()](https://github.com/silgy/silgy#void-silgy_add_to_static_resconst-char-name-char-src).
+
 ### void silgy_random(char \*dest, int len)
 Generate random string of *len* length and copy it to *dest*. Generated string can contain letters (lower- and upper-case) and digits.
+
 ### bool silgy_read_param(const char \*param, char \*dest)
-Copy config file parameter to a variable. Returns true if found. *dest* can be NULL to only do presence check.  
+Copy config file parameter to a variable. Returns true if found. *dest* can be NULL to only do presence check.
+
 Example:
 ```source.c++
 // in app_init()
@@ -669,8 +685,10 @@ if ( silgy_read_param("Param1", buffer) )
     // use buffer
 }
 ```
+
 ### void silgy_set_auth_level(const char \*resource, char level)
-Set required authorization level for a resource.  
+Set required authorization level for a resource.
+
 *level* can have one of the following values:
 
 macro|notes
@@ -689,48 +707,49 @@ silgy_set_auth_level("about", AUTH_LEVEL_NONE);
 silgy_set_auth_level("dashboard", AUTH_LEVEL_LOGGEDIN);
 silgy_set_auth_level("blockIP", AUTH_LEVEL_ADMIN);
 ```
+
 ## Engine callbacks
+
 ### void app_done()
 Called once, during termination.
+
 ### bool app_init(int argc, char \*argv[])
 Called once at the beginning, but after server init. Returning *true* means successful initialization. Good place to set authorization levels, generate statics, etc.
+
 ### void app_luses_init(int ci)
 Called when logged in user session is created.
+
 ### int app_process_req(int ci)
 This is the main entry point for Silgy web application logic. *ci* is a connection index, as there can be many connections served asynchronously at the same time. **Always pass ci down the calling stack** as this is required by most macros and functions. For examples, see [Hello World](https://github.com/silgy/silgy#hello-world).
+
 ### void app_uses_init(int ci)
 Called when a new user session is created.
+
 ### void app_uses_reset(int usi)
 Called when user session is closed.
+
 ### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
-[ASYNC](https://github.com/silgy/silgy#async) compilation switch is required.  
-  
-Process anynchronous call response.  
+[ASYNC](https://github.com/silgy/silgy#async) compilation switch is required.
+
+Finish page rendering after CALL_ASYNC has returned service response.
+
 Example:
 ```source.c++
 void app_async_done(int ci, const char *service, const char *data, bool timeouted)
 {
-    if ( S("get_customer") )
-    {
-        gen_header(ci);
-        if ( timeouted )
-        {
-            WAR("get_customer timeout-ed");
-            OUT("There was no response from get_customer service");
-        }
-        else
-            OUT(data);
-        gen_footer(ci);
-    }
-    else if ( S("get_records") )
+    if ( S("getCustomer") )
     {
         if ( timeouted )
         {
-            WAR("get_records timeout-ed");
-            OUT("-|get_records timeout-ed|\n");
+            WAR("getCustomer timeout-ed");
+            OUT("<p>There was no response from getCustomer service</p>");
         }
         else
-            OUT(data);
+        {
+            OUT("<p>Customer data: %s</p>", data);
+        }
+
+        OUT_HTML_FOOTER;
     }
 }
 ```
