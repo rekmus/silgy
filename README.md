@@ -8,19 +8,19 @@ That's why I've written Silgy. I think all the web applications in the world sho
 
 In Silgy you just compile and link your logic into one executable that responds immediately to HTTP requests, without creating a new thread or — God forbid — process. No layers, no dependencies, no layers, translations, layers, converters, layers...
 
-I repeat: all the web applications should be written in Silgy.
+What you get with Silgy:
 
-- **Lightning fast** − speed measured in µ-seconds.
-- **Safe** − nobody can ever see your application logic.
-- **Small memory footprint** − 17 MB for demo app − can be easily reduced for embedded apps.
-- **Simple coding** − three main macros do most of work, easy to understand even for a beginner programmer.
+- **Speed** − measured in µ-seconds.
+- **Safety** − nobody can ever see your application logic nor wander through your filesystem nor run scripts. It has build in protection against most popular attacks.
+- **Small memory footprint** − a couple of MB for demo app − can be easily reduced for embedded apps.
+- **Simple coding** − straightforward approach, easy to understand even for a beginner programmer [jump to Hello World](https://github.com/silgy/silgy#hello-world).
 - **All-In-One** − no need to install external modules; Silgy source already contains all the logic required to run the application.
 - **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around.
 - **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro), not even mentioning planet-friendliness.
 
-Silgy is written in ANSI C in order to support as many platforms and compilers as possible.
+Silgy is written in ANSI C in order to support as many platforms as possible and it's C++ compilers compatible. Sample [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) source module can be C as well as C++ code. Typical application code will look almost the same as in any of the C family language: C++, Java, JavaScript (before it has been destroyed with ES6 and all that arrow functions hell everyone thinks must be used, and hardly anyone really understands). All that could be automated, is automated.
 
-It aims to be All-In-One solution for writing typical web application, including HTTPS and handling anonymous and registered user sessions. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues. Macros [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) make it as simple as possible.
+It aims to be All-In-One solution for writing typical web application — traditional HTML rendering model, SPA or mixed. It handles HTTPS, and anonymous and registered user sessions — even with forgotten passwords. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues in an asynchronous manner, using Silgy's [ASYNC](https://github.com/silgy/silgy#async) facility. Macros [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) make it as simple as possible.
 
 Web applications like [Budgeter](https://budgeter.org) or [minishare](https://minishare.com) based on Silgy, fit in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds). Even with the network latency [it still shows](https://tools.pingdom.com/#!/bu4p3i/https://budgeter.org).
   
@@ -37,7 +37,7 @@ int app_process_req(int ci)
     return OK;
 }
 ```
-Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows). That's it, your application is now listening on the port 80 :)
+Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows). That's it, your application is now listening on the port 80 :) (If you want different port, add it as a command line argument)
 
 ## Some more details
 Silgy supports HTTPS, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism using shared memory/POSIX queues (Linux/UNIX).
@@ -338,11 +338,11 @@ g++ silgy_app.cpp silgy_eng.c silgy_lib.c -D HTTPS -D DBMYSQL ...
 ```
 
 ### ASYNC
-Use asynchronous module.
+Enable asynchronous module.
 
 If defined, the server opens two queues at the start: one for requests, one for responses. Then the app can use [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) to call the services, and [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted) will be called when the response arrives.
 
-There's also a service library, yet to be documented.
+Sample service module is [pretty simple](https://github.com/silgy/silgy/blob/master/src/silgy_service.cpp). Compile it with [ms](https://github.com/silgy/silgy/blob/master/src/ms) script.
 
 ### BLACKLISTAUTOUPDATE
 Automatically add malicious IPs to the file defined in *blockedIPList*.
