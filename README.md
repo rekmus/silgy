@@ -338,7 +338,8 @@ Because speed is Silgy's priority, every possible decision is taken at a compile
 
 Add your switches to [m](https://github.com/silgy/silgy/blob/master/src/m) before compilation, i.e.:
 ```
-g++ silgy_app.cpp silgy_eng.c silgy_lib.c -D HTTPS -D DBMYSQL ...
+g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
+-D HTTPS -D DBMYSQL ...
 ```
 
 ### ASYNC
@@ -347,6 +348,8 @@ Enable asynchronous module.
 If defined, the server opens two queues at the start: one for requests, one for responses. Then the app can use [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) to call the services, and [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted) will be called when the response arrives.
 
 Sample service module is [pretty simple](https://github.com/silgy/silgy/blob/master/src/silgy_service.cpp). Compile it with [ms](https://github.com/silgy/silgy/blob/master/src/ms) script.
+
+Note that mq is only available on Linux/UNIX platforms. I'm experimenting with Windows IPC, however it's not ready yet.
 
 ### BLACKLISTAUTOUPDATE
 Automatically add malicious IPs to the file defined in *blockedIPList*.
@@ -373,7 +376,10 @@ sudo yum install openssl-devel
 
 3. Add -D HTTPS and OpenSSL libraries to [m](https://github.com/silgy/silgy/blob/master/src/m), so it would look like this:
 ```
-g++ silgy_app.cpp silgy_eng.c silgy_lib.c -D HTTPS -o $SILGYDIR/bin/silgy_app_dev -lssl -lcrypto
+g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
+-D HTTPS \
+-o $SILGYDIR/bin/silgy_app \
+-lssl -lcrypto
 ```
 
 ### MEM_SMALL, MEM_MEDIUM, MEM_BIG, MEM_HUGE
@@ -612,7 +618,7 @@ Call *service*. *timeout* is in seconds. When the response arrives or timeout pa
 
 Example:
 ```source.c++
-CALL_ASYNC("get_customer", cust_id, 10);
+CALL_ASYNC("getCustomer", cust_id, 10);
 ```
 
 ### void CALL_ASYNC_NR(const char \*service, const char \*data)
@@ -620,7 +626,7 @@ Call *service*. Response is not required.
 
 Example:
 ```source.c++
-CALL_ASYNC_NR("set_counter", counter);
+CALL_ASYNC_NR("setCounter", counter);
 ```
 
 ### bool S(const char \*string)
