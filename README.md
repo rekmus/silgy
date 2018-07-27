@@ -207,30 +207,26 @@ Simple HTML with 2 pages:
 ```source.c++
 int app_process_req(int ci)
 {
-    OUT("<!DOCTYPE html>");
-    OUT("<head>");
-    OUT("<title>%s</title>", APP_WEBSITE);
-    OUT("</head>");
-    OUT("<body>");
-    OUT("<h1>%s</h1>", APP_WEBSITE);
-
     if ( REQ("") )  // landing page
     {
+        OUT_HTML_HEADER;
+        OUT("<h1>%s</h1>", APP_WEBSITE);
         OUT("<h2>Welcome to my web app!</h2>");
+        OUT_HTML_FOOTER;
     }
     else if ( REQ("about") )
     {
+        OUT_HTML_HEADER;
+        OUT("<h1>%s</h1>", APP_WEBSITE);
         OUT("<h2>About</h2>");
         OUT("<p>Hello World Sample Silgy Web Application</p>");
         OUT("<p><a href=\"/\">Back to landing page</a></p>");
+        OUT_HTML_FOOTER;
     }
     else  // page not found
     {
         ret = ERR_NOT_FOUND;
     }
-
-    OUT("</body>");
-    OUT("</html>");
 
     return OK;
 }
@@ -242,23 +238,19 @@ int app_process_req(int ci)
 {
     int ret=OK;
 
-    OUT("<!DOCTYPE html>");
-    OUT("<head>");
-    OUT("<title>%s</title>", APP_WEBSITE);
-    if ( REQ_MOB )  // if mobile request
-        OUT("<meta name=\"viewport\" content=\"width=device-width\">");
-    OUT("</head>");
-
-    OUT("<body>");
-    OUT("<h1>%s</h1>", APP_WEBSITE);
-
     if ( REQ("") )  // landing page
     {
+        OUT_HTML_HEADER;
+        OUT("<h1>%s</h1>", APP_WEBSITE);
         OUT("<h2>Welcome to my web app!</h2>");
         OUT("<p>Click <a href=\"welcome\">here</a> to try my welcoming bot.</p>");
+        OUT_HTML_FOOTER;
     }
     else if ( REQ("welcome") )  // welcoming bot
     {
+        OUT_HTML_HEADER;
+        OUT("<h1>%s</h1>", APP_WEBSITE);
+
         // show form
 
         OUT("<p>Please enter your name:</p>");
@@ -277,14 +269,13 @@ int app_process_req(int ci)
         // show link to main page
 
         OUT("<p><a href=\"/\">Back to landing page</a></p>");
+
+        OUT_HTML_FOOTER;
     }
     else  // page not found
     {
         ret = ERR_NOT_FOUND;  // this will return status 404 to the browser
     }
-
-    OUT("</body>");
-    OUT("</html>");
 
     return ret;
 }
