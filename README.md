@@ -300,7 +300,7 @@ httpsPort=443
 # ----------------------------------------------------------------------------
 # HTTPS
 
-# mandatory
+# mandatory if HTTPS is enabled
 certFile=/etc/letsencrypt/live/example.com/fullchain.pem
 keyFile=/etc/letsencrypt/live/example.com/privkey.pem
 
