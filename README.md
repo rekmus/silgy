@@ -11,7 +11,7 @@ In Silgy you just compile and link your logic into one executable that responds 
 What you get with Silgy:
 
 - **Speed** − measured in µ-seconds.
-- **Safety** − nobody can ever see your application logic nor wander through your filesystem nor run scripts. It has build in protection against most popular attacks.
+- **Safety** − nobody can ever see your application logic nor wander through your filesystem nor run scripts. It has build-in protection against most popular attacks.
 - **Small memory footprint** − a couple of MB for demo app − can be easily reduced for embedded apps.
 - **Simple coding** − straightforward approach, easy to understand even for a beginner programmer [jump to Hello World](https://github.com/silgy/silgy#hello-world).
 - **All-In-One** − no need to install external modules; Silgy source already contains all the logic required to run the application.
@@ -39,10 +39,14 @@ int app_process_req(int ci)
 ```
 Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows). That's it, your application is now listening on the port 80 :) (If you want different port, add it as a command line argument)
 
-## Some more details
-Silgy supports HTTPS, anonymous and registered user sessions, binary data upload and rudimentary asynchronous services mechanism using shared memory/POSIX queues (Linux/UNIX).
+## Requirements
+Silgy is being developed around the idea of using as much generic environment as possible. Therefore it requires only three things:
 
-Silgy requires Linux/UNIX or Windows computer with C or C++ compiler for development. GCC is recommended (which is known as MinGW on Windows). Fuss-free deployment and cloud vendor independency means that production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
+1. Computer with operating system (Linux / UNIX / Windows),
+2. C/C++ compiler. I recommend GCC (which is known as MinGW on Windows, AFAIK it is also used by CodeBlocks).
+3. Silgy [src](https://github.com/silgy/silgy/tree/master/src).
+
+Fuss-free deployment and cloud vendor independency means that production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 
 ## Priorities / tradeoffs
 Every project on Earth has them. So you'd better know.
