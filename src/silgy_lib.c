@@ -39,6 +39,9 @@ static int  M_shmid;                /* SHM id */
 
 static rest_header_t M_rest_headers[REST_MAX_HEADERS];
 static int M_rest_headers_cnt=0;
+#ifdef HTTPS
+static SSL_CTX *M_ssl_ctx=NULL;
+#endif
 #ifdef AUTO_INIT_EXPERIMENT
 static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers for auto-init */
 static int M_jsons_cnt=0;
@@ -55,6 +58,66 @@ static int minify_2(char *dest, const char *src);
 static void get_byteorder32(void);
 static void get_byteorder64(void);
 
+
+#include <openssl/err.h>
+
+/* --------------------------------------------------------------------------
+   Log SSL error
+-------------------------------------------------------------------------- */
+static void log_ssl() 
+{ 
+    char buf[256]; 
+    u_long err; 
+
+    while ( (err=ERR_get_error()) != 0 )
+    { 
+        ERR_error_string_n(err, buf, sizeof(buf)); 
+        ERR(buf); 
+    } 
+} 
+
+
+/* --------------------------------------------------------------------------
+   Init SSL for a client
+-------------------------------------------------------------------------- */
+static bool init_ssl_client()
+{
+#ifdef HTTPS
+
+#ifndef __linux__
+#ifndef _WIN32
+    /* AIX */
+    SSL_METHOD  *method;
+#else
+    const SSL_METHOD    *method;
+#endif
+#else
+    const SSL_METHOD    *method;
+#endif
+
+    DBG("init_ssl (silgy_lib)");
+
+    method = SSLv23_client_method();    /* negotiate the highest protocol version supported by both the server and the client */
+
+    M_ssl_ctx = SSL_CTX_new(method);    /* create new context from method */
+
+    if ( M_ssl_ctx == NULL )
+    {
+        ERR("SSL_CTX_new failed");
+        return FALSE;
+    }
+
+    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+    SSL_CTX_set_options(M_ssl_ctx, flags);
+
+    /* temporarily ignore server cert errors */
+
+    WAR("Ignoring remote server cert errors for REST calls");
+    SSL_CTX_set_verify(M_ssl_ctx, SSL_VERIFY_NONE, NULL);
+
+#endif
+    return TRUE;
+}
 
 
 /* --------------------------------------------------------------------------
@@ -156,6 +219,19 @@ void lib_rest_header_unset(const char *key)
 /* --------------------------------------------------------------------------
    REST call
 -------------------------------------------------------------------------- */
+static void close_conn(int sock)
+{
+#ifdef _WIN32   /* Windows */
+    closesocket(sock);
+#else
+    close(sock);
+#endif  /* _WIN32 */
+}
+
+
+/* --------------------------------------------------------------------------
+   REST call
+-------------------------------------------------------------------------- */
 bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json)
 {
 #ifdef _WIN32   /* Windows */
@@ -170,6 +246,11 @@ static char buffer[JSON_BUFSIZE];
     static struct sockaddr_in serv_addr;
     int len, i, j;
     bool endingslash=FALSE;
+#ifdef HTTPS
+    bool secure=FALSE;
+    SSL  *ssl;
+    int  ssl_err;
+#endif /* HTTPS */
 
     DBG("lib_rest_req [%s] [%s]", method, url);
 
@@ -200,8 +281,34 @@ static char buffer[JSON_BUFSIZE];
     }
     else if ( len > 7 && url[0]=='h' && url[1]=='t' && url[2]=='t' && url[3]=='p' && url[4]=='s' && url[5]==':' )
     {
-        ERR("HTTPS is not currently supported in REST calls");
+#ifdef HTTPS
+        secure = TRUE;
+        
+        url += 8;
+        len -= 8;
+        if ( len < 1 )
+        {
+            ERR("url too short (2)");
+            return FALSE;
+        }
+
+        if ( !M_ssl_ctx && !init_ssl_client() )   /* first time */
+        {
+            ERR("init_ssl failed");
+            return FALSE;
+        }
+        
+        ssl = SSL_new(M_ssl_ctx);
+
+        if ( !ssl )
+        {
+            ERR("SSL_new failed");
+            return FALSE;
+        }
+#else
+        ERR("HTTPS is not enabled");
         return FALSE;
+#endif /* HTTPS */
     }
 
 //    DBG("url [%s]", url);
@@ -244,7 +351,11 @@ static char buffer[JSON_BUFSIZE];
             strcpy(host, url);
             uri[0] = EOS;
         }
-
+#ifdef HTTPS
+        if ( secure )
+            strcpy(port, "443");
+        else
+#endif /* HTTPS */
         strcpy(port, "80");
     }
 
@@ -301,33 +412,65 @@ static char buffer[JSON_BUFSIZE];
 #endif
         lib_setnonblocking(sockfd);
 
-        /* ------------------------------------------------------------------------------------------ */
+        /* plain socket connection --------------------------------------- */
 
         if ( (connection=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 )
         {
             break;  /* immediate success */
         }
-        else if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, 0, G_RESTTimeout) == 0 )
+        else if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, 0, G_RESTTimeout, NULL, 0) == 0 )
         {
             break;  /* success within timeout */
         }
 
-#ifdef _WIN32   /* Windows */
-        closesocket(sockfd);
-#else
-        close(sockfd);
-#endif  /* _WIN32 */
+        close_conn(sockfd);     /* no cigar */
     }
 
     if ( rp == NULL )     /* No address succeeded */
     {
         ERR("Could not connect");
+        close_conn(sockfd);
         return FALSE;
     }
 
     freeaddrinfo(result);   /* No longer needed */
 
     DBG("Connected");
+
+    /* -------------------------------------------------------------------------- */
+
+#ifdef HTTPS
+    if ( secure )
+    {
+        DBG("Trying SSL_connect...");
+
+        int ret = SSL_set_fd(ssl, sockfd);
+
+        if ( ret <= 0 )
+        {
+            ERR("SSL_set_fd failed, ret = %d", ret);
+            close_conn(sockfd);
+            return FALSE;
+        }
+
+        ret = SSL_connect(ssl);
+#ifdef DUMP
+        DBG("ret = %d", ret);    /* 1 = success */
+#endif
+        if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, ret, G_RESTTimeout, ssl, 0) == 1 )
+        {
+            DBG("SSL_connect successful");
+        }
+        else
+        {
+            ERR("SSL_connect failed");
+            close_conn(sockfd);
+            return FALSE;
+        }
+
+//        cert = SSL_get_peer_certificate(ssl);
+    }
+#endif /* HTTPS */
 
     /* -------------------------------------------------------------------------- */
 
@@ -387,21 +530,31 @@ static char buffer[JSON_BUFSIZE];
     DBG("------------------------------------------------------------");
 #endif /* DUMP */
 
+#ifdef HTTPS
+    if ( secure )
+        bytes = lib_finish_with_timeout(sockfd, WRITE, buffer, strlen(buffer), G_RESTTimeout, ssl, 0);
+    else
+#endif /* HTTPS */
     bytes = send(sockfd, buffer, strlen(buffer), 0);
 
     if ( bytes < 15 )
     {
-        bytes += lib_finish_with_timeout(sockfd, WRITE, buffer+bytes, strlen(buffer)-bytes, G_RESTTimeout);
-        
+#ifndef HTTPS
+        bytes += lib_finish_with_timeout(sockfd, WRITE, buffer+bytes, strlen(buffer)-bytes, G_RESTTimeout, NULL, 0);
+#endif
         if ( bytes < 15 )
         {
             ERR("send failed, errno = %d (%s)", errno, strerror(errno));
+#ifdef HTTPS
+            if ( secure )
+            {
+                ssl_err = SSL_get_error(ssl, bytes);
+                ERR("SSL_write failed, ssl_err = %d", ssl_err);
+                log_ssl();
+            }
+#endif
             close(connection);
-#ifdef _WIN32   /* Windows */
-            closesocket(sockfd);
-#else
-            close(sockfd);
-#endif  /* _WIN32 */
+            close_conn(sockfd);
             return FALSE;
         }
     }
@@ -410,9 +563,20 @@ static char buffer[JSON_BUFSIZE];
 
     DBG("Reading response...");
 
-    if ( (bytes=recv(sockfd, buffer, JSON_BUFSIZE-1, 0)) == -1 )
+#ifdef HTTPS
+    if ( secure )
+        bytes = SSL_read(ssl, buffer, JSON_BUFSIZE-1);
+    else
+#endif /* HTTPS */
+    bytes = recv(sockfd, buffer, JSON_BUFSIZE-1, 0);
+
+    if ( bytes == -1 )
     {
-        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, G_RESTTimeout);
+#ifdef HTTPS
+        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, G_RESTTimeout, secure?ssl:NULL, 0);
+#else
+        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, G_RESTTimeout, NULL, 0);
+#endif
 
         if ( bytes <= 0 )
             ERR("recv failed, errno = %d (%s)", errno, strerror(errno));
@@ -422,13 +586,25 @@ static char buffer[JSON_BUFSIZE];
 
     if ( bytes > 0 )     /* there may be payload sent as a second write on the other side */
     {
+#ifdef DUMP
         DBG("trying again");
-
+#endif
         long current_bytes;
 
-        if ( (current_bytes=recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0)) == -1 )
+#ifdef HTTPS
+        if ( secure )
+            current_bytes = SSL_read(ssl, buffer+bytes, JSON_BUFSIZE-bytes-1);
+        else
+#endif /* HTTPS */
+        current_bytes = recv(sockfd, buffer+bytes, JSON_BUFSIZE-bytes-1, 0);
+
+        if ( current_bytes == -1 )
         {
-            current_bytes = lib_finish_with_timeout(sockfd, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, G_RESTTimeout);
+#ifdef HTTPS
+            current_bytes = lib_finish_with_timeout(sockfd, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, G_RESTTimeout, secure?ssl:NULL, 0);
+#else
+            current_bytes = lib_finish_with_timeout(sockfd, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, G_RESTTimeout, NULL, 0);
+#endif
 
             if ( current_bytes > 0 )
                 bytes += current_bytes;
@@ -436,11 +612,7 @@ static char buffer[JSON_BUFSIZE];
     }
 
     close(connection);
-#ifdef _WIN32   /* Windows */
-    closesocket(sockfd);
-#else
-    close(sockfd);
-#endif  /* _WIN32 */
+    close_conn(sockfd);
 
     /* -------------------------------------------------------------------------- */
     /* parse the response                                                         */
@@ -510,13 +682,32 @@ static char buffer[JSON_BUFSIZE];
 /* --------------------------------------------------------------------------
    Finish socket operation with timeout
 -------------------------------------------------------------------------- */
-int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int msec)
+int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int msec, void *ssl, int level)
 {
     int             sockerr;
     struct timeval  timeout;
     fd_set          readfds;
     fd_set          writefds;
     int             socks=0;
+
+    sockerr = errno;
+
+#ifdef DUMP
+    if ( readwrite==READ )
+        DBG("lib_finish_with_timeout READ");
+    else if ( readwrite==WRITE )
+        DBG("lib_finish_with_timeout WRITE");
+    else
+        DBG("lib_finish_with_timeout CONNECT");
+#endif
+
+    if ( level > 100 )
+    {
+        ERR("lib_finish_with_timeout -- too many levels");
+        return -1;
+    }
+
+    /* get the error code ------------------------------------------------ */
 
 #ifdef _WIN32   /* Windows */
 
@@ -531,17 +722,17 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
         return -1;
     }
 
-#else
+#else   /* Linux */
 
-    sockerr = errno;
-
-    if ( sockerr != EWOULDBLOCK && sockerr != EINPROGRESS )
+    if ( sockerr != 0 && sockerr != EWOULDBLOCK && sockerr != EINPROGRESS )
     {
         ERR("sockerr = %d (%s)", sockerr, strerror(sockerr));
         return -1;
     }
 
 #endif  /* _WIN32 */
+
+    /* set up timeout for select ----------------------------------------- */
 
     if ( msec < 1000 )
     {
@@ -553,6 +744,8 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
         timeout.tv_sec = msec/1000;
         timeout.tv_usec = (msec-((int)(msec/1000)*1000))*1000;
     }
+
+    /* set up fd-s ------------------------------------------------------- */
 
     if ( readwrite == READ )
     {
@@ -567,6 +760,7 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
         socks = select(sock+1, NULL, &writefds, NULL, &timeout);
     }
 
+    /* process select result --------------------------------------------- */
 
     if ( socks < 0 )
     {
@@ -575,19 +769,121 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
     }
     else if ( socks == 0 )
     {
-        WAR("lib_finish_with_timeout timeouted");
+        WAR("lib_finish_with_timeout timeouted (was waiting for %d ms)", msec);
         return -1;
     }
-    else
+    else    /* socket is ready for I/O */
     {
+#ifdef DUMP
         DBG("lib_finish_with_timeout OK");
+#endif
+#ifdef HTTPS
+        int bytes, ssl_err;
+        char ec[128]="";
+#endif
 
         if ( readwrite == READ )
-            return recv(sock, buffer, len, 0);
-        else if ( readwrite == WRITE )
-            return send(sock, buffer, len, 0);
+        {
+#ifdef HTTPS
+            if ( ssl )
+            {
+                if ( buffer )
+                    bytes = SSL_read((SSL*)ssl, buffer, len);
+                else    /* connect */
+                    bytes = SSL_connect((SSL*)ssl);
 
-        return 0;   /* for CONNECT */
+                if ( bytes > 0 )
+                {
+                    return bytes;
+                }
+                else
+                {
+                    ssl_err = SSL_get_error((SSL*)ssl, bytes);
+#ifdef DUMP
+                    if ( ssl_err == SSL_ERROR_SYSCALL )
+                        sprintf(ec, ", errno = %d (%s)", sockerr, strerror(sockerr));
+
+                    DBG("bytes = %d, ssl_err = %d%s", bytes, ssl_err, ec);
+#endif /* DUMP */
+                    if ( ssl_err==SSL_ERROR_WANT_READ )
+                        return lib_finish_with_timeout(sock, READ, buffer, len, msec, ssl, level+1);
+                    else if ( ssl_err==SSL_ERROR_WANT_WRITE )
+                        return lib_finish_with_timeout(sock, WRITE, buffer, len, msec, ssl, level+1);
+                    else
+                    {
+                        DBG("SSL_read error %d", ssl_err);
+                        return -1;
+                    }
+                }
+            }
+            else
+#endif /* HTTPS */
+                return recv(sock, buffer, len, 0);
+        }
+        else if ( readwrite == WRITE )
+        {
+#ifdef HTTPS
+            if ( ssl )
+            {
+                if ( buffer )
+                    bytes = SSL_write((SSL*)ssl, buffer, len);
+                else    /* connect */
+                    bytes = SSL_connect((SSL*)ssl);
+
+                if ( bytes > 0 )
+                {
+                    return bytes;
+                }
+                else
+                {
+                    ssl_err = SSL_get_error((SSL*)ssl, bytes);
+#ifdef DUMP
+                    if ( ssl_err == SSL_ERROR_SYSCALL )
+                        sprintf(ec, ", errno = %d (%s)", sockerr, strerror(sockerr));
+
+                    DBG("bytes = %d, ssl_err = %d%s", bytes, ssl_err, ec);
+#endif /* DUMP */
+                    if ( ssl_err==SSL_ERROR_WANT_WRITE )
+                        return lib_finish_with_timeout(sock, WRITE, buffer, len, msec, ssl, level+1);
+                    else if ( ssl_err==SSL_ERROR_WANT_READ )
+                        return lib_finish_with_timeout(sock, READ, buffer, len, msec, ssl, level+1);
+                    else
+                    {
+                        DBG("SSL_write error %d", ssl_err);
+                        return -1;
+                    }
+                }
+            }
+            else
+#endif /* HTTPS */
+                return send(sock, buffer, len, 0);
+        }
+        else   /* CONNECT */
+        {
+#ifdef HTTPS
+            if ( ssl )
+            {
+                ssl_err = SSL_get_error((SSL*)ssl, len);
+#ifdef DUMP
+                if ( ssl_err == SSL_ERROR_SYSCALL )
+                    sprintf(ec, ", errno = %d (%s)", sockerr, strerror(sockerr));
+
+                DBG("error = %d, ssl_err = %d%s", len, ssl_err, ec);
+#endif /* DUMP */
+                if ( ssl_err==SSL_ERROR_WANT_WRITE )
+                    return lib_finish_with_timeout(sock, WRITE, NULL, 0, msec, ssl, level+1);
+                else if ( ssl_err==SSL_ERROR_WANT_READ )
+                    return lib_finish_with_timeout(sock, READ, NULL, 0, msec, ssl, level+1);
+                else
+                {
+                    DBG("SSL_connect error %d", ssl_err);
+                    return -1;
+                }
+            }
+            else
+#endif /* HTTPS */
+            return 0;
+        }
     }
 }
 

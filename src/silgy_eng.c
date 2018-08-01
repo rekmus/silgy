@@ -264,7 +264,11 @@ struct timeval  timeout;                    /* Timeout for select */
     DBG("M_listening_sec_fd = %d", M_listening_sec_fd);
 
     /* So that we can re-bind to it without TIME_WAIT problems */
+#ifdef _WIN32   /* Windows */
+    setsockopt(M_listening_sec_fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse_addr, sizeof(reuse_addr));
+#else
     setsockopt(M_listening_sec_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+#endif
 
     /* Set socket to non-blocking with our lib_setnonblocking routine */
     lib_setnonblocking(M_listening_sec_fd);
@@ -458,7 +462,7 @@ struct timeval  timeout;                    /* Timeout for select */
                             {
 #ifdef DUMP
                                 DBG("Trying SSL_read from fd=%d", conn[i].fd);
-#endif /* DUMP */
+#endif
                                 bytes = SSL_read(conn[i].ssl, conn[i].in, IN_BUFSIZE-1);
                                 if ( bytes > 1 )
                                     conn[i].in[bytes] = EOS;
@@ -839,7 +843,7 @@ static void set_state(int ci, long bytes)
 static void set_state_sec(int ci, long bytes)
 {
     int     e;
-    char    ec[64]="";
+    char    ec[128]="";
 #ifdef HTTPS
     e = errno;
 
@@ -3225,22 +3229,27 @@ static void gen_page_msg(int ci, int msg)
 
 
 /* --------------------------------------------------------------------------
-   Init SSL
+   Init SSL for a server
 -------------------------------------------------------------------------- */
 static bool init_ssl()
 {
 #ifdef HTTPS
-#ifdef __linux__
-    const SSL_METHOD    *method;
-#else
+#ifndef __linux__
+#ifndef _WIN32
+    /* AIX */
     SSL_METHOD  *method;
+#else
+    const SSL_METHOD    *method;
+#endif
+#else
+    const SSL_METHOD    *method;
 #endif
     /*
        From Hynek Schlawack's blog:
        https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers
        https://www.ssllabs.com/ssltest
     */
-    char                ciphers[256]="ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS";
+    char ciphers[256]="ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS";
 
     DBG("init_ssl");
 
