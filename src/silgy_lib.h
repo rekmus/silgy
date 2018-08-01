@@ -75,7 +75,7 @@ typedef struct {
 #define CALL_REST_HTTP(req,res,m,u) CALL_REST_RAW(req,res,m,u)
 #define CALL_REST(req,res,m,u)      CALL_REST_JSON(req,res,m,u)
 
-#define CALL_REST_DEFAULT_TIMEOUT   500     /* in ms -- to avoid blocking */
+#define CALL_REST_DEFAULT_TIMEOUT   750     /* in ms -- to avoid blocking */
 
 
 

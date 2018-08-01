@@ -237,22 +237,23 @@ static void close_conn(int sock)
 bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json)
 {
 #ifdef _WIN32   /* Windows */
-    SOCKET sockfd;
-    int winErr;
+    SOCKET  sockfd;
+    int     winErr;
 #else
-    int sockfd;
+    int     sockfd;
 #endif  /* _WIN32 */
-    int connection;
-    long bytes;
+    int     connection;
+    long    bytes;
 static char buffer[JSON_BUFSIZE];
     static struct sockaddr_in serv_addr;
-    int len, i, j;
-    bool endingslash=FALSE;
+    int     len, i, j;
+    bool    endingslash=FALSE;
 #ifdef HTTPS
-    bool secure=FALSE;
-    SSL  *ssl;
-    int  ssl_err;
+    bool    secure=FALSE;
+    SSL     *ssl;
+    int     ssl_err;
 #endif /* HTTPS */
+    int     timeout_remain = G_RESTTimeout;
 
     DBG("lib_rest_req [%s] [%s]", method, url);
 
@@ -367,10 +368,10 @@ static char buffer[JSON_BUFSIZE];
 
 //    return FALSE;   /* parsing tests... */
 
-#ifdef DUMP
+//#ifdef DUMP
     struct timespec start;
     clock_gettime(MONOTONIC_CLOCK_NAME, &start);
-#endif
+//#endif
 
     /* -------------------------------------------------------------------------- */
 
@@ -421,11 +422,20 @@ static char buffer[JSON_BUFSIZE];
 
         /* plain socket connection --------------------------------------- */
 
+/*        int timeout_conn = G_RESTTimeout * 0.7;
+        int timeout_req = G_RESTTimeout * 0.15;
+        int timeout_res = G_RESTTimeout * 0.15;
+#ifdef DUMP
+        DBG("timeout_conn = %d", timeout_conn);
+        DBG("timeout_req = %d", timeout_req);
+        DBG("timeout_res = %d", timeout_res);
+#endif */
+
         if ( (connection=connect(sockfd, rp->ai_addr, rp->ai_addrlen)) != -1 )
         {
             break;  /* immediate success */
         }
-        else if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, 0, G_RESTTimeout, NULL, 0) == 0 )
+        else if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, 0, timeout_remain, NULL, 0) == 0 )
         {
             break;  /* success within timeout */
         }
@@ -445,6 +455,10 @@ static char buffer[JSON_BUFSIZE];
 #ifdef DUMP
     DBG("elapsed after plain connect: %.3lf ms", lib_elapsed(&start));
 #endif
+
+    timeout_remain = G_RESTTimeout - lib_elapsed(&start);
+    if ( timeout_remain < 1 ) timeout_remain = 1;
+    DBG("timeout_remain = %d", timeout_remain);
 
     DBG("Connected");
 
@@ -468,7 +482,7 @@ static char buffer[JSON_BUFSIZE];
 #ifdef DUMP
         DBG("ret = %d", ret);    /* 1 = success */
 #endif
-        if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, ret, G_RESTTimeout, ssl, 0) == 1 )
+        if ( lib_finish_with_timeout(sockfd, CONNECT, NULL, ret, timeout_remain, ssl, 0) == 1 )
         {
             DBG("SSL_connect successful");
         }
@@ -482,6 +496,10 @@ static char buffer[JSON_BUFSIZE];
 #ifdef DUMP
     DBG("elapsed after SSL connect: %.3lf ms", lib_elapsed(&start));
 #endif
+
+    timeout_remain = G_RESTTimeout - lib_elapsed(&start);
+    if ( timeout_remain < 1 ) timeout_remain = 1;
+    DBG("timeout_remain = %d", timeout_remain);
 
 //        cert = SSL_get_peer_certificate(ssl);
     }
@@ -547,15 +565,19 @@ static char buffer[JSON_BUFSIZE];
 
 #ifdef HTTPS
     if ( secure )
-        bytes = lib_finish_with_timeout(sockfd, WRITE, buffer, strlen(buffer), G_RESTTimeout, ssl, 0);
+        bytes = lib_finish_with_timeout(sockfd, WRITE, buffer, strlen(buffer), timeout_remain, ssl, 0);
     else
 #endif /* HTTPS */
     bytes = send(sockfd, buffer, strlen(buffer), 0);
 
+    timeout_remain = G_RESTTimeout - lib_elapsed(&start);
+    if ( timeout_remain < 1 ) timeout_remain = 1;
+    DBG("timeout_remain = %d", timeout_remain);
+
     if ( bytes < 15 )
     {
 #ifndef HTTPS
-        bytes += lib_finish_with_timeout(sockfd, WRITE, buffer+bytes, strlen(buffer)-bytes, G_RESTTimeout, NULL, 0);
+        bytes += lib_finish_with_timeout(sockfd, WRITE, buffer+bytes, strlen(buffer)-bytes, timeout_remain, NULL, 0);
 #endif
         if ( bytes < 15 )
         {
@@ -578,6 +600,10 @@ static char buffer[JSON_BUFSIZE];
     DBG("elapsed after request: %.3lf ms", lib_elapsed(&start));
 #endif
 
+    timeout_remain = G_RESTTimeout - lib_elapsed(&start);
+    if ( timeout_remain < 1 ) timeout_remain = 1;
+    DBG("timeout_remain = %d", timeout_remain);
+
     /* -------------------------------------------------------------------------- */
 
     DBG("Reading response...");
@@ -592,9 +618,9 @@ static char buffer[JSON_BUFSIZE];
     if ( bytes == -1 )
     {
 #ifdef HTTPS
-        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, G_RESTTimeout, secure?ssl:NULL, 0);
+        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, timeout_remain, secure?ssl:NULL, 0);
 #else
-        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, G_RESTTimeout, NULL, 0);
+        bytes = lib_finish_with_timeout(sockfd, READ, buffer, JSON_BUFSIZE-1, timeout_remain, NULL, 0);
 #endif
 
         if ( bytes <= 0 )
@@ -608,6 +634,10 @@ static char buffer[JSON_BUFSIZE];
 #ifdef DUMP
         DBG("trying again");
 #endif
+        timeout_remain = G_RESTTimeout - lib_elapsed(&start);
+        if ( timeout_remain < 1 ) timeout_remain = 1;
+        DBG("timeout_remain = %d", timeout_remain);
+
         long current_bytes;
 
 #ifdef HTTPS
@@ -620,9 +650,9 @@ static char buffer[JSON_BUFSIZE];
         if ( current_bytes == -1 )
         {
 #ifdef HTTPS
-            current_bytes = lib_finish_with_timeout(sockfd, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, G_RESTTimeout, secure?ssl:NULL, 0);
+            current_bytes = lib_finish_with_timeout(sockfd, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, timeout_remain, secure?ssl:NULL, 0);
 #else
-            current_bytes = lib_finish_with_timeout(sockfd, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, G_RESTTimeout, NULL, 0);
+            current_bytes = lib_finish_with_timeout(sockfd, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, timeout_remain, NULL, 0);
 #endif
 
             if ( current_bytes > 0 )
