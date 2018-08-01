@@ -393,10 +393,12 @@ static char buffer[JSON_BUFSIZE];
         return FALSE;
     }
 
+#ifdef DUMP
+    DBG("elapsed after getaddrinfo: %.3lf ms", lib_elapsed(&start));
+#endif
+
     /* getaddrinfo() returns a list of address structures.
-       Try each address until we successfully connect(2).
-       If socket(2) (or connect(2)) fails, we (close the socket
-       and) try the next address. */
+       Try each address until we successfully connect */
 
     DBG("Trying to connect...");
 
@@ -413,7 +415,11 @@ static char buffer[JSON_BUFSIZE];
         DBG("socket succeeded");
 #endif
 
-        /* Windows timeout option is a s**t */
+#ifdef DUMP
+    DBG("elapsed after socket: %.3lf ms", lib_elapsed(&start));
+#endif
+
+        /* Windows timeout option is a s**t -- go for non-blocking I/O */
 
 #ifdef DUMP
         DBG("Setting socket to non-blocking...");
@@ -494,12 +500,11 @@ static char buffer[JSON_BUFSIZE];
         }
 
 #ifdef DUMP
-    DBG("elapsed after SSL connect: %.3lf ms", lib_elapsed(&start));
+        DBG("elapsed after SSL connect: %.3lf ms", lib_elapsed(&start));
 #endif
-
-    timeout_remain = G_RESTTimeout - lib_elapsed(&start);
-    if ( timeout_remain < 1 ) timeout_remain = 1;
-    DBG("timeout_remain = %d", timeout_remain);
+        timeout_remain = G_RESTTimeout - lib_elapsed(&start);
+        if ( timeout_remain < 1 ) timeout_remain = 1;
+        DBG("timeout_remain = %d", timeout_remain);
 
 //        cert = SSL_get_peer_certificate(ssl);
     }
