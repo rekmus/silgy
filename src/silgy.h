@@ -56,7 +56,7 @@ typedef char                        bool;
 #endif
 
 
-#define WEB_SERVER_VERSION          "3.4"
+#define WEB_SERVER_VERSION          "3.4.1"
 
 
 /* for use with booleans */

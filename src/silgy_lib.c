@@ -59,6 +59,8 @@ static void get_byteorder32(void);
 static void get_byteorder64(void);
 
 
+#ifdef HTTPS
+
 #include <openssl/err.h>
 
 /* --------------------------------------------------------------------------
@@ -75,7 +77,7 @@ static void log_ssl()
         ERR(buf); 
     } 
 } 
-
+#endif /* HTTPS */
 
 /* --------------------------------------------------------------------------
    Init SSL for a client
@@ -115,7 +117,7 @@ static bool init_ssl_client()
     WAR("Ignoring remote server cert errors for REST calls");
     SSL_CTX_set_verify(M_ssl_ctx, SSL_VERIFY_NONE, NULL);
 
-#endif
+#endif /* HTTPS */
     return TRUE;
 }
 
@@ -365,6 +367,11 @@ static char buffer[JSON_BUFSIZE];
 
 //    return FALSE;   /* parsing tests... */
 
+#ifdef DUMP
+    struct timespec start;
+    clock_gettime(MONOTONIC_CLOCK_NAME, &start);
+#endif
+
     /* -------------------------------------------------------------------------- */
 
     DBG("getaddrinfo...");
@@ -435,6 +442,10 @@ static char buffer[JSON_BUFSIZE];
 
     freeaddrinfo(result);   /* No longer needed */
 
+#ifdef DUMP
+    DBG("elapsed after plain connect: %.3lf ms", lib_elapsed(&start));
+#endif
+
     DBG("Connected");
 
     /* -------------------------------------------------------------------------- */
@@ -467,6 +478,10 @@ static char buffer[JSON_BUFSIZE];
             close_conn(sockfd);
             return FALSE;
         }
+
+#ifdef DUMP
+    DBG("elapsed after SSL connect: %.3lf ms", lib_elapsed(&start));
+#endif
 
 //        cert = SSL_get_peer_certificate(ssl);
     }
@@ -559,6 +574,10 @@ static char buffer[JSON_BUFSIZE];
         }
     }
 
+#ifdef DUMP
+    DBG("elapsed after request: %.3lf ms", lib_elapsed(&start));
+#endif
+
     /* -------------------------------------------------------------------------- */
 
     DBG("Reading response...");
@@ -613,6 +632,10 @@ static char buffer[JSON_BUFSIZE];
 
     close(connection);
     close_conn(sockfd);
+
+#ifdef DUMP
+    DBG("elapsed after response: %.3lf ms", lib_elapsed(&start));
+#endif
 
     /* -------------------------------------------------------------------------- */
     /* parse the response                                                         */
