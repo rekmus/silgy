@@ -5,4 +5,4 @@ echo Making silgy_app...
 g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
 -s -O3 \
 -D MEM_SMALL \
--o $SILGYDIR/bin/silgy_app \
+-o $SILGYDIR/bin/silgy_app
