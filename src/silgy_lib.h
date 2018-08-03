@@ -65,15 +65,15 @@ typedef struct {
 #define REST_HEADER_SET(k,v)        lib_rest_header_set(k, v)
 #define REST_HEADER_UNSET(k,v)      lib_rest_header_unset(k)
 
-#define CALL_REST_RAW(req,res,m,u)  lib_rest_req(req, res, m, u, FALSE)
+#define CALL_REST_RAW(req,res,m,u,k)  lib_rest_req(req, res, m, u, FALSE, k)
 #ifdef JSON_NO_AUTO_AMPERSANDS
-#define CALL_REST_JSON(req,res,m,u) lib_rest_req(req, res, m, u, TRUE)
+#define CALL_REST_JSON(req,res,m,u,k) lib_rest_req(req, res, m, u, TRUE, k)
 #else
-#define CALL_REST_JSON(req,res,m,u) lib_rest_req(&req, &res, m, u, TRUE)
+#define CALL_REST_JSON(req,res,m,u,k) lib_rest_req(&req, &res, m, u, TRUE, k)
 #endif
 /* aliases */
-#define CALL_REST_HTTP(req,res,m,u) CALL_REST_RAW(req,res,m,u)
-#define CALL_REST(req,res,m,u)      CALL_REST_JSON(req,res,m,u)
+#define CALL_REST_HTTP(req,res,m,u,k) CALL_REST_RAW(req,res,m,u,k)
+#define CALL_REST(req,res,m,u,k)      CALL_REST_JSON(req,res,m,u,k)
 
 #define CALL_REST_DEFAULT_TIMEOUT   750     /* in ms -- to avoid blocking */
 
@@ -217,7 +217,7 @@ extern "C" {
     void lib_rest_headers_reset(void);
     void lib_rest_header_set(const char *key, const char *value);
     void lib_rest_header_unset(const char *key);
-    bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json);
+    bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json, bool keep);
     int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int msec, void *ssl, int level);
     void lib_get_app_dir(void);
     double lib_elapsed(struct timespec *start);
