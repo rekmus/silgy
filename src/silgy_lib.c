@@ -47,9 +47,9 @@ static int M_rest_sock;
 static int M_rest_connection;
 #ifdef HTTPS
 static SSL_CTX *M_ssl_ctx=NULL;
-static SSL *M_rest_ssl;
+static SSL *M_rest_ssl=NULL;
 #else
-static void *M_rest_ssl;    /* dummy */
+static void *M_rest_ssl=NULL;    /* dummy */
 #endif /* HTTPS */
 #ifdef AUTO_INIT_EXPERIMENT
 static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers for auto-init */
@@ -414,6 +414,8 @@ static bool rest_connect(const char *host, const char *port, struct timespec *st
 {
 static struct sockaddr_in serv_addr;
 
+    DBG("rest_connect");
+
     DBG("getaddrinfo...");
 
     struct addrinfo hints;
@@ -562,6 +564,8 @@ static struct sockaddr_in serv_addr;
 -------------------------------------------------------------------------- */
 static void rest_disconnect()
 {
+    DBG("rest_disconnect");
+
     close(M_rest_connection);
     close_conn(M_rest_sock);
 #ifdef HTTPS
@@ -569,6 +573,7 @@ static void rest_disconnect()
     {
         SSL_free(M_rest_ssl);
         DBG("Should be NULL: M_rest_ssl = %d", M_rest_ssl);
+        M_rest_ssl = NULL;
     }
 #endif
 }
@@ -636,7 +641,7 @@ static char buffer[JSON_BUFSIZE];
 
     bool after_reconnect=0;
 
-    while ( !after_reconnect )
+    while ( TRUE )
     {
 #ifdef HTTPS
         if ( secure )
@@ -650,6 +655,8 @@ static char buffer[JSON_BUFSIZE];
             if ( !previously_connected || after_reconnect )
             {
                 ERR("Send (after fresh connect) failed");
+                rest_disconnect();
+                connected = FALSE;
                 return FALSE;
             }
 
@@ -667,6 +674,8 @@ static char buffer[JSON_BUFSIZE];
                 if ( !previously_connected || after_reconnect )
                 {
                     ERR("Send (after fresh connect) failed");
+                    rest_disconnect();
+                    connected = FALSE;
                     return FALSE;
                 }
 
@@ -676,7 +685,7 @@ static char buffer[JSON_BUFSIZE];
                 after_reconnect = 1;
             }
         }
-        else    /* OK */
+        else    /* bytes > 0 ==> OK */
         {
             break;
         }
@@ -804,6 +813,14 @@ static char buffer[JSON_BUFSIZE];
     else
     {
         ERR("No or incomplete response");
+#ifdef DUMP
+        if ( bytes >= 0 )
+        {
+            buffer[bytes] = EOS;
+            DBG("Got %d bytes of response [%s]", bytes, buffer);
+        }
+#endif
+        rest_disconnect();
         connected = FALSE;
         return FALSE;
     }
