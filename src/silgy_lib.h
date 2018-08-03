@@ -75,7 +75,7 @@ typedef struct {
 #define CALL_REST_HTTP(req,res,m,u,k) CALL_REST_RAW(req,res,m,u,k)
 #define CALL_REST(req,res,m,u,k)      CALL_REST_JSON(req,res,m,u,k)
 
-#define CALL_REST_DEFAULT_TIMEOUT   750     /* in ms -- to avoid blocking */
+#define CALL_REST_DEFAULT_TIMEOUT   1000     /* in ms -- to avoid blocking forever */
 
 
 
@@ -218,7 +218,7 @@ extern "C" {
     void lib_rest_header_set(const char *key, const char *value);
     void lib_rest_header_unset(const char *key);
     bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json, bool keep);
-    int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int msec, void *ssl, int level);
+    int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int *msec, void *ssl, int level);
     void lib_get_app_dir(void);
     double lib_elapsed(struct timespec *start);
     long lib_get_memory(void);

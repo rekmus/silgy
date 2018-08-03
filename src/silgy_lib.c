@@ -437,6 +437,9 @@ static struct sockaddr_in serv_addr;
 #ifdef DUMP
     DBG("elapsed after getaddrinfo: %.3lf ms", lib_elapsed(start));
 #endif
+    *timeout_remain = G_RESTTimeout - lib_elapsed(start);
+    if ( *timeout_remain < 1 ) *timeout_remain = 1;
+//    DBG("timeout_remain = %d", *timeout_remain);
 
     /* getaddrinfo() returns a list of address structures.
        Try each address until we successfully connect */
@@ -456,6 +459,10 @@ static struct sockaddr_in serv_addr;
         DBG("socket succeeded");
         DBG("elapsed after socket: %.3lf ms", lib_elapsed(start));
 #endif
+        *timeout_remain = G_RESTTimeout - lib_elapsed(start);
+        if ( *timeout_remain < 1 ) *timeout_remain = 1;
+//        DBG("timeout_remain = %d", *timeout_remain);
+
         /* Windows timeout option is a s**t -- go for non-blocking I/O */
 #ifdef DUMP
         DBG("Setting socket to non-blocking...");
@@ -468,7 +475,7 @@ static struct sockaddr_in serv_addr;
         {
             break;  /* immediate success */
         }
-        else if ( lib_finish_with_timeout(M_rest_sock, CONNECT, NULL, 0, *timeout_remain, NULL, 0) == 0 )
+        else if ( lib_finish_with_timeout(M_rest_sock, CONNECT, NULL, 0, timeout_remain, NULL, 0) == 0 )
         {
             break;  /* success within timeout */
         }
@@ -488,9 +495,6 @@ static struct sockaddr_in serv_addr;
 #ifdef DUMP
     DBG("elapsed after plain connect: %.3lf ms", lib_elapsed(start));
 #endif
-    *timeout_remain = G_RESTTimeout - lib_elapsed(start);
-    if ( *timeout_remain < 1 ) *timeout_remain = 1;
-//        DBG("timeout_remain = %d", *timeout_remain);
 
     DBG("Connected");
 
@@ -532,7 +536,7 @@ static struct sockaddr_in serv_addr;
         {
             DBG("SSL_connect immediate success");
         }
-        else if ( lib_finish_with_timeout(M_rest_sock, CONNECT, NULL, ret, *timeout_remain, M_rest_ssl, 0) > 0 )
+        else if ( lib_finish_with_timeout(M_rest_sock, CONNECT, NULL, ret, timeout_remain, M_rest_ssl, 0) > 0 )
         {
             DBG("SSL_connect successful");
         }
@@ -547,9 +551,6 @@ static struct sockaddr_in serv_addr;
 #ifdef DUMP
         DBG("elapsed after SSL connect: %.3lf ms", lib_elapsed(start));
 #endif
-        *timeout_remain = G_RESTTimeout - lib_elapsed(start);
-        if ( *timeout_remain < 1 ) *timeout_remain = 1;
-//            DBG("timeout_remain = %d", *timeout_remain);
 
 //        cert = SSL_get_peer_certificate(M_rest_ssl);
     }
@@ -667,7 +668,7 @@ static char buffer[JSON_BUFSIZE];
         }
         else if ( secure && bytes == -1 )
         {
-            bytes = lib_finish_with_timeout(M_rest_sock, WRITE, buffer, len, timeout_remain, secure?M_rest_ssl:NULL, 0);
+            bytes = lib_finish_with_timeout(M_rest_sock, WRITE, buffer, len, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
             if ( bytes == -1 )
             {
@@ -707,10 +708,6 @@ static char buffer[JSON_BUFSIZE];
     DBG("elapsed after request: %.3lf ms", lib_elapsed(&start));
 #endif
 
-    timeout_remain = G_RESTTimeout - lib_elapsed(&start);
-    if ( timeout_remain < 1 ) timeout_remain = 1;
-//    DBG("timeout_remain = %d", timeout_remain);
-
     /* -------------------------------------------------------------------------- */
 
     DBG("Reading response...");
@@ -724,7 +721,7 @@ static char buffer[JSON_BUFSIZE];
 
     if ( bytes == -1 )
     {
-        bytes = lib_finish_with_timeout(M_rest_sock, READ, buffer, JSON_BUFSIZE-1, timeout_remain, secure?M_rest_ssl:NULL, 0);
+        bytes = lib_finish_with_timeout(M_rest_sock, READ, buffer, JSON_BUFSIZE-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
         if ( bytes <= 0 )
         {
@@ -742,9 +739,6 @@ static char buffer[JSON_BUFSIZE];
 #ifdef DUMP
         DBG("trying again");
 #endif
-        timeout_remain = G_RESTTimeout - lib_elapsed(&start);
-        if ( timeout_remain < 1 ) timeout_remain = 1;
-//        DBG("timeout_remain = %d", timeout_remain);
 
         long current_bytes;
 
@@ -757,7 +751,7 @@ static char buffer[JSON_BUFSIZE];
 
         if ( current_bytes == -1 )
         {
-            current_bytes = lib_finish_with_timeout(M_rest_sock, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, timeout_remain, secure?M_rest_ssl:NULL, 0);
+            current_bytes = lib_finish_with_timeout(M_rest_sock, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
             DBG("current_bytes = %ld", current_bytes);
 
@@ -862,7 +856,7 @@ static char buffer[JSON_BUFSIZE];
 /* --------------------------------------------------------------------------
    Finish socket operation with timeout
 -------------------------------------------------------------------------- */
-int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int msec, void *ssl, int level)
+int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int *msec, void *ssl, int level)
 {
     int             sockerr;
     struct timeval  timeout;
@@ -918,15 +912,15 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
 
     /* set up timeout for select ----------------------------------------- */
 
-    if ( msec < 1000 )
+    if ( *msec < 1000 )
     {
         timeout.tv_sec = 0;
-        timeout.tv_usec = msec*1000;
+        timeout.tv_usec = *msec*1000;
     }
     else    /* 1000 ms or more */
     {
-        timeout.tv_sec = msec/1000;
-        timeout.tv_usec = (msec-((int)(msec/1000)*1000))*1000;
+        timeout.tv_sec = *msec/1000;
+        timeout.tv_usec = (*msec-((int)(*msec/1000)*1000))*1000;
     }
 
     /* update remaining timeout ------------------------------------------ */
@@ -949,10 +943,10 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
         socks = select(sock+1, NULL, &writefds, NULL, &timeout);
     }
 
-    msec -= lib_elapsed(&start);
-    if ( msec < 1 ) msec = 1;
+    *msec -= lib_elapsed(&start);
+    if ( *msec < 1 ) *msec = 1;
 #ifdef DUMP
-    DBG("msec reduced to %d ms", msec);
+    DBG("msec reduced to %d ms", *msec);
 #endif
 
     /* process select result --------------------------------------------- */
