@@ -581,6 +581,39 @@ static void rest_disconnect()
 
 
 /* --------------------------------------------------------------------------
+   REST call / get response content length
+-------------------------------------------------------------------------- */
+static int rest_res_content_length(const char *buffer, int len)
+{
+    char buf[len+1];
+    char *p;
+
+    strncpy(buf, buffer, len);
+    buf[len] = EOS;
+
+    if ( (p=strstr(buf, "\nContent-Length: ")) == NULL ) return 0;
+
+    if ( len < (p-buf) + 18 ) return 0;
+    
+    char result_str[8];
+    char i=0;
+
+    p += 17;
+
+    while ( isdigit(*p) && i<7 )
+    {
+        result_str[i++] = *p++;
+    }
+
+    result_str[i] = EOS;
+
+    DBG("result_str [%s]", result_str);
+
+    return atoi(result_str);
+}
+
+
+/* --------------------------------------------------------------------------
    REST call
 -------------------------------------------------------------------------- */
 bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json, bool keep)
@@ -594,8 +627,11 @@ static bool prev_secure=FALSE;
     char    uri[MAX_URI_LEN+1];
 static bool connected=FALSE;
 static time_t connected_time=0;
+    char    res_header[REST_HEADER_LEN+1];
 static char buffer[JSON_BUFSIZE];
     long    bytes;
+    char    *body;
+    int     content_read;
     int     len, i, j;
     int     timeout_remain = G_RESTTimeout;
 #ifdef HTTPS
@@ -714,14 +750,14 @@ static char buffer[JSON_BUFSIZE];
 
 #ifdef HTTPS
     if ( secure )
-        bytes = SSL_read(M_rest_ssl, buffer, JSON_BUFSIZE-1);
+        bytes = SSL_read(M_rest_ssl, res_header, REST_HEADER_LEN);
     else
 #endif /* HTTPS */
-        bytes = recv(M_rest_sock, buffer, JSON_BUFSIZE-1, 0);
+        bytes = recv(M_rest_sock, res_header, REST_HEADER_LEN, 0);
 
     if ( bytes == -1 )
     {
-        bytes = lib_finish_with_timeout(M_rest_sock, READ, buffer, JSON_BUFSIZE-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
+        bytes = lib_finish_with_timeout(M_rest_sock, READ, res_header, REST_HEADER_LEN, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
         if ( bytes <= 0 )
         {
@@ -734,35 +770,121 @@ static char buffer[JSON_BUFSIZE];
 
     DBG("Read %ld bytes", bytes);
 
-    if ( bytes > 0 )     /* there may be payload sent as a second write on the other side */
-    {
 #ifdef DUMP
-        DBG("trying again");
+    DBG("elapsed after first response read: %.3lf ms", lib_elapsed(&start));
 #endif
 
-        long current_bytes;
+    /* -------------------------------------------------------------------------- */
+    /* parse the response                                                         */
+    /* we assume that at least response header arrived at once                    */
+
+    /* HTTP/1.1 200 OK <== 15 chars */
+
+    char status[4];
+
+    if ( bytes > 14 && 0==strncmp(res_header, "HTTP/1.", 7) )
+    {
+        res_header[bytes] = EOS;
+#ifdef DUMP
+        DBG("Got %d bytes of response [%s]", bytes, res_header);
+#else
+        DBG("Got %d bytes of response", bytes);
+#endif /* DUMP */
+        strncpy(status, res_header+9, 3);
+        status[3] = EOS;
+        INF("Response status: %s", status);
+    }
+    else
+    {
+        ERR("No or incomplete response");
+#ifdef DUMP
+        if ( bytes >= 0 )
+        {
+            res_header[bytes] = EOS;
+            DBG("Got %d bytes of response [%s]", bytes, res_header);
+        }
+#endif
+        rest_disconnect();
+        connected = FALSE;
+        return FALSE;
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /* at this point we've got something that seems to be a HTTP header,
+       possibly with content */
+
+    /* -------------------------------------------------------------------------- */
+    /* find the expected Content-Length                                           */
+
+    int content_length = rest_res_content_length(res_header, bytes);
+
+    if ( content_length > JSON_BUFSIZE-1 )
+    {
+        ERR("Response content is too big");
+#ifdef DUMP
+        if ( bytes >= 0 )
+        {
+            res_header[bytes] = EOS;
+            DBG("Got %d bytes of response [%s]", bytes, res_header);
+        }
+#endif
+        rest_disconnect();
+        connected = FALSE;
+        return FALSE;
+    }
+
+    /* ------------------------------------------------------------------- */
+
+    if ( content_length > 0 )
+    {
+        /* skip HTTP header */
+
+        if ( !(body=strstr(res_header, "\r\n\r\n")) )
+        {
+            INF("No response body found");
+            return TRUE;
+        }
+
+        body += 4;
+
+        /* read content */
+
+        content_read = bytes - (body-res_header);
+
+        if ( content_read > 0 )
+            strncpy(buffer, body, content_read);
+
+        while ( content_read < content_length && timeout_remain > 1 )  /* read whatever we can within timeout */
+        {
+#ifdef DUMP
+            DBG("trying again");
+#endif
 
 #ifdef HTTPS
-        if ( secure )
-            current_bytes = SSL_read(M_rest_ssl, buffer+bytes, JSON_BUFSIZE-bytes-1);
-        else
+            if ( secure )
+                bytes = SSL_read(M_rest_ssl, buffer+content_read, JSON_BUFSIZE-content_read-1);
+            else
 #endif /* HTTPS */
-            current_bytes = recv(M_rest_sock, buffer+bytes, JSON_BUFSIZE-bytes-1, 0);
+                bytes = recv(M_rest_sock, buffer+content_read, JSON_BUFSIZE-content_read-1, 0);
 
-        if ( current_bytes == -1 )
-        {
-            current_bytes = lib_finish_with_timeout(M_rest_sock, READ, buffer+bytes, JSON_BUFSIZE-bytes-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
+            if ( bytes == -1 )
+            {
+                bytes = lib_finish_with_timeout(M_rest_sock, READ, buffer+content_read, JSON_BUFSIZE-content_read-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
-            DBG("current_bytes = %ld", current_bytes);
-
-            if ( current_bytes > 0 )
-                bytes += current_bytes;
+                if ( bytes > 0 )
+                    content_read += bytes;
+            }
         }
     }
 
-    DBG("Read %ld bytes", bytes);
+    buffer[content_read] = EOS;
+#ifdef DUMP
+    DBG("Read %d bytes of content [%s]", content_read, buffer);
+#else
+    DBG("Read %d bytes of content", content_read);
+#endif
 
-    /* -------------------------------------------------------------------------- */
+    /* ------------------------------------------------------------------- */
 
     if ( !keep )
     {
@@ -782,69 +904,16 @@ static char buffer[JSON_BUFSIZE];
     }
 
 #ifdef DUMP
-    DBG("elapsed after response: %.3lf ms", lib_elapsed(&start));
+    DBG("elapsed after second response read: %.3lf ms", lib_elapsed(&start));
 #endif
-
-    /* -------------------------------------------------------------------------- */
-    /* parse the response                                                         */
-
-    /* HTTP/1.1 200 OK <== 15 chars */
-
-    char status[4];
-
-    if ( bytes > 14 && 0==strncmp(buffer, "HTTP/1.", 7) )
-    {
-        buffer[bytes] = EOS;
-#ifdef DUMP
-        DBG("Got %d bytes of response [%s]", bytes, buffer);
-#else
-        DBG("Got %d bytes of response", bytes);
-#endif /* DUMP */
-        strncpy(status, buffer+9, 3);
-        status[3] = EOS;
-        INF("Response status: %s", status);
-    }
-    else
-    {
-        ERR("No or incomplete response");
-#ifdef DUMP
-        if ( bytes >= 0 )
-        {
-            buffer[bytes] = EOS;
-            DBG("Got %d bytes of response [%s]", bytes, buffer);
-        }
-#endif
-        rest_disconnect();
-        connected = FALSE;
-        return FALSE;
-    }
-
-    /* ------------------------------------------------------------------- */
-
-    char *body;
-
-    /* skip HTTP header */
-
-    if ( !(body=strstr(buffer, "\r\n\r\n")) )
-    {
-        INF("No response body found");
-        return TRUE;
-    }
-
-    body += 4;
 
     /* -------------------------------------------------------------------------- */
     /* we expect JSON response in body                                            */
 
-//    DBG("Response body [%s]", body);
-
-    len = bytes - (body - buffer);
-    DBG("Real response content length = %d", len);
-
     if ( len && res )
     {
         if ( json )
-            lib_json_from_string((JSON*)res, body, len, 0);
+            lib_json_from_string((JSON*)res, buffer, content_read, 0);
         else
             strcpy((char*)res, buffer);
     }
