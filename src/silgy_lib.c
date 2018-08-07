@@ -627,7 +627,7 @@ static bool prev_secure=FALSE;
     char    uri[MAX_URI_LEN+1];
 static bool connected=FALSE;
 static time_t connected_time=0;
-    char    res_header[REST_HEADER_LEN+1];
+    char    res_header[REST_RES_HEADER_LEN+1];
 static char buffer[JSON_BUFSIZE];
     long    bytes;
     char    *body;
@@ -750,14 +750,14 @@ static char buffer[JSON_BUFSIZE];
 
 #ifdef HTTPS
     if ( secure )
-        bytes = SSL_read(M_rest_ssl, res_header, REST_HEADER_LEN);
+        bytes = SSL_read(M_rest_ssl, res_header, REST_RES_HEADER_LEN);
     else
 #endif /* HTTPS */
-        bytes = recv(M_rest_sock, res_header, REST_HEADER_LEN, 0);
+        bytes = recv(M_rest_sock, res_header, REST_RES_HEADER_LEN, 0);
 
     if ( bytes == -1 )
     {
-        bytes = lib_finish_with_timeout(M_rest_sock, READ, res_header, REST_HEADER_LEN, &timeout_remain, secure?M_rest_ssl:NULL, 0);
+        bytes = lib_finish_with_timeout(M_rest_sock, READ, res_header, REST_RES_HEADER_LEN, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
         if ( bytes <= 0 )
         {

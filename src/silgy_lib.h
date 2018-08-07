@@ -60,24 +60,28 @@ typedef struct {
 } rest_header_t;
 
 
-#define REST_MAX_HEADERS            100
-#define REST_HEADERS_RESET          lib_rest_headers_reset()
-#define REST_HEADER_SET(k,v)        lib_rest_header_set(k, v)
-#define REST_HEADER_UNSET(k,v)      lib_rest_header_unset(k)
+#define REST_MAX_HEADERS                100
+#define REST_HEADERS_RESET              lib_rest_headers_reset()
+#define REST_HEADER_SET(k,v)            lib_rest_header_set(k, v)
+#define REST_HEADER_UNSET(k,v)          lib_rest_header_unset(k)
 
-#define CALL_REST_RAW(req,res,m,u,k)  lib_rest_req(req, res, m, u, FALSE, k)
+
 #ifdef JSON_NO_AUTO_AMPERSANDS
-#define CALL_REST_JSON(req,res,m,u,k) lib_rest_req(req, res, m, u, TRUE, k)
+#define CALL_REST_HTTP(req,res,m,u,k)   lib_rest_req(req, res, m, u, FALSE, k)
+#define CALL_REST_JSON(req,res,m,u,k)   lib_rest_req(req, res, m, u, TRUE, k)
 #else
-#define CALL_REST_JSON(req,res,m,u,k) lib_rest_req(&req, &res, m, u, TRUE, k)
+#define CALL_REST_HTTP(req,res,m,u,k)   lib_rest_req(&req, &res, m, u, FALSE, k)
+#define CALL_REST_JSON(req,res,m,u,k)   lib_rest_req(&req, &res, m, u, TRUE, k)
 #endif
-/* aliases */
-#define CALL_REST_HTTP(req,res,m,u,k) CALL_REST_RAW(req,res,m,u,k)
-#define CALL_REST(req,res,m,u,k)      CALL_REST_JSON(req,res,m,u,k)
 
-#define CALL_REST_DEFAULT_TIMEOUT   1000     /* in ms -- to avoid blocking forever */
+/* aliases -- highest level -- 'keep' always TRUE */
+#define CALL_REST_RAW(req,res,m,u)      CALL_REST_HTTP(req, res, m, u, TRUE)
+#define CALL_REST(req,res,m,u)          CALL_REST_JSON(req, res, m, u, TRUE)
 
-#define REST_HEADER_LEN             4095
+
+#define CALL_REST_DEFAULT_TIMEOUT       1000     /* in ms -- to avoid blocking forever */
+
+#define REST_RES_HEADER_LEN             4095
 
 
 /* JSON */
