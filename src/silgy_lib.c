@@ -412,47 +412,69 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
 -------------------------------------------------------------------------- */
 static bool rest_connect(const char *host, const char *port, struct timespec *start, int *timeout_remain, bool secure)
 {
-static struct sockaddr_in serv_addr;
+static struct {
+    char host[256];
+    char port[16];
+    struct addrinfo addr;
+    struct sockaddr ai_addr;
+} addresses[REST_ADDRESSES_CACHE_SIZE];
+static int addresses_cnt=0, addresses_last=0, i;
+    bool addr_cached=FALSE;
 
     DBG("rest_connect");
 
-    DBG("getaddrinfo...");
+    struct addrinfo *result=NULL;
 
-    struct addrinfo hints;
-    struct addrinfo *result, *rp;
-    int s;
+#ifndef REST_CALL_DONT_CACHE_ADDRINFO
 
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_family = AF_UNSPEC;        /* Allow IPv4 or IPv6 */
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE;        /* For wildcard IP address */
-    hints.ai_protocol = 0;              /* Any protocol */
+    DBG("Trying cache...");
 
-    if ( (s=getaddrinfo(host, port, &hints, &result)) != 0 )
+    for ( i=0; i<addresses_cnt; ++i )
     {
-        ERR("getaddrinfo: %s", gai_strerror(s));
-        return FALSE;
+//        if ( 0==strcmp(addresses[i].host, host) )
+        if ( 0==strcmp(addresses[i].host, host) && 0==strcmp(addresses[i].port, port) )
+        {
+            DBG("Host %s found in cache (%d)", host, i);
+            addr_cached = TRUE;
+            result = &addresses[i].addr;
+            break;
+        }
     }
 
-#ifdef DUMP
-    DBG("elapsed after getaddrinfo: %.3lf ms", lib_elapsed(start));
-#endif
-    *timeout_remain = G_RESTTimeout - lib_elapsed(start);
-    if ( *timeout_remain < 1 ) *timeout_remain = 1;
-//    DBG("timeout_remain = %d", *timeout_remain);
+#endif /* REST_CALL_DONT_CACHE_ADDRINFO */
 
-    /* getaddrinfo() returns a list of address structures.
-       Try each address until we successfully connect */
+    if ( !addr_cached )
+    {
+        DBG("getaddrinfo...");   /* TODO: change to asynchronous, i.e. getaddrinfo_a */
+
+        struct addrinfo hints;
+        int s;
+
+        memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_socktype = SOCK_STREAM;
+
+        if ( (s=getaddrinfo(host, port, &hints, &result)) != 0 )
+        {
+            ERR("getaddrinfo: %s", gai_strerror(s));
+            return FALSE;
+        }
+
+#ifdef DUMP
+        DBG("elapsed after getaddrinfo: %.3lf ms", lib_elapsed(start));
+#endif
+        *timeout_remain = G_RESTTimeout - lib_elapsed(start);
+        if ( *timeout_remain < 1 ) *timeout_remain = 1;
+
+        /* getaddrinfo() returns a list of address structures.
+           Try each address until we successfully connect */
+    }
 
     DBG("Trying to connect...");
 
-    int sockerr;
+    struct addrinfo *rp;
 
     for ( rp=result; rp!=NULL; rp=rp->ai_next )
     {
-#ifdef DUMP
-        DBG("In a loop");
-#endif
         M_rest_sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
         if (M_rest_sock == -1) continue;
 #ifdef DUMP
@@ -461,12 +483,8 @@ static struct sockaddr_in serv_addr;
 #endif
         *timeout_remain = G_RESTTimeout - lib_elapsed(start);
         if ( *timeout_remain < 1 ) *timeout_remain = 1;
-//        DBG("timeout_remain = %d", *timeout_remain);
 
         /* Windows timeout option is a s**t -- go for non-blocking I/O */
-#ifdef DUMP
-        DBG("Setting socket to non-blocking...");
-#endif
         lib_setnonblocking(M_rest_sock);
 
         /* plain socket connection --------------------------------------- */
@@ -486,11 +504,43 @@ static struct sockaddr_in serv_addr;
     if ( rp == NULL )     /* No address succeeded */
     {
         ERR("Could not connect");
+        if ( result ) freeaddrinfo(result);
         close_conn(M_rest_sock);
         return FALSE;
     }
 
-    freeaddrinfo(result);   /* No longer needed */
+    /* -------------------------------------------------------------------------- */
+
+    if ( !addr_cached )   /* add to cache */
+    {
+#ifndef REST_CALL_DONT_CACHE_ADDRINFO
+        strcpy(addresses[addresses_last].host, host);
+        strcpy(addresses[addresses_last].port, port);
+        memcpy(&addresses[addresses_last].addr, rp, sizeof(addrinfo));
+        /* addrinfo contains pointers -- mind a shallow copy! */
+        memcpy(&addresses[addresses_last].ai_addr, rp->ai_addr, sizeof(struct sockaddr));
+        addresses[addresses_last].addr.ai_addr = &addresses[addresses_last].ai_addr;
+        addresses[addresses_last].addr.ai_next = NULL;
+
+        DBG("Host cached (%d)", addresses_last);
+
+        if ( addresses_cnt < REST_ADDRESSES_CACHE_SIZE-1 )   /* first round */
+        {
+            ++addresses_cnt;
+            ++addresses_last;
+        }
+        else    /* cache full -- reuse it from start */
+        {
+            if ( addresses_last < REST_ADDRESSES_CACHE_SIZE-1 )
+                ++addresses_last;
+            else
+                addresses_last = 0;
+        }
+
+#endif /* REST_CALL_DONT_CACHE_ADDRINFO */
+
+        freeaddrinfo(result);
+    }
 
 #ifdef DUMP
     DBG("elapsed after plain connect: %.3lf ms", lib_elapsed(start));
@@ -1005,7 +1055,11 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
     struct timespec start;
     clock_gettime(MONOTONIC_CLOCK_NAME, &start);
 
-    /* set up fd-s ------------------------------------------------------- */
+    /* set up fd-s and wait ---------------------------------------------- */
+
+#ifdef DUMP
+    DBG("Waiting on select()...");
+#endif
 
     if ( readwrite == READ )
     {

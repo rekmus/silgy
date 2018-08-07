@@ -82,6 +82,7 @@ typedef struct {
 #define CALL_REST_DEFAULT_TIMEOUT       1000     /* in ms -- to avoid blocking forever */
 
 #define REST_RES_HEADER_LEN             4095
+#define REST_ADDRESSES_CACHE_SIZE       100
 
 
 /* JSON */
