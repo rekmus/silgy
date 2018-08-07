@@ -573,7 +573,7 @@ static void rest_disconnect()
     if ( M_rest_ssl )
     {
         SSL_free(M_rest_ssl);
-        DBG("Should be NULL: M_rest_ssl = %d", M_rest_ssl);
+//        DBG("Should be NULL: M_rest_ssl = %d", M_rest_ssl);
         M_rest_ssl = NULL;
     }
 #endif
@@ -666,7 +666,7 @@ static char buffer[JSON_BUFSIZE];
         connected = FALSE;
     }
 
-    bool previously_connected = connected;
+    bool was_connected = connected;
 
     /* connect if necessary ----------------------------------------------------- */
 
@@ -678,7 +678,7 @@ static char buffer[JSON_BUFSIZE];
 
     bool after_reconnect=0;
 
-    while ( TRUE )
+    while ( timeout_remain > 1 )
     {
 #ifdef HTTPS
         if ( secure )
@@ -689,7 +689,7 @@ static char buffer[JSON_BUFSIZE];
 
         if ( !secure && bytes <= 0 )
         {
-            if ( !previously_connected || after_reconnect )
+            if ( !was_connected || after_reconnect )
             {
                 ERR("Send (after fresh connect) failed");
                 rest_disconnect();
@@ -708,7 +708,7 @@ static char buffer[JSON_BUFSIZE];
 
             if ( bytes == -1 )
             {
-                if ( !previously_connected || after_reconnect )
+                if ( !was_connected || after_reconnect )
                 {
                     ERR("Send (after fresh connect) failed");
                     rest_disconnect();
@@ -875,6 +875,14 @@ static char buffer[JSON_BUFSIZE];
                     content_read += bytes;
             }
         }
+
+        if ( bytes < 1 )    /* timeouted? */
+        {
+            DBG("timeouted?");
+            rest_disconnect();
+            connected = FALSE;
+            return FALSE;
+        }        
     }
 
     buffer[content_read] = EOS;
