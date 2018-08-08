@@ -572,11 +572,14 @@ extern mqd_t    G_queue_res;                /* response queue */
 #ifdef ASYNC
 extern async_res_t ares[MAX_ASYNC];         /* async response array */
 extern long     G_last_call_id;             /* counter */
-#endif
-#endif
+#endif /* ASYNC */
+#endif /* _WIN32 */
 extern char     G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
+extern bool     G_index_present;            /* index.html present in res? */
+
 extern char     G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
 extern int      G_blacklist_cnt;            /* M_blacklist length */
+/* counters */
 extern counters_t G_cnts_today;             /* today's counters */
 extern counters_t G_cnts_yesterday;         /* yesterday's counters */
 extern counters_t G_cnts_day_before;        /* day before's counters */

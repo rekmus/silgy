@@ -517,7 +517,7 @@ static int addresses_cnt=0, addresses_last=0, i;
         strcpy(addresses[addresses_last].host, host);
         strcpy(addresses[addresses_last].port, port);
         memcpy(&addresses[addresses_last].addr, rp, sizeof(addrinfo));
-        /* addrinfo contains pointers -- mind a shallow copy! */
+        /* addrinfo contains pointers -- mind the shallow copy! */
         memcpy(&addresses[addresses_last].ai_addr, rp->ai_addr, sizeof(struct sockaddr));
         addresses[addresses_last].addr.ai_addr = &addresses[addresses_last].ai_addr;
         addresses[addresses_last].addr.ai_next = NULL;

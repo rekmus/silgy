@@ -77,13 +77,17 @@ mqd_t       G_queue_res;                /* response queue */
 #ifdef ASYNC
 async_res_t ares[MAX_ASYNC];            /* async response array */
 long        G_last_call_id;             /* counter */
-#endif
-#endif
+#endif /* ASYNC */
+#endif /* _WIN32 */
+bool        G_index_present;            /* index.html present in res? */
+
 char        G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
 int         G_blacklist_cnt;            /* M_blacklist length */
+/* counters */
 counters_t  G_cnts_today;               /* today's counters */
 counters_t  G_cnts_yesterday;           /* yesterday's counters */
 counters_t  G_cnts_day_before;          /* day before's counters */
+
 
 /* locals */
 
@@ -1083,6 +1087,7 @@ static bool init(int argc, char **argv)
     G_days_up = 0;
     G_open_conn = 0;
     G_sessions = 0;
+    G_index_present = FALSE;
 
     /* counters */
 
@@ -1249,7 +1254,7 @@ static bool init(int argc, char **argv)
 #else
     ALWAYS(" Users' authentication = USERSBYLOGIN");
 #endif
-#endif
+#endif /* USERS */
     ALWAYS("");
     ALWAYS("           auses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(auses), sizeof(auses)/1024, (double)sizeof(auses)/1024/1024);
     ALWAYS("");
@@ -1826,12 +1831,12 @@ static bool read_files(bool minify)
     int     i=0;
     char    resdir[256]="";
     DIR     *dir;
-struct dirent *dirent;
+    struct dirent *dirent;
     char    namewpath[256]="";
     FILE    *fd;
     char    *data_tmp=NULL;
     char    *data_tmp_min=NULL;
-struct stat fstat;
+    struct stat fstat;
     char    mod_time[32];
 
     DBG("read_files, minify = %s\n", minify?"TRUE":"FALSE");
@@ -1964,12 +1969,17 @@ struct stat fstat;
             G_ptm = gmtime(&M_stat[i].modified);
             sprintf(mod_time, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
             ALWAYS("%s %s\t\t%ld Bytes", lib_add_spaces(M_stat[i].name, 28), mod_time, M_stat[i].len);
+            
+            if ( 0==strcmp(M_stat[i].name, "index.html") )
+                G_index_present = TRUE;
         }
 
+#ifdef DUMP
 //      if ( minify )   /* temporarily */
 //      {
 //          DBG("minified %s: [%s]", M_stat[i].name, M_stat[i].data);
 //      }
+#endif /* DUMP */
 
         ++i;
     }
@@ -2742,7 +2752,19 @@ static int parse_req(int ci, long len)
         }
     }
 
-    /* split URI and resource / id ---------------------------------------------- */
+    /* behave as one good web server ------------------------------------- */
+
+#ifndef DONT_LOOK_FOR_INDEX
+
+    if ( conn[ci].uri[0]==EOS && G_index_present && REQ_GET )
+    {
+        INF("Serving index.html");
+        strcpy(conn[ci].uri, "index.html");
+    }
+
+#endif /* DONT_LOOK_FOR_INDEX */
+
+    /* split URI and resource / id --------------------------------------- */
 
     if ( conn[ci].uri[0] )  /* if not empty */
     {
