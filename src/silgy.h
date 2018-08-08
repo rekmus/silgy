@@ -509,12 +509,17 @@ typedef struct {
 
 /* static resources */
 
+#define STATIC_SOURCE_INTERNAL      0
+#define STATIC_SOURCE_RES           1
+#define STATIC_SOURCE_RESMIN        2
+
 typedef struct {
     char    name[256];
     char    type;
     char    *data;
     long    len;
     time_t  modified;
+    char    source;
 } stat_res_t;
 
 

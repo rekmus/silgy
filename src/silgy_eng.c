@@ -127,7 +127,7 @@ static void accept_https();
 static bool read_blocked_ips(void);
 static bool ip_blocked(const char *addr);
 static int first_free_stat(void);
-static bool read_files(bool minify);
+static bool read_files(bool minify, bool first_scan);
 static int is_static_res(int ci, const char *name);
 static bool open_db(void);
 static void process_req(int ci);
@@ -394,6 +394,11 @@ struct timeval  timeout;                    /* Timeout for select */
                 if ( G_sessions ) libusr_close_luses_timeout();     /* tidy up cache */
 #endif
                 fflush(G_log);
+
+#ifndef DONT_RESCAN_RES    /* refresh static resources */
+                read_files(FALSE, FALSE);
+                read_files(TRUE, FALSE);
+#endif /* DONT_RESCAN_RES */
 
                 /* start new log file every day */
 
@@ -1163,7 +1168,8 @@ static bool init(int argc, char **argv)
 
     /* empty static resources list */
 
-    strcpy(M_stat[0].name, "-");
+    for ( i=0; i<MAX_STATICS; ++i )
+        strcpy(M_stat[i].name, "-");
 
     /* check endianness and some parameters */
 
@@ -1275,7 +1281,7 @@ static bool init(int argc, char **argv)
 
     /* read static resources */
 
-    if ( !read_files(FALSE) )   /* normal */
+    if ( !read_files(FALSE, TRUE) )   /* normal */
     {
         ERR("read_files() failed");
         return FALSE;
@@ -1283,7 +1289,7 @@ static bool init(int argc, char **argv)
 
     DBG("read_files(FALSE) OK");
 
-    if ( !read_files(TRUE) )    /* minified */
+    if ( !read_files(TRUE, TRUE) )    /* minified */
     {
         ERR("read_files() for minified failed");
         return FALSE;
@@ -1819,23 +1825,29 @@ static bool ip_blocked(const char *addr)
 
 
 /* --------------------------------------------------------------------------
-  read static resources from disk
-  read all the files from G_appdir/res directory
+   Read static resources from disk
+   read all the files from G_appdir/res directory
 -------------------------------------------------------------------------- */
-static bool read_files(bool minify)
+static bool read_files(bool minify, bool first_scan)
 {
-    int     i=0;
-    char    resdir[256]="";
+    int     i;
+    char    resdir[256];
     DIR     *dir;
     struct dirent *dirent;
-    char    namewpath[256]="";
+    char    namewpath[256];
     FILE    *fd;
     char    *data_tmp=NULL;
     char    *data_tmp_min=NULL;
     struct stat fstat;
     char    mod_time[32];
 
-    DBG("read_files, minify = %s\n", minify?"TRUE":"FALSE");
+    DBG("read_files, minify = %s", minify?"TRUE":"FALSE");
+
+#ifdef _DIRENT_HAVE_D_TYPE
+#ifdef DUMP
+    INF("_DIRENT_HAVE_D_TYPE is defined");  /* we could use d_type in the future? */
+#endif
+#endif
 
     if ( minify )
         sprintf(resdir, "%s/resmin", G_appdir);
@@ -1865,27 +1877,132 @@ static bool read_files(bool minify)
         }
     }
 
-#ifdef _DIRENT_HAVE_D_TYPE
-    INF("_DIRENT_HAVE_D_TYPE is defined");  /* we could use d_type in the future? */
+    /* ------------------------------------------------------------------- */
+    /* check removed files */
+
+    if ( !first_scan )
+    {
+#ifdef DUMP
+        DBG("Checking removed files...");
 #endif
+        for ( i=0; M_stat[i].name[0] != '-'; ++i )
+        {
+            if ( M_stat[i].name[0]==EOS ) continue;  /* already removed */
 
-    /* find the first unused slot in M_stat array */
+            if ( minify && M_stat[i].source != STATIC_SOURCE_RESMIN ) continue;
 
-    i = first_free_stat();
+            if ( !minify && M_stat[i].source != STATIC_SOURCE_RES ) continue;
+#ifdef DUMP
+//            DBG("Checking %s...", M_stat[i].name);
+#endif
+            bool found=FALSE;
+
+            while ( (dirent=readdir(dir)) )
+            {
+                if ( dirent->d_name[0] == '.' ) continue;
+
+                if ( 0==strcmp(M_stat[i].name, dirent->d_name) )
+                {
+                    found = TRUE;
+                    break;
+                }
+            }
+
+            if ( !found )
+            {
+                DBG("Removing %s from static resources", M_stat[i].name);
+
+                if ( 0==strcmp(M_stat[i].name, "index.html") )
+                    G_index_present = FALSE;
+
+                M_stat[i].name[0] = EOS;
+                free(M_stat[i].data);
+            }
+
+            rewinddir(dir);
+        }
+    }
+
+    /* ------------------------------------------------------------------- */
+
+    DBG("Reading %sfiles", first_scan?"":"new ");
 
     /* read the files into memory */
 
     while ( (dirent=readdir(dir)) )
     {
-        if ( dirent->d_name[0] == '.' ) /* skip ".", ".." and hidden files */
+        if ( dirent->d_name[0] == '.' )  /* skip ".", ".." and hidden files */
             continue;
 
-        strcpy(M_stat[i].name, dirent->d_name);
+        /* additional file info */
 
         if ( minify )
-            sprintf(namewpath, "%s/resmin/%s", G_appdir, M_stat[i].name);
+            sprintf(namewpath, "%s/resmin/%s", G_appdir, dirent->d_name);
         else
-            sprintf(namewpath, "%s/res/%s", G_appdir, M_stat[i].name);
+            sprintf(namewpath, "%s/res/%s", G_appdir, dirent->d_name);
+
+        if ( stat(namewpath, &fstat) != 0 )
+        {
+            ERR("stat failed, errno = %d (%s)", errno, strerror(errno));
+            closedir(dir);
+            return FALSE;
+        }
+
+        /* already read? */
+
+        bool reread = FALSE;
+
+        if ( !first_scan )
+        {
+            bool exists = FALSE;
+
+            for ( i=0; M_stat[i].name[0] != '-'; ++i )
+            {
+                if ( M_stat[i].name[0]==EOS ) continue;  /* removed */
+
+                if ( minify && M_stat[i].source != STATIC_SOURCE_RESMIN ) continue;
+
+                if ( !minify && M_stat[i].source != STATIC_SOURCE_RES ) continue;
+
+                if ( 0==strcmp(M_stat[i].name, dirent->d_name) )
+                {
+#ifdef DUMP
+//                    DBG("%s already read", dirent->d_name);
+#endif
+                    if ( M_stat[i].modified == fstat.st_mtime )
+                    {
+#ifdef DUMP
+//                        DBG("Not modified");
+#endif
+                        exists = TRUE;
+                    }
+                    else
+                    {
+                        DBG("%s has been modified", dirent->d_name);
+                        reread = TRUE;
+                    }
+
+                    break;
+                }
+            }
+
+            if ( exists ) continue;  /* not modified */
+        }
+
+        /* find the first unused slot in M_stat array */
+
+        if ( !reread )
+        {
+            i = first_free_stat();
+            /* file name */
+            strcpy(M_stat[i].name, dirent->d_name);
+        }
+
+        /* last modified */
+
+        M_stat[i].modified = fstat.st_mtime;
+
+        /* size and content */
 
 #ifdef _WIN32   /* Windows */
         if ( NULL == (fd=fopen(namewpath, "rb")) )
@@ -1927,6 +2044,9 @@ static bool read_files(bool minify)
 
             /* allocate the final destination */
 
+            if ( reread )
+                free(M_stat[i].data);
+
             if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1)) )
             {
                 ERR("Couldn't allocate %ld bytes for %s!!!", M_stat[i].len+1, M_stat[i].name);
@@ -1942,32 +2062,31 @@ static bool read_files(bool minify)
                 free(data_tmp_min);
                 data_tmp = NULL;
                 data_tmp_min = NULL;
+
+                M_stat[i].source = STATIC_SOURCE_RESMIN;
             }
             else
             {
                 fread(M_stat[i].data, M_stat[i].len, 1, fd);
+
+                M_stat[i].source = STATIC_SOURCE_RES;
             }
 
             fclose(fd);
 
-            M_stat[i].type = get_res_type(M_stat[i].name);
-
-            /* last modified */
-
-            if ( stat(namewpath, &fstat) == 0 )
-                M_stat[i].modified = fstat.st_mtime;
-            else
+            if ( !reread )
             {
-                ERR("stat failed, errno = %d (%s)", errno, strerror(errno));
-                return FALSE;
+                M_stat[i].type = get_res_type(M_stat[i].name);
+
+                if ( 0==strcmp(M_stat[i].name, "index.html") )
+                    G_index_present = TRUE;
             }
+
+            /* log file info */
 
             G_ptm = gmtime(&M_stat[i].modified);
             sprintf(mod_time, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
-            ALWAYS("%s %s\t\t%ld Bytes", lib_add_spaces(M_stat[i].name, 28), mod_time, M_stat[i].len);
-            
-            if ( 0==strcmp(M_stat[i].name, "index.html") )
-                G_index_present = TRUE;
+            DBG("%s %s\t\t%ld Bytes", lib_add_spaces(M_stat[i].name, 28), mod_time, M_stat[i].len);
         }
 
 #ifdef DUMP
@@ -1977,12 +2096,10 @@ static bool read_files(bool minify)
 //      }
 #endif /* DUMP */
 
-        ++i;
+//        ++i;
     }
 
     closedir(dir);
-
-    strcpy(M_stat[i].name, "-");    /* end of list */
 
     G_ptm = gmtime(&G_now);     /* set it back */
 
@@ -2000,7 +2117,7 @@ static int first_free_stat()
     int i=0;
 
     for ( i=0; i<MAX_STATICS; ++i )
-        if ( 0==strcmp(M_stat[i].name, "-") )
+        if ( M_stat[i].name[0]==EOS || M_stat[i].name[0]=='-' )
             return i;
 
     ERR("Big trouble, ran out of statics! i = %d", i);
@@ -3584,10 +3701,11 @@ void silgy_add_to_static_res(const char *name, char *src)
 
     M_stat[i].type = get_res_type(M_stat[i].name);
     M_stat[i].modified = G_now;
+    M_stat[i].source = STATIC_SOURCE_INTERNAL;
 
     INF("%s (%ld bytes)", M_stat[i].name, M_stat[i].len);
 
-    strcpy(M_stat[++i].name, "-");
+//    strcpy(M_stat[++i].name, "-");
 }
 
 
