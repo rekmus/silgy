@@ -9,32 +9,11 @@
 #ifndef SILGY_LIB_H
 #define SILGY_LIB_H
 
-#define MAX_URI_VAL_LEN         255             /* max value length received in URI -- sufficient for 99% cases */
-#define MAX_LONG_URI_VAL_LEN    65535           /* max long value length received in URI -- 64 kB - 1 B */
-
-#define QSBUF                   MAX_URI_VAL_LEN+1
-#define QS_BUF                  QSBUF
-
 #define ALWAYS(s, ...)          log_write(LOG_ALWAYS, s, ##__VA_ARGS__)
 #define ERR(s, ...)             log_write(LOG_ERR, s, ##__VA_ARGS__)
 #define WAR(s, ...)             log_write(LOG_WAR, s, ##__VA_ARGS__)
 #define INF(s, ...)             log_write(LOG_INF, s, ##__VA_ARGS__)
 #define DBG(s, ...)             log_write(LOG_DBG, s, ##__VA_ARGS__)
-
-#define QS_HTML_ESCAPE(l, v)    get_qs_param_html_esc(ci, l, v)
-#define QS_SQL_ESCAPE(l, v)     get_qs_param_sql_esc(ci, l, v)
-#define QS_DONT_ESCAPE(l, v)    get_qs_param(ci, l, v)
-#define QS_RAW(l, v)            get_qs_param_raw(ci, l, v, MAX_URI_VAL_LEN)
-
-#ifdef QS_DEF_HTML_ESCAPE
-#define QS(l, v)                QS_HTML_ESCAPE(l, v)
-#endif
-#ifdef QS_DEF_SQL_ESCAPE
-#define QS(l, v)                QS_SQL_ESCAPE(l, v)
-#endif
-#ifdef QS_DEF_DONT_ESCAPE
-#define QS(l, v)                QS_DONT_ESCAPE(l, v)
-#endif
 
 #define LOREM_IPSUM             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
@@ -232,7 +211,6 @@ extern "C" {
     char *lib_filter_strict(const char *src);
     char *lib_add_spaces(const char *src, int len);
     char *lib_add_lspaces(const char *src, int len);
-    void lib_send_ajax_msg(int ci, int errcode);
     char get_res_type(const char *fname);
     void date_str2rec(const char *str, date_t *rec);
     void date_rec2str(char *str, date_t *rec);
@@ -247,13 +225,6 @@ extern "C" {
     void samts(char *stramt, const char *in_amt);
     void lib_normalize_float(char *str);
     void ftm(char *strtm, long in_tm);
-    bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen);
-    bool get_qs_param_long(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf);
-    char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
     char const *san(const char *str);
     char *san_long(const char *str);
     char *silgy_sql_esc(const char *str);
@@ -284,8 +255,6 @@ extern "C" {
     time_t db2epoch(const char *str);
     bool sendemail(int ci, const char *to, const char *subject, const char *message);
     int silgy_minify(char *dest, const char *src);
-    void add_script(int ci, const char *fname, bool first);
-    void add_css(int ci, const char *fname, bool first);
     void date_inc(char *str, int days, int *dow);
     int date_cmp(const char *str1, const char *str2);
     bool lib_read_conf(const char *file);

@@ -366,6 +366,30 @@ typedef char                        bool;
 
 #define OUT_HTML_HEADER             eng_out_html_header(ci)
 #define OUT_HTML_FOOTER             eng_out_html_footer(ci)
+#define APPEND_CSS(n,f)             eng_append_css(ci, n, f)
+#define APPEND_SCRIPT(n,f)          eng_append_script(ci, n, f)
+
+#define MAX_URI_VAL_LEN             255             /* max value length received in URI -- sufficient for 99% cases */
+#define MAX_LONG_URI_VAL_LEN        65535           /* max long value length received in URI -- 64 kB - 1 B */
+
+#define QSBUF                       MAX_URI_VAL_LEN+1
+#define QS_BUF                      QSBUF
+
+#define QS_HTML_ESCAPE(l, v)        get_qs_param_html_esc(ci, l, v)
+#define QS_SQL_ESCAPE(l, v)         get_qs_param_sql_esc(ci, l, v)
+#define QS_DONT_ESCAPE(l, v)        get_qs_param(ci, l, v)
+#define QS_RAW(l, v)                get_qs_param_raw(ci, l, v, MAX_URI_VAL_LEN)
+
+#ifdef QS_DEF_HTML_ESCAPE
+#define QS(l, v)                    QS_HTML_ESCAPE(l, v)
+#endif
+#ifdef QS_DEF_SQL_ESCAPE
+#define QS(l, v)                    QS_SQL_ESCAPE(l, v)
+#endif
+#ifdef QS_DEF_DONT_ESCAPE
+#define QS(l, v)                    QS_DONT_ESCAPE(l, v)
+#endif
+
 
 
 /* HTTP status */
@@ -624,6 +648,16 @@ extern "C" {
     void eng_out_check_realloc_bin(int ci, const char *data, long len);
     void eng_out_html_header(int ci);
     void eng_out_html_footer(int ci);
+    void eng_append_css(int ci, const char *fname, bool first);
+    void eng_append_script(int ci, const char *fname, bool first);
+    void eng_send_ajax_msg(int ci, int errcode);
+    bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf);
+    bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf);
+    bool get_qs_param(int ci, const char *fieldname, char *retbuf);
+    bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen);
+    bool get_qs_param_long(int ci, const char *fieldname, char *retbuf);
+    bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf);
+    char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
 #ifdef ASYNC_SERVICE
     bool service_init(void);
     void service_app_process_req(const char *service, const char *req, char *res);
