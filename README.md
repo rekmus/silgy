@@ -13,7 +13,7 @@ What you get with Silgy:
 - **Speed** − measured in µ-seconds.
 - **Safety** − nobody can ever see your application logic nor wander through your filesystem nor run scripts. It has build-in protection against most popular attacks.
 - **Small memory footprint** − a couple of MB for demo app − can be easily reduced for embedded apps.
-- **Simple coding** − straightforward approach, easy to understand even for a beginner programmer [jump to Hello World](https://github.com/silgy/silgy#hello-world).
+- **Simple coding** − straightforward approach, easy to understand even for a beginner programmer ([jump to Hello World](https://github.com/silgy/silgy#hello-world)).
 - **All-In-One** − no need to install external modules; Silgy source already contains all the logic required to run the application.
 - **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around.
 - **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro), not even mentioning planet-friendliness.
