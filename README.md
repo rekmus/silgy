@@ -167,13 +167,13 @@ chmod u+x te
 
 ### 7. Run:
 ```source.sh
-sudo ./silgy_app
+sudo ../bin/silgy_app
 ```
 That's it. Your app should now be online.
 
 In a 'no-hung-up mode' you'll be able to exit terminal after starting the app:
 ```source.sh
-sudo nohup ./silgy_app &
+sudo nohup ../bin/silgy_app &
 ```
 or you can just use scripts provided in [bin](https://github.com/silgy/silgy/tree/master/bin) directory: [silgystart](https://github.com/silgy/silgy/blob/master/bin/silgystart) and [silgystop](https://github.com/silgy/silgy/blob/master/bin/silgystop).
 
