@@ -188,7 +188,7 @@ Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/
 ## Static Resources
 Static resources are simply any content that you rarely change and keep as ordinary disk files, as opposed to dynamic content that is generated in your code, as a unique response to user request. In this regard, Silgy is like any other web server (except it's extremely fast). Statics usually include pictures, css, robots.txt etc.
 
-Static resources are read into memory on startup from **res** directory. Static resources you want to serve minified (CSS and JS), are read into memory and minified on startup from **resmin** directory.
+Static resources are read into memory on startup from **res** directory. Static resources you want to serve minified (CSS and JS), are read into memory and minified on startup from **resmin** directory. Then, every 60 seconds (provided no traffic, that is select() timeouted) both directories are scanned for changes.
 
 Static resources are handled automatically, you don't have to add anything in your app.
 
