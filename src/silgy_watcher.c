@@ -20,11 +20,11 @@ void restart(void);
 int main(int argc, char *argv[])
 {
     char config[256];
-    int sockfd;
-    int conn;
-    int bytes;
+    int  sockfd;
+    int  conn;
+    int  bytes;
     char buffer[BUFSIZE];
-    static struct sockaddr_in serv_addr;
+static struct sockaddr_in serv_addr;
 
     /* set G_appdir ------------------------------------------------------ */
 
@@ -39,10 +39,13 @@ int main(int argc, char *argv[])
     sprintf(config, "%s/bin/silgy_watcher.conf", G_appdir);
     lib_read_conf(config);
 
+    if ( !silgy_read_param_int("logLevel", &G_logLevel) )
+        G_logLevel = 0;  /* don't create log file */
+
     /* start log --------------------------------------------------------- */
 
     if ( G_logLevel && !log_start("watch", G_test) )
-        return -1;
+		return EXIT_FAILURE;
 
     /* ------------------------------------------------------------------- */
 
@@ -51,7 +54,8 @@ int main(int argc, char *argv[])
     if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 )
     {
         ERR("socket failed, errno = %d (%s)", errno, strerror(errno));
-        exit(1);
+        log_finish();
+		return EXIT_FAILURE;
     }
 
     serv_addr.sin_family = AF_INET;

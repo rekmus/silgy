@@ -43,6 +43,9 @@ int main(int argc, char *argv[])
     sprintf(config, "%s/bin/silgy_service.conf", G_appdir);
     lib_read_conf(config);
 
+    if ( !silgy_read_param_int("logLevel", &G_logLevel) )
+        G_logLevel = 3;  /* info */
+
     /* start log --------------------------------------------------------- */
 
     if ( G_logLevel && !log_start("service", G_test) )

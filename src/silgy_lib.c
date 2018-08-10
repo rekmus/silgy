@@ -15,10 +15,10 @@
 /* globals */
 
 FILE        *G_log=NULL;            /* log file handle */
-char        G_logLevel=4;           /* log level */
+int         G_logLevel=4;           /* log level */
 char        G_appdir[256]=".";      /* application root dir */
 int         G_RESTTimeout=CALL_REST_DEFAULT_TIMEOUT;
-char        G_test=0;               /* test run */
+int         G_test=0;               /* test run */
 int         G_pid=0;                /* pid */
 time_t      G_now=0;                /* current time (GMT) */
 struct tm   *G_ptm={0};             /* human readable current time */
@@ -3706,8 +3706,43 @@ int date_cmp(const char *str1, const char *str2)
 
 
 /* --------------------------------------------------------------------------
-   Read & parse conf file and set global parameters
+   Read the config file
 -------------------------------------------------------------------------- */
+bool lib_read_conf(const char *file)
+{
+    FILE    *h_file=NULL;
+
+    /* open the conf file */
+
+    if ( NULL == (h_file=fopen(file, "r")) )
+    {
+//        printf("Error opening %s, using defaults.\n", file);
+        return FALSE;
+    }
+
+    /* read content into M_conf for silgy_read_param */
+
+    fseek(h_file, 0, SEEK_END);     /* determine the file size */
+    long size = ftell(h_file);
+    rewind(h_file);
+
+    if ( (M_conf=(char*)malloc(size+1)) == NULL )
+    {
+        printf("ERROR: Couldn't get %ld bytes for M_conf\n", size+1);
+        fclose(h_file);
+        return FALSE;
+    }
+
+    fread(M_conf, size, 1, h_file);
+    *(M_conf+size) = EOS;
+
+    fclose(h_file);
+
+    return TRUE;
+}
+
+
+#ifdef OLD_CODE
 bool lib_read_conf(const char *file)
 {
     FILE    *h_file=NULL;
@@ -3817,12 +3852,13 @@ bool lib_read_conf(const char *file)
 
     return TRUE;
 }
+#endif /* OLD_CODE */
 
 
 /* --------------------------------------------------------------------------
    Get param from config file
 ---------------------------------------------------------------------------*/
-bool silgy_read_param(const char *param, char *dest)
+bool silgy_read_param_str(const char *param, char *dest)
 {
     char *p;
 
@@ -3836,7 +3872,7 @@ bool silgy_read_param(const char *param, char *dest)
 
     if ( (p=strstr(M_conf, param)) == NULL )
     {
-        if ( dest ) dest[0] = EOS;
+//        if ( dest ) dest[0] = EOS;
         return FALSE;
     }
 
@@ -3845,7 +3881,7 @@ bool silgy_read_param(const char *param, char *dest)
     if ( p > M_conf && *(p-1) != '\n' )
     {
         /* looks like it's a value or it's commented out */
-        if ( dest ) dest[0] = EOS;
+//        if ( dest ) dest[0] = EOS;
         return FALSE;
     }
 
@@ -3870,6 +3906,23 @@ bool silgy_read_param(const char *param, char *dest)
     dest[i] = EOS;
 
     return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get integer param from config file
+---------------------------------------------------------------------------*/
+bool silgy_read_param_int(const char *param, int *dest)
+{
+    char tmp[256];
+
+    if ( silgy_read_param_str(param, tmp) )
+    {
+        if ( dest ) *dest = atoi(tmp);
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 

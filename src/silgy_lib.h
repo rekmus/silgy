@@ -194,6 +194,9 @@ typedef json_buf_t JSON;
 
 #endif  /* JSON_NO_AUTO_AMPERSANDS */
 
+/* for backward compatibility */
+#define silgy_read_param(p,v)       silgy_read_param_str(p,v)
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -258,7 +261,8 @@ extern "C" {
     void date_inc(char *str, int days, int *dow);
     int date_cmp(const char *str1, const char *str2);
     bool lib_read_conf(const char *file);
-    bool silgy_read_param(const char *param, char *dest);
+    bool silgy_read_param_str(const char *param, char *dest);
+    bool silgy_read_param_int(const char *param, int *dest);
     char *lib_create_pid_file(const char *name);
 	bool lib_shm_create(long bytes);
 	void lib_shm_delete(long bytes);

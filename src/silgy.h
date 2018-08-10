@@ -56,7 +56,9 @@ typedef char                        bool;
 #endif
 
 
-#define WEB_SERVER_VERSION          "3.5"
+#define WEB_SERVER_VERSION          "3.5.1"
+/* alias */
+#define SILGY_VERSION               WEB_SERVER_VERSION
 
 
 /* for use with booleans */
@@ -559,7 +561,7 @@ typedef struct {
 
 
 /* read from the config file */
-extern char     G_logLevel;
+extern int      G_logLevel;
 extern int      G_httpPort;
 extern int      G_httpsPort;
 extern char     G_cipherList[256];
@@ -573,7 +575,7 @@ extern char     G_dbUser[128];
 extern char     G_dbPassword[128];
 extern char     G_blockedIPList[256];
 extern int      G_RESTTimeout;
-extern char     G_test;
+extern int      G_test;
 /* end of config params */
 extern int      G_pid;                      /* pid */
 extern char     G_appdir[256];              /* application root dir */
@@ -633,7 +635,6 @@ extern char     *G_shm_segptr;              /* SHM pointer */
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void eng_set_param(const char *label, const char *value);
     void silgy_set_auth_level(const char *resource, char level);
     bool eng_uses_start(int ci);
     void eng_uses_close(int usi);

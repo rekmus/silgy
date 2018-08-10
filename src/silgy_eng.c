@@ -946,6 +946,7 @@ static void read_conf()
 {
     char    *p_conf_path=NULL;
     char    conf_path[512];
+    bool    conf_read=FALSE;
 
     /* set defaults */
 
@@ -968,22 +969,40 @@ static void read_conf()
 
     if ( NULL != (p_conf_path=getenv("SILGY_CONF")) )
     {
-        lib_read_conf(p_conf_path);
+        conf_read = lib_read_conf(p_conf_path);
     }
     else    /* no SILGY_CONF -- try default */
     {
-        if ( !lib_read_conf("silgy.conf") )     /* try current dir first */
+        if ( !(conf_read=lib_read_conf("silgy.conf")) )    /* try current dir first */
         {
             sprintf(conf_path, "%s/bin/silgy.conf", G_appdir);
 
-            if ( !lib_read_conf(conf_path) && 0==strcmp(G_appdir, ".") )    /* no SILGYDIR explicitly defined */
+            if ( !(conf_read=lib_read_conf(conf_path)) && 0==strcmp(G_appdir, ".") )  /* no SILGYDIR explicitly defined */
             {                                                               /* we're likely in src */
                 strcpy(conf_path, "../bin/silgy.conf");
 
-                if ( lib_read_conf(conf_path) ) /* that worked */
-                    strcpy(G_appdir, "..");     /* change G_appdir */
+                if ( (conf_read=lib_read_conf(conf_path)) )  /* that worked */
+                    strcpy(G_appdir, "..");         /* change G_appdir */
             }
         }
+    }
+
+    if ( conf_read )
+    {
+        silgy_read_param_int("logLevel", &G_logLevel);
+        silgy_read_param_int("httpPort", &G_httpPort);
+        silgy_read_param_int("httpsPort", &G_httpsPort);
+        silgy_read_param_str("certFile", G_certFile);
+        silgy_read_param_str("certChainFile", G_certChainFile);
+        silgy_read_param_str("keyFile", G_keyFile);
+        silgy_read_param_str("dbHost", G_dbHost);
+        silgy_read_param_int("dbPort", &G_dbPort);
+        silgy_read_param_str("dbName", G_dbName);
+        silgy_read_param_str("dbUser", G_dbUser);
+        silgy_read_param_str("dbPassword", G_dbPassword);
+        silgy_read_param_str("blockedIPList", G_blockedIPList);
+        silgy_read_param_int("RESTTimeout", &G_RESTTimeout);
+        silgy_read_param_int("test", &G_test);
     }
 }
 
@@ -3474,45 +3493,6 @@ static bool init_ssl()
 
 
 /* --------------------------------------------------------------------------
-   Set global parameters read from conf file
-   lib_read_conf() callback
--------------------------------------------------------------------------- */
-void eng_set_param(const char *label, const char *value)
-{
-    if ( PARAM("logLevel") )
-        G_logLevel = atoi(value);
-    else if ( PARAM("httpPort") )
-        G_httpPort = atoi(value);
-    else if ( PARAM("httpsPort") )
-        G_httpsPort = atoi(value);
-    else if ( PARAM("cipherList") )
-        strcpy(G_cipherList, value);
-    else if ( PARAM("certFile") )
-        strcpy(G_certFile, value);
-    else if ( PARAM("certChainFile") )
-        strcpy(G_certChainFile, value);
-    else if ( PARAM("keyFile") )
-        strcpy(G_keyFile, value);
-    else if ( PARAM("dbHost") )
-        strcpy(G_dbHost, value);
-    else if ( PARAM("dbPort") )
-        G_dbPort = atoi(value);
-    else if ( PARAM("dbName") )
-        strcpy(G_dbName, value);
-    else if ( PARAM("dbUser") )
-        strcpy(G_dbUser, value);
-    else if ( PARAM("dbPassword") )
-        strcpy(G_dbPassword, value);
-    else if ( PARAM("blockedIPList") )
-        strcpy(G_blockedIPList, value);
-    else if ( PARAM("RESTTimeout") )
-        G_RESTTimeout = atoi(value);
-    else if ( PARAM("test") )
-        G_test = atoi(value);
-}
-
-
-/* --------------------------------------------------------------------------
    Set required authorization level for the resource
 -------------------------------------------------------------------------- */
 void silgy_set_auth_level(const char *resource, char level)
@@ -3704,8 +3684,6 @@ void silgy_add_to_static_res(const char *name, char *src)
     M_stat[i].source = STATIC_SOURCE_INTERNAL;
 
     INF("%s (%ld bytes)", M_stat[i].name, M_stat[i].len);
-
-//    strcpy(M_stat[++i].name, "-");
 }
 
 
