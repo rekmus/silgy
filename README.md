@@ -688,12 +688,21 @@ Copy config file parameter to a variable. Returns true if found. *dest* can be N
 
 Example:
 ```source.c++
-// in app_init()
-char buffer[256];
-if ( silgy_read_param("Param1", buffer) )
-{
-    // use buffer
-}
+static char M_someSetting[256]=SOME_SETTING_DEFAULT_VALUE;
+
+    // in app_init()
+    silgy_read_param("someSetting", M_someSetting);
+```
+
+### bool silgy_read_param_int(const char \*param, int \*dest)
+Copy config file parameter to an integer variable. Returns true if found. *dest* can be NULL to only do presence check.
+
+Example:
+```source.c++
+static int M_someSetting=SOME_SETTING_DEFAULT_VALUE;
+
+    // in app_init()
+    silgy_read_param_int("someSetting", &M_someSetting);
 ```
 
 ### void silgy_set_auth_level(const char \*resource, char level)
