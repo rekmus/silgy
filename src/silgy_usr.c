@@ -9,6 +9,7 @@
 
 #include "silgy.h"
 
+#ifdef USERS
 
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
@@ -1565,3 +1566,5 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
     else
         sprintf(dest, "Unknown error (%d)", errcode);
 }
+
+#endif /* USERS */
