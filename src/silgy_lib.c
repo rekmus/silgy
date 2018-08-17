@@ -631,15 +631,15 @@ static void rest_disconnect()
 -------------------------------------------------------------------------- */
 static int rest_res_content_length(const char *buffer, int len)
 {
-    char buf[len+1];
+//    char buf[len+1];
     char *p;
 
-    strncpy(buf, buffer, len);
-    buf[len] = EOS;
+//    strncpy(buf, buffer, len);
+//    buf[len] = EOS;
 
-    if ( (p=strstr(buf, "\nContent-Length: ")) == NULL ) return 0;
+    if ( (p=strstr(buffer, "\nContent-Length: ")) == NULL ) return -1;
 
-    if ( len < (p-buf) + 18 ) return 0;
+    if ( len < (p-buffer) + 18 ) return -1;
     
     char result_str[8];
     char i=0;
@@ -653,7 +653,9 @@ static int rest_res_content_length(const char *buffer, int len)
 
     result_str[i] = EOS;
 
+#ifdef DUMP
     DBG("result_str [%s]", result_str);
+#endif
 
     return atoi(result_str);
 }
@@ -677,7 +679,7 @@ static time_t connected_time=0;
 static char buffer[JSON_BUFSIZE];
     long    bytes;
     char    *body;
-    int     content_read;
+    int     content_read=0;
     int     len, i, j;
     int     timeout_remain = G_RESTTimeout;
 #ifdef HTTPS
@@ -855,51 +857,50 @@ static char buffer[JSON_BUFSIZE];
         return FALSE;
     }
 
-    /* -------------------------------------------------------------------------- */
+    /* ------------------------------------------------------------------- */
     /* at this point we've got something that seems to be a HTTP header,
        possibly with content */
 
-    /* -------------------------------------------------------------------------- */
-    /* find the expected Content-Length                                           */
+    /* ------------------------------------------------------------------- */
+    /* find the expected Content-Length                                    */
 
     int content_length = rest_res_content_length(res_header, bytes);
 
     if ( content_length > JSON_BUFSIZE-1 )
     {
         ERR("Response content is too big");
-#ifdef DUMP
-        if ( bytes >= 0 )
-        {
-            res_header[bytes] = EOS;
-            DBG("Got %d bytes of response [%s]", bytes, res_header);
-        }
-#endif
         rest_disconnect();
         connected = FALSE;
         return FALSE;
     }
 
     /* ------------------------------------------------------------------- */
+    /* some content may have already been read                             */
 
-    if ( content_length > 0 )
+    body = strstr(res_header, "\r\n\r\n");
+
+    if ( body )
     {
-        /* skip HTTP header */
-
-        if ( !(body=strstr(res_header, "\r\n\r\n")) )
-        {
-            INF("No response body found");
-            return TRUE;
-        }
-
         body += 4;
-
-        /* read content */
 
         content_read = bytes - (body-res_header);
 
         if ( content_read > 0 )
             strncpy(buffer, body, content_read);
+    }
 
+    /* ------------------------------------------------------------------- */
+    /* without Content-Length we won't read anymore                        */
+
+//    if ( content_length == -1 )   /* no Content-Length in response */
+//    {
+//    }
+
+    /* ------------------------------------------------------------------- */
+    /* read content                                                        */
+
+//    if ( content_length > 0 )
+//    {
         while ( content_read < content_length && timeout_remain > 1 )  /* read whatever we can within timeout */
         {
 #ifdef DUMP
@@ -929,7 +930,7 @@ static char buffer[JSON_BUFSIZE];
             connected = FALSE;
             return FALSE;
         }        
-    }
+//    }
 
     buffer[content_read] = EOS;
 #ifdef DUMP
@@ -940,9 +941,9 @@ static char buffer[JSON_BUFSIZE];
 
     /* ------------------------------------------------------------------- */
 
-    if ( !keep )
+    if ( !keep || strstr(res_header, "\nConnection: close") != NULL )
     {
-        DBG("keep = FALSE, closing connection");
+        DBG("Closing connection");
         rest_disconnect();
         connected = FALSE;
     }

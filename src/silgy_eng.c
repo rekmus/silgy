@@ -1943,9 +1943,9 @@ static bool read_files(bool minify, bool first_scan)
     }
 
     /* ------------------------------------------------------------------- */
-
+#ifdef DUMP
     DBG("Reading %sfiles", first_scan?"":"new ");
-
+#endif
     /* read the files into memory */
 
     while ( (dirent=readdir(dir)) )
@@ -2122,14 +2122,14 @@ static bool read_files(bool minify, bool first_scan)
 
     G_ptm = gmtime(&G_now);     /* set it back */
 
-    DBG("");
+    if ( first_scan ) DBG("");
 
     return TRUE;
 }
 
 
 /* --------------------------------------------------------------------------
-  find first free slot in M_stat
+   Find first free slot in M_stat
 -------------------------------------------------------------------------- */
 static int first_free_stat()
 {
