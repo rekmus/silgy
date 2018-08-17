@@ -631,11 +631,7 @@ static void rest_disconnect()
 -------------------------------------------------------------------------- */
 static int rest_res_content_length(const char *buffer, int len)
 {
-//    char buf[len+1];
-    char *p;
-
-//    strncpy(buf, buffer, len);
-//    buf[len] = EOS;
+    const char *p;
 
     if ( (p=strstr(buffer, "\nContent-Length: ")) == NULL ) return -1;
 
