@@ -281,13 +281,17 @@ extern "C" {
 #ifdef _WIN32   /* Windows */
     int getpid(void);
     int clock_gettime(int dummy, struct timespec *spec);
+#endif  /* _WIN32 */
+
 #ifndef stpcpy
     char *stpcpy(char *dest, const char *src);
 #endif 
 #ifndef stpncpy
-    char *stpncpy(char *dest, const char *src, int len);
+    char *stpncpy(char *dest, const char *src, unsigned long len);
 #endif 
-#endif  /* _WIN32 */
+#ifndef strnstr
+    char *strnstr(const char *haystack, const char *needle, size_t len);
+#endif 
 
 #ifdef __cplusplus
 }   // extern "C"

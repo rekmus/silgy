@@ -658,6 +658,93 @@ static int rest_res_content_length(const char *buffer, int len)
 
 
 /* --------------------------------------------------------------------------
+   REST call / convert chunked to normal content
+   Return number of bytes written to res_content
+-------------------------------------------------------------------------- */
+static int chunked2content(char *res_content, const char *buffer, int src_len, int res_len)
+{
+    char *res=res_content;
+    char chunk_size_str[8];
+    int  chunk_size=1;
+    const char *p=buffer;
+    int  was_read=0, written=0;
+
+    while ( chunk_size > 0 )    /* chunk by chunk */
+    {
+        /* get the chunk size */
+
+        int i=0;
+
+        while ( *p!='\r' && i<6 && i<src_len )
+            chunk_size_str[i++] = *p++;
+
+        chunk_size_str[i] = EOS;
+#ifdef DUMP
+        DBG("chunk_size_str [%s]", chunk_size_str);
+#endif
+        sscanf(chunk_size_str, "%x", &chunk_size);
+        DBG("chunk_size = %d", chunk_size);
+
+        was_read += i;
+
+        /* --------------------------------------------------------------- */
+
+        if ( chunk_size == 0 )    /* last one */
+        {
+            DBG("Last chunk");
+            break;
+        }
+        else if ( chunk_size < 0 )
+        {
+            ERR("chunk_size < 0");
+            break;
+        }
+        else if ( chunk_size > res_len-written )
+        {
+            ERR("chunk_size > res_len-written");
+            break;
+        }
+
+        /* --------------------------------------------------------------- */
+        /* skip "\r\n" */
+
+        p += 2;
+        was_read += 2;
+
+        /* --------------------------------------------------------------- */
+
+        if ( was_read >= src_len || chunk_size > src_len-was_read )
+        {
+            ERR("Unexpected end of buffer");
+            break;
+        }
+
+        /* --------------------------------------------------------------- */
+        /* copy chunk to destination */
+
+        res = stpncpy(res, p, chunk_size);
+        written += chunk_size;
+
+        p += chunk_size;
+        was_read += chunk_size;
+
+        /* --------------------------------------------------------------- */
+
+        while ( *p != '\n' && was_read<src_len-1 )
+        {
+//            DBG("Skip '%c'", *p);
+            ++p;
+        }
+
+        ++p;    /* skip '\n' */
+        ++was_read;
+    }
+
+    return written;
+}
+
+
+/* --------------------------------------------------------------------------
    REST call
 -------------------------------------------------------------------------- */
 bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json, bool keep)
@@ -675,7 +762,7 @@ static time_t connected_time=0;
 static char buffer[JSON_BUFSIZE];
     long    bytes;
     char    *body;
-    int     content_read=0;
+    int     content_read=0, buffer_read=0;
     int     len, i, j;
     int     timeout_remain = G_RESTTimeout;
 #ifdef HTTPS
@@ -871,6 +958,49 @@ static char buffer[JSON_BUFSIZE];
     }
 
     /* ------------------------------------------------------------------- */
+    /*
+       There are 4 options now:
+
+       1. Normal content with explicit Content-Length (content_length > 0)
+       2. No content gracefully (content_length = 0)
+       3. Chunked content (content_length = -1 and Transfer-Encoding says 'chunked')
+       4. Error -- that is, no Content-Length header and no Transfer-Encoding
+
+    */
+
+#define TRANSFER_MODE_NORMAL     '1'
+#define TRANSFER_MODE_NO_CONTENT '2'
+#define TRANSFER_MODE_CHUNKED    '3'
+#define TRANSFER_MODE_ERROR      '4'
+
+    char res_content[JSON_BUFSIZE];
+    char mode;
+
+    if ( content_length > 0 )     /* Content-Length present in response */
+    {
+        DBG("TRANSFER_MODE_NORMAL");
+        mode = TRANSFER_MODE_NORMAL;
+    }
+    else if ( content_length == 0 )
+    {
+        DBG("TRANSFER_MODE_NO_CONTENT");
+        mode = TRANSFER_MODE_NO_CONTENT;
+    }
+    else    /* content_length == -1 */
+    {
+        if ( strstr(res_header, "\nTransfer-Encoding: chunked") != NULL )
+        {
+            DBG("TRANSFER_MODE_CHUNKED");
+            mode = TRANSFER_MODE_CHUNKED;
+        }
+        else
+        {
+            WAR("TRANSFER_MODE_ERROR");
+            mode = TRANSFER_MODE_ERROR;
+        }
+    }
+
+    /* ------------------------------------------------------------------- */
     /* some content may have already been read                             */
 
     body = strstr(res_header, "\r\n\r\n");
@@ -879,58 +1009,101 @@ static char buffer[JSON_BUFSIZE];
     {
         body += 4;
 
-        content_read = bytes - (body-res_header);
+        int was_read = bytes - (body-res_header);
 
-        if ( content_read > 0 )
-            strncpy(buffer, body, content_read);
+        if ( was_read > 0 )
+        {
+            if ( mode == TRANSFER_MODE_NORMAL )   /* not chunked goes directly to res_content */
+            {
+                content_read = was_read;
+                strncpy(res_content, body, content_read);
+            }
+            else if ( mode == TRANSFER_MODE_CHUNKED )   /* chunked goes to buffer before res_content */
+            {
+                buffer_read = was_read;
+                strncpy(buffer, body, buffer_read);
+            }
+        }
     }
-
-    /* ------------------------------------------------------------------- */
-    /* without Content-Length we won't read anymore                        */
-
-//    if ( content_length == -1 )   /* no Content-Length in response */
-//    {
-//    }
 
     /* ------------------------------------------------------------------- */
     /* read content                                                        */
 
-//    if ( content_length > 0 )
-//    {
-        while ( content_read < content_length && timeout_remain > 1 )  /* read whatever we can within timeout */
+    if ( mode == TRANSFER_MODE_NORMAL )
+    {
+        while ( content_read < content_length && timeout_remain > 1 )   /* read whatever we can within timeout */
         {
 #ifdef DUMP
-            DBG("trying again");
+            DBG("trying again (content-length)");
 #endif
 
 #ifdef HTTPS
             if ( secure )
-                bytes = SSL_read(M_rest_ssl, buffer+content_read, JSON_BUFSIZE-content_read-1);
+                bytes = SSL_read(M_rest_ssl, res_content+content_read, JSON_BUFSIZE-content_read-1);
             else
 #endif /* HTTPS */
-                bytes = recv(M_rest_sock, buffer+content_read, JSON_BUFSIZE-content_read-1, 0);
+                bytes = recv(M_rest_sock, res_content+content_read, JSON_BUFSIZE-content_read-1, 0);
 
             if ( bytes == -1 )
-            {
-                bytes = lib_finish_with_timeout(M_rest_sock, READ, buffer+content_read, JSON_BUFSIZE-content_read-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
+                bytes = lib_finish_with_timeout(M_rest_sock, READ, res_content+content_read, JSON_BUFSIZE-content_read-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
-                if ( bytes > 0 )
-                    content_read += bytes;
-            }
+            if ( bytes > 0 )
+                content_read += bytes;
         }
 
-        if ( bytes < 1 )    /* timeouted? */
+        if ( bytes < 1 )
         {
             DBG("timeouted?");
             rest_disconnect();
             connected = FALSE;
             return FALSE;
         }        
-//    }
+    }
+    else if ( mode == TRANSFER_MODE_CHUNKED )
+    {
+        /* for single-threaded process, I can't see better option than to read everything
+           into a buffer and then parse and copy chunks into final res_content */
 
-    buffer[content_read] = EOS;
+        /* there's no guarantee that every read = one chunk, so just read whatever comes in, until it does */
+
+        while ( bytes > 0 && timeout_remain > 1 )   /* read whatever we can within timeout */
+        {
 #ifdef DUMP
-    DBG("Read %d bytes of content [%s]", content_read, buffer);
+            DBG("trying again (chunked)");
+#endif
+
+#ifdef HTTPS
+            if ( secure )
+                bytes = SSL_read(M_rest_ssl, buffer+buffer_read, JSON_BUFSIZE-buffer_read-1);
+            else
+#endif /* HTTPS */
+                bytes = recv(M_rest_sock, buffer+buffer_read, JSON_BUFSIZE-buffer_read-1, 0);
+
+            if ( bytes == -1 )
+                bytes = lib_finish_with_timeout(M_rest_sock, READ, buffer+buffer_read, JSON_BUFSIZE-buffer_read-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
+
+            if ( bytes > 0 )
+                buffer_read += bytes;
+        }
+
+        if ( buffer_read < 5 )
+        {
+            ERR("buffer_read is only %d, this can't be valid chunked content", buffer_read);
+            rest_disconnect();
+            connected = FALSE;
+            return FALSE;
+        }
+
+//        buffer[buffer_read] = EOS;
+
+        content_read = chunked2content(res_content, buffer, buffer_read, JSON_BUFSIZE);
+    }
+
+    /* ------------------------------------------------------------------- */
+
+    res_content[content_read] = EOS;
+#ifdef DUMP
+    DBG("Read %d bytes of content [%s]", content_read, res_content);
 #else
     DBG("Read %d bytes of content", content_read);
 #endif
@@ -964,9 +1137,9 @@ static char buffer[JSON_BUFSIZE];
     if ( len && res )
     {
         if ( json )
-            lib_json_from_string((JSON*)res, buffer, content_read, 0);
+            lib_json_from_string((JSON*)res, res_content, content_read, 0);
         else
-            strcpy((char*)res, buffer);
+            strcpy((char*)res, res_content);
     }
 
     return TRUE;
@@ -4797,6 +4970,7 @@ int clock_gettime(int dummy, struct timespec *spec)
 
    return 0;
 }
+#endif  /* _WIN32 */
 
 
 #ifndef stpcpy
@@ -4821,7 +4995,7 @@ char *stpcpy(char *dest, const char *src)
 /* --------------------------------------------------------------------------
    Windows port of stpcpy
 -------------------------------------------------------------------------- */
-char *stpncpy(char *dest, const char *src, int len)
+char *stpncpy(char *dest, const char *src, unsigned long len)
 {
     register char *d=dest;
     register const char *s=src;
@@ -4835,4 +5009,27 @@ char *stpncpy(char *dest, const char *src, int len)
 }
 #endif
 
-#endif  /* _WIN32 */
+
+#ifndef strnstr
+/* --------------------------------------------------------------------------
+   Windows port of strnstr
+-------------------------------------------------------------------------- */
+char *strnstr(const char *haystack, const char *needle, size_t len)
+{
+    int i;
+    size_t needle_len;
+
+    if ( 0 == (needle_len = strnlen(needle, len)) )
+        return (char*)haystack;
+
+    for ( i=0; i<=(int)(len-needle_len); ++i )
+    {
+        if ( (haystack[0] == needle[0]) && (0 == strncmp(haystack, needle, needle_len)) )
+            return (char*)haystack;
+
+        ++haystack;
+    }
+
+    return NULL;
+}
+#endif
