@@ -1,9 +1,11 @@
 #!/bin/sh
 
-echo Making silgy_service...
+SVC_NAME=silgy_service
 
-g++ silgy_service.cpp silgy_service_eng.c silgy_lib.c \
+echo Making $SVC_NAME...
+
+g++ $SVC_NAME.cpp silgy_eng.c silgy_lib.c \
 -s -O3 \
 -D ASYNC_SERVICE \
 -lrt \
--o $SILGYDIR/bin/silgy_service \
+-o ../bin/$SVC_NAME

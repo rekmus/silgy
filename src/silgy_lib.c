@@ -4312,6 +4312,8 @@ static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 
     if ( level > G_logLevel ) return;
 
+    if ( !G_log ) G_log = stdout;
+
     /* output timestamp */
 
     fprintf(G_log, "[%s] ", G_dt);
@@ -4348,6 +4350,8 @@ void log_write(int level, const char *message, ...)
 static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 
     if ( level > G_logLevel ) return;
+
+    if ( !G_log ) G_log = stdout;
 
     if ( LOG_ERR == level )
         fprintf(G_log, "ERROR: ");
@@ -4981,10 +4985,8 @@ int clock_gettime(int dummy, struct timespec *spec)
 
    return 0;
 }
-#endif  /* _WIN32 */
 
 
-#ifndef stpcpy
 /* --------------------------------------------------------------------------
    Windows port of stpcpy
 -------------------------------------------------------------------------- */
@@ -4999,10 +5001,8 @@ char *stpcpy(char *dest, const char *src)
 
     return d - 1;
 }
-#endif
 
 
-#ifndef stpncpy
 /* --------------------------------------------------------------------------
    Windows port of stpcpy
 -------------------------------------------------------------------------- */
@@ -5018,7 +5018,7 @@ char *stpncpy(char *dest, const char *src, unsigned long len)
 
     return d - 1;
 }
-#endif
+#endif  /* _WIN32 */
 
 
 #ifndef strnstr
