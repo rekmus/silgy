@@ -201,6 +201,7 @@ typedef json_buf_t JSON;
 #ifdef __cplusplus
 extern "C" {
 #endif
+    void lib_update_time_globals(void);
     void lib_setnonblocking(int sock);
     void lib_rest_headers_reset(void);
     void lib_rest_header_set(const char *key, const char *value);

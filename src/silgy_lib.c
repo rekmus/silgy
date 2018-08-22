@@ -64,6 +64,17 @@ static void get_byteorder32(void);
 static void get_byteorder64(void);
 
 
+/* --------------------------------------------------------------------------
+   Update G_now, G_ptm and G_dt
+-------------------------------------------------------------------------- */
+void lib_update_time_globals()
+{
+    G_now = time(NULL);
+    G_ptm = gmtime(&G_now);
+    sprintf(G_dt, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
+}
+
+
 #ifdef HTTPS
 
 #include <openssl/err.h>

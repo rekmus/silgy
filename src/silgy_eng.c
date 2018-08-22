@@ -344,14 +344,14 @@ struct timeval  timeout;                    /* Timeout for select */
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
 
-        G_now = time(NULL);
-        G_ptm = gmtime(&G_now);
+        lib_update_time_globals();
+
 #ifdef _WIN32   /* Windows */
         strftime(M_resp_date, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
 #else
         strftime(M_resp_date, 32, "%a, %d %b %Y %T GMT", G_ptm);
 #endif  /* _WIN32 */
-        sprintf(G_dt, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
+
 #ifdef ASYNC
         /* mark timeout-ed */
 
@@ -1157,9 +1157,7 @@ static bool init(int argc, char **argv)
 
     /* init time variables */
 
-    G_now = time(NULL);
-    G_ptm = gmtime(&G_now);
-    sprintf(G_dt, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
+    lib_update_time_globals();
 
     /* start log */
 

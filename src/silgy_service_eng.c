@@ -38,9 +38,7 @@ int main(int argc, char *argv[])
 
     /* init time variables ----------------------------------------------- */
 
-    G_now = time(NULL);
-    G_ptm = gmtime(&G_now);
-    sprintf(G_dt, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
+    lib_update_time_globals();
 
     sprintf(config, "%s.conf", argv[0]);
 
@@ -131,6 +129,7 @@ int main(int argc, char *argv[])
     {
         if ( mq_receive(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, NULL) != -1 )
         {
+            lib_update_time_globals();
             log_write_time(LOG_INF, "Message received");
             DBG("ci = %d, service [%s], call_id = %ld", req.ci, req.service, req.call_id);
             res.call_id = req.call_id;
