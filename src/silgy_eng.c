@@ -695,8 +695,12 @@ struct timeval  timeout;                    /* Timeout for select */
         /* async processing -- check on response queue */
 #ifdef ASYNC
         async_res_t res;
-
-        if ( mq_receive(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, 0) != -1 )    /* there's a response in a queue */
+#ifdef DUMP
+        int mq_ret;
+        if ( (mq_ret=mq_receive(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, NULL)) != -1 )    /* there's a response in the queue */
+#else
+        if ( mq_receive(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, NULL) != -1 )    /* there's a response in the queue */
+#endif /* DUMP */
         {
             DBG("Message received!");
             DBG("res.call_id = %ld", res.call_id);
@@ -714,6 +718,20 @@ struct timeval  timeout;                    /* Timeout for select */
                 }
             }
         }
+#ifdef DUMP
+        else
+        {
+            static time_t last_time=0;  /* not too often */
+
+            if ( last_time != G_now )
+            {
+                int wtf = errno;
+                if ( wtf != EAGAIN )
+                    ERR("mq_receive failed, errno = %d (%s)", wtf, strerror(wtf));
+                last_time = G_now;
+            }
+        }
+#endif
 
         /* free timeout-ed */
 
@@ -1429,22 +1447,33 @@ static bool init(int argc, char **argv)
 #ifdef ASYNC
     ALWAYS("\nOpening message queues...\n");
 
-    struct mq_attr attr;
+    struct mq_attr attr={0};
 
-    attr.mq_maxmsg = 10;
+    attr.mq_maxmsg = ASYNC_MQ_MAXMSG;
+
+    /* ------------------------------------------------------------------- */
+
+    if ( mq_unlink(ASYNC_REQ_QUEUE) == 0 )
+        INF("Message queue %s removed from system", ASYNC_REQ_QUEUE);
+
     attr.mq_msgsize = ASYNC_REQ_MSG_SIZE;
-    attr.mq_flags = 0;
-    attr.mq_curmsgs = 0;
 
     G_queue_req = mq_open(ASYNC_REQ_QUEUE, O_WRONLY | O_CREAT | O_NONBLOCK, 0664, &attr);
     if (G_queue_req < 0)
         ERR("mq_open for req failed, errno = %d (%s)", errno, strerror(errno));
+
+    /* ------------------------------------------------------------------- */
+
+    if ( mq_unlink(ASYNC_RES_QUEUE) == 0 )
+        INF("Message queue %s removed from system", ASYNC_RES_QUEUE);
 
     attr.mq_msgsize = ASYNC_RES_MSG_SIZE;   /* larger buffer */
 
     G_queue_res = mq_open(ASYNC_RES_QUEUE, O_RDONLY | O_CREAT | O_NONBLOCK, 0664, &attr);
     if (G_queue_res < 0)
         ERR("mq_open for res failed, errno = %d (%s)", errno, strerror(errno));
+
+    /* ------------------------------------------------------------------- */
 
     for (i=0; i<MAX_ASYNC; ++i)
         ares[i].state = ASYNC_STATE_FREE;
@@ -1744,7 +1773,7 @@ static bool read_blocked_ips()
 
     if ( NULL == (h_file=fopen(fname, "r")) )
     {
-        ERR("Error opening %s\n", fname);
+        WAR("Couldn't open %s\n", fname);
         return FALSE;
     }
 
@@ -3625,7 +3654,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     DBG("Sending a message on behalf of ci=%d, call_id=%ld, service [%s]", ci, req.call_id, req.service);
 
-    mq_send(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, 0);
+    mq_send(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, NULL);
 
     if ( response )     /* we will wait */
     {
@@ -3651,7 +3680,9 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         }
 
         /* set request state */
-
+#ifdef DUMP
+        DBG("Changing state to CONN_STATE_WAITING_FOR_ASYNC");
+#endif
         conn[ci].conn_state = CONN_STATE_WAITING_FOR_ASYNC;
     }
 #endif

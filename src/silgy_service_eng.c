@@ -40,15 +40,20 @@ int main(int argc, char *argv[])
     G_ptm = gmtime(&G_now);
     sprintf(G_dt, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
 
-    sprintf(config, "%s/bin/silgy_service.conf", G_appdir);
-    lib_read_conf(config);
+    sprintf(config, "%s.conf", argv[0]);
+
+    if ( !lib_read_conf(config) )
+    {
+        sprintf(config, "%s/bin/%s.conf", G_appdir, argv[0]);
+        lib_read_conf(config);
+    }
 
     if ( !silgy_read_param_int("logLevel", &G_logLevel) )
         G_logLevel = 3;  /* info */
 
     /* start log --------------------------------------------------------- */
 
-    if ( G_logLevel && !log_start("service", G_test) )
+    if ( G_logLevel && !log_start(argv[0], G_test) )
 		return EXIT_FAILURE;
 
     /* pid file ---------------------------------------------------------- */
@@ -67,7 +72,12 @@ int main(int argc, char *argv[])
 
     /* open queues ------------------------------------------------------- */
 
-	G_queue_req = mq_open(ASYNC_REQ_QUEUE, O_RDONLY);
+    struct mq_attr attr={0};
+
+    attr.mq_maxmsg = ASYNC_MQ_MAXMSG;
+    attr.mq_msgsize = ASYNC_REQ_MSG_SIZE;
+
+	G_queue_req = mq_open(ASYNC_REQ_QUEUE, O_RDONLY, 0664, &attr);
 
 	if ( G_queue_req < 0 )
 	{
@@ -76,9 +86,11 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-    DBG("G_queue_req open OK");
+    INF("G_queue_req open OK");
 
-	G_queue_res = mq_open(ASYNC_RES_QUEUE, O_WRONLY);
+    attr.mq_msgsize = ASYNC_RES_MSG_SIZE;   /* larger buffer */
+
+	G_queue_res = mq_open(ASYNC_RES_QUEUE, O_WRONLY, 0664, &attr);
 
 	if ( G_queue_res < 0 )
 	{
@@ -87,7 +99,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-    DBG("G_queue_res open OK");
+    INF("G_queue_res open OK");
 
     /* ------------------------------------------------------------------- */
 
@@ -107,9 +119,9 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-        if ( mq_receive(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, 0) != -1 )
+        if ( mq_receive(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, NULL) != -1 )
         {
-            DBG("Message received");
+            log_write_time(LOG_INF, "Message received");
             DBG("ci = %d, service [%s], call_id = %ld", req.ci, req.service, req.call_id);
             res.call_id = req.call_id;
             res.ci = req.ci;
@@ -118,13 +130,13 @@ int main(int argc, char *argv[])
             service_app_process_req(req.service, req.data, res.data);
             if ( req.response )
             {
-                DBG("Sending response...");
-                mq_send(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, 0);
+                log_write_time(LOG_INF, "Sending response...");
+                mq_send(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, NULL);
                 DBG("Sent\n");
             }
             else
             {
-                DBG("Response not required");
+                log_write_time(LOG_INF, "Response not required");
             }
         }
     }
