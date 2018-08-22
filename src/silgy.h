@@ -599,6 +599,8 @@ extern MYSQL    *G_dbconn;                  /* database connection */
 #endif
 #ifndef _WIN32
 /* asynchorous processing */
+extern char     G_req_queue_name[256];
+extern char     G_res_queue_name[256];
 extern mqd_t    G_queue_req;                /* request queue */
 extern mqd_t    G_queue_res;                /* response queue */
 #ifdef ASYNC

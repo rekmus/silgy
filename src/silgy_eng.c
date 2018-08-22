@@ -68,6 +68,8 @@ MYSQL       *G_dbconn;                  /* database connection */
 #endif
 #ifndef _WIN32
 /* asynchorous processing */
+char        G_req_queue_name[256];
+char        G_res_queue_name[256];
 mqd_t       G_queue_req;                /* request queue */
 mqd_t       G_queue_res;                /* response queue */
 #ifdef ASYNC
@@ -1447,29 +1449,37 @@ static bool init(int argc, char **argv)
 #ifdef ASYNC
     ALWAYS("\nOpening message queues...\n");
 
+#ifdef APP_ASYNC_ID
+    sprintf(G_req_queue_name, "%s_%d", ASYNC_REQ_QUEUE, APP_ASYNC_ID);
+    sprintf(G_res_queue_name, "%s_%d", ASYNC_RES_QUEUE, APP_ASYNC_ID);
+#else
+    strcpy(G_req_queue_name, ASYNC_REQ_QUEUE);
+    strcpy(G_res_queue_name, ASYNC_RES_QUEUE);
+#endif
+
     struct mq_attr attr={0};
 
     attr.mq_maxmsg = ASYNC_MQ_MAXMSG;
 
     /* ------------------------------------------------------------------- */
 
-    if ( mq_unlink(ASYNC_REQ_QUEUE) == 0 )
-        INF("Message queue %s removed from system", ASYNC_REQ_QUEUE);
+    if ( mq_unlink(G_req_queue_name) == 0 )
+        INF("Message queue %s removed from system", G_req_queue_name);
 
     attr.mq_msgsize = ASYNC_REQ_MSG_SIZE;
 
-    G_queue_req = mq_open(ASYNC_REQ_QUEUE, O_WRONLY | O_CREAT | O_NONBLOCK, 0664, &attr);
+    G_queue_req = mq_open(G_req_queue_name, O_WRONLY | O_CREAT | O_NONBLOCK, 0664, &attr);
     if (G_queue_req < 0)
         ERR("mq_open for req failed, errno = %d (%s)", errno, strerror(errno));
 
     /* ------------------------------------------------------------------- */
 
-    if ( mq_unlink(ASYNC_RES_QUEUE) == 0 )
-        INF("Message queue %s removed from system", ASYNC_RES_QUEUE);
+    if ( mq_unlink(G_res_queue_name) == 0 )
+        INF("Message queue %s removed from system", G_res_queue_name);
 
     attr.mq_msgsize = ASYNC_RES_MSG_SIZE;   /* larger buffer */
 
-    G_queue_res = mq_open(ASYNC_RES_QUEUE, O_RDONLY | O_CREAT | O_NONBLOCK, 0664, &attr);
+    G_queue_res = mq_open(G_res_queue_name, O_RDONLY | O_CREAT | O_NONBLOCK, 0664, &attr);
     if (G_queue_res < 0)
         ERR("mq_open for res failed, errno = %d (%s)", errno, strerror(errno));
 
@@ -3358,12 +3368,12 @@ static void clean_up()
     if (G_queue_req)
     {
         mq_close(G_queue_req);
-        mq_unlink(ASYNC_REQ_QUEUE);
+        mq_unlink(G_req_queue_name);
     }
     if (G_queue_res)
     {
         mq_close(G_queue_res);
-        mq_unlink(ASYNC_RES_QUEUE);
+        mq_unlink(G_res_queue_name);
     }
 #endif
 

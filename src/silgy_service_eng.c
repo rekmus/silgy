@@ -10,11 +10,13 @@
 #include "silgy.h"
 
 
-mqd_t           G_queue_req;                /* request queue */
-mqd_t           G_queue_res;                /* response queue */
+char        G_req_queue_name[256];
+char        G_res_queue_name[256];
+mqd_t       G_queue_req;                /* request queue */
+mqd_t       G_queue_res;                /* response queue */
 
 
-static char     *M_pidfile;                 /* pid file name */
+static char *M_pidfile;                 /* pid file name */
 
 
 static void sigdisp(int sig);
@@ -72,12 +74,20 @@ int main(int argc, char *argv[])
 
     /* open queues ------------------------------------------------------- */
 
+#ifdef APP_ASYNC_ID
+    sprintf(G_req_queue_name, "%s_%d", ASYNC_REQ_QUEUE, APP_ASYNC_ID);
+    sprintf(G_res_queue_name, "%s_%d", ASYNC_RES_QUEUE, APP_ASYNC_ID);
+#else
+    strcpy(G_req_queue_name, ASYNC_REQ_QUEUE);
+    strcpy(G_res_queue_name, ASYNC_RES_QUEUE);
+#endif
+
     struct mq_attr attr={0};
 
     attr.mq_maxmsg = ASYNC_MQ_MAXMSG;
     attr.mq_msgsize = ASYNC_REQ_MSG_SIZE;
 
-	G_queue_req = mq_open(ASYNC_REQ_QUEUE, O_RDONLY, 0664, &attr);
+	G_queue_req = mq_open(G_req_queue_name, O_RDONLY, 0664, &attr);
 
 	if ( G_queue_req < 0 )
 	{
@@ -90,7 +100,7 @@ int main(int argc, char *argv[])
 
     attr.mq_msgsize = ASYNC_RES_MSG_SIZE;   /* larger buffer */
 
-	G_queue_res = mq_open(ASYNC_RES_QUEUE, O_WRONLY, 0664, &attr);
+	G_queue_res = mq_open(G_res_queue_name, O_WRONLY, 0664, &attr);
 
 	if ( G_queue_res < 0 )
 	{
@@ -185,11 +195,16 @@ static void clean_up()
         system(command);
     }
 
-	if (G_queue_req)
-		mq_close(G_queue_req);
-
-	if (G_queue_res)
-		mq_close(G_queue_res);
+    if (G_queue_req)
+    {
+        mq_close(G_queue_req);
+        mq_unlink(G_req_queue_name);
+    }
+    if (G_queue_res)
+    {
+        mq_close(G_queue_res);
+        mq_unlink(G_res_queue_name);
+    }
 
     log_finish();
 }

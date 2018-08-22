@@ -21,6 +21,10 @@
 #define APP_ADMIN_EMAIL             "admin@example.com"
 #define APP_CONTACT_EMAIL           "contact@example.com"
 
+/* for ASYNC */
+
+#define APP_ASYNC_ID                1
+
 /* for USERS module passwords' hashing */
 
 #define STR_001                     "abcde"
