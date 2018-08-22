@@ -15,6 +15,12 @@
 #define INF(s, ...)             log_write(LOG_INF, s, ##__VA_ARGS__)
 #define DBG(s, ...)             log_write(LOG_DBG, s, ##__VA_ARGS__)
 
+#define ALWAYS_T(s, ...)        log_write_time(LOG_ALWAYS, s, ##__VA_ARGS__)
+#define ERR_T(s, ...)           log_write_time(LOG_ERR, s, ##__VA_ARGS__)
+#define WAR_T(s, ...)           log_write_time(LOG_WAR, s, ##__VA_ARGS__)
+#define INF_T(s, ...)           log_write_time(LOG_INF, s, ##__VA_ARGS__)
+#define DBG_T(s, ...)           log_write_time(LOG_DBG, s, ##__VA_ARGS__)
+
 #define LOREM_IPSUM             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
 #define PARAM(p)                (0==strcmp(label,p))

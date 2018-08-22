@@ -3336,7 +3336,7 @@ static void clean_up()
     if ( G_log )
     {
         ALWAYS("");
-        log_write_time(LOG_ALWAYS, "Cleaning up...\n");
+        ALWAYS("Cleaning up...\n");
         lib_log_memory();
         dump_counters();
     }
@@ -3388,7 +3388,9 @@ static void clean_up()
 -------------------------------------------------------------------------- */
 static void sigdisp(int sig)
 {
-    INF("Exiting due to receiving signal: %d", sig);
+    lib_update_time_globals();
+    ALWAYS("");
+    ALWAYS_T("Exiting due to receiving signal: %d", sig);
     clean_up();
     exit(1);
 }

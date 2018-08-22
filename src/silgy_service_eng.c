@@ -123,29 +123,34 @@ int main(int argc, char *argv[])
     async_req_t req;
     async_res_t res;
 
-    INF("Waiting...");
+    INF("Waiting...\n");
 
     while (1)
     {
         if ( mq_receive(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, NULL) != -1 )
         {
             lib_update_time_globals();
-            log_write_time(LOG_INF, "Message received");
-            DBG("ci = %d, service [%s], call_id = %ld", req.ci, req.service, req.call_id);
+            DBG_T("Message received");
+            if ( G_logLevel > LOG_INF )
+                DBG_T("ci = %d, service [%s], call_id = %ld", req.ci, req.service, req.call_id);
+            else
+                INF_T("%s called (id=%ld)", req.service, req.call_id);
             res.call_id = req.call_id;
             res.ci = req.ci;
             strcpy(res.service, req.service);
+            /* ----------------------------------------------------------- */
             DBG("Processing...");
             service_app_process_req(req.service, req.data, res.data);
+            /* ----------------------------------------------------------- */
             if ( req.response )
             {
-                log_write_time(LOG_INF, "Sending response...");
+                DBG("Sending response...");
                 mq_send(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, NULL);
                 DBG("Sent\n");
             }
             else
             {
-                log_write_time(LOG_INF, "Response not required");
+                DBG("Response not required\n");
             }
         }
     }
@@ -161,7 +166,9 @@ int main(int argc, char *argv[])
 -------------------------------------------------------------------------- */
 static void sigdisp(int sig)
 {
-    INF("Exiting due to receiving signal: %d", sig);
+    lib_update_time_globals();
+    ALWAYS("");
+    ALWAYS_T("Exiting due to receiving signal: %d", sig);
     clean_up();
     exit(1);
 }
@@ -177,7 +184,7 @@ static void clean_up()
     if ( G_log )
     {
         ALWAYS("");
-        log_write_time(LOG_ALWAYS, "Cleaning up...\n");
+        ALWAYS("Cleaning up...\n");
         lib_log_memory();
     }
 
