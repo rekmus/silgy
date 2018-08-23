@@ -14,7 +14,6 @@
 
 /* globals */
 
-FILE        *G_log=NULL;            /* log file handle */
 int         G_logLevel=4;           /* log level */
 char        G_appdir[256]=".";      /* application root dir */
 int         G_RESTTimeout=CALL_REST_DEFAULT_TIMEOUT;
@@ -30,6 +29,7 @@ char        *G_shm_segptr=NULL;     /* SHM pointer */
 /* locals */
 
 static char *M_conf=NULL;           /* config file content */
+FILE        *M_log_fd=stdout;       /* log file handle */
 
 static char M_df=0;                 /* date format */
 static char M_tsep=' ';             /* thousand separator */
@@ -4247,7 +4247,7 @@ void lib_shm_delete(long bytes)
 
 
 /* --------------------------------------------------------------------------
-   Start a log. uses global G_log as file handler
+   Start a log
 -------------------------------------------------------------------------- */
 bool log_start(const char *prefix, bool test)
 {
@@ -4255,6 +4255,8 @@ bool log_start(const char *prefix, bool test)
     char    fname[512];         /* file name */
     char    ffname[512];        /* full file name */
     char    fffname[512];       /* full file name with path */
+
+    if ( M_log_fd != NULL && M_log_fd != stdout ) return TRUE;  /* already started */
 
     if ( prefix && prefix[0] )
         sprintf(fprefix, "%s_", prefix);
@@ -4270,17 +4272,17 @@ bool log_start(const char *prefix, bool test)
 
     sprintf(fffname, "../logs/%s", ffname);
 
-    if ( NULL == (G_log=fopen(fffname, "a")) )
+    if ( NULL == (M_log_fd=fopen(fffname, "a")) )
     {
         /* try in SILGYDIR ----------------------------------------------- */
 
         sprintf(fffname, "%s/logs/%s", G_appdir, ffname);
 
-        if ( NULL == (G_log=fopen(fffname, "a")) )
+        if ( NULL == (M_log_fd=fopen(fffname, "a")) )
         {
             /* try in current directory ---------------------------------- */
 
-            if ( NULL == (G_log=fopen(ffname, "a")) )
+            if ( NULL == (M_log_fd=fopen(ffname, "a")) )
             {
                 printf("ERROR: Couldn't open log file.\n");
                 return FALSE;
@@ -4288,7 +4290,7 @@ bool log_start(const char *prefix, bool test)
         }
     }
 
-    if ( fprintf(G_log, "----------------------------------------------------------------------------------------------\n") < 0 )
+    if ( fprintf(M_log_fd, "----------------------------------------------------------------------------------------------\n") < 0 )
     {
         perror("fprintf");
         return FALSE;
@@ -4296,14 +4298,14 @@ bool log_start(const char *prefix, bool test)
 
     ALWAYS(" %s  Starting %s's log. Server version: %s, app version: %s", G_dt, APP_WEBSITE, WEB_SERVER_VERSION, APP_VERSION);
 
-    fprintf(G_log, "----------------------------------------------------------------------------------------------\n\n");
+    fprintf(M_log_fd, "----------------------------------------------------------------------------------------------\n\n");
 
     return TRUE;
 }
 
 
 /* --------------------------------------------------------------------------
-   Write to log with date/time. Uses global G_log as file handler
+   Write to log with date/time
 -------------------------------------------------------------------------- */
 void log_write_time(int level, const char *message, ...)
 {
@@ -4312,16 +4314,14 @@ static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 
     if ( level > G_logLevel ) return;
 
-    if ( !G_log ) G_log = stdout;
-
     /* output timestamp */
 
-    fprintf(G_log, "[%s] ", G_dt);
+    fprintf(M_log_fd, "[%s] ", G_dt);
 
     if ( LOG_ERR == level )
-        fprintf(G_log, "ERROR: ");
+        fprintf(M_log_fd, "ERROR: ");
     else if ( LOG_WAR == level )
-        fprintf(G_log, "WARNING: ");
+        fprintf(M_log_fd, "WARNING: ");
 
     /* compile message with arguments into buffer */
 
@@ -4331,18 +4331,18 @@ static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 
     /* write to log file */
 
-    fprintf(G_log, "%s\n", buffer);
+    fprintf(M_log_fd, "%s\n", buffer);
 
 #ifdef DUMP
-    fflush(G_log);
+    fflush(M_log_fd);
 #else
-    if ( G_logLevel >= LOG_DBG ) fflush(G_log);
+    if ( G_logLevel >= LOG_DBG ) fflush(M_log_fd);
 #endif
 }
 
 
 /* --------------------------------------------------------------------------
-   Write to log. Uses global G_log as file handler
+   Write to log
 -------------------------------------------------------------------------- */
 void log_write(int level, const char *message, ...)
 {
@@ -4351,12 +4351,10 @@ static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 
     if ( level > G_logLevel ) return;
 
-    if ( !G_log ) G_log = stdout;
-
     if ( LOG_ERR == level )
-        fprintf(G_log, "ERROR: ");
+        fprintf(M_log_fd, "ERROR: ");
     else if ( LOG_WAR == level )
-        fprintf(G_log, "WARNING: ");
+        fprintf(M_log_fd, "WARNING: ");
 
     /* compile message with arguments into buffer */
 
@@ -4366,12 +4364,12 @@ static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 
     /* write to log file */
 
-    fprintf(G_log, "%s\n", buffer);
+    fprintf(M_log_fd, "%s\n", buffer);
 
 #ifdef DUMP
-    fflush(G_log);
+    fflush(M_log_fd);
 #else
-    if ( G_logLevel >= LOG_DBG ) fflush(G_log);
+    if ( G_logLevel >= LOG_DBG ) fflush(M_log_fd);
 #endif
 }
 
@@ -4396,14 +4394,24 @@ static char log_buffer[MAX_LOG_STR_LEN+1];
 
 
 /* --------------------------------------------------------------------------
-   Close log. uses global G_log as file handler
+   Flush log
+-------------------------------------------------------------------------- */
+void log_flush()
+{
+    if ( M_log_fd != NULL )
+        fflush(M_log_fd);
+}
+
+
+/* --------------------------------------------------------------------------
+   Close log
 -------------------------------------------------------------------------- */
 void log_finish()
 {
-    if ( !G_log ) return;
-
     ALWAYS("Closing log");
-    fclose(G_log);
+
+    if ( M_log_fd != NULL && M_log_fd != stdout )
+        fclose(M_log_fd);
 }
 
 

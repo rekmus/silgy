@@ -177,11 +177,7 @@ struct timeval  timeout;                    /* Timeout for select */
 
     if ( !init(argc, argv) )
     {
-        if ( G_log )
-            ERR("init() failed, exiting");
-        else
-            printf("init() failed, exiting.\n");
-
+        ERR("init() failed, exiting");
         clean_up();
         return EXIT_FAILURE;
     }
@@ -333,7 +329,7 @@ struct timeval  timeout;                    /* Timeout for select */
 
     ALWAYS("Waiting for requests...\n");
 
-    fflush(G_log);
+    log_flush();
 
 
     /* main server loop ------------------------------------------------------------------------- */
@@ -397,7 +393,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef USERS
                 if ( G_sessions ) libusr_close_luses_timeout();     /* tidy up cache */
 #endif
-                fflush(G_log);
+                log_flush();
 
 #ifndef DONT_RESCAN_RES    /* refresh static resources */
                 read_files(FALSE, FALSE);
@@ -3335,19 +3331,16 @@ static void clean_up()
 {
     char    command[256];
 
-    if ( G_log )
-    {
-        ALWAYS("");
-        ALWAYS("Cleaning up...\n");
-        lib_log_memory();
-        dump_counters();
-    }
+    ALWAYS("");
+    ALWAYS("Cleaning up...\n");
+    lib_log_memory();
+    dump_counters();
 
     app_done();
 
     if ( access(M_pidfile, F_OK) != -1 )
     {
-        if (G_log) DBG("Removing pid file...");
+        DBG("Removing pid file...");
 #ifdef _WIN32   /* Windows */
         sprintf(command, "del %s", M_pidfile);
 #else
@@ -4901,18 +4894,15 @@ static void clean_up()
 {
     char    command[256];
 
-    if ( G_log )
-    {
-        ALWAYS("");
-        ALWAYS("Cleaning up...\n");
-        lib_log_memory();
-    }
+    ALWAYS("");
+    ALWAYS("Cleaning up...\n");
+    lib_log_memory();
 
     service_done();
 
     if ( access(M_pidfile, F_OK) != -1 )
     {
-        if (G_log) DBG("Removing pid file...");
+        DBG("Removing pid file...");
 #ifdef _WIN32   /* Windows */
         sprintf(command, "del %s", M_pidfile);
 #else

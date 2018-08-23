@@ -277,6 +277,7 @@ extern "C" {
     void log_write_time(int level, const char *message, ...);
     void log_write(int level, const char *message, ...);
     void log_long(const char *str, long len, const char *desc);
+    void log_flush(void);
     void log_finish(void);
     char *lib_convert(char *src, const char *cp_from, const char *cp_to);
 

@@ -582,7 +582,6 @@ extern int      G_test;
 /* end of config params */
 extern int      G_pid;                      /* pid */
 extern char     G_appdir[256];              /* application root dir */
-extern FILE     *G_log;                     /* log file handle */
 extern long     G_days_up;                  /* web server's days up */
 #ifndef ASYNC_SERVICE
 extern conn_t   conn[MAX_CONNECTIONS];      /* HTTP connections & requests -- by far the most important structure around */
