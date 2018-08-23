@@ -286,7 +286,7 @@ int app_process_req(int ci)
 ```
 
 ## Configuration File
-By default Silgy server starts listening on the port 80. As long as you use the same computer for development and production, you need a way to test your application with different port, since only one process can listen on the port 80. Also, if you want to use [HTTPS](https://github.com/silgy/silgy#https), you will need to pass your certificate file path. You can set these and some more in a configuration file. Default name is silgy.conf and you can overwrite this with SILGY_CONF environment variable. Create a new file in $SILGYDIR/bin and paste the below:
+By default Silgy server starts listening on the port 80. As long as you use the same computer for development and production, you need a way to test your application with different port, since only one process can listen on the port 80. Also, if you want to use [HTTPS](https://github.com/silgy/silgy#https), you will need to pass your certificate file path. You can set these and some more in a configuration file. You can open a new file `silgy.conf` in `$SILGYDIR/bin` and paste the below:
 ```
 # ----------------------------------------------------------------------------
 # between 1...4 (most detailed)
@@ -605,7 +605,7 @@ WAR - only if log level >= 2, writes WARNING: before string
 INF - only if log level >= 3  
 DBG - only if log level >= 4  
 ```
-Log file is created on every start in $SILGYDIR/logs. File name contains date and time: *YYYYMMDD_HHmm.log* or — if test=1 in config — *YYYYMMDD_HHmm_t.log*. Every midnight new log file is started.  
+Log file is created on every start in `$SILGYDIR/logs`. File name contains date and time: *YYYYMMDD_HHmm.log* or — if test=1 in config — *YYYYMMDD_HHmm_t.log*. Every midnight new log file is started.  
 Examples:
 ```source.c++
 ALWAYS("Server is starting");
@@ -754,16 +754,16 @@ Finish page rendering after CALL_ASYNC has returned service response.
 
 Example:
 ```source.c++
-void app_async_done(int ci, const char *service, const char *data, bool timeouted)
+void app_async_done(int ci, const char *service, const char *data, int err_code)
 {
     if ( S("getCustomer") )
     {
-        if ( timeouted )
+        if ( err_code == ERR_ASYNC_TIMEOUT )
         {
             WAR("getCustomer timeout-ed");
             OUT("<p>There was no response from getCustomer service</p>");
         }
-        else
+        else if ( err_code == OK )
         {
             OUT("<p>Customer data: %s</p>", data);
         }
