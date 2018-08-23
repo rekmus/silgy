@@ -128,7 +128,7 @@ static bool init(int argc, char **argv);
 static void build_select_list(void);
 static void accept_http();
 static void accept_https();
-static bool read_blocked_ips(void);
+static void read_blocked_ips(void);
 static bool ip_blocked(const char *addr);
 static int first_free_stat(void);
 static bool read_files(bool minify, bool first_scan);
@@ -962,13 +962,11 @@ static void set_state_sec(int ci, long bytes)
 -------------------------------------------------------------------------- */
 static void read_conf()
 {
-    char    *p_conf_path=NULL;
-    char    conf_path[512];
     bool    conf_read=FALSE;
 
     /* set defaults */
 
-    G_logLevel = 4;
+    G_logLevel = 3;
     G_httpPort = 80;
     G_httpsPort = 443;
     G_certFile[0] = EOS;
@@ -985,26 +983,18 @@ static void read_conf()
 
     /* get the conf file path & name */
 
-    if ( NULL != (p_conf_path=getenv("SILGY_CONF")) )
+    if ( G_appdir[0] )
     {
-        conf_read = lib_read_conf(p_conf_path);
+        char conf_path[512];
+        sprintf(conf_path, "%s/bin/silgy.conf", G_appdir);
+        if ( !(conf_read=lib_read_conf(conf_path)) )   /* no config file there */
+            conf_read = lib_read_conf("silgy.conf");
     }
-    else    /* no SILGY_CONF -- try default */
+    else    /* no SILGYDIR -- try current dir */
     {
-        if ( !(conf_read=lib_read_conf("silgy.conf")) )    /* try current dir first */
-        {
-            sprintf(conf_path, "%s/bin/silgy.conf", G_appdir);
-
-            if ( !(conf_read=lib_read_conf(conf_path)) && 0==strcmp(G_appdir, ".") )  /* no SILGYDIR explicitly defined */
-            {                                                               /* we're likely in src */
-                strcpy(conf_path, "../bin/silgy.conf");
-
-                if ( (conf_read=lib_read_conf(conf_path)) )  /* that worked */
-                    strcpy(G_appdir, "..");         /* change G_appdir */
-            }
-        }
+        conf_read = lib_read_conf("silgy.conf");
     }
-
+    
     if ( conf_read )
     {
         silgy_read_param_int("logLevel", &G_logLevel);
@@ -1442,8 +1432,7 @@ static bool init(int argc, char **argv)
 
     /* read blocked IPs list */
 
-    if ( G_blockedIPList[0] )
-        read_blocked_ips();
+    read_blocked_ips();
 
 #ifdef ASYNC
     ALWAYS("\nOpening message queues...\n");
@@ -1761,9 +1750,9 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 /* --------------------------------------------------------------------------
    Read list of blocked IPs from the file
 -------------------------------------------------------------------------- */
-static bool read_blocked_ips()
+static void read_blocked_ips()
 {
-    char    fname[256];
+    char    fname[512];
     FILE    *h_file=NULL;
     int     c=0;
     int     i=0;
@@ -1771,19 +1760,23 @@ static bool read_blocked_ips()
     char    now_comment=0;
     char    value[64]="";
 
+    if ( G_blockedIPList[0] == EOS ) return;
+
     INF("Updating blocked IPs list");
 
     /* open the file */
 
     if ( G_blockedIPList[0] == '/' )    /* full path */
         strcpy(fname, G_blockedIPList);
-    else    /* just a file name */
+    else if ( G_appdir[0] )
         sprintf(fname, "%s/bin/%s", G_appdir, G_blockedIPList);
+    else
+        strcpy(fname, G_blockedIPList);
 
     if ( NULL == (h_file=fopen(fname, "r")) )
     {
         WAR("Couldn't open %s\n", fname);
-        return FALSE;
+        return;
     }
 
     G_blacklist_cnt = 0;
@@ -1859,8 +1852,6 @@ static bool read_blocked_ips()
     for ( i=0; i<G_blacklist_cnt; ++i )
         DBG("%s", G_blacklist[i]);
     DBG("");*/
-
-    return TRUE;
 }
 
 
@@ -1898,6 +1889,10 @@ static bool read_files(bool minify, bool first_scan)
     struct stat fstat;
     char    mod_time[32];
 
+#ifndef _WIN32
+    if ( G_appdir[0] == EOS ) return TRUE;
+#endif
+
     DBG("read_files, minify = %s", minify?"TRUE":"FALSE");
 
 #ifdef _DIRENT_HAVE_D_TYPE
@@ -1906,32 +1901,36 @@ static bool read_files(bool minify, bool first_scan)
 #endif
 #endif
 
+#ifdef _WIN32   /* be more forgiving */
+
+    if ( G_appdir[0] )
+    {
+        if ( minify )
+            sprintf(resdir, "%s/resmin", G_appdir);
+        else
+            sprintf(resdir, "%s/res", G_appdir);
+    }
+    else    /* no SILGYDIR */
+    {
+        if ( minify )
+            strcpy(resdir, "../resmin");
+        else
+            strcpy(resdir, "../res");
+    }
+
+#else /* Linux -- don't fool around */
+
     if ( minify )
         sprintf(resdir, "%s/resmin", G_appdir);
     else
         sprintf(resdir, "%s/res", G_appdir);
 
+#endif /* _WIN32 */
+
     if ( (dir=opendir(resdir)) == NULL )
     {
-        /* we may be in src, so try one level up */
-
-        if ( 0==strcmp(G_appdir, ".") )     /* no SILGYDIR explicitly defined */
-        {
-            if ( minify )
-                strcpy(resdir, "../resmin");
-            else
-                strcpy(resdir, "../res");
-
-            if ( (dir=opendir(resdir)) == NULL )
-                return TRUE;    /* don't panic, just no external resources will be used */
-            else
-                strcpy(G_appdir, "..");     /* change G_appdir */
-        }
-        else
-        {
-            WAR("Couldn't open directory %s", resdir);
-            return TRUE;    /* don't panic, just no external resources will be used */
-        }
+        WAR("Couldn't open directory %s", resdir);
+        return TRUE;    /* don't panic, just no external resources will be used */
     }
 
     /* ------------------------------------------------------------------- */
@@ -1993,10 +1992,7 @@ static bool read_files(bool minify, bool first_scan)
 
         /* additional file info */
 
-        if ( minify )
-            sprintf(namewpath, "%s/resmin/%s", G_appdir, dirent->d_name);
-        else
-            sprintf(namewpath, "%s/res/%s", G_appdir, dirent->d_name);
+        sprintf(namewpath, "%s/%s", resdir, dirent->d_name);
 
         if ( stat(namewpath, &fstat) != 0 )
         {
@@ -3731,8 +3727,10 @@ void silgy_add_to_static_res(const char *name, char *src)
 -------------------------------------------------------------------------- */
 void eng_block_ip(const char *value, bool autoblocked)
 {
-    char    file[256];
+    char    fname[512];
     char    comm[512];
+
+    if ( G_blockedIPList[0] == EOS ) return;
 
     if ( G_blacklist_cnt > MAX_BLACKLIST-1 )
     {
@@ -3749,11 +3747,13 @@ void eng_block_ip(const char *value, bool autoblocked)
     strcpy(G_blacklist[G_blacklist_cnt++], value);
 
     if ( G_blockedIPList[0] == '/' )    /* full path */
-        strcpy(file, G_blockedIPList);
-    else    /* just a file name */
-        sprintf(file, "%s/bin/%s", G_appdir, G_blockedIPList);
+        strcpy(fname, G_blockedIPList);
+    else if ( G_appdir[0] )
+        sprintf(fname, "%s/bin/%s", G_appdir, G_blockedIPList);
+    else
+        strcpy(fname, G_blockedIPList);
 
-    sprintf(comm, "echo \"%s\t# %sblocked on %s\" >> %s", value, autoblocked?"auto":"", G_dt, file);
+    sprintf(comm, "echo \"%s\t# %sblocked on %s\" >> %s", value, autoblocked?"auto":"", G_dt, fname);
     system(comm);
 
     WAR("IP %s blacklisted", value);
@@ -4759,11 +4759,18 @@ int main(int argc, char *argv[])
     char exec_name[256];
     lib_get_exec_name(exec_name, argv[0]);
 
-    sprintf(config, "%s.conf", exec_name);
-
-    if ( !lib_read_conf(config) )
+    if ( G_appdir[0] )
     {
         sprintf(config, "%s/bin/%s.conf", G_appdir, exec_name);
+        if ( !lib_read_conf(config) )   /* no config file there */
+        {
+            sprintf(config, "%s.conf", exec_name);
+            lib_read_conf(config);
+        }
+    }
+    else    /* no SILGYDIR -- try current dir */
+    {
+        sprintf(config, "%s.conf", exec_name);
         lib_read_conf(config);
     }
 

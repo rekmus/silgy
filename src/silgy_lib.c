@@ -1426,20 +1426,13 @@ void lib_get_app_dir()
     if ( NULL != (appdir=getenv("SILGYDIR")) )
     {
         strcpy(G_appdir, appdir);
-    }
-    else if ( NULL != (appdir=getenv("HOME")) )
-    {
-        strcpy(G_appdir, appdir);
-        printf("No SILGYDIR defined. Assuming app dir = %s\n", G_appdir);
+        int len = strlen(G_appdir);
+        if ( G_appdir[len-1] == '/' ) G_appdir[len-1] = EOS;
     }
     else
     {
-        strcpy(G_appdir, ".");
-//        printf("No SILGYDIR defined. Assuming app dir = .\n");
+        G_appdir[0] = EOS;   /* not defined */
     }
-
-    int len = strlen(G_appdir);
-    if ( G_appdir[len-1] == '/' ) G_appdir[len-1] = EOS;
 }
 
 
@@ -4285,10 +4278,9 @@ bool log_start(const char *prefix, bool test)
     char    fprefix[64]="";     /* formatted prefix */
     char    fname[512];         /* file name */
     char    ffname[512];        /* full file name */
-    char    fffname[512];       /* full file name with path */
-
+    
     if ( G_logLevel < 1 ) return TRUE;
-
+    
     if ( M_log_fd != NULL && M_log_fd != stdout ) return TRUE;  /* already started */
 
     if ( prefix && prefix[0] )
@@ -4301,25 +4293,27 @@ bool log_start(const char *prefix, bool test)
     else
         sprintf(ffname, "%s.log", fname);
 
-    /* first try in ../logs ---------------------------------------------- */
+    /* first try in SILGYDIR --------------------------------------------- */
 
-    sprintf(fffname, "../logs/%s", ffname);
-
-    if ( NULL == (M_log_fd=fopen(fffname, "a")) )
+    if ( G_appdir[0] )
     {
-        /* try in SILGYDIR ----------------------------------------------- */
-
+        char fffname[512];       /* full file name with path */
         sprintf(fffname, "%s/logs/%s", G_appdir, ffname);
-
         if ( NULL == (M_log_fd=fopen(fffname, "a")) )
         {
-            /* try in current directory ---------------------------------- */
-
-            if ( NULL == (M_log_fd=fopen(ffname, "a")) )
+            if ( NULL == (M_log_fd=fopen(ffname, "a")) )  /* try current dir */
             {
                 printf("ERROR: Couldn't open log file.\n");
                 return FALSE;
             }
+        }
+    }
+    else    /* no SILGYDIR -- try current dir */
+    {
+        if ( NULL == (M_log_fd=fopen(ffname, "a")) )
+        {
+            printf("ERROR: Couldn't open log file.\n");
+            return FALSE;
         }
     }
 
