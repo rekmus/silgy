@@ -165,10 +165,15 @@ void app_get_msg_str(int ci, char *dest, int errcode)
 
     if ( S("getCustomer") )
     {
-        if ( timeouted )
+        if ( err_code == ERR_ASYNC_TIMEOUT )
         {
-            WAR("getCustomer timeout-ed");
+            ERR("getCustomer timeout-ed");
             OUT("<p>There was no response from getCustomer service</p>");
+        }
+        else if ( err_code != OK )
+        {
+            ERR("getCustomer failed with %d", err_code);
+            OUT("<p>getCustomer service returned an error %d</p>", err_code);
         }
         else
         {
@@ -179,7 +184,7 @@ void app_get_msg_str(int ci, char *dest, int errcode)
     }
 
 -------------------------------------------------------------------------- */
-void app_async_done(int ci, const char *service, const char *data, bool timeouted)
+void app_async_done(int ci, const char *service, const char *data, int err_code)
 {
 }
 #endif
