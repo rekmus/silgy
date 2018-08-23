@@ -747,7 +747,7 @@ Called when a new user session is created.
 ### void app_uses_reset(int usi)
 Called when user session is closed.
 
-### void app_async_done(int ci, const char \*service, const char \*data, bool timeouted)
+### void app_async_done(int ci, const char \*service, const char \*data, int err_code)
 [ASYNC](https://github.com/silgy/silgy#async) compilation switch is required.
 
 Finish page rendering after CALL_ASYNC has returned service response.
