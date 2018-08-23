@@ -15,19 +15,19 @@
 -------------------------------------------------------------------------- */
 int service_app_process_req(const char *service, const char *req, char *res)
 {
-	if ( S("hello") )
-	{
-		strcpy(res, "Hello from Silgy service!");
-	}
-	else if ( S("upper") )
-	{
-		strcpy(res, upper(req));
-	}
-	else if ( S("blocking") )
-	{
+    if ( S("hello") )
+    {
+        strcpy(res, "Hello from Silgy service!");
+    }
+    else if ( S("upper") )
+    {
+        strcpy(res, upper(req));
+    }
+    else if ( S("blocking") )
+    {
         sleep(5);
-		strcpy(res, "I was just sleeping for 5 seconds");
-	}
+        strcpy(res, "I was just sleeping for 5 seconds");
+    }
 
     return OK;
 }
@@ -39,7 +39,7 @@ int service_app_process_req(const char *service, const char *req, char *res)
 -------------------------------------------------------------------------- */
 bool service_init()
 {
-	return TRUE;
+    return TRUE;
 }
 
 
