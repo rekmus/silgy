@@ -13,7 +13,7 @@
 /* --------------------------------------------------------------------------
    Entry point
 -------------------------------------------------------------------------- */
-void service_app_process_req(const char *service, const char *req, char *res)
+int service_app_process_req(const char *service, const char *req, char *res)
 {
 	if ( S("hello") )
 	{
@@ -28,6 +28,8 @@ void service_app_process_req(const char *service, const char *req, char *res)
         sleep(5);
 		strcpy(res, "I was just sleeping for 5 seconds");
 	}
+
+    return OK;
 }
 
 

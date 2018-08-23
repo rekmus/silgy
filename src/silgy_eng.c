@@ -554,12 +554,12 @@ struct timeval  timeout;                    /* Timeout for select */
                                     if ( ares[j].state == ASYNC_STATE_RECEIVED )
                                     {
                                         DBG("Async response in an array for ci=%d, processing", i);
-                                        app_async_done(i, ares[j].service, ares[j].data, FALSE);
+                                        app_async_done(i, ares[j].service, ares[j].data, ares[j].err_code);
                                     }
                                     else if ( ares[j].state == ASYNC_STATE_TIMEOUTED )
                                     {
                                         DBG("Async response done as timeout-ed for ci=%d", i);
-                                        app_async_done(i, ares[j].service, "", TRUE);
+                                        app_async_done(i, ares[j].service, "", ERR_ASYNC_TIMEOUT);
                                     }
                                     gen_response_header(i);
                                     ares[j].state = ASYNC_STATE_FREE;
@@ -4860,7 +4860,7 @@ int main(int argc, char *argv[])
             strcpy(res.service, req.service);
             /* ----------------------------------------------------------- */
             DBG("Processing...");
-            service_app_process_req(req.service, req.data, res.data);
+            res.err_code = service_app_process_req(req.service, req.data, res.data);
             /* ----------------------------------------------------------- */
             if ( req.response )
             {

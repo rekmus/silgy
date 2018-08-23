@@ -45,34 +45,6 @@ typedef struct {
     int id;
 } ausession_t;
 
-extern ausession_t  auses[MAX_SESSIONS+1];          /* app user sessions */
-
-
-/* engine callbacks */
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-    bool app_init(int argc, char *argv[]);
-    void app_done(void);
-    void app_set_param(const char *label, const char *value);
-    int app_process_req(int ci);
-    void app_uses_init(int ci);
-#ifdef USERS
-    void app_luses_init(int ci);
-#endif
-    void app_uses_reset(int usi);
-#ifdef ASYNC
-    void app_async_done(int ci, const char *service, const char *data, bool timeouted);
-#endif
-    bool app_gen_page_msg(int ci, int msg);
-    void app_get_msg_str(int ci, char *dest, int errcode);
-#ifdef EVERY_SECOND
-    void app_every_second(void);
-#endif
-#ifdef __cplusplus
-}   // extern "C"
-#endif
 
 
 #endif  /* SILGY_APP_H */

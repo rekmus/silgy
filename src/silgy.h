@@ -304,16 +304,17 @@ typedef char                        bool;
 #define ERR_SERVER_TOOBUSY          -6
 #define ERR_FILE_TOO_BIG            -7
 #define ERR_REDIRECTION             -8
+#define ERR_ASYNC_TIMEOUT           -9
 
 #define NOT_STATIC                  -1
 #define MAX_STATICS                 1000            /* max static resources */
 
-#define MAX_ASYNC                   20              /* max async responses */
 #define ASYNC_STATE_FREE            '0'
 #define ASYNC_STATE_SENT            '1'
 #define ASYNC_STATE_RECEIVED        '2'
 #define ASYNC_STATE_TIMEOUTED       '3'
 #define ASYNC_MQ_MAXMSG             10
+#define MAX_ASYNC                   ASYNC_MQ_MAXMSG*2 /* max queued async responses */
 #define ASYNC_REQ_MSG_SIZE          1024            /* async message size */
 #define ASYNC_RES_MSG_SIZE          8192            /* async message size */
 #define ASYNC_REQ_QUEUE             "/silgy_req"    /* request queue name */
@@ -557,7 +558,8 @@ typedef struct {
     char    state;
     time_t  sent;
     int     timeout;
-    char    data[ASYNC_RES_MSG_SIZE-sizeof(long)-(sizeof(int)*2)-sizeof(time_t)-33];
+    int     err_code;
+    char    data[ASYNC_RES_MSG_SIZE-sizeof(long)-(sizeof(int)*3)-sizeof(time_t)-33];
 } async_res_t;
 
 
@@ -631,13 +633,17 @@ extern char     *G_shm_segptr;              /* SHM pointer */
 #include "silgy_app.h"
 
 
+extern ausession_t  auses[MAX_SESSIONS+1];  /* app user sessions */
 
 
-/* public engine functions */
+/* prototypes */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+    /* public engine functions */
+
     void silgy_set_auth_level(const char *resource, char level);
     bool eng_uses_start(int ci);
     void eng_uses_close(int usi);
@@ -667,11 +673,33 @@ extern "C" {
     bool get_qs_param_long(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf);
     char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
+
+    /* public app functions */
+
 #ifdef ASYNC_SERVICE
     bool service_init(void);
-    void service_app_process_req(const char *service, const char *req, char *res);
+    int service_app_process_req(const char *service, const char *req, char *res);
     void service_done(void);
+#else /* not ASYNC_SERVICE */
+    bool app_init(int argc, char *argv[]);
+    void app_done(void);
+    void app_set_param(const char *label, const char *value);
+    int app_process_req(int ci);
+    void app_uses_init(int ci);
+#ifdef USERS
+    void app_luses_init(int ci);
 #endif
+    void app_uses_reset(int usi);
+#ifdef ASYNC
+    void app_async_done(int ci, const char *service, const char *data, int err_code);
+#endif
+    bool app_gen_page_msg(int ci, int msg);
+    void app_get_msg_str(int ci, char *dest, int errcode);
+#ifdef EVERY_SECOND
+    void app_every_second(void);
+#endif
+#endif /* ASYNC_SERVICE */
+
 #ifdef __cplusplus
 }   /* extern "C" */
 #endif
