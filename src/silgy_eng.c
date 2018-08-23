@@ -1153,11 +1153,14 @@ static bool init(int argc, char **argv)
         printf("Will be listening on the port %d...\n", G_httpPort);
     }
 
-    /* init time variables */
+    /* init time variables ----------------------------------------------- */
 
     lib_update_time_globals();
 
-    /* start log */
+    /* start log --------------------------------------------------------- */
+
+    char exec_name[256];
+    lib_get_exec_name(exec_name, argv[0]);
 
     if ( !log_start("", G_test) )
         return FALSE;
@@ -1196,7 +1199,7 @@ static bool init(int argc, char **argv)
     ALWAYS("G_RESTTimeout = %d", G_RESTTimeout);
     ALWAYS("G_test = %d", G_test);
 
-    /* pid file --------------------------------------------------------------------------- */
+    /* pid file ---------------------------------------------------------- */
 
     if ( !(M_pidfile=lib_create_pid_file(argv[0])) )
         return FALSE;
@@ -1211,7 +1214,7 @@ static bool init(int argc, char **argv)
     get_byteorder();
 
     ALWAYS("");
-    ALWAYS("----------------------------------------------------------------------------------------------");
+    ALWAYS("-------------------------------------------------------------------------------------------------");
     ALWAYS("");
     ALWAYS("System:");
     ALWAYS("-------");
@@ -1295,7 +1298,7 @@ static bool init(int argc, char **argv)
     ALWAYS("");
     ALWAYS("           auses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(auses), sizeof(auses)/1024, (double)sizeof(auses)/1024/1024);
     ALWAYS("");
-    ALWAYS("----------------------------------------------------------------------------------------------");
+    ALWAYS("-------------------------------------------------------------------------------------------------");
     ALWAYS("");
 
 #ifdef DUMP
@@ -1394,9 +1397,9 @@ static bool init(int argc, char **argv)
 
     G_ptm = gmtime(&G_now); /* reset to today */
 
-#ifndef _WIN32
-    /* handle signals */
+	/* handle signals ---------------------------------------------------- */
 
+#ifndef _WIN32
     signal(SIGINT,  sigdisp);   /* Ctrl-C */
     signal(SIGTERM, sigdisp);
     signal(SIGQUIT, sigdisp);   /* Ctrl-\ */
@@ -4753,11 +4756,14 @@ int main(int argc, char *argv[])
 
     lib_update_time_globals();
 
-    sprintf(config, "%s.conf", argv[0]);
+    char exec_name[256];
+    lib_get_exec_name(exec_name, argv[0]);
+
+    sprintf(config, "%s.conf", exec_name);
 
     if ( !lib_read_conf(config) )
     {
-        sprintf(config, "%s/bin/%s.conf", G_appdir, argv[0]);
+        sprintf(config, "%s/bin/%s.conf", G_appdir, exec_name);
         lib_read_conf(config);
     }
 
@@ -4766,7 +4772,7 @@ int main(int argc, char *argv[])
 
     /* start log --------------------------------------------------------- */
 
-    if ( G_logLevel && !log_start(argv[0], G_test) )
+    if ( !log_start(exec_name, G_test) )
 		return EXIT_FAILURE;
 
     /* pid file ---------------------------------------------------------- */

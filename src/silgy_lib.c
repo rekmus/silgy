@@ -14,7 +14,7 @@
 
 /* globals */
 
-int         G_logLevel=4;           /* log level */
+int         G_logLevel=3;           /* log level -- 'info' by default */
 char        G_appdir[256]=".";      /* application root dir */
 int         G_RESTTimeout=CALL_REST_DEFAULT_TIMEOUT;
 int         G_test=0;               /* test run */
@@ -62,6 +62,37 @@ static void minify_1(char *dest, const char *src);
 static int minify_2(char *dest, const char *src);
 static void get_byteorder32(void);
 static void get_byteorder64(void);
+
+
+/* --------------------------------------------------------------------------
+   Get the last part of path
+-------------------------------------------------------------------------- */
+void lib_get_exec_name(char *dst, const char *path)
+{
+    const char *p=path;
+    const char *pd=NULL;
+
+    while ( *p )
+    {
+#ifdef _WIN32
+        if ( *p == '\\' )
+#else
+        if ( *p == '/' )
+#endif
+        {
+            if ( *(p+1) )   /* not EOS */
+                pd = p+1;
+        }
+        ++p;
+    }
+
+    if ( pd )
+        strcpy(dst, pd);
+    else
+        strcpy(dst, path);
+
+//    DBG("exec name [%s]", dst);
+}
 
 
 /* --------------------------------------------------------------------------
@@ -4256,6 +4287,8 @@ bool log_start(const char *prefix, bool test)
     char    ffname[512];        /* full file name */
     char    fffname[512];       /* full file name with path */
 
+    if ( G_logLevel < 1 ) return TRUE;
+
     if ( M_log_fd != NULL && M_log_fd != stdout ) return TRUE;  /* already started */
 
     if ( prefix && prefix[0] )
@@ -4290,7 +4323,7 @@ bool log_start(const char *prefix, bool test)
         }
     }
 
-    if ( fprintf(M_log_fd, "----------------------------------------------------------------------------------------------\n") < 0 )
+    if ( fprintf(M_log_fd, "-------------------------------------------------------------------------------------------------\n") < 0 )
     {
         perror("fprintf");
         return FALSE;
@@ -4298,7 +4331,7 @@ bool log_start(const char *prefix, bool test)
 
     ALWAYS(" %s  Starting %s's log. Server version: %s, app version: %s", G_dt, APP_WEBSITE, WEB_SERVER_VERSION, APP_VERSION);
 
-    fprintf(M_log_fd, "----------------------------------------------------------------------------------------------\n\n");
+    fprintf(M_log_fd, "-------------------------------------------------------------------------------------------------\n\n");
 
     return TRUE;
 }
