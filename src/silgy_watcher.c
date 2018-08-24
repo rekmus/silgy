@@ -32,12 +32,25 @@ static struct sockaddr_in serv_addr;
 
     /* init time variables ----------------------------------------------- */
 
-    G_now = time(NULL);
-    G_ptm = gmtime(&G_now);
-    sprintf(G_dt, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
+    lib_update_time_globals();
 
-    sprintf(config, "%s/bin/silgy_watcher.conf", G_appdir);
-    lib_read_conf(config);
+    char exec_name[256];
+    lib_get_exec_name(exec_name, argv[0]);
+
+    if ( G_appdir[0] )
+    {
+        sprintf(config, "%s/bin/%s.conf", G_appdir, exec_name);
+        if ( !lib_read_conf(config) )   /* no config file there */
+        {
+            sprintf(config, "%s.conf", exec_name);
+            lib_read_conf(config);
+        }
+    }
+    else    /* no SILGYDIR -- try current dir */
+    {
+        sprintf(config, "%s.conf", exec_name);
+        lib_read_conf(config);
+    }
 
     if ( !silgy_read_param_int("logLevel", &G_logLevel) )
         G_logLevel = 0;  /* don't create log file */
