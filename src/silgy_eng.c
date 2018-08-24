@@ -386,6 +386,16 @@ struct timeval  timeout;                    /* Timeout for select */
             if ( G_open_conn ) close_old_conn();
             if ( G_sessions ) close_uses_timeout();
 
+#ifdef DUMP
+#ifndef DONT_RESCAN_RES
+            if ( G_test )   /* kind of developer mode */
+            {
+                read_files(FALSE, FALSE);
+                read_files(TRUE, FALSE);
+            }
+#endif
+#endif
+
             if ( time_elapsed >= 60 )   /* say something sometimes ... */
             {
                 ALWAYS("[%s] %d open connection(s) | %d user session(s)", G_dt+11, G_open_conn, G_sessions);
