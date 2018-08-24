@@ -13,8 +13,16 @@
                                                     /* it's now how long it stays in cache */
 
 #define DB_UAGENT_LEN               120             /* User-Agent length stored in ulogins table */
-#define MIN_USER_NAME_LEN           2               /* minimal user name length */
-#define MIN_PASSWD_LEN              5               /* minimal password length */
+#ifdef APP_MIN_USER_NAME_LEN                        /* minimum user name length */
+#define MIN_USER_NAME_LEN           APP_MIN_USER_NAME_LEN               
+#else
+#define MIN_USER_NAME_LEN           2               
+#endif
+#ifdef APP_MIN_PASSWD_LEN                           /* minimum password length */
+#define MIN_PASSWD_LEN              APP_MIN_PASSWD_LEN
+#else
+#define MIN_PASSWD_LEN              5               /* default minimal password length */
+#endif
 #define PASSWD_RESET_KEY_LEN        30              /* password reset key length */
 
 /* errors -- red */

@@ -623,13 +623,13 @@ extern char     *G_shm_segptr;              /* SHM pointer */
 
 
 
+#include "silgy_app.h"
+
 #include "silgy_lib.h"
 
 #ifdef USERS
 #include "silgy_usr.h"
 #endif
-
-#include "silgy_app.h"
 
 
 extern ausession_t  auses[MAX_SESSIONS+1];  /* app user sessions */
