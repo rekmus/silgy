@@ -4281,7 +4281,7 @@ bool log_start(const char *prefix, bool test)
     
     if ( G_logLevel < 1 ) return TRUE;
     
-    if ( M_log_fd != NULL && M_log_fd != stdout ) return TRUE;  /* already started */
+    if ( M_log_fd != NULL && M_log_fd != (FILE*)STDOUT_FILENO ) return TRUE;  /* already started */
 
     if ( prefix && prefix[0] )
         sprintf(fprefix, "%s_", prefix);
@@ -4437,7 +4437,7 @@ void log_finish()
 {
     ALWAYS("Closing log");
 
-    if ( M_log_fd != NULL && M_log_fd != stdout )
+    if ( M_log_fd != NULL && M_log_fd != (FILE*)STDOUT_FILENO )
         fclose(M_log_fd);
 }
 
