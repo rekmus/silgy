@@ -14,28 +14,28 @@
 
 /* globals */
 
-int         G_logLevel=3;           /* log level -- 'info' by default */
-char        G_appdir[256]=".";      /* application root dir */
+int         G_logLevel=3;               /* log level -- 'info' by default */
+char        G_appdir[256]=".";          /* application root dir */
 int         G_RESTTimeout=CALL_REST_DEFAULT_TIMEOUT;
-int         G_test=0;               /* test run */
-int         G_pid=0;                /* pid */
-time_t      G_now=0;                /* current time (GMT) */
-struct tm   *G_ptm={0};             /* human readable current time */
-char        G_dt[20]="";            /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
-char        G_tmp[TMP_BUFSIZE];     /* temporary string buffer */
-char        *G_shm_segptr=NULL;     /* SHM pointer */
+int         G_test=0;                   /* test run */
+int         G_pid=0;                    /* pid */
+time_t      G_now=0;                    /* current time (GMT) */
+struct tm   *G_ptm={0};                 /* human readable current time */
+char        G_dt[20]="";                /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
+char        G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
+char        *G_shm_segptr=NULL;         /* SHM pointer */
 
 
 /* locals */
 
-static char *M_conf=NULL;           /* config file content */
-FILE        *M_log_fd=stdout;       /* log file handle */
+static char *M_conf=NULL;               /* config file content */
+static FILE *M_log_fd=(FILE*)STDOUT_FILENO; /* log file handle */
 
-static char M_df=0;                 /* date format */
-static char M_tsep=' ';             /* thousand separator */
-static char M_dsep='.';             /* decimal separator */
+static char M_df=0;                     /* date format */
+static char M_tsep=' ';                 /* thousand separator */
+static char M_dsep='.';                 /* decimal separator */
 
-static int  M_shmid;                /* SHM id */
+static int  M_shmid;                    /* SHM id */
 
 static rest_header_t M_rest_headers[REST_MAX_HEADERS];
 static int M_rest_headers_cnt=0;
