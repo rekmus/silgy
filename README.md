@@ -20,7 +20,7 @@ What you get with Silgy:
 
 Silgy is written in ANSI C in order to support as many platforms as possible and it's C++ compilers compatible. Sample [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) source module can be C as well as C++ code. Typical application code will look almost the same as in any of the C family language: C++, Java, JavaScript (before it has been destroyed with ES6 and all that arrow functions hell everyone thinks must be used, and hardly anyone really understands). All that could be automated, is automated.
 
-It aims to be All-In-One solution for writing typical web application — traditional HTML rendering model, SPA or mixed. It handles HTTPS, and anonymous and registered user sessions — even with forgotten passwords. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues in an asynchronous manner, using Silgy's [ASYNC](https://github.com/silgy/silgy#async) facility. Macros [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) make it as simple as possible.
+It aims to be All-In-One solution for writing typical web application — traditional HTML rendering model, SPA or mixed. It handles HTTPS, and anonymous and registered user sessions — even with forgotten passwords. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues in an asynchronous manner, using Silgy's [ASYNC](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#async) facility. Macros [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) make it as simple as possible.
 
 Web applications like [Budgeter](https://budgeter.org) or [minishare](https://minishare.com) based on Silgy, fit in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds). Even with the network latency [it still shows](https://tools.pingdom.com/#!/bu4p3i/https://budgeter.org).
   
@@ -341,7 +341,7 @@ Add your switches to [m](https://github.com/silgy/silgy/blob/master/src/m) befor
 g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
 -D HTTPS -D DBMYSQL ...
 ```
-[Compilation switches specification](https://github.com/silgy/silgy/wiki/Compilation-switches)
+[Compilation switches specification](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches)
 
 ## API Reference
 I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in Silgy.
@@ -661,7 +661,7 @@ Called when a new user session is created.
 Called when user session is closed.
 
 ### void app_async_done(int ci, const char \*service, const char \*data, int err_code)
-[ASYNC](https://github.com/silgy/silgy#async) compilation switch is required.
+[ASYNC](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#async) compilation switch is required.
 
 Finish page rendering after CALL_ASYNC has returned service response.
 
