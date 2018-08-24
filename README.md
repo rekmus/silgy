@@ -527,7 +527,7 @@ DBG("in a while loop, i = %d", i);
 If log level is set to 4, there's quite a lot of information logged, including full request and response HTTP headers, and every call flushes the buffer straight away, to help in investigation in case of crash.
 
 ### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
-Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, app_async_done() will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.
+Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-int-err_code) will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.
 
 Example:
 ```source.c++
@@ -544,7 +544,7 @@ CALL_ASYNC_NR("setCounter", counter);
 
 ### bool S(const char \*string)
 Return TRUE if service matches *string*.  
-Example: see [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-bool-timeouted).
+Example: see [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-int-err_code).
 
 ## Functions
 
