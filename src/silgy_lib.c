@@ -7,7 +7,9 @@
    General purpose library
 -------------------------------------------------------------------------- */
 
+#ifdef ICONV
 #include <iconv.h>
+#endif
 
 #include "silgy.h"
 
@@ -4438,7 +4440,10 @@ void log_finish()
     ALWAYS("Closing log");
 
     if ( M_log_fd != NULL && M_log_fd != (FILE*)STDOUT_FILENO )
+    {
         fclose(M_log_fd);
+        M_log_fd = (FILE*)STDOUT_FILENO;
+    }
 }
 
 
@@ -4448,7 +4453,7 @@ void log_finish()
 char *lib_convert(char *src, const char *cp_from, const char *cp_to)
 {
 static char dst[1024];
-
+#ifdef ICONV
     iconv_t cd = iconv_open(cp_to, cp_from);
 
     if (cd == (iconv_t) -1)
@@ -4475,7 +4480,9 @@ static char dst[1024];
     *out_buf = 0;
 
     iconv_close(cd);
-
+#else
+    strcpy(dst, "Compile Silgy with ICONV flag to enable convertion.");
+#endif /* ICONV */
     return dst;
 }
 

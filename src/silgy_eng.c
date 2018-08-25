@@ -1218,7 +1218,10 @@ static bool init(int argc, char **argv)
     ALWAYS("");
     ALWAYS("System:");
     ALWAYS("-------");
-    ALWAYS("              SIZE_MAX = %lu (%lu kB / %lu MB)", SIZE_MAX, SIZE_MAX/1024, SIZE_MAX/1024/1024);
+#ifdef DUMP
+    // SIZE_MAX is not defined in older GCC!
+//    ALWAYS("              SIZE_MAX = %lu (%lu kB / %lu MB)", SIZE_MAX, SIZE_MAX/1024, SIZE_MAX/1024/1024);
+#endif
     ALWAYS("            FD_SETSIZE = %d", FD_SETSIZE);
     ALWAYS("             SOMAXCONN = %d", SOMAXCONN);
     ALWAYS("");
