@@ -280,7 +280,9 @@ extern "C" {
     void log_long(const char *str, long len, const char *desc);
     void log_flush(void);
     void log_finish(void);
+#ifdef ICONV
     char *lib_convert(char *src, const char *cp_from, const char *cp_to);
+#endif
 
     int Base64encode_len(int len);
     int Base64encode(char * coded_dst, const char *plain_src,int len_plain_src);

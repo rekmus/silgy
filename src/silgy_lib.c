@@ -4447,13 +4447,14 @@ void log_finish()
 }
 
 
+#ifdef ICONV
 /* --------------------------------------------------------------------------
    Convert string
 -------------------------------------------------------------------------- */
 char *lib_convert(char *src, const char *cp_from, const char *cp_to)
 {
 static char dst[1024];
-#ifdef ICONV
+
     iconv_t cd = iconv_open(cp_to, cp_from);
 
     if (cd == (iconv_t) -1)
@@ -4480,11 +4481,11 @@ static char dst[1024];
     *out_buf = 0;
 
     iconv_close(cd);
-#else
-    strcpy(dst, "Compile Silgy with ICONV flag to enable convertion.");
-#endif /* ICONV */
+
     return dst;
 }
+#endif /* ICONV */
+
 
 
 
