@@ -104,7 +104,7 @@ I've managed to produce a [step by step video tutorial](https://www.youtube.com/
 ```source.sh
 sudo yum install gcc-c++
 ```
-Optionally, if you're planning to use [HTTPS](https://github.com/silgy/silgy#https):
+Optionally, if you're planning to use [HTTPS](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#https):
 ```source.sh
 sudo yum install openssl-devel
 ```
@@ -286,7 +286,7 @@ int app_process_req(int ci)
 ```
 
 ## Configuration File
-By default Silgy server starts listening on the port 80. As long as you use the same computer for development and production, you need a way to test your application with different port, since only one process can listen on the port 80. Also, if you want to use [HTTPS](https://github.com/silgy/silgy#https), you will need to pass your certificate file path. You can set these and some more in a configuration file. You can open a new file `silgy.conf` in `$SILGYDIR/bin` and paste the below:
+By default Silgy server starts listening on the port 80. As long as you use the same computer for development and production, you need a way to test your application with different port, since only one process can listen on the port 80. Also, if you want to use [HTTPS](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#https), you will need to pass your certificate file path. You can set these and some more in a configuration file. You can open a new file `silgy.conf` in `$SILGYDIR/bin` and paste the below:
 ```
 # ----------------------------------------------------------------------------
 # between 1...4 (most detailed)
