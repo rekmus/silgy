@@ -207,6 +207,7 @@ typedef json_buf_t JSON;
 #ifdef __cplusplus
 extern "C" {
 #endif
+    void silgy_lib_init(void);
     void lib_get_exec_name(char *dst, const char *path);
     void lib_update_time_globals(void);
     void lib_setnonblocking(int sock);
@@ -281,7 +282,7 @@ extern "C" {
     void log_flush(void);
     void log_finish(void);
 #ifdef ICONV
-    char *lib_convert(char *src, const char *cp_from, const char *cp_to);
+    char *silgy_convert(char *src, const char *cp_from, const char *cp_to);
 #endif
 
     int Base64encode_len(int len);

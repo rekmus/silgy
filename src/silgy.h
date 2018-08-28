@@ -565,6 +565,7 @@ typedef struct {
 
 /* read from the config file */
 extern int      G_logLevel;
+extern int      G_logToStdout;
 extern int      G_httpPort;
 extern int      G_httpsPort;
 extern char     G_cipherList[256];

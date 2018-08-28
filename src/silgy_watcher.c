@@ -26,13 +26,11 @@ int main(int argc, char *argv[])
     char buffer[BUFSIZE];
 static struct sockaddr_in serv_addr;
 
-    /* set G_appdir ------------------------------------------------------ */
+    /* library init ------------------------------------------------------ */
 
-    lib_get_app_dir();
+    silgy_lib_init();
 
-    /* init time variables ----------------------------------------------- */
-
-    lib_update_time_globals();
+    /* read the config file or set defaults ------------------------------ */
 
     char exec_name[256];
     lib_get_exec_name(exec_name, argv[0]);
@@ -57,7 +55,7 @@ static struct sockaddr_in serv_addr;
 
     /* start log --------------------------------------------------------- */
 
-    if ( G_logLevel && !log_start("watch", G_test) )
+    if ( !log_start("watcher", G_test) )
 		return EXIT_FAILURE;
 
     /* ------------------------------------------------------------------- */

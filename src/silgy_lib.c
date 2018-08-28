@@ -17,6 +17,7 @@
 /* globals */
 
 int         G_logLevel=3;               /* log level -- 'info' by default */
+int         G_logToStdout=0;            /* log to stdout */
 char        G_appdir[256]=".";          /* application root dir */
 int         G_RESTTimeout=CALL_REST_DEFAULT_TIMEOUT;
 int         G_test=0;                   /* test run */
@@ -31,7 +32,7 @@ char        *G_shm_segptr=NULL;         /* SHM pointer */
 /* locals */
 
 static char *M_conf=NULL;               /* config file content */
-static FILE *M_log_fd=(FILE*)STDOUT_FILENO; /* log file handle */
+static FILE *M_log_fd=NULL;             /* log file handle */
 
 static char M_df=0;                     /* date format */
 static char M_tsep=' ';                 /* thousand separator */
@@ -64,6 +65,22 @@ static void minify_1(char *dest, const char *src);
 static int minify_2(char *dest, const char *src);
 static void get_byteorder32(void);
 static void get_byteorder64(void);
+
+
+/* --------------------------------------------------------------------------
+   Library init
+-------------------------------------------------------------------------- */
+void silgy_lib_init()
+{
+    /* G_pid */
+    G_pid = getpid();
+    /* G_appdir */
+    lib_get_app_dir();
+    /* time globals */
+    lib_update_time_globals();
+    /* log file fd */
+    M_log_fd = stdout;
+}
 
 
 /* --------------------------------------------------------------------------
@@ -4281,49 +4298,48 @@ bool log_start(const char *prefix, bool test)
     char    fname[512];         /* file name */
     char    ffname[512];        /* full file name */
     
-    if ( G_logLevel < 1 ) return TRUE;
-    
-    if ( M_log_fd != NULL && M_log_fd != (FILE*)STDOUT_FILENO ) return TRUE;  /* already started */
+    if ( G_logLevel < 1 ) return TRUE;  /* no log */
 
-    if ( prefix && prefix[0] )
-        sprintf(fprefix, "%s_", prefix);
-
-    sprintf(fname, "%s%d%02d%02d_%02d%02d", fprefix, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
-
-    if ( test )
-        sprintf(ffname, "%s_t.log", fname);
-    else
-        sprintf(ffname, "%s.log", fname);
-
-    /* first try in SILGYDIR --------------------------------------------- */
-
-    if ( G_appdir[0] )
+    if ( G_logToStdout != 1 )   /* log to a file */
     {
-        char fffname[512];       /* full file name with path */
-        sprintf(fffname, "%s/logs/%s", G_appdir, ffname);
-        if ( NULL == (M_log_fd=fopen(fffname, "a")) )
+        if ( M_log_fd != NULL && M_log_fd != stdout ) return TRUE;  /* already started */
+
+        if ( prefix && prefix[0] )
+            sprintf(fprefix, "%s_", prefix);
+
+        sprintf(fname, "%s%d%02d%02d_%02d%02d", fprefix, G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min);
+
+        if ( test )
+            sprintf(ffname, "%s_t.log", fname);
+        else
+            sprintf(ffname, "%s.log", fname);
+
+        /* first try in SILGYDIR --------------------------------------------- */
+
+        if ( G_appdir[0] )
         {
-            if ( NULL == (M_log_fd=fopen(ffname, "a")) )  /* try current dir */
+            char fffname[512];       /* full file name with path */
+            sprintf(fffname, "%s/logs/%s", G_appdir, ffname);
+            if ( NULL == (M_log_fd=fopen(fffname, "a")) )
+            {
+                if ( NULL == (M_log_fd=fopen(ffname, "a")) )  /* try current dir */
+                {
+                    printf("ERROR: Couldn't open log file.\n");
+                    return FALSE;
+                }
+            }
+        }
+        else    /* no SILGYDIR -- try current dir */
+        {
+            if ( NULL == (M_log_fd=fopen(ffname, "a")) )
             {
                 printf("ERROR: Couldn't open log file.\n");
                 return FALSE;
             }
         }
     }
-    else    /* no SILGYDIR -- try current dir */
-    {
-        if ( NULL == (M_log_fd=fopen(ffname, "a")) )
-        {
-            printf("ERROR: Couldn't open log file.\n");
-            return FALSE;
-        }
-    }
 
-    if ( fprintf(M_log_fd, "-------------------------------------------------------------------------------------------------\n") < 0 )
-    {
-        perror("fprintf");
-        return FALSE;
-    }
+    fprintf(M_log_fd, "-------------------------------------------------------------------------------------------------\n");
 
     ALWAYS(" %s  Starting %s's log. Server version: %s, app version: %s", G_dt, APP_WEBSITE, WEB_SERVER_VERSION, APP_VERSION);
 
@@ -4439,10 +4455,10 @@ void log_finish()
 {
     ALWAYS("Closing log");
 
-    if ( M_log_fd != NULL && M_log_fd != (FILE*)STDOUT_FILENO )
+    if ( M_log_fd != NULL && M_log_fd != stdout )
     {
         fclose(M_log_fd);
-        M_log_fd = (FILE*)STDOUT_FILENO;
+        M_log_fd = stdout;
     }
 }
 
@@ -4451,7 +4467,7 @@ void log_finish()
 /* --------------------------------------------------------------------------
    Convert string
 -------------------------------------------------------------------------- */
-char *lib_convert(char *src, const char *cp_from, const char *cp_to)
+char *silgy_convert(char *src, const char *cp_from, const char *cp_to)
 {
 static char dst[1024];
 

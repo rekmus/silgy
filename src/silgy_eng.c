@@ -977,6 +977,7 @@ static void read_conf()
     /* set defaults */
 
     G_logLevel = 3;
+    G_logToStdout = 0;
     G_httpPort = 80;
     G_httpsPort = 443;
     G_certFile[0] = EOS;
@@ -1008,6 +1009,7 @@ static void read_conf()
     if ( conf_read )
     {
         silgy_read_param_int("logLevel", &G_logLevel);
+        silgy_read_param_int("logToStdout", &G_logToStdout);
         silgy_read_param_int("httpPort", &G_httpPort);
         silgy_read_param_int("httpsPort", &G_httpsPort);
         silgy_read_param_str("certFile", G_certFile);
@@ -1113,33 +1115,23 @@ static bool init(int argc, char **argv)
     time_t      sometimeahead;
     int         i=0;
 
-    /* libSHA1 test */
-
-    uint8_t sha1_res1[SHA1_DIGEST_SIZE];
-    char    sha1_res2[64];
-    char    sha1_res3[64];
+    silgy_lib_init();
 
     /* init globals */
 
-    G_pid = getpid();
     G_days_up = 0;
     G_open_conn = 0;
     G_sessions = 0;
     G_index_present = FALSE;
+#ifdef DBMYSQL
+    G_dbconn = NULL;
+#endif
 
     /* counters */
 
     memset(&G_cnts_today, 0, sizeof(counters_t));
     memset(&G_cnts_yesterday, 0, sizeof(counters_t));
     memset(&G_cnts_day_before, 0, sizeof(counters_t));
-
-#ifdef DBMYSQL
-    G_dbconn = NULL;
-#endif
-
-    /* app root dir */
-
-    lib_get_app_dir();      // set G_appdir
 
     /* read the config file or set defaults */
 
@@ -1152,10 +1144,6 @@ static bool init(int argc, char **argv)
         G_httpPort = atoi(argv[1]);
         printf("Will be listening on the port %d...\n", G_httpPort);
     }
-
-    /* init time variables ----------------------------------------------- */
-
-    lib_update_time_globals();
 
     /* start log --------------------------------------------------------- */
 
@@ -1184,6 +1172,7 @@ static bool init(int argc, char **argv)
 
     ALWAYS("G_appdir [%s]", G_appdir);
     ALWAYS("logLevel = %d", G_logLevel);
+    ALWAYS("logToStdout = %d", G_logToStdout);
     if ( argc > 1 )
     {
         ALWAYS("----------------------------------------------------------------------------------------------");
@@ -1371,6 +1360,10 @@ static bool init(int argc, char **argv)
 
     /* libSHA1 test */
 
+    uint8_t sha1_res1[SHA1_DIGEST_SIZE];
+    char    sha1_res2[64];
+    char    sha1_res3[64];
+
     DBG("");
     DBG("Trying libSHA1...\n");
     DBG("Expected: [A9993E36 4706816A BA3E2571 7850C26C 9CD0D89D]");
@@ -1491,7 +1484,7 @@ static bool init(int argc, char **argv)
 
     G_last_call_id = 0;
 
-#endif
+#endif /* ASYNC */
 
     return TRUE;
 }
@@ -4759,15 +4752,11 @@ int main(int argc, char *argv[])
 {
     char config[256];
 
-    G_pid = getpid();
+    /* library init ------------------------------------------------------ */
 
-    /* set G_appdir ------------------------------------------------------ */
+    silgy_lib_init();
 
-    lib_get_app_dir();
-
-    /* init time variables ----------------------------------------------- */
-
-    lib_update_time_globals();
+    /* read the config file or set defaults ------------------------------ */
 
     char exec_name[256];
     lib_get_exec_name(exec_name, argv[0]);
