@@ -80,37 +80,34 @@
 #endif
 #endif
 
-//#define AUTH_BY_LOGIN               1
-//#define AUTH_BY_EMAIL               2
-
 #define LOGGED                      US.logged
 #define ADMIN                       (LOGGED && 0==strcmp(US.login, "admin"))
 
 
-//typedef struct {
-//    char    auth;
-//} libusr_t;
-
-
-//void libusr_init(libusr_t *s);
-int libusr_do_login(int ci);
-int libusr_do_create_acc(int ci);
-int libusr_do_contact(int ci);
-int libusr_do_save_myacc(int ci);
-int libusr_email_exists(int ci);
-int libusr_do_send_passwd_reset_email(int ci);
-int libusr_do_passwd_reset(int ci);
-int libusr_valid_linkkey(int ci, char *linkkey, long *uid);
-void libusr_log_out(int ci);
-int libusr_l_usession_ok(int ci);
-void libusr_close_luses_timeout(void);
-void libusr_close_l_uses(int ci, int usi);
-int libusr_sets(int ci, const char *us_key, const char *us_val);
-int libusr_gets(int ci, const char *us_key, char *us_val);
-int libusr_setn(int ci, const char *us_key, long us_val);
-int libusr_getn(int ci, const char *us_key, long *us_val);
-long libusr_get_max(int ci, const char *table);
-void libusr_get_msg_str(int ci, char *dest, int errcode);
+#ifdef __cplusplus
+extern "C" {
+#endif
+    int libusr_do_login(int ci);
+    int libusr_do_create_acc(int ci);
+    int libusr_do_contact(int ci);
+    int libusr_do_save_myacc(int ci);
+    int libusr_email_exists(int ci);
+    int libusr_do_send_passwd_reset_email(int ci);
+    int libusr_do_passwd_reset(int ci);
+    int libusr_valid_linkkey(int ci, char *linkkey, long *uid);
+    void libusr_log_out(int ci);
+    int libusr_l_usession_ok(int ci);
+    void libusr_close_luses_timeout(void);
+    void libusr_close_l_uses(int ci, int usi);
+    int libusr_sets(int ci, const char *us_key, const char *us_val);
+    int libusr_gets(int ci, const char *us_key, char *us_val);
+    int libusr_setn(int ci, const char *us_key, long us_val);
+    int libusr_getn(int ci, const char *us_key, long *us_val);
+    long libusr_get_max(int ci, const char *table);
+    void libusr_get_msg_str(int ci, char *dest, int errcode);
+#ifdef __cplusplus
+}   // extern "C"
+#endif
 
 
 #endif  /* SILGY_USR_H */
