@@ -1899,11 +1899,13 @@ static bool read_files(bool minify, bool first_scan)
     if ( G_appdir[0] == EOS ) return TRUE;
 #endif
 
+#ifndef DUMP
     DBG("read_files, minify = %s", minify?"TRUE":"FALSE");
+#endif
 
 #ifdef _DIRENT_HAVE_D_TYPE
 #ifdef DUMP
-    INF("_DIRENT_HAVE_D_TYPE is defined");  /* we could use d_type in the future? */
+//    DBG("_DIRENT_HAVE_D_TYPE is defined");  /* we could use d_type in the future? */
 #endif
 #endif
 
@@ -1945,7 +1947,7 @@ static bool read_files(bool minify, bool first_scan)
     if ( !first_scan )
     {
 #ifdef DUMP
-        DBG("Checking removed files...");
+//        DBG("Checking removed files...");
 #endif
         for ( i=0; M_stat[i].name[0] != '-'; ++i )
         {
@@ -1987,7 +1989,7 @@ static bool read_files(bool minify, bool first_scan)
 
     /* ------------------------------------------------------------------- */
 #ifdef DUMP
-    DBG("Reading %sfiles", first_scan?"":"new ");
+//    DBG("Reading %sfiles", first_scan?"":"new ");
 #endif
     /* read the files into memory */
 
@@ -2145,7 +2147,7 @@ static bool read_files(bool minify, bool first_scan)
 
             G_ptm = gmtime(&M_stat[i].modified);
             sprintf(mod_time, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
-            DBG("%s %s\t\t%ld Bytes", lib_add_spaces(M_stat[i].name, 28), mod_time, M_stat[i].len);
+            DBG("%s %s\t\t%ld bytes", lib_add_spaces(M_stat[i].name, 28), mod_time, M_stat[i].len);
         }
 
 #ifdef DUMP
