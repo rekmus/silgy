@@ -465,7 +465,7 @@ Prevent response from being cached by browser.
 Redirect browser to landing page.
 
 ### void ALWAYS(const char \*str[, ...]), void ERR(const char \*str[, ...]), void WAR(const char \*str[, ...]), void INF(const char \*str[, ...]), void DBG(const char \*str[, ...])
-Write *str* to log, depending on log level set in [conf file](https://github.com/silgy/silgy#configuration-file). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
+Write *str* to log, depending on log level set in [conf file](https://github.com/silgy/silgy/wiki/Silgy-configuration-parameters). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
 ```
 ALWAYS - regardless of log level  
 ERR - only if log level >= 1, writes ERROR: before string  
