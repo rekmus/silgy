@@ -286,52 +286,7 @@ int app_process_req(int ci)
 ```
 
 ## Configuration File
-By default Silgy server starts listening on the port 80. As long as you use the same computer for development and production, you need a way to test your application with different port, since only one process can listen on the port 80. Also, if you want to use [HTTPS](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#https), you will need to pass your certificate file path. You can set these and some more in a configuration file. You can open a new file `silgy.conf` in `$SILGYDIR/bin` and paste the below:
-```
-# ----------------------------------------------------------------------------
-# between 1...4 (most detailed)
-logLevel=4
-
-# ----------------------------------------------------------------------------
-# ports
-httpPort=80
-httpsPort=443
-
-# ----------------------------------------------------------------------------
-# HTTPS
-
-# mandatory if HTTPS is enabled
-certFile=/etc/letsencrypt/live/example.com/fullchain.pem
-keyFile=/etc/letsencrypt/live/example.com/privkey.pem
-
-# optional
-# below cipher list will support IE8 on Windows XP but SSLLabs would cap the grade to B
-#cipherList=ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS+RC4:RC4
-certChainFile=/etc/letsencrypt/live/example.com/chain.pem
-
-# ----------------------------------------------------------------------------
-# database connection details
-#dbHost=                # not required if local
-#dbPort=                # not required if local
-dbName=mydatabase
-dbUser=mysqluser
-dbPassword=mysqlpassword
-
-# ----------------------------------------------------------------------------
-# IP blacklist
-blockedIPList=/home/ec2-user/web/bin/blacklist.txt
-
-# ----------------------------------------------------------------------------
-# setting this to 1 will add _t to the log file name
-# slightly different behaviour with https redirections
-test=0
-
-# ----------------------------------------------------------------------------
-# Custom params
-myParam1=someValue
-myParam2=someOtherValue
-```
-Change the contents to your taste. Note that you can use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy#bool-silgy_read_paramconst-char-param-char-dest).
+You can change default behaviour with [configuration parameters](https://github.com/silgy/silgy/wiki/Silgy-configuration-parameters). Note that you can also use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy#bool-silgy_read_paramconst-char-param-char-dest).
 
 ## Compilation Switches
 Because speed is Silgy's priority, every possible decision is taken at a compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.
