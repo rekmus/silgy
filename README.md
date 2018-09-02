@@ -298,10 +298,9 @@ g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
 ```
 [Compilation switches specification](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches)
 
-## API Reference
-I am trying to document everything here, however the first three macros (REQ, OUT and QS) is enough to write simple web application in Silgy.
+## Functions and macros
 
-## Macros
+[Full reference is now in Wiki](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros). Below are just the most basic ones that are essential for building any web application in Silgy.
 
 ### bool REQ(const char \*string)
 Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
@@ -342,6 +341,7 @@ QS_DONT_ESCAPE - value is not escaped
 And the fifth one:  
   
 QS_RAW - value is not URI-decoded  
+
 ### void OUT_BIN(const char \*data, long len)
 Send binary *data* to a browser. Typical usage would be to serve an image from a database.  
 Example:
@@ -364,7 +364,7 @@ int show_image(int ci, long user_id, long img_id)
     {
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
-    }
+2    }
 
     if ( !mysql_num_rows(result) )      /* no such entry */
     {
@@ -480,6 +480,8 @@ ALWAYS("Server is starting");
 DBG("in a while loop, i = %d", i);
 ```
 If log level is set to 4, there's quite a lot of information logged, including full request and response HTTP headers, and every call flushes the buffer straight away, to help in investigation in case of crash.
+
+## Asynchronous calls
 
 ### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
 Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-int-err_code) will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.
