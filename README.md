@@ -300,7 +300,9 @@ g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
 
 ## Functions and macros
 
-[Full reference is now in Wiki](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros). Below are just the most basic ones that are essential for building any web application in Silgy.
+[Full reference is now in Wiki](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros).
+
+Below are just the most basic ones that are essential for building any web application in Silgy.
 
 ### bool REQ(const char \*string)
 Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
@@ -342,48 +344,6 @@ And the fifth one:
   
 QS_RAW - value is not URI-decoded  
 
-### void OUT_BIN(const char \*data, long len)
-Send binary *data* to a browser. Typical usage would be to serve an image from a database.  
-Example:
-```source.c++
-int show_image(int ci, long user_id, long img_id)
-{
-    int             ret=OK;
-    char            sql_query[1024];
-    MYSQL_RES       *result;
-    MYSQL_ROW       sql_row;
-    unsigned long   *lengths;
-
-    DBG("show_image");
-
-    sprintf(sql_query, "SELECT fname, bcontent FROM images WHERE user_id=%ld AND img_id=%ld", user_id, img_id);
-    DBG("sql_query: %s", sql_query);
-    mysql_query(G_dbconn, sql_query);
-    result = mysql_store_result(G_dbconn);
-    if ( !result )
-    {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-        return ERR_INT_SERVER_ERROR;
-2    }
-
-    if ( !mysql_num_rows(result) )      /* no such entry */
-    {
-        mysql_free_result(result);
-        return ERR_NOT_FOUND;
-    }
-
-    sql_row = mysql_fetch_row(result);
-    lengths = mysql_fetch_lengths(result);
-    
-    OUT_BIN(sql_row[1], lengths[1]);
-
-    DBG("File: [%s], size = %ul", sql_row[0], lengths[1]);
-
-    mysql_free_result(result);
-
-    return OK;
-}
-```
 ### bool URI(const char \*string)
 Return TRUE if URI matches *string*.  
 Example:
