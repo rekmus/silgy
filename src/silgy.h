@@ -468,7 +468,7 @@ typedef struct {
     char    cookie_out_a_exp[32];           /* cookie expires */
     char    cookie_out_l[SESID_LEN+1];
     char    cookie_out_l_exp[32];           /* cookie expires */
-    char    location[256];                  /* redirection */
+    char    location[MAX_URI_LEN+1];        /* redirection */
     /* internal stuff */
     long    req;                            /* request count */
     struct timespec proc_start;
