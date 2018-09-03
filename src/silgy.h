@@ -198,7 +198,7 @@ typedef char                        bool;
 
 
 #define IN_BUFSIZE                  8192            /* incoming request buffer length (8 kB) */
-#define OUT_HEADER_BUFSIZE          2048            /* response header buffer length */
+#define OUT_HEADER_BUFSIZE          4096            /* response header buffer length */
 #define OUT_BUFSIZE                 262144          /* initial HTTP response buffer length (256 kB) */
 #define TMP_BUFSIZE                 1048576         /* temporary string buffer size (1 MB) */
 #define MAX_POST_DATA_BUFSIZE       16777216+1048576    /* max incoming POST data length (16+1 MB) */
