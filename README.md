@@ -300,9 +300,9 @@ g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
 
 ## Functions and macros
 
-[Full reference is now in Wiki](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros).
+[Full reference is now moving to Wiki](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros).
 
-Below are just the most basic ones that are essential for building any web application in Silgy.
+Below I'll leave just the most basic ones that are essential for building any web application in Silgy ([REQ](https://github.com/silgy/silgy/wiki/REQ()), [OUT](https://github.com/silgy/silgy/wiki/OUT()) and [QS](https://github.com/silgy/silgy/wiki/QS())).
 
 ### bool REQ(const char \*string)
 Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
@@ -315,6 +315,12 @@ Example:
 ```source.c++
 if ( REQ("calc") )
     process_calc(ci);
+else if ( REQ("about") )
+    gen_page_about(ci);
+else if ( REQ("") )
+    gen_page_main(ci);
+else
+    ret = ERR_NOT_FOUND;
 ```
 ### void OUT(const char \*string[, ...])
 Send *string* to a browser. Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).  
