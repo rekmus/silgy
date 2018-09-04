@@ -508,7 +508,15 @@ static int addresses_cnt=0, addresses_last=0, i;
         int s;
 
         memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_family = AF_UNSPEC;
         hints.ai_socktype = SOCK_STREAM;
+        hints.ai_protocol = IPPROTO_TCP;
+
+/*        char svc[8];
+        if ( secure )
+            strcpy(svc, "https");
+        else
+            strcpy(svc, "http"); */
 
         if ( (s=getaddrinfo(host, port, &hints, &result)) != 0 )
         {
@@ -542,7 +550,10 @@ static int addresses_cnt=0, addresses_last=0, i;
         if ( *timeout_remain < 1 ) *timeout_remain = 1;
 
         /* Windows timeout option is a s**t -- go for non-blocking I/O */
+
         lib_setnonblocking(M_rest_sock);
+
+        int timeout_tmp = G_RESTTimeout/5;
 
         /* plain socket connection --------------------------------------- */
 
@@ -550,7 +561,7 @@ static int addresses_cnt=0, addresses_last=0, i;
         {
             break;  /* immediate success */
         }
-        else if ( lib_finish_with_timeout(M_rest_sock, CONNECT, NULL, 0, timeout_remain, NULL, 0) == 0 )
+        else if ( lib_finish_with_timeout(M_rest_sock, CONNECT, NULL, 0, &timeout_tmp, NULL, 0) == 0 )
         {
             break;  /* success within timeout */
         }
@@ -565,6 +576,11 @@ static int addresses_cnt=0, addresses_last=0, i;
         close_conn(M_rest_sock);
         return FALSE;
     }
+
+    /* -------------------------------------------------------------------------- */
+
+    *timeout_remain = G_RESTTimeout - lib_elapsed(start);
+    if ( *timeout_remain < 1 ) *timeout_remain = 1;
 
     /* -------------------------------------------------------------------------- */
 
