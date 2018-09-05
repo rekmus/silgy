@@ -305,12 +305,14 @@ g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
 Below I'll leave just the most basic ones that are essential for building any web application in Silgy ([REQ](https://github.com/silgy/silgy/wiki/REQ()), [OUT](https://github.com/silgy/silgy/wiki/OUT()) and [QS](https://github.com/silgy/silgy/wiki/QS())).
 
 ### bool REQ(const char \*string)
-Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
+Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:
+
 URI|Catched by
 ----|----
 `/calc?first=2&second=3`|REQ("calc")
 `/customers/123`|REQ("customers")
 `/about.html`|REQ("about.html")
+
 Example:  
 ```source.c++
 if ( REQ("calc") )
@@ -323,7 +325,8 @@ else
     ret = ERR_NOT_FOUND;
 ```
 ### void OUT(const char \*string[, ...])
-Send *string* to a browser. Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).  
+Send *string* to a browser. Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
+
 Examples:
 ```source.c++
 OUT("<!DOCTYPE html>");
@@ -331,7 +334,8 @@ OUT("<p>There are %d records in the table.</p>", records);
 ```
 ### bool QS(const char \*param, QSVAL variable)
 Search query string for *param* and if found, URI-decode it, copy its value to *variable* and return TRUE. Otherwise return FALSE. For POST, PUT and DELETE methods it assumes query string is in payload.  
-QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.  
+QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.
+
 Example:  
 ```source.c++
 QSVAL qs_firstname;
