@@ -4107,7 +4107,7 @@ bool silgy_read_param_str(const char *param, char *dest)
 #endif
     if ( !M_conf )
     {
-        ERR("No config file or not read yet");
+//        ERR("No config file or not read yet");
         return FALSE;
     }
 
@@ -4487,7 +4487,8 @@ void log_flush()
 -------------------------------------------------------------------------- */
 void log_finish()
 {
-    ALWAYS("Closing log");
+    if ( G_logLevel > 0 )
+        ALWAYS("Closing log");
 
     if ( M_log_fd != NULL && M_log_fd != stdout )
     {

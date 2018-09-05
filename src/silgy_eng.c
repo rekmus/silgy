@@ -1908,7 +1908,7 @@ static bool read_files(bool minify, bool first_scan)
 #endif
 
 #ifndef DUMP
-    DBG("read_files, minify = %s", minify?"TRUE":"FALSE");
+//    DBG("read_files, minify = %s", minify?"TRUE":"FALSE");
 #endif
 
 #ifdef _DIRENT_HAVE_D_TYPE
@@ -1945,7 +1945,7 @@ static bool read_files(bool minify, bool first_scan)
 
     if ( (dir=opendir(resdir)) == NULL )
     {
-        WAR("Couldn't open directory %s", resdir);
+        DBG("Couldn't open directory %s", resdir);
         return TRUE;    /* don't panic, just no external resources will be used */
     }
 
@@ -1982,7 +1982,7 @@ static bool read_files(bool minify, bool first_scan)
 
             if ( !found )
             {
-                DBG("Removing %s from static resources", M_stat[i].name);
+                INF("Removing %s from static resources", M_stat[i].name);
 
                 if ( 0==strcmp(M_stat[i].name, "index.html") )
                     G_index_present = FALSE;
@@ -2047,7 +2047,7 @@ static bool read_files(bool minify, bool first_scan)
                     }
                     else
                     {
-                        DBG("%s has been modified", dirent->d_name);
+                        INF("%s has been modified", dirent->d_name);
                         reread = TRUE;
                     }
 
