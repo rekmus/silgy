@@ -978,6 +978,7 @@ static void read_conf()
 
     G_logLevel = 3;
     G_logToStdout = 0;
+    G_logCombined = 0;
     G_httpPort = 80;
     G_httpsPort = 443;
     G_certFile[0] = EOS;
@@ -1010,6 +1011,7 @@ static void read_conf()
     {
         silgy_read_param_int("logLevel", &G_logLevel);
         silgy_read_param_int("logToStdout", &G_logToStdout);
+        silgy_read_param_int("logCombined", &G_logCombined);
         silgy_read_param_int("httpPort", &G_httpPort);
         silgy_read_param_int("httpsPort", &G_httpsPort);
         silgy_read_param_str("certFile", G_certFile);
@@ -1081,10 +1083,15 @@ static void log_proc_time(int ci)
 {
     DBG("Processing time: %.3lf ms [%s]\n", lib_elapsed(&conn[ci].proc_start), conn[ci].resource);
 
-    if ( G_logLevel < LOG_DBG )
-    {
-        ALWAYS("[%s] #%ld %s %s  %s  %d  %.3lf ms%s", G_dt+11, conn[ci].req, conn[ci].method, conn[ci].uri, (conn[ci].static_res==NOT_STATIC && !conn[ci].post)?conn[ci].referer:"", conn[ci].status, lib_elapsed(&conn[ci].proc_start), REQ_BOT?" [bot]":"");
-    }
+    /* Use (almost) Combined Log Format */
+
+    char logtime[64];
+    strftime(logtime, 64, "%d/%b/%Y:%H:%M:%S +0000", G_ptm);
+
+    if ( G_logCombined )
+        ALWAYS("%s - - [%s] \"%s /%s %s\" %d %d \"%s\" \"%s\"  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].data_sent, conn[ci].referer, conn[ci].uagent, conn[ci].req, lib_elapsed(&conn[ci].proc_start), REQ_BOT?"  [bot]":"");
+    else
+        ALWAYS("%s - - [%s] \"%s /%s %s\" %d %d  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].data_sent, conn[ci].req, lib_elapsed(&conn[ci].proc_start), REQ_BOT?"  [bot]":"");
 }
 
 
@@ -1173,6 +1180,7 @@ static bool init(int argc, char **argv)
     ALWAYS("G_appdir [%s]", G_appdir);
     ALWAYS("logLevel = %d", G_logLevel);
     ALWAYS("logToStdout = %d", G_logToStdout);
+    ALWAYS("logCombined = %d", G_logCombined);
     if ( argc > 1 )
     {
         ALWAYS("----------------------------------------------------------------------------------------------");
@@ -2685,6 +2693,7 @@ static void reset_conn(int ci, char conn_state)
     conn[ci].mobile = FALSE;
     conn[ci].referer[0] = EOS;
     conn[ci].keep_alive = FALSE;
+    conn[ci].proto[0] = EOS;
     conn[ci].clen = 0;
     conn[ci].cookie_in_a[0] = EOS;
     conn[ci].cookie_in_l[0] = EOS;
@@ -2864,7 +2873,20 @@ static int parse_req(int ci, long len)
 //  DBG("URI: [%s]", conn[ci].uri);
     /* -------------------------------------------------------------- */
 
-    while ( i < hlen && conn[ci].in[i] != '\n' ) ++i;   /* go to the next line */
+    j = 0;
+    while ( i < hlen && conn[ci].in[i] != '\r' && conn[ci].in[i] != '\n' )
+    {
+        if ( conn[ci].in[i] != ' ' && j < 15 )
+            conn[ci].proto[j++] = conn[ci].in[i];
+        ++i;
+    }
+    conn[ci].proto[j] = EOS;
+#ifdef DUMP
+//    DBG("proto [%s]", conn[ci].proto);
+#endif
+
+    while ( i < hlen && conn[ci].in[i] != '\n' ) ++i;
+
     j = 0;
 
     for ( i; i<hlen; ++i )  /* next lines */

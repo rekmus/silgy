@@ -18,6 +18,7 @@
 
 int         G_logLevel=3;               /* log level -- 'info' by default */
 int         G_logToStdout=0;            /* log to stdout */
+int         G_logCombined=0;            /* standard log format */
 char        G_appdir[256]=".";          /* application root dir */
 int         G_RESTTimeout=CALL_REST_DEFAULT_TIMEOUT;
 int         G_test=0;                   /* test run */

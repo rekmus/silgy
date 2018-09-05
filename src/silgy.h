@@ -436,6 +436,7 @@ typedef struct {
     char    uri[MAX_URI_LEN+1];             /* requested URI string */
     char    resource[MAX_RESOURCE_LEN+1];   /* from URI */
     char    id[MAX_ID_LEN+1];               /* from URI */
+    char    proto[16];                      /* HTTP request protocol */
     char    uagent[MAX_VALUE_LEN+1];        /* user agent string */
     bool    mobile;
     bool    keep_alive;
@@ -567,6 +568,7 @@ typedef struct {
 /* read from the config file */
 extern int      G_logLevel;
 extern int      G_logToStdout;
+extern int      G_logCombined;
 extern int      G_httpPort;
 extern int      G_httpsPort;
 extern char     G_cipherList[256];
