@@ -306,11 +306,11 @@ Below I'll leave just the most basic ones that are essential for building any we
 
 ### bool REQ(const char \*string)
 Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:  
-```
-URI: /calc?first=2&second=3  will be catched by  REQ("calc")
-URI: /customers/123          will be catched by  REQ("customers")
-URI: /about.html             will be catched by  REQ("about.html")
-```
+URI|Catched by
+----|----
+`/calc?first=2&second=3`|REQ("calc")
+`/customers/123`|REQ("customers")
+`/about.html`|REQ("about.html")
 Example:  
 ```source.c++
 if ( REQ("calc") )
@@ -350,32 +350,24 @@ And the fifth one:
   
 QS_RAW - value is not URI-decoded  
 
-### bool URI(const char \*string)
-Return TRUE if URI matches *string*.  
-Example:
-```source.c++
-if ( URI("temp/document.pdf") )
-    send_pdf(ci);
-```
-### bool REQ_METHOD(const char \*string)
-Return TRUE if request method matches *string*.  
-Example:  
-```source.c++
-if ( REQ_METHOD("OPTIONS") )
-    show_options(ci);
-```
 ### char* REQ_URI
 Request URI.
+
 ### bool REQ_GET
 Return TRUE if request method is GET.
+
 ### bool REQ_POST
 Return TRUE if request method is POST.
+
 ### bool REQ_PUT
 Return TRUE if request method is PUT.
+
 ### bool REQ_DELETE
 Return TRUE if request method is DELETE.
+
 ### bool REQ_DSK
 Return TRUE if request user agent is desktop.
+
 ### bool REQ_MOB
 Return TRUE if request user agent is mobile.  
 Example:  
@@ -392,34 +384,40 @@ if ( !REQ_BOT )
     ++real_visits;
 ```
 ### char* REQ_LANG
-User agent primary language code.  
+User agent primary language code.
+
 ### bool HOST(const char \*string)
-Return TRUE if HTTP request *Host* header matches *string*. Case is ignored.  
+Return TRUE if HTTP request *Host* header matches *string*. Case is ignored.
+
 Example:
 ```source.c++
 if ( HOST("example.com") )
     process_example(ci);
 ```
 ### void RES_STATUS(int code)
-Set response status to *code*.  
+Set response status to *code*.
+
 Example:
 ```source.c++
 RES_STATUS(501);
 ```
 ### void RES_CONTENT_TYPE(const char \*string)
-Set response content type to *string*.  
+Set response content type to *string*.
+
 Example:
 ```source.c++
 RES_CONTENT_TYPE("text/plain");
 ```
 ### void RES_LOCATION(const char \*string)
-Redirect browser to *string*.  
+Redirect browser to *string*.
+
 Example:
 ```source.c++
 RES_LOCATION("login");
 ```
 ### void RES_CONTENT_DISPOSITION(const char \*string[, ...])
-Add Content-Disposition to response header.  
+Add Content-Disposition to response header.
+
 Example:
 ```source.c++
 RES_CONTENT_DISPOSITION("attachment; filename=\"%s.csv\"", doc_name);
