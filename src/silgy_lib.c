@@ -4101,9 +4101,9 @@ bool lib_read_conf(const char *file)
 bool silgy_read_param_str(const char *param, char *dest)
 {
     char *p;
-
-//    DBG("silgy_read_param [%s]", param);
-
+#ifdef DUMP
+    DBG("silgy_read_param_str [%s]", param);
+#endif
     if ( !M_conf )
     {
         ERR("No config file or not read yet");
@@ -4118,13 +4118,28 @@ bool silgy_read_param_str(const char *param, char *dest)
 
     /* string present but is it label or value? */
 
-    if ( p > M_conf && *(p-1) != '\n' )
+    bool found=FALSE;
+
+    while ( p )    /* param may be commented out but present later */
     {
-        /* looks like it's a value or it's commented out */
-//        if ( dest ) dest[0] = EOS;
-        return FALSE;
+        if ( p > M_conf && *(p-1) != '\n' )  /* commented out or within quotes -- try the next occurence */
+        {
+#ifdef DUMP
+            DBG("param commented out or within quotes");
+#endif
+            ++p;
+//            if ( *p == EOS ) return FALSE;
+            p = strstr(p, param);
+        }
+        else
+        {
+            found = TRUE;
+            break;
+        }
     }
 
+    if ( !found )
+        return FALSE;
 
     /* param present ----------------------------------- */
 
@@ -4144,6 +4159,8 @@ bool silgy_read_param_str(const char *param, char *dest)
         dest[i++] = *p++;
 
     dest[i] = EOS;
+
+    DBG("%s [%s]", param, dest);
 
     return TRUE;
 }
