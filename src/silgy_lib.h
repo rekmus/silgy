@@ -9,21 +9,21 @@
 #ifndef SILGY_LIB_H
 #define SILGY_LIB_H
 
-#define ALWAYS(s, ...)          log_write(LOG_ALWAYS, s, ##__VA_ARGS__)
-#define ERR(s, ...)             log_write(LOG_ERR, s, ##__VA_ARGS__)
-#define WAR(s, ...)             log_write(LOG_WAR, s, ##__VA_ARGS__)
-#define INF(s, ...)             log_write(LOG_INF, s, ##__VA_ARGS__)
-#define DBG(s, ...)             log_write(LOG_DBG, s, ##__VA_ARGS__)
+#define ALWAYS(str, ...)        log_write(LOG_ALWAYS, str, ##__VA_ARGS__)
+#define ERR(str, ...)           log_write(LOG_ERR, str, ##__VA_ARGS__)
+#define WAR(str, ...)           log_write(LOG_WAR, str, ##__VA_ARGS__)
+#define INF(str, ...)           log_write(LOG_INF, str, ##__VA_ARGS__)
+#define DBG(str, ...)           log_write(LOG_DBG, str, ##__VA_ARGS__)
 
-#define ALWAYS_T(s, ...)        log_write_time(LOG_ALWAYS, s, ##__VA_ARGS__)
-#define ERR_T(s, ...)           log_write_time(LOG_ERR, s, ##__VA_ARGS__)
-#define WAR_T(s, ...)           log_write_time(LOG_WAR, s, ##__VA_ARGS__)
-#define INF_T(s, ...)           log_write_time(LOG_INF, s, ##__VA_ARGS__)
-#define DBG_T(s, ...)           log_write_time(LOG_DBG, s, ##__VA_ARGS__)
+#define ALWAYS_T(str, ...)      log_write_time(LOG_ALWAYS, str, ##__VA_ARGS__)
+#define ERR_T(str, ...)         log_write_time(LOG_ERR, str, ##__VA_ARGS__)
+#define WAR_T(str, ...)         log_write_time(LOG_WAR, str, ##__VA_ARGS__)
+#define INF_T(str, ...)         log_write_time(LOG_INF, str, ##__VA_ARGS__)
+#define DBG_T(str, ...)         log_write_time(LOG_DBG, str, ##__VA_ARGS__)
 
 #define LOREM_IPSUM             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
-#define PARAM(p)                (0==strcmp(label,p))
+#define PARAM(param)            (0==strcmp(label, param))
 
 /* Query String Value */
 
@@ -47,21 +47,21 @@ typedef struct {
 
 #define REST_MAX_HEADERS                100
 #define REST_HEADERS_RESET              lib_rest_headers_reset()
-#define REST_HEADER_SET(k,v)            lib_rest_header_set(k, v)
-#define REST_HEADER_UNSET(k,v)          lib_rest_header_unset(k)
+#define REST_HEADER_SET(key, val)       lib_rest_header_set(key, val)
+#define REST_HEADER_UNSET(key)          lib_rest_header_unset(key)
 
 
 #ifdef JSON_NO_AUTO_AMPERSANDS
-#define CALL_REST_HTTP(req,res,m,u,k)   lib_rest_req(req, res, m, u, FALSE, k)
-#define CALL_REST_JSON(req,res,m,u,k)   lib_rest_req(req, res, m, u, TRUE, k)
+#define CALL_REST_HTTP(req, res, method, url, keep) lib_rest_req(req, res, method, url, FALSE, keep)
+#define CALL_REST_JSON(req, res, method, url, keep) lib_rest_req(req, res, method, url, TRUE, keep)
 #else
-#define CALL_REST_HTTP(req,res,m,u,k)   lib_rest_req(&req, &res, m, u, FALSE, k)
-#define CALL_REST_JSON(req,res,m,u,k)   lib_rest_req(&req, &res, m, u, TRUE, k)
+#define CALL_REST_HTTP(req, res, method, url, keep) lib_rest_req(&req, &res, method, url, FALSE, keep)
+#define CALL_REST_JSON(req, res, method, url, keep) lib_rest_req(&req, &res, method, url, TRUE, keep)
 #endif
 
 /* aliases -- highest level -- 'keep' always TRUE */
-#define CALL_REST_RAW(req,res,m,u)      CALL_REST_HTTP(req, res, m, u, TRUE)
-#define CALL_REST(req,res,m,u)          CALL_REST_JSON(req, res, m, u, TRUE)
+#define CALL_REST_RAW(req, res, method, url)     CALL_REST_HTTP(req, res, method, url, TRUE)
+#define CALL_REST(req, res, method, url)         CALL_REST_JSON(req, res, method, url, TRUE)
 
 
 #define CALL_REST_DEFAULT_TIMEOUT       1000     /* in ms -- to avoid blocking forever */
