@@ -791,9 +791,9 @@ int libusr_do_create_acc(int ci)
     US.uid = mysql_insert_id(G_dbconn);
 
 #ifdef USERSBYEMAIL
-    DBG("User [%s] created", email);
+    INF("User [%s] created", email);
 #else
-    DBG("User [%s] created", login);
+    INF("User [%s] created", login);
 #endif
 
     return OK;
