@@ -4415,7 +4415,7 @@ static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 #ifdef DUMP
     fflush(M_log_fd);
 #else
-    if ( G_logLevel >= LOG_DBG ) fflush(M_log_fd);
+    if ( G_logLevel >= LOG_DBG || level == LOG_ERR ) fflush(M_log_fd);
 #endif
 }
 
@@ -4448,7 +4448,7 @@ static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 #ifdef DUMP
     fflush(M_log_fd);
 #else
-    if ( G_logLevel >= LOG_DBG ) fflush(M_log_fd);
+    if ( G_logLevel >= LOG_DBG || level == LOG_ERR ) fflush(M_log_fd);
 #endif
 }
 
