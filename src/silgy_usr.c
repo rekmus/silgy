@@ -18,6 +18,7 @@ static int user_exists(const char *login);
 static int email_exists(const char *email);
 static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_about, long visits, const char *sesid);
 static void doit(char *result1, char *result2, const char *usr, const char *email, const char *src);
+static long get_max(int ci, const char *table);
 
 
 /* --------------------------------------------------------------------------
@@ -99,8 +100,8 @@ static bool start_new_luses(int ci, long uid, const char *login, const char *ema
 
 
 /* --------------------------------------------------------------------------
-  verify IP & User-Agent against uid and sesid in uses (logged in users)
-  set user session array index (usi) if all ok
+   Verify IP & User-Agent against uid and sesid in uses (logged in users)
+   set user session array index (usi) if all ok
 -------------------------------------------------------------------------- */
 int libusr_l_usession_ok(int ci)
 {
@@ -275,7 +276,7 @@ void libusr_close_l_uses(int ci, int usi)
 
 
 /* --------------------------------------------------------------------------
-  check whether user exists in database
+   Check whether user exists in database
 -------------------------------------------------------------------------- */
 static int user_exists(const char *login)
 {
@@ -354,7 +355,7 @@ static int email_exists(const char *email)
 
 
 /* --------------------------------------------------------------------------
-  log user in -- called either by l_usession_ok or libusr_do_login
+  log user in -- called either by l_usession_ok or silgy_usr_login
   Authentication has already been done prior to calling this
 -------------------------------------------------------------------------- */
 static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_about, long visits, const char *sesid)
@@ -463,7 +464,7 @@ unsigned long   sql_records;
   and through do_login:
   ERR_SERVER_TOOBUSY
 -------------------------------------------------------------------------- */
-int libusr_do_login(int ci)
+int silgy_usr_login(int ci)
 {
     QSVAL       login;
     QSVAL       email;
@@ -489,7 +490,7 @@ unsigned long   sql_records;
     long        visits;
     char        deleted[4];
 
-    DBG("libusr_do_login");
+    DBG("silgy_usr_login");
 
 #ifdef USERSBYEMAIL
 
@@ -669,7 +670,7 @@ unsigned long   sql_records;
    ERR_PASSWORD_DIFFERENT
    ERR_INT_SERVER_ERROR
 -------------------------------------------------------------------------- */
-int libusr_do_create_acc(int ci)
+int silgy_usr_create_account(int ci)
 {
     int     ret=OK;
     QSVAL   login;
@@ -683,7 +684,7 @@ int libusr_do_create_acc(int ci)
     char    sql_query[MAX_SQL_QUERY_LEN+1];
     char    str1[32], str2[32];
 
-    DBG("libusr_do_create_acc");
+    DBG("silgy_usr_create_account");
 
     if ( QS_HTML_ESCAPE("login", login) )
     {
@@ -804,14 +805,14 @@ int libusr_do_create_acc(int ci)
 /* --------------------------------------------------------------------------
    Save user message
 -------------------------------------------------------------------------- */
-int libusr_do_contact(int ci)
+int silgy_usr_send_message(int ci)
 {
 static char message[MAX_LONG_URI_VAL_LEN+1];
 static char sanmessage[MAX_LONG_URI_VAL_LEN+1];
     QSVAL   email;
 static char sql_query[MAX_LONG_URI_VAL_LEN*2];
 
-    DBG("libusr_do_contact");
+    DBG("silgy_usr_send_message");
 
     if ( !get_qs_param_long(ci, "msg_box", message) )
     {
@@ -828,8 +829,8 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
 
     strcpy(US.email_tmp, email);
 
-    sprintf(sql_query, "INSERT INTO messages (user_id,msg_id,email,message,created) VALUES (%ld,%ld,'%s','%s','%s')", US.uid, libusr_get_max(ci, "messages")+1, email, sanmessage, G_dt);
-    DBG("sql_query: INSERT INTO messages (user_id,msg_id,email,...) VALUES (%ld,libusr_get_max(),'%s',...)", US.uid, email);
+    sprintf(sql_query, "INSERT INTO messages (user_id,msg_id,email,message,created) VALUES (%ld,%ld,'%s','%s','%s')", US.uid, get_max(ci, "messages")+1, email, sanmessage, G_dt);
+    DBG("sql_query: INSERT INTO messages (user_id,msg_id,email,...) VALUES (%ld,get_max(),'%s',...)", US.uid, email);
 
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -846,9 +847,9 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
 
 
 /* --------------------------------------------------------------------------
-  save changes to user account
+   Save changes to user account
 -------------------------------------------------------------------------- */
-int libusr_do_save_myacc(int ci)
+int silgy_usr_save_account(int ci)
 {
     int         ret=OK;
     QSVAL       login;
@@ -869,7 +870,7 @@ int libusr_do_save_myacc(int ci)
     MYSQL_RES   *result;
 unsigned long   sql_records;
 
-    DBG("libusr_do_save_myacc");
+    DBG("silgy_usr_save_account");
 
     if ( !QS_HTML_ESCAPE("opasswd", opasswd)
 #ifndef USERSBYEMAIL
@@ -932,7 +933,7 @@ unsigned long   sql_records;
     strcpy(uemail_old, upper(US.email));
     strcpy(uemail_new, upper(email));
 
-    if ( uemail_new[0] && strcmp(uemail_old, uemail_new) != 0 && (ret=libusr_email_exists(ci)) != OK )
+    if ( uemail_new[0] && strcmp(uemail_old, uemail_new) != 0 && (ret=silgy_usr_email_registered(ci)) != OK )
         return ret;
 
     /* verify existing password against login/email/passwd1 */
@@ -1020,13 +1021,13 @@ unsigned long   sql_records;
 
 
 /* --------------------------------------------------------------------------
-  email taken?
+   Email taken?
 -------------------------------------------------------------------------- */
-int libusr_email_exists(int ci)
+int silgy_usr_email_registered(int ci)
 {
     QSVAL   email;
 
-    DBG("libusr_email_exists");
+    DBG("silgy_usr_email_registered");
 
     if ( !QS_HTML_ESCAPE("email", email) )
     {
@@ -1041,9 +1042,9 @@ int libusr_email_exists(int ci)
 
 
 /* --------------------------------------------------------------------------
-  send an email with password reset link
+   Send an email with password reset link
 -------------------------------------------------------------------------- */
-int libusr_do_send_passwd_reset_email(int ci)
+int silgy_usr_send_passwd_reset_email(int ci)
 {
     QSVAL       email;
     QSVAL       submit;
@@ -1138,9 +1139,70 @@ unsigned long   sql_records;
 
 
 /* --------------------------------------------------------------------------
-  save new password after reset
+   Verify the link key for password reset
 -------------------------------------------------------------------------- */
-int libusr_do_passwd_reset(int ci)
+int silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid)
+{
+    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    MYSQL_RES   *result;
+    MYSQL_ROW   sql_row;
+unsigned long   sql_records;
+
+    DBG("silgy_usr_verify_passwd_reset_key");
+
+    if ( strlen(linkkey) != PASSWD_RESET_KEY_LEN )
+        return ERR_LINK_BROKEN;
+
+    sprintf(sql_query, "SELECT user_id, created FROM users_p_resets WHERE linkkey='%s'", silgy_sql_esc(linkkey));
+    DBG("sql_query: %s", sql_query);
+
+    mysql_query(G_dbconn, sql_query);
+
+    result = mysql_store_result(G_dbconn);
+
+    if ( !result )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    sql_records = mysql_num_rows(result);
+
+    DBG("users_p_resets: %lu row(s) found", sql_records);
+
+    if ( !sql_records )     /* no records with this key in users_p_resets -- link broken? */
+    {
+        mysql_free_result(result);
+        return ERR_LINK_MAY_BE_EXPIRED;
+    }
+
+    sql_row = mysql_fetch_row(result);
+
+    /* validate expiry time */
+
+    if ( db2epoch(sql_row[1]) < G_now-3600*24 ) /* older than 24 hours? */
+    {
+        DBG("Key created more than 24 hours ago");
+        mysql_free_result(result);
+        return ERR_LINK_MAY_BE_EXPIRED;
+    }
+
+    /* otherwise everything's OK */
+
+    *uid = atol(sql_row[0]);
+
+    mysql_free_result(result);
+
+    DBG("Key ok, uid = %ld", *uid);
+
+    return OK;
+}
+
+
+/* --------------------------------------------------------------------------
+   Save new password after reset
+-------------------------------------------------------------------------- */
+int silgy_usr_reset_password(int ci)
 {
     int         ret;
     QSVAL       linkkey;
@@ -1155,9 +1217,9 @@ int libusr_do_passwd_reset(int ci)
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
 
-    DBG("libusr_do_passwd_reset");
+    DBG("silgy_usr_reset_password");
 
-    strcpy(linkkey, US.additional); /* from here instead of URI */
+    strcpy(linkkey, US.additional);   /* from here instead of URI */
 
     if ( !QS_HTML_ESCAPE("email", email)
             || !QS_HTML_ESCAPE("passwd", passwd)
@@ -1246,72 +1308,11 @@ unsigned long   sql_records;
 
 
 /* --------------------------------------------------------------------------
-  verify the link key for password reset
+   Log user out
 -------------------------------------------------------------------------- */
-int libusr_valid_linkkey(int ci, char *linkkey, long *uid)
+void silgy_usr_logout(int ci)
 {
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
-    MYSQL_RES   *result;
-    MYSQL_ROW   sql_row;
-unsigned long   sql_records;
-
-    DBG("libusr_valid_linkkey");
-
-    if ( strlen(linkkey) != PASSWD_RESET_KEY_LEN )
-        return ERR_LINK_BROKEN;
-
-    sprintf(sql_query, "SELECT user_id, created FROM users_p_resets WHERE linkkey='%s'", silgy_sql_esc(linkkey));
-    DBG("sql_query: %s", sql_query);
-
-    mysql_query(G_dbconn, sql_query);
-
-    result = mysql_store_result(G_dbconn);
-
-    if ( !result )
-    {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-        return ERR_INT_SERVER_ERROR;
-    }
-
-    sql_records = mysql_num_rows(result);
-
-    DBG("users_p_resets: %lu row(s) found", sql_records);
-
-    if ( !sql_records )     /* no records with this key in users_p_resets -- link broken? */
-    {
-        mysql_free_result(result);
-        return ERR_LINK_MAY_BE_EXPIRED;
-    }
-
-    sql_row = mysql_fetch_row(result);
-
-    /* validate expiry time */
-
-    if ( db2epoch(sql_row[1]) < G_now-3600*24 ) /* older than 24 hours? */
-    {
-        DBG("Key created more than 24 hours ago");
-        mysql_free_result(result);
-        return ERR_LINK_MAY_BE_EXPIRED;
-    }
-
-    /* otherwise everything's OK */
-
-    *uid = atol(sql_row[0]);
-
-    mysql_free_result(result);
-
-    DBG("Key ok, uid = %ld", *uid);
-
-    return OK;
-}
-
-
-/* --------------------------------------------------------------------------
-  log user out
--------------------------------------------------------------------------- */
-void libusr_log_out(int ci)
-{
-    DBG("libusr_log_out");
+    DBG("silgy_usr_logout");
     libusr_close_l_uses(ci, conn[ci].usi);
 }
 
@@ -1352,12 +1353,12 @@ static void doit(char *result1, char *result2, const char *login, const char *em
 /* --------------------------------------------------------------------------
    Save user string setting
 -------------------------------------------------------------------------- */
-int libusr_sets(int ci, const char *us_key, const char *us_val)
+int silgy_usr_set_str(int ci, const char *us_key, const char *us_val)
 {
     int         ret=OK;
     char        sql_query[MAX_SQL_QUERY_LEN+1];
 
-    ret = libusr_gets(ci, us_key, NULL);
+    ret = silgy_usr_get_str(ci, us_key, NULL);
 
     if ( ret == ERR_NOT_FOUND )
     {
@@ -1396,7 +1397,7 @@ int libusr_sets(int ci, const char *us_key, const char *us_val)
 /* --------------------------------------------------------------------------
    Read user string setting
 -------------------------------------------------------------------------- */
-int libusr_gets(int ci, const char *us_key, char *us_val)
+int silgy_usr_get_str(int ci, const char *us_key, char *us_val)
 {
     char        sql_query[MAX_SQL_QUERY_LEN+1];
     MYSQL_RES   *result;
@@ -1441,24 +1442,24 @@ unsigned long   sql_records;
 /* --------------------------------------------------------------------------
    Save user number setting
 -------------------------------------------------------------------------- */
-int libusr_setn(int ci, const char *us_key, long us_val)
+int silgy_usr_set_num(int ci, const char *us_key, long us_val)
 {
     char    val[32];
 
     sprintf(val, "%ld", us_val);
-    return libusr_sets(ci, us_key, val);
+    return silgy_usr_set_str(ci, us_key, val);
 }
 
 
 /* --------------------------------------------------------------------------
    Read user number setting
 -------------------------------------------------------------------------- */
-int libusr_getn(int ci, const char *us_key, long *us_val)
+int silgy_usr_get_num(int ci, const char *us_key, long *us_val)
 {
     int     ret;
     char    val[32];
 
-    if ( (ret=libusr_gets(ci, us_key, val)) == OK )
+    if ( (ret=silgy_usr_get_str(ci, us_key, val)) == OK )
         *us_val = atol(val);
 
     return ret;
@@ -1468,7 +1469,7 @@ int libusr_getn(int ci, const char *us_key, long *us_val)
 /* --------------------------------------------------------------------------
    Get MAX id
 -------------------------------------------------------------------------- */
-long libusr_get_max(int ci, const char *table)
+static long get_max(int ci, const char *table)
 {
     char        sql_query[MAX_SQL_QUERY_LEN+1];
     MYSQL_RES   *result;
@@ -1501,7 +1502,7 @@ long libusr_get_max(int ci, const char *table)
 
     mysql_free_result(result);
 
-    DBG("libusr_get_max for uid=%ld  max = %ld", US.uid, max);
+    DBG("get_max for uid=%ld  max = %ld", US.uid, max);
 
     return max;
 }

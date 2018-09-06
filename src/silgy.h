@@ -85,7 +85,7 @@ typedef char                        bool;
 
 /* request macros */
 
-#define REQ_METHOD(s)               (0==strcmp(conn[ci].method, s))
+#define REQ_METHOD(str)             (0==strcmp(conn[ci].method, str))
 #define REQ_GET                     (0==strcmp(conn[ci].method, "GET"))
 #define REQ_POST                    (0==strcmp(conn[ci].method, "POST"))
 #define REQ_PUT                     (0==strcmp(conn[ci].method, "PUT"))
@@ -127,23 +127,23 @@ typedef char                        bool;
 
 #ifdef NOSTPCPY /* alas! */
 
-    #define HOUT(s)                     (strcpy(conn[ci].p_curr_h, s), conn[ci].p_curr_h += strlen(s))
-    #define OUTSS(s)                    (strcpy(conn[ci].p_curr_c, s), conn[ci].p_curr_c += strlen(s))
+    #define HOUT(str)                   (strcpy(conn[ci].p_curr_h, str), conn[ci].p_curr_h += strlen(str))
+    #define OUTSS(str)                  (strcpy(conn[ci].p_curr_c, str), conn[ci].p_curr_c += strlen(str))
     #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
 
 #else   /* faster */
 
-    #define HOUT(s)                     (conn[ci].p_curr_h = stpcpy(conn[ci].p_curr_h, s))
+    #define HOUT(str)                   (conn[ci].p_curr_h = stpcpy(conn[ci].p_curr_h, str))
 
     #ifdef OUTFAST
-        #define OUTSS(s)                    (conn[ci].p_curr_c = stpcpy(conn[ci].p_curr_c, s))
+        #define OUTSS(str)                  (conn[ci].p_curr_c = stpcpy(conn[ci].p_curr_c, str))
         #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
     #else
         #ifdef OUTCHECK
-            #define OUTSS(s)                    eng_out_check(ci, s)
+            #define OUTSS(str)                  eng_out_check(ci, str)
             #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
         #else   /* OUTCHECKREALLOC */
-            #define OUTSS(s)                    eng_out_check_realloc(ci, s)
+            #define OUTSS(str)                  eng_out_check_realloc(ci, str)
             #define OUT_BIN(data, len)          eng_out_check_realloc_bin(ci, data, len)
         #endif
     #endif  /* OUTFAST */
@@ -151,13 +151,13 @@ typedef char                        bool;
 #endif  /* NOSTPCPY */
 
 
-#define OUTM(s, ...)                (sprintf(G_tmp, s, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
+#define OUTM(str, ...)              (sprintf(G_tmp, str, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
 
 #define CHOOSE_OUT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME          /* single or multiple? */
 #define OUT(...)                    CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
 
 /* HTTP header -- resets respbuf! */
-#define PRINT_HTTP_STATUS(st)       (sprintf(G_tmp, "HTTP/1.1 %d %s\r\n", st, get_http_descr(st)), HOUT(G_tmp))
+#define PRINT_HTTP_STATUS(val)      (sprintf(G_tmp, "HTTP/1.1 %d %s\r\n", val, get_http_descr(val)), HOUT(G_tmp))
 
 /* date */
 #define PRINT_HTTP_DATE             (sprintf(G_tmp, "Date: %s\r\n", M_resp_date), HOUT(G_tmp))
@@ -165,7 +165,7 @@ typedef char                        bool;
 /* cache control */
 #define PRINT_HTTP_NO_CACHE         HOUT("Cache-Control: private, must-revalidate, no-store, no-cache, max-age=0\r\n")
 #define PRINT_HTTP_EXPIRES          (sprintf(G_tmp, "Expires: %s\r\n", M_expires), HOUT(G_tmp))
-#define PRINT_HTTP_LAST_MODIFIED(s) (sprintf(G_tmp, "Last-Modified: %s\r\n", s), HOUT(G_tmp))
+#define PRINT_HTTP_LAST_MODIFIED(str) (sprintf(G_tmp, "Last-Modified: %s\r\n", str), HOUT(G_tmp))
 
 /* connection */
 #define PRINT_HTTP_CONNECTION(ci)   (sprintf(G_tmp, "Connection: %s\r\n", conn[ci].keep_alive?"Keep-Alive":"close"), HOUT(G_tmp))
@@ -321,9 +321,9 @@ typedef char                        bool;
 #define ASYNC_REQ_QUEUE             "/silgy_req"    /* request queue name */
 #define ASYNC_RES_QUEUE             "/silgy_res"    /* response queue name */
 #define ASYNC_MAX_TIMEOUT           1800            /* in seconds ==> 30 minutes */
-#define S(s)                        (0==strcmp(service,s))
-#define CALL_ASYNC(s,d,t)           eng_async_req(ci, s, d, TRUE, t)
-#define CALL_ASYNC_NR(s,d)          eng_async_req(ci, s, d, FALSE, 0)
+#define S(svc)                      (0==strcmp(service, svc))
+#define CALL_ASYNC(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, t)
+#define CALL_ASYNC_NR(svc, data)     eng_async_req(ci, svc, data, FALSE, 0)
 
 
 /* resource / content types */
@@ -357,22 +357,22 @@ typedef char                        bool;
 #define ID(id)                      (0==strcmp(conn[ci].id, id))
 #define US                          uses[conn[ci].usi]
 #define AUS                         auses[conn[ci].usi]
-#define HOST(s)                     eng_host(ci, s)
+#define HOST(str)                   eng_host(ci, str)
 
 /* response macros */
 
-#define RES_STATUS(s)               eng_set_res_status(ci, s)
-#define RES_CONTENT_TYPE(s)         eng_set_res_content_type(ci, s)
-#define RES_LOCATION(s, ...)        eng_set_res_location(ci, s, ##__VA_ARGS__)
+#define RES_STATUS(val)             eng_set_res_status(ci, val)
+#define RES_CONTENT_TYPE(str)       eng_set_res_content_type(ci, str)
+#define RES_LOCATION(str, ...)      eng_set_res_location(ci, str, ##__VA_ARGS__)
 #define RES_DONT_CACHE              conn[ci].dont_cache=TRUE
-#define RES_CONTENT_DISPOSITION(s, ...) eng_set_res_content_disposition(ci, s, ##__VA_ARGS__)
+#define RES_CONTENT_DISPOSITION(str, ...) eng_set_res_content_disposition(ci, str, ##__VA_ARGS__)
 
 #define REDIRECT_TO_LANDING         sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host)
 
 #define OUT_HTML_HEADER             eng_out_html_header(ci)
 #define OUT_HTML_FOOTER             eng_out_html_footer(ci)
-#define APPEND_CSS(n,f)             eng_append_css(ci, n, f)
-#define APPEND_SCRIPT(n,f)          eng_append_script(ci, n, f)
+#define APPEND_CSS(name, first)     eng_append_css(ci, name, first)
+#define APPEND_SCRIPT(name, first)  eng_append_script(ci, name, first)
 
 #define MAX_URI_VAL_LEN             255             /* max value length received in URI -- sufficient for 99% cases */
 #define MAX_LONG_URI_VAL_LEN        65535           /* max long value length received in URI -- 64 kB - 1 B */
@@ -380,19 +380,19 @@ typedef char                        bool;
 #define QSBUF                       MAX_URI_VAL_LEN+1
 #define QS_BUF                      QSBUF
 
-#define QS_HTML_ESCAPE(l, v)        get_qs_param_html_esc(ci, l, v)
-#define QS_SQL_ESCAPE(l, v)         get_qs_param_sql_esc(ci, l, v)
-#define QS_DONT_ESCAPE(l, v)        get_qs_param(ci, l, v)
-#define QS_RAW(l, v)                get_qs_param_raw(ci, l, v, MAX_URI_VAL_LEN)
+#define QS_HTML_ESCAPE(param, val)  get_qs_param_html_esc(ci, param, val)
+#define QS_SQL_ESCAPE(param, val)   get_qs_param_sql_esc(ci, param, val)
+#define QS_DONT_ESCAPE(param, val)  get_qs_param(ci, param, val)
+#define QS_RAW(param, val)          get_qs_param_raw(ci, param, val, MAX_URI_VAL_LEN)
 
 #ifdef QS_DEF_HTML_ESCAPE
-#define QS(l, v)                    QS_HTML_ESCAPE(l, v)
+#define QS(param, val)              QS_HTML_ESCAPE(param, val)
 #endif
 #ifdef QS_DEF_SQL_ESCAPE
-#define QS(l, v)                    QS_SQL_ESCAPE(l, v)
+#define QS(param, val)              QS_SQL_ESCAPE(param, val)
 #endif
 #ifdef QS_DEF_DONT_ESCAPE
-#define QS(l, v)                    QS_DONT_ESCAPE(l, v)
+#define QS(param, val)              QS_DONT_ESCAPE(param, val)
 #endif
 
 
