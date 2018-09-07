@@ -305,7 +305,8 @@ typedef char                        bool;
 #define ERR_SERVER_TOOBUSY              -6
 #define ERR_FILE_TOO_BIG                -7
 #define ERR_REDIRECTION                 -8
-#define ERR_ASYNC_TIMEOUT               -9
+#define ERR_ASYNC_NO_SUCH_SERVICE       -9
+#define ERR_ASYNC_TIMEOUT               -10
 
 #define NOT_STATIC                      -1
 #define MAX_STATICS                     1000            /* max static resources */
@@ -362,6 +363,7 @@ typedef char                        bool;
 #define US                              uses[conn[ci].usi]
 #define AUS                             auses[conn[ci].usi]
 #define HOST(str)                       eng_host(ci, str)
+#define REQ_DATA                        conn[ci].data
 
 /* response macros */
 
