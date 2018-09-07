@@ -451,12 +451,20 @@ If log level is set to 4, there's quite a lot of information logged, including f
 
 ## Asynchronous calls
 
-### void CALL_ASYNC(const char \*service, const char \*data, int timeout)
+### void CALL_ASYNC(const char \*service, const char \*data)
+Call *service* with default timeout (ASYNC_DEF_TIMEOUT, currently 30 seconds). When the response arrives or timeout passes, [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-int-err_code) will be called with the same *service*.
+
+Example:
+```source.c++
+CALL_ASYNC("getCustomer", cust_id);
+```
+
+### void CALL_ASYNC_TM(const char \*service, const char \*data, int timeout)
 Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-int-err_code) will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.
 
 Example:
 ```source.c++
-CALL_ASYNC("getCustomer", cust_id, 10);
+CALL_ASYNC_TM("getCustomer", cust_id, 10);
 ```
 
 ### void CALL_ASYNC_NR(const char \*service, const char \*data)
