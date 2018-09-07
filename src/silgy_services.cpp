@@ -67,7 +67,7 @@ int getAccounts(const char *req, char *res)
    Server start
    Return TRUE if successful
 -------------------------------------------------------------------------- */
-bool service_init()
+bool services_init()
 {
     return TRUE;
 }
@@ -76,6 +76,6 @@ bool service_init()
 /* --------------------------------------------------------------------------
    Server stop
 -------------------------------------------------------------------------- */
-void service_done()
+void services_done()
 {
 }

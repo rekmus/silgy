@@ -4863,9 +4863,9 @@ int main(int argc, char *argv[])
 
     /* ------------------------------------------------------------------- */
 
-	if ( !service_init() )
+	if ( !services_init() )
 	{
-		ERR("service_init failed");
+		ERR("services_init failed");
 		clean_up();
 		return EXIT_FAILURE;
     }
@@ -4937,7 +4937,7 @@ static void clean_up()
     ALWAYS("Cleaning up...\n");
     lib_log_memory();
 
-    service_done();
+    services_done();
 
     if ( access(M_pidfile, F_OK) != -1 )
     {
