@@ -10,27 +10,44 @@
 #include "silgy.h"
 
 
+int getCustomer(const char *req, char *res);
+int getAccounts(const char *req, char *res);
+
+
 /* --------------------------------------------------------------------------
    Entry point
 -------------------------------------------------------------------------- */
 int service_app_process_req(const char *service, const char *req, char *res)
 {
-    if ( S("hello") )
-    {
-        strcpy(res, "Hello from Silgy service!");
-    }
-    else if ( S("upper") )
-    {
-        strcpy(res, upper(req));
-    }
-    else if ( S("blocking") )
-    {
-        sleep(5);
-        strcpy(res, "I was just sleeping for 5 seconds");
-    }
+    if ( S("getCustomer") )
+        return getCustomer(req, res);
+    else if ( S("getAccounts") )
+        return getAccounts(req, res);
 
+    return ERR_ASYNC_NO_SUCH_SERVICE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Service
+-------------------------------------------------------------------------- */
+int getCustomer(const char *req, char *res)
+{
+    strcpy(res, "Hello from getCustomer service!");
     return OK;
 }
+
+
+/* --------------------------------------------------------------------------
+   Service
+-------------------------------------------------------------------------- */
+int getAccounts(const char *req, char *res)
+{
+    strcpy(res, "Hello from getAccounts service!");
+    return OK;
+}
+
+
 
 
 /* --------------------------------------------------------------------------
