@@ -254,145 +254,149 @@ typedef char                        bool;
 
 /* UTF-8 */
 
-#define CHAR_POUND                  "&#163;"
-#define CHAR_COPYRIGHT              "&#169;"
-#define CHAR_N_ACUTE                "&#324;"
-#define CHAR_DOWN_ARROWHEAD1        "&#709;"
-#define CHAR_LONG_DASH              "&#8212;"
-#define CHAR_EURO                   "&#8364;"
-#define CHAR_UP                     "&#8593;"
-#define CHAR_DOWN                   "&#8595;"
-#define CHAR_MINUS                  "&#8722;"
-#define CHAR_VEL                    "&#8744;"
-#define CHAR_VERTICAL_ELLIPSIS      "&#8942;"
-#define CHAR_COUNTERSINK            "&#9013;"
-#define CHAR_DOUBLE_TRIANGLE_U      "&#9195;"
-#define CHAR_DOUBLE_TRIANGLE_D      "&#9196;"
-#define CHAR_DOWN_TRIANGLE_B        "&#9660;"
-#define CHAR_DOWN_TRIANGLE_W        "&#9661;"
-#define CHAR_CLOSE                  "&#10005;"
-#define CHAR_HEAVY_PLUS             "&#10133;"
-#define CHAR_HEAVY_MINUS            "&#10134;"
-#define CHAR_DOWN_ARROWHEAD2        "&#65088;"
-#define CHAR_FULLW_PLUS             "&#65291;"
+#define CHAR_POUND                      "&#163;"
+#define CHAR_COPYRIGHT                  "&#169;"
+#define CHAR_N_ACUTE                    "&#324;"
+#define CHAR_DOWN_ARROWHEAD1            "&#709;"
+#define CHAR_LONG_DASH                  "&#8212;"
+#define CHAR_EURO                       "&#8364;"
+#define CHAR_UP                         "&#8593;"
+#define CHAR_DOWN                       "&#8595;"
+#define CHAR_MINUS                      "&#8722;"
+#define CHAR_VEL                        "&#8744;"
+#define CHAR_VERTICAL_ELLIPSIS          "&#8942;"
+#define CHAR_COUNTERSINK                "&#9013;"
+#define CHAR_DOUBLE_TRIANGLE_U          "&#9195;"
+#define CHAR_DOUBLE_TRIANGLE_D          "&#9196;"
+#define CHAR_DOWN_TRIANGLE_B            "&#9660;"
+#define CHAR_DOWN_TRIANGLE_W            "&#9661;"
+#define CHAR_CLOSE                      "&#10005;"
+#define CHAR_HEAVY_PLUS                 "&#10133;"
+#define CHAR_HEAVY_MINUS                "&#10134;"
+#define CHAR_DOWN_ARROWHEAD2            "&#65088;"
+#define CHAR_FULLW_PLUS                 "&#65291;"
 
-#define LOGIN_LEN                   63
-#define EMAIL_LEN                   127
-#define UNAME_LEN                   63
+#define LOGIN_LEN                       63
+#define EMAIL_LEN                       127
+#define UNAME_LEN                       63
 
-#define VIEW_DEFAULT                '0'
-#define VIEW_DESKTOP                '1'
-#define VIEW_MOBILE                 '2'
+#define VIEW_DEFAULT                    '0'
+#define VIEW_DESKTOP                    '1'
+#define VIEW_MOBILE                     '2'
 
-#define SESID_LEN                   15
+#define SESID_LEN                       15
 
-#define EXPIRES_IN_DAYS             30              /* from app start for Expires HTTP reponse header for static resources */
+#define EXPIRES_IN_DAYS                 30              /* from app start for Expires HTTP reponse header for static resources */
 
 /* authorization levels */
 
-#define AUTH_LEVEL_NONE             '0'
-#define AUTH_LEVEL_ANONYMOUS        '1'
-#define AUTH_LEVEL_LOGGEDIN         '2'
-#define AUTH_LEVEL_ADMIN            '3'
+#define AUTH_LEVEL_NONE                 '0'
+#define AUTH_LEVEL_ANONYMOUS            '1'
+#define AUTH_LEVEL_LOGGEDIN             '2'
+#define AUTH_LEVEL_ADMIN                '3'
 
 /* errors */
 
-#define ERR_INVALID_REQUEST         -1
-#define ERR_UNAUTHORIZED            -2
-#define ERR_FORBIDDEN               -3
-#define ERR_NOT_FOUND               -4
-#define ERR_INT_SERVER_ERROR        -5
-#define ERR_SERVER_TOOBUSY          -6
-#define ERR_FILE_TOO_BIG            -7
-#define ERR_REDIRECTION             -8
-#define ERR_ASYNC_TIMEOUT           -9
+#define ERR_INVALID_REQUEST             -1
+#define ERR_UNAUTHORIZED                -2
+#define ERR_FORBIDDEN                   -3
+#define ERR_NOT_FOUND                   -4
+#define ERR_INT_SERVER_ERROR            -5
+#define ERR_SERVER_TOOBUSY              -6
+#define ERR_FILE_TOO_BIG                -7
+#define ERR_REDIRECTION                 -8
+#define ERR_ASYNC_TIMEOUT               -9
 
-#define NOT_STATIC                  -1
-#define MAX_STATICS                 1000            /* max static resources */
+#define NOT_STATIC                      -1
+#define MAX_STATICS                     1000            /* max static resources */
 
-#define ASYNC_STATE_FREE            '0'
-#define ASYNC_STATE_SENT            '1'
-#define ASYNC_STATE_RECEIVED        '2'
-#define ASYNC_STATE_TIMEOUTED       '3'
-#define ASYNC_MQ_MAXMSG             10
-#define MAX_ASYNC                   ASYNC_MQ_MAXMSG*2 /* max queued async responses */
-#define ASYNC_REQ_MSG_SIZE          1024            /* async message size */
-#define ASYNC_RES_MSG_SIZE          8192            /* async message size */
-#define ASYNC_REQ_QUEUE             "/silgy_req"    /* request queue name */
-#define ASYNC_RES_QUEUE             "/silgy_res"    /* response queue name */
-#define ASYNC_MAX_TIMEOUT           1800            /* in seconds ==> 30 minutes */
-#define S(svc)                      (0==strcmp(service, svc))
-#define CALL_ASYNC(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, t)
-#define CALL_ASYNC_NR(svc, data)     eng_async_req(ci, svc, data, FALSE, 0)
+/* asynchronous calls */
+
+#define ASYNC_STATE_FREE                '0'
+#define ASYNC_STATE_SENT                '1'
+#define ASYNC_STATE_RECEIVED            '2'
+#define ASYNC_STATE_TIMEOUTED           '3'
+#define ASYNC_MQ_MAXMSG                 10
+#define MAX_ASYNC                       ASYNC_MQ_MAXMSG*2   /* max queued async responses */
+#define ASYNC_REQ_MSG_SIZE              1024                /* async message size */
+#define ASYNC_RES_MSG_SIZE              8192                /* async message size */
+#define ASYNC_REQ_QUEUE                 "/silgy_req"        /* request queue name */
+#define ASYNC_RES_QUEUE                 "/silgy_res"        /* response queue name */
+#define ASYNC_DEF_TIMEOUT               30                  /* in seconds */
+#define ASYNC_MAX_TIMEOUT               1800                /* in seconds ==> 30 minutes */
+#define S(svc)                          (0==strcmp(service, svc))
+#define CALL_ASYNC(svc, data)           eng_async_req(ci, svc, data, TRUE, ASYNC_DEF_TIMEOUT)
+#define CALL_ASYNC_TM(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, tmout)
+#define CALL_ASYNC_NR(svc, data)        eng_async_req(ci, svc, data, FALSE, 0)
 
 
 /* resource / content types */
 
 /* incoming */
 
-#define CONTENT_TYPE_URLENCODED     'U'
-#define CONTENT_TYPE_MULTIPART      'L'
+#define CONTENT_TYPE_URLENCODED         'U'
+#define CONTENT_TYPE_MULTIPART          'L'
 
 /* outgoing */
 
-#define CONTENT_TYPE_UNSET          '-'
-#define CONTENT_TYPE_USER           '+'
-#define RES_TEXT                    'T'
-#define RES_HTML                    'H'
-#define RES_CSS                     'C'
-#define RES_JS                      'S'
-#define RES_GIF                     'G'
-#define RES_JPG                     'J'
-#define RES_ICO                     'I'
-#define RES_PNG                     'P'
-#define RES_BMP                     'B'
-#define RES_PDF                     'A'
-#define RES_AMPEG                   'M'
-#define RES_EXE                     'X'
-#define RES_ZIP                     'Z'
+#define CONTENT_TYPE_UNSET              '-'
+#define CONTENT_TYPE_USER               '+'
+#define RES_TEXT                        'T'
+#define RES_HTML                        'H'
+#define RES_CSS                         'C'
+#define RES_JS                          'S'
+#define RES_GIF                         'G'
+#define RES_JPG                         'J'
+#define RES_ICO                         'I'
+#define RES_PNG                         'P'
+#define RES_BMP                         'B'
+#define RES_PDF                         'A'
+#define RES_AMPEG                       'M'
+#define RES_EXE                         'X'
+#define RES_ZIP                         'Z'
 
 
-#define URI(uri)                    (0==strcmp(conn[ci].uri, uri))
-#define REQ(res)                    (0==strcmp(conn[ci].resource, res))
-#define ID(id)                      (0==strcmp(conn[ci].id, id))
-#define US                          uses[conn[ci].usi]
-#define AUS                         auses[conn[ci].usi]
-#define HOST(str)                   eng_host(ci, str)
+#define URI(uri)                        (0==strcmp(conn[ci].uri, uri))
+#define REQ(res)                        (0==strcmp(conn[ci].resource, res))
+#define ID(id)                          (0==strcmp(conn[ci].id, id))
+#define US                              uses[conn[ci].usi]
+#define AUS                             auses[conn[ci].usi]
+#define HOST(str)                       eng_host(ci, str)
 
 /* response macros */
 
-#define RES_STATUS(val)             eng_set_res_status(ci, val)
-#define RES_CONTENT_TYPE(str)       eng_set_res_content_type(ci, str)
-#define RES_LOCATION(str, ...)      eng_set_res_location(ci, str, ##__VA_ARGS__)
-#define RES_DONT_CACHE              conn[ci].dont_cache=TRUE
+#define RES_STATUS(val)                 eng_set_res_status(ci, val)
+#define RES_CONTENT_TYPE(str)           eng_set_res_content_type(ci, str)
+#define RES_LOCATION(str, ...)          eng_set_res_location(ci, str, ##__VA_ARGS__)
+#define RES_DONT_CACHE                  conn[ci].dont_cache=TRUE
 #define RES_CONTENT_DISPOSITION(str, ...) eng_set_res_content_disposition(ci, str, ##__VA_ARGS__)
 
-#define REDIRECT_TO_LANDING         sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host)
+#define REDIRECT_TO_LANDING             sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host)
 
-#define OUT_HTML_HEADER             eng_out_html_header(ci)
-#define OUT_HTML_FOOTER             eng_out_html_footer(ci)
-#define APPEND_CSS(name, first)     eng_append_css(ci, name, first)
-#define APPEND_SCRIPT(name, first)  eng_append_script(ci, name, first)
+#define OUT_HTML_HEADER                 eng_out_html_header(ci)
+#define OUT_HTML_FOOTER                 eng_out_html_footer(ci)
+#define APPEND_CSS(name, first)         eng_append_css(ci, name, first)
+#define APPEND_SCRIPT(name, first)      eng_append_script(ci, name, first)
 
-#define MAX_URI_VAL_LEN             255             /* max value length received in URI -- sufficient for 99% cases */
-#define MAX_LONG_URI_VAL_LEN        65535           /* max long value length received in URI -- 64 kB - 1 B */
+#define MAX_URI_VAL_LEN                 255             /* max value length received in URI -- sufficient for 99% cases */
+#define MAX_LONG_URI_VAL_LEN            65535           /* max long value length received in URI -- 64 kB - 1 B */
 
-#define QSBUF                       MAX_URI_VAL_LEN+1
-#define QS_BUF                      QSBUF
+#define QSBUF                           MAX_URI_VAL_LEN+1
+#define QS_BUF                          QSBUF
 
-#define QS_HTML_ESCAPE(param, val)  get_qs_param_html_esc(ci, param, val)
-#define QS_SQL_ESCAPE(param, val)   get_qs_param_sql_esc(ci, param, val)
-#define QS_DONT_ESCAPE(param, val)  get_qs_param(ci, param, val)
-#define QS_RAW(param, val)          get_qs_param_raw(ci, param, val, MAX_URI_VAL_LEN)
+#define QS_HTML_ESCAPE(param, val)      get_qs_param_html_esc(ci, param, val)
+#define QS_SQL_ESCAPE(param, val)       get_qs_param_sql_esc(ci, param, val)
+#define QS_DONT_ESCAPE(param, val)      get_qs_param(ci, param, val)
+#define QS_RAW(param, val)              get_qs_param_raw(ci, param, val, MAX_URI_VAL_LEN)
 
 #ifdef QS_DEF_HTML_ESCAPE
-#define QS(param, val)              QS_HTML_ESCAPE(param, val)
+#define QS(param, val)                  QS_HTML_ESCAPE(param, val)
 #endif
 #ifdef QS_DEF_SQL_ESCAPE
-#define QS(param, val)              QS_SQL_ESCAPE(param, val)
+#define QS(param, val)                  QS_SQL_ESCAPE(param, val)
 #endif
 #ifdef QS_DEF_DONT_ESCAPE
-#define QS(param, val)              QS_DONT_ESCAPE(param, val)
+#define QS(param, val)                  QS_DONT_ESCAPE(param, val)
 #endif
 
 
