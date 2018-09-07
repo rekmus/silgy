@@ -1001,7 +1001,7 @@ static char buffer[JSON_BUFSIZE];
 #endif /* DUMP */
         strncpy(status, res_header+9, 3);
         status[3] = EOS;
-        INF("Response status: %s", status);
+        INF("REST response status: %s", status);
     }
     else
     {

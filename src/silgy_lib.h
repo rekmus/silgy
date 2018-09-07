@@ -45,10 +45,10 @@ typedef struct {
 } rest_header_t;
 
 
-#define REST_MAX_HEADERS                100
-#define REST_HEADERS_RESET              lib_rest_headers_reset()
-#define REST_HEADER_SET(key, val)       lib_rest_header_set(key, val)
-#define REST_HEADER_UNSET(key)          lib_rest_header_unset(key)
+#define REST_MAX_HEADERS                        100
+#define REST_HEADERS_RESET                      lib_rest_headers_reset()
+#define REST_HEADER_SET(key, val)               lib_rest_header_set(key, val)
+#define REST_HEADER_UNSET(key)                  lib_rest_header_unset(key)
 
 
 #ifdef JSON_NO_AUTO_AMPERSANDS
@@ -60,14 +60,14 @@ typedef struct {
 #endif
 
 /* aliases -- highest level -- 'keep' always TRUE */
-#define CALL_REST_RAW(req, res, method, url)     CALL_REST_HTTP(req, res, method, url, TRUE)
-#define CALL_REST(req, res, method, url)         CALL_REST_JSON(req, res, method, url, TRUE)
+#define CALL_REST_RAW(req, res, method, url)    CALL_REST_HTTP(req, res, method, url, TRUE)
+#define CALL_REST(req, res, method, url)        CALL_REST_JSON(req, res, method, url, TRUE)
 
 
-#define CALL_REST_DEFAULT_TIMEOUT       1000     /* in ms -- to avoid blocking forever */
+#define CALL_REST_DEFAULT_TIMEOUT               1000     /* in ms -- to avoid blocking forever */
 
-#define REST_RES_HEADER_LEN             4095
-#define REST_ADDRESSES_CACHE_SIZE       100
+#define REST_RES_HEADER_LEN                     4095
+#define REST_ADDRESSES_CACHE_SIZE               100
 
 
 /* JSON */
@@ -105,103 +105,103 @@ typedef struct {
 typedef json_buf_t JSON;
 
 
-#define JSON_BUFSIZE                32784
+#define JSON_BUFSIZE                        32784
 
 
 #ifdef JSON_NO_AUTO_AMPERSANDS
 
-#define JSON_TO_STRING(j)           lib_json_to_string(j)
-#define JSON_TO_STRING_PRETTY(j)    lib_json_to_string_pretty(j)
-#define JSON_FROM_STRING(j,s)       lib_json_from_string(j, s, 0, 0)
+#define JSON_TO_STRING(json)                lib_json_to_string(json)
+#define JSON_TO_STRING_PRETTY(json)         lib_json_to_string_pretty(json)
+#define JSON_FROM_STRING(json, str)         lib_json_from_string(json, str, 0, 0)
 
 
-#define JSON_ADD_STR(j,n,v)         lib_json_add(j, n, v, 0, 0, JSON_STRING, -1)
-#define JSON_ADD_ARRAY_STR(j,i,v)   lib_json_add(j, NULL, v, 0, 0, JSON_STRING, i)
-#define JSON_ADD_INT(j,n,v)         lib_json_add(j, n, NULL, v, 0, JSON_INTEGER, -1)
-#define JSON_ADD_ARRAY_INT(j,i,v)   lib_json_add(j, NULL, NULL, v, 0, JSON_INTEGER, i)
-#define JSON_ADD_FLOAT(j,n,v)       lib_json_add(j, n, NULL, 0, v, JSON_FLOAT, -1)
-#define JSON_ADD_ARRAY_FLOAT(j,i,v) lib_json_add(j, NULL, NULL, 0, v, JSON_FLOAT, i)
-#define JSON_ADD_BOOL(j,n,v)        lib_json_add(j, n, NULL, v, 0, JSON_BOOL, -1)
-#define JSON_ADD_ARRAY_BOOL(j,i,v)  lib_json_add(j, NULL, NULL, v, 0, JSON_BOOL, i)
+#define JSON_ADD_STR(json, name, val)       lib_json_add(json, name, val, 0, 0, JSON_STRING, -1)
+#define JSON_ADD_ARRAY_STR(json, i, val)    lib_json_add(json, NULL, val, 0, 0, JSON_STRING, i)
+#define JSON_ADD_INT(json, name, val)       lib_json_add(json, name, NULL, val, 0, JSON_INTEGER, -1)
+#define JSON_ADD_ARRAY_INT(json, i, val)    lib_json_add(json, NULL, NULL, val, 0, JSON_INTEGER, i)
+#define JSON_ADD_FLOAT(json, name, val)     lib_json_add(json, name, NULL, 0, val, JSON_FLOAT, -1)
+#define JSON_ADD_ARRAY_FLOAT(json, i, val)  lib_json_add(json, NULL, NULL, 0, val, JSON_FLOAT, i)
+#define JSON_ADD_BOOL(json, name, val)      lib_json_add(json, name, NULL, val, 0, JSON_BOOL, -1)
+#define JSON_ADD_ARRAY_BOOL(json, i, val)   lib_json_add(json, NULL, NULL, val, 0, JSON_BOOL, i)
 
-#define JSON_ADD_RECORD(j,n,v)      lib_json_add_record(j, n, v, FALSE, -1)
-#define JSON_ADD_ARRAY_RECORD(j,i,v) lib_json_add_record(j, NULL, v, FALSE, i)
+#define JSON_ADD_RECORD(json, name, val)    lib_json_add_record(json, name, val, FALSE, -1)
+#define JSON_ADD_ARRAY_RECORD(json, i ,val) lib_json_add_record(json, NULL, val, FALSE, i)
 
-#define JSON_ADD_ARRAY(j,n,v)       lib_json_add_record(j, n, v, TRUE, -1)
-#define JSON_ADD_ARRAY_ARRAY(j,i,v) lib_json_add_record(j, NULL, v, TRUE, i)
-
-
-#define JSON_GET_STR(j,n)           lib_json_get_str(j, n, -1)
-#define JSON_GET_ARRAY_STR(j,i)     lib_json_get_str(j, NULL, i)
-#define JSON_GET_INT(j,n)           lib_json_get_int(j, n, -1)
-#define JSON_GET_ARRAY_INT(j,i)     lib_json_get_int(j, NULL, i)
-#define JSON_GET_FLOAT(j,n)         lib_json_get_float(j, n, -1)
-#define JSON_GET_ARRAY_FLOAT(j,i)   lib_json_get_float(j, NULL, i)
-#define JSON_GET_BOOL(j,n)          lib_json_get_bool(j, n, -1)
-#define JSON_GET_ARRAY_BOOL(j,i)    lib_json_get_bool(j, NULL, i)
-
-#define JSON_GET_RECORD(j,n,v)      lib_json_get_record(j, n, v, -1)
-#define JSON_GET_ARRAY_RECORD(j,i,v) lib_json_get_record(j, NULL, v, i)
-
-#define JSON_GET_ARRAY(j,n,v)       lib_json_get_record(j, n, v, -1)
-#define JSON_GET_ARRAY_ARRAY(j,i,v) lib_json_get_record(j, NULL, v, i)
+#define JSON_ADD_ARRAY(json, name, val)     lib_json_add_record(json, name, val, TRUE, -1)
+#define JSON_ADD_ARRAY_ARRAY(json, i, val)  lib_json_add_record(json, NULL, val, TRUE, i)
 
 
-#define JSON_RESET(j)               lib_json_reset(j)
-#define JSON_COUNT(j)               j.cnt
+#define JSON_GET_STR(json, name)            lib_json_get_str(json, name, -1)
+#define JSON_GET_ARRAY_STR(json, i)         lib_json_get_str(json, NULL, i)
+#define JSON_GET_INT(json, name)            lib_json_get_int(json, name, -1)
+#define JSON_GET_ARRAY_INT(json, i)         lib_json_get_int(json, NULL, i)
+#define JSON_GET_FLOAT(json, name)          lib_json_get_float(json, name, -1)
+#define JSON_GET_ARRAY_FLOAT(json, i)       lib_json_get_float(json, NULL, i)
+#define JSON_GET_BOOL(json, name)           lib_json_get_bool(json, name, -1)
+#define JSON_GET_ARRAY_BOOL(json, i)        lib_json_get_bool(json, NULL, i)
 
-#define JSON_LOG_DBG(j,n)           lib_json_log_dbg(j, n)
-#define JSON_LOG_INF(j,n)           lib_json_log_inf(j, n)
+#define JSON_GET_RECORD(json, name, val)    lib_json_get_record(json, name, val, -1)
+#define JSON_GET_ARRAY_RECORD(json, i, val) lib_json_get_record(json, NULL, val, i)
+
+#define JSON_GET_ARRAY(json, name, val)     lib_json_get_record(json, name, val, -1)
+#define JSON_GET_ARRAY_ARRAY(json, i, val)  lib_json_get_record(json, NULL, val, i)
+
+
+#define JSON_RESET(json)                    lib_json_reset(json)
+#define JSON_COUNT(json)                    json.cnt
+
+#define JSON_LOG_DBG(json, name)            lib_json_log_dbg(json, name)
+#define JSON_LOG_INF(json, name)            lib_json_log_inf(json, name)
 
 #else  /* JSON_NO_AUTO_AMPERSANDS not defined */
 
-#define JSON_TO_STRING(j)           lib_json_to_string(&j)
-#define JSON_TO_STRING_PRETTY(j)    lib_json_to_string_pretty(&j)
-#define JSON_FROM_STRING(j,s)       lib_json_from_string(&j, s, 0, 0)
+#define JSON_TO_STRING(json)                lib_json_to_string(&json)
+#define JSON_TO_STRING_PRETTY(json)         lib_json_to_string_pretty(&json)
+#define JSON_FROM_STRING(json, str)         lib_json_from_string(&json, str, 0, 0)
 
 
-#define JSON_ADD_STR(j,n,v)         lib_json_add(&j, n, v, 0, 0, JSON_STRING, -1)
-#define JSON_ADD_ARRAY_STR(j,i,v)   lib_json_add(&j, NULL, v, 0, 0, JSON_STRING, i)
-#define JSON_ADD_INT(j,n,v)         lib_json_add(&j, n, NULL, v, 0, JSON_INTEGER, -1)
-#define JSON_ADD_ARRAY_INT(j,i,v)   lib_json_add(&j, NULL, NULL, v, 0, JSON_INTEGER, i)
-#define JSON_ADD_FLOAT(j,n,v)       lib_json_add(&j, n, NULL, 0, v, JSON_FLOAT, -1)
-#define JSON_ADD_ARRAY_FLOAT(j,i,v) lib_json_add(&j, NULL, NULL, 0, v, JSON_FLOAT, i)
-#define JSON_ADD_BOOL(j,n,v)        lib_json_add(&j, n, NULL, v, 0, JSON_BOOL, -1)
-#define JSON_ADD_ARRAY_BOOL(j,i,v)  lib_json_add(&j, NULL, NULL, v, 0, JSON_BOOL, i)
+#define JSON_ADD_STR(json, name, val)       lib_json_add(&json, name, val, 0, 0, JSON_STRING, -1)
+#define JSON_ADD_ARRAY_STR(json, i, val)    lib_json_add(&json, NULL, val, 0, 0, JSON_STRING, i)
+#define JSON_ADD_INT(json, name, val)       lib_json_add(&json, name, NULL, val, 0, JSON_INTEGER, -1)
+#define JSON_ADD_ARRAY_INT(json, i, val)    lib_json_add(&json, NULL, NULL, val, 0, JSON_INTEGER, i)
+#define JSON_ADD_FLOAT(json, name, val)     lib_json_add(&json, name, NULL, 0, val, JSON_FLOAT, -1)
+#define JSON_ADD_ARRAY_FLOAT(json, i, val)  lib_json_add(&json, NULL, NULL, 0, val, JSON_FLOAT, i)
+#define JSON_ADD_BOOL(json, name, val)      lib_json_add(&json, name, NULL, val, 0, JSON_BOOL, -1)
+#define JSON_ADD_ARRAY_BOOL(json, i, val)   lib_json_add(&json, NULL, NULL, val, 0, JSON_BOOL, i)
 
-#define JSON_ADD_RECORD(j,n,v)      lib_json_add_record(&j, n, &v, FALSE, -1)
-#define JSON_ADD_ARRAY_RECORD(j,i,v) lib_json_add_record(&j, NULL, &v, FALSE, i)
+#define JSON_ADD_RECORD(json, name, val)    lib_json_add_record(&json, name, &val, FALSE, -1)
+#define JSON_ADD_ARRAY_RECORD(json, i, val) lib_json_add_record(&json, NULL, &val, FALSE, i)
 
-#define JSON_ADD_ARRAY(j,n,v)       lib_json_add_record(&j, n, &v, TRUE, -1)
-#define JSON_ADD_ARRAY_ARRAY(j,i,v) lib_json_add_record(&j, NULL, &v, TRUE, i)
-
-
-#define JSON_GET_STR(j,n)           lib_json_get_str(&j, n, -1)
-#define JSON_GET_ARRAY_STR(j,i)     lib_json_get_str(&j, NULL, i)
-#define JSON_GET_INT(j,n)           lib_json_get_int(&j, n, -1)
-#define JSON_GET_ARRAY_INT(j,i)     lib_json_get_int(&j, NULL, i)
-#define JSON_GET_FLOAT(j,n)         lib_json_get_float(&j, n, -1)
-#define JSON_GET_ARRAY_FLOAT(j,i)   lib_json_get_float(&j, NULL, i)
-#define JSON_GET_BOOL(j,n)          lib_json_get_bool(&j, n, -1)
-#define JSON_GET_ARRAY_BOOL(j,i)    lib_json_get_bool(&j, NULL, i)
-
-#define JSON_GET_RECORD(j,n,v)      lib_json_get_record(&j, n, &v, -1)
-#define JSON_GET_ARRAY_RECORD(j,i,v) lib_json_get_record(&j, NULL, &v, i)
-
-#define JSON_GET_ARRAY(j,n,v)       lib_json_get_record(&j, n, &v, -1)
-#define JSON_GET_ARRAY_ARRAY(j,i,v) lib_json_get_record(&j, NULL, &v, i)
+#define JSON_ADD_ARRAY(json, name, val)     lib_json_add_record(&json, name, &val, TRUE, -1)
+#define JSON_ADD_ARRAY_ARRAY(json, i, val)  lib_json_add_record(&json, NULL, &val, TRUE, i)
 
 
-#define JSON_RESET(j)               lib_json_reset(&j)
-#define JSON_COUNT(j)               j.cnt
+#define JSON_GET_STR(json, name)            lib_json_get_str(&json, name, -1)
+#define JSON_GET_ARRAY_STR(json, i)         lib_json_get_str(&json, NULL, i)
+#define JSON_GET_INT(json, name)            lib_json_get_int(&json, name, -1)
+#define JSON_GET_ARRAY_INT(json, i)         lib_json_get_int(&json, NULL, i)
+#define JSON_GET_FLOAT(json, name)          lib_json_get_float(&json, name, -1)
+#define JSON_GET_ARRAY_FLOAT(json, i)       lib_json_get_float(&json, NULL, i)
+#define JSON_GET_BOOL(json, name)           lib_json_get_bool(&json, name, -1)
+#define JSON_GET_ARRAY_BOOL(json, i)        lib_json_get_bool(&json, NULL, i)
 
-#define JSON_LOG_DBG(j,n)           lib_json_log_dbg(&j, n)
-#define JSON_LOG_INF(j,n)           lib_json_log_inf(&j, n)
+#define JSON_GET_RECORD(json, name, val)    lib_json_get_record(&json, name, &val, -1)
+#define JSON_GET_ARRAY_RECORD(jsoni, val)   lib_json_get_record(&json, NULL, &val, i)
+
+#define JSON_GET_ARRAY(json, name, val)     lib_json_get_record(&json, name, &val, -1)
+#define JSON_GET_ARRAY_ARRAY(json, i, val)  lib_json_get_record(&json, NULL, &val, i)
+
+
+#define JSON_RESET(json)                    lib_json_reset(&json)
+#define JSON_COUNT(json)                    json.cnt
+
+#define JSON_LOG_DBG(json, name)            lib_json_log_dbg(&json, name)
+#define JSON_LOG_INF(json, name)            lib_json_log_inf(&json, name)
 
 #endif  /* JSON_NO_AUTO_AMPERSANDS */
 
 /* for backward compatibility */
-#define silgy_read_param(p,v)       silgy_read_param_str(p,v)
+#define silgy_read_param(param, val)        silgy_read_param_str(param, val)
 
 
 #ifdef __cplusplus
