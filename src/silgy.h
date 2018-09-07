@@ -319,7 +319,7 @@ typedef char                        bool;
 #define ASYNC_STATE_TIMEOUTED           '3'
 #define ASYNC_MQ_MAXMSG                 10
 #define MAX_ASYNC                       ASYNC_MQ_MAXMSG*2   /* max queued async responses */
-#define ASYNC_REQ_MSG_SIZE              1024                /* async message size */
+#define ASYNC_REQ_MSG_SIZE              4096                /* async message size */
 #define ASYNC_RES_MSG_SIZE              8192                /* async message size */
 #define ASYNC_REQ_QUEUE                 "/silgy_req"        /* request queue name */
 #define ASYNC_RES_QUEUE                 "/silgy_res"        /* response queue name */
