@@ -45,10 +45,10 @@ typedef struct {
 } rest_header_t;
 
 
-#define REST_MAX_HEADERS                        100
-#define REST_HEADERS_RESET                      lib_rest_headers_reset()
-#define REST_HEADER_SET(key, val)               lib_rest_header_set(key, val)
-#define REST_HEADER_UNSET(key)                  lib_rest_header_unset(key)
+#define REST_MAX_HEADERS                            100
+#define REST_HEADERS_RESET                          lib_rest_headers_reset()
+#define REST_HEADER_SET(key, val)                   lib_rest_header_set(key, val)
+#define REST_HEADER_UNSET(key)                      lib_rest_header_unset(key)
 
 
 #ifdef JSON_NO_AUTO_AMPERSANDS
@@ -60,30 +60,30 @@ typedef struct {
 #endif
 
 /* aliases -- highest level -- 'keep' always TRUE */
-#define CALL_REST_RAW(req, res, method, url)    CALL_REST_HTTP(req, res, method, url, TRUE)
-#define CALL_REST(req, res, method, url)        CALL_REST_JSON(req, res, method, url, TRUE)
+#define CALL_REST_RAW(req, res, method, url)        CALL_REST_HTTP(req, res, method, url, TRUE)
+#define CALL_REST(req, res, method, url)            CALL_REST_JSON(req, res, method, url, TRUE)
 
 
-#define CALL_REST_DEFAULT_TIMEOUT               1000     /* in ms -- to avoid blocking forever */
+#define CALL_REST_DEFAULT_TIMEOUT                   1000     /* in ms -- to avoid blocking forever */
 
-#define REST_RES_HEADER_LEN                     4095
-#define REST_ADDRESSES_CACHE_SIZE               100
+#define REST_RES_HEADER_LEN                         4095
+#define REST_ADDRESSES_CACHE_SIZE                   100
 
 
 /* JSON */
 
-#define JSON_STRING         0
-#define JSON_INTEGER        1
-#define JSON_FLOAT          2
-#define JSON_BOOL           3
-#define JSON_RECORD         4
-#define JSON_ARRAY          5
+#define JSON_STRING             0
+#define JSON_INTEGER            1
+#define JSON_FLOAT              2
+#define JSON_BOOL               3
+#define JSON_RECORD             4
+#define JSON_ARRAY              5
 
-#define JSON_MAX_ELEMS      50      /* in one JSON struct */
-#define JSON_MAX_LEVELS     4
+#define JSON_MAX_ELEMS          50      /* in one JSON struct */
+#define JSON_MAX_LEVELS         4
 
-#define JSON_MAX_JSONS      1000    /* size of the array used for auto-initializing JSON variables */
-#define JSON_POOL_SIZE      100     /* for storing sub-JSONs */
+#define JSON_MAX_JSONS          1000    /* size of the array used for auto-initializing JSON variables */
+#define JSON_POOL_SIZE          100     /* for storing sub-JSONs */
 
 
 /* JSON record */
@@ -186,7 +186,7 @@ typedef json_buf_t JSON;
 #define JSON_GET_ARRAY_BOOL(json, i)        lib_json_get_bool(&json, NULL, i)
 
 #define JSON_GET_RECORD(json, name, val)    lib_json_get_record(&json, name, &val, -1)
-#define JSON_GET_ARRAY_RECORD(jsoni, val)   lib_json_get_record(&json, NULL, &val, i)
+#define JSON_GET_ARRAY_RECORD(json, i, val) lib_json_get_record(&json, NULL, &val, i)
 
 #define JSON_GET_ARRAY(json, name, val)     lib_json_get_record(&json, name, &val, -1)
 #define JSON_GET_ARRAY_ARRAY(json, i, val)  lib_json_get_record(&json, NULL, &val, i)
