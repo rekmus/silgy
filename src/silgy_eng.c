@@ -4832,12 +4832,12 @@ int main(int argc, char *argv[])
     strcpy(G_res_queue_name, ASYNC_RES_QUEUE);
 #endif
 
-    struct mq_attr attr={0};
+/*    struct mq_attr attr={0};
 
     attr.mq_maxmsg = ASYNC_MQ_MAXMSG;
-    attr.mq_msgsize = ASYNC_REQ_MSG_SIZE;
+    attr.mq_msgsize = ASYNC_REQ_MSG_SIZE; */
 
-	G_queue_req = mq_open(G_req_queue_name, O_RDONLY, 0664, &attr);
+	G_queue_req = mq_open(G_req_queue_name, O_RDONLY, NULL, NULL);
 
 	if ( G_queue_req < 0 )
 	{
@@ -4848,9 +4848,9 @@ int main(int argc, char *argv[])
 
     INF("G_queue_req open OK");
 
-    attr.mq_msgsize = ASYNC_RES_MSG_SIZE;   /* larger buffer */
+//    attr.mq_msgsize = ASYNC_RES_MSG_SIZE;   /* larger buffer */
 
-	G_queue_res = mq_open(G_res_queue_name, O_WRONLY, 0664, &attr);
+	G_queue_res = mq_open(G_res_queue_name, O_WRONLY, NULL, NULL);
 
 	if ( G_queue_res < 0 )
 	{
