@@ -241,34 +241,6 @@ And the fifth one:
   
 QS_RAW - value is not URI-decoded  
 
-### void RES_STATUS(int code)
-Set response status to *code*.
-
-Example:
-```source.c++
-RES_STATUS(501);
-```
-### void RES_CONTENT_TYPE(const char \*string)
-Set response content type to *string*.
-
-Example:
-```source.c++
-RES_CONTENT_TYPE("text/plain");
-```
-### void RES_LOCATION(const char \*string)
-Redirect browser to *string*.
-
-Example:
-```source.c++
-RES_LOCATION("login");
-```
-### void RES_CONTENT_DISPOSITION(const char \*string[, ...])
-Add Content-Disposition to response header.
-
-Example:
-```source.c++
-RES_CONTENT_DISPOSITION("attachment; filename=\"%s.csv\"", doc_name);
-```
 
 ## Asynchronous calls
 
@@ -300,7 +272,7 @@ CALL_ASYNC_NR("setCounter", counter);
 Return TRUE if service matches *string*.  
 Example: see [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-int-err_code).
 
-## Functions
+## Goodies
 
 ### char \*silgy_html_esc(const char \*str)
 HTML-escape *str*, return pointer to a new string. Max length is 64 kB.
