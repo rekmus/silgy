@@ -186,7 +186,6 @@ g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
 [Compilation switches specification](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches)
 
 ## Functions and macros
-
 [Full reference is now moving to Wiki](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros).
 
 Below I'll leave just the most basic ones that are essential for building any web application in Silgy ([REQ](https://github.com/silgy/silgy/wiki/REQ), [OUT](https://github.com/silgy/silgy/wiki/OUT) and [QS](https://github.com/silgy/silgy/wiki/QS)).
@@ -242,29 +241,6 @@ And the fifth one:
   
 QS_RAW - value is not URI-decoded  
 
-### bool REQ_MOB
-Return TRUE if request user agent is mobile.  
-Example:  
-```source.c++
-if ( REQ_MOB )
-    OUT("<meta name=\"viewport\" content=\"width=device-width\">");
-```
-### bool REQ_BOT
-Return TRUE if user agent in a request is a bot.  
-Silgy maintains its own internal library of known bots to determine whether request comes from one. If the request comes from a bot, user session is not created. You can also use this to better estimate number of visits to your site.  
-Example:  
-```source.c++
-if ( !REQ_BOT )
-    ++real_visits;
-```
-### bool HOST(const char \*string)
-Return TRUE if HTTP request *Host* header matches *string*. Case is ignored.
-
-Example:
-```source.c++
-if ( HOST("example.com") )
-    process_example(ci);
-```
 ### void RES_STATUS(int code)
 Set response status to *code*.
 
