@@ -2,19 +2,19 @@
 
 In 1995, when I landed my first computer job, my PC had an Intel 286 processor and 1 MB of RAM. Disks had spinning plates, nobody heard of SSD. Our office had Novell file server. And whatever we'd do, programs responded **immediately**.
 
-Fast forward to 2018 and my PC has Intel i5 processor and 8 GB of RAM. Everyone can download GCC for free and there's Stackoverflow.com. And guess what? Web applications doing the same things in my intranet now are **painfully slow**.
+Fast forward to 2018 and my PC has Intel i5 processor and 8 GB of RAM. Everyone can download GCC for free and there's Stackoverflow.com. And guess what? Web applications doing the same things in my intranet now are **painfully slow**. Not only this. When I compile and boot my Java or Node.js projects, I have to waste my health for making zillionth coffee that day or to waste my time for waiting, because my computer is useless for a loooong time.
 
 That's why I've written Silgy. I think all the web applications in the world should be written in it. World would be much better off.
 
-In Silgy you just compile and link your logic into one executable that responds immediately to HTTP requests, without creating a new thread or — God forbid — process. No layers, no dependencies, no layers, translations, layers, converters, layers...
+In Silgy you just compile and link your logic into one executable that responds immediately to HTTP requests, without creating a new thread or — God forbid — process. There's no VM layer (Hello, Java) nor interpreter, nor external modules' dependencies (Hello, Node.js frameworks). Compilation takes about a second (Hello, Java and Node.js again). You get non-blocking Node.js-like or better performance, with Java-like coding simplicity, C-like instant compilation and instant startup, on much cheaper hardware. By the time my Spring Boot application boots, I can have another RESTful service written and tested with Silgy.
 
 What you get with Silgy:
 
-- **Speed** − measured in µ-seconds.
+- **Speed** − response measured in µ-seconds, compilation around one second, boot in a fraction of a second.
 - **Safety** − nobody can ever see your application logic nor wander through your filesystem nor run scripts. It has build-in protection against most popular attacks.
 - **Small memory footprint** − a couple of MB for demo app − can be easily reduced for embedded apps.
 - **Simple coding** − straightforward approach, easy to understand even for a beginner programmer ([jump to Hello World](https://github.com/silgy/silgy#hello-world)).
-- **All-In-One** − no need to install external modules; Silgy source already contains all the logic required to run the application.
+- **All-In-One** − no need to install external modules; Silgy source already contains all the logic required to run the application, including JSON objects and RESTful calls.
 - **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around.
 - **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro), not even mentioning planet-friendliness.
 
@@ -302,7 +302,7 @@ g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
 
 [Full reference is now moving to Wiki](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros).
 
-Below I'll leave just the most basic ones that are essential for building any web application in Silgy ([REQ](https://github.com/silgy/silgy/wiki/REQ()), [OUT](https://github.com/silgy/silgy/wiki/OUT()) and [QS](https://github.com/silgy/silgy/wiki/QS())).
+Below I'll leave just the most basic ones that are essential for building any web application in Silgy ([REQ](https://github.com/silgy/silgy/wiki/REQ), [OUT](https://github.com/silgy/silgy/wiki/OUT) and [QS](https://github.com/silgy/silgy/wiki/QS)).
 
 ### bool REQ(const char \*string)
 Return TRUE if first part of request URI matches *string*. 'First part' means everything until **/** or **?**, for example:
@@ -481,39 +481,6 @@ Example: see [app_async_done()](https://github.com/silgy/silgy#void-app_async_do
 
 ## Functions
 
-### void silgy_add_to_static_res(const char \*name, char \*src)
-Expose string *src* as a [static resource](https://github.com/silgy/silgy#static-resources). Instead of using a file, you may sometimes want to generate something like CSS. Once you've added it, it's visible the same way other statics are. *src* has to be a 0-terminated string.
-
-Example:
-```source.c++
-#define COLOR_RED "#b40508"  // carefully crafted 'red' we want to use across the entire app
-                             // as well as many times in CSS
-// ...
-
-void create_css()  // called from app_init()
-{
-    char dsk[2048];
-    char mob[2048];
-    char dsk_min[2048];
-    char mob_min[2048];
-
-    // .w_border style used in .....
-    sprintf(dsk, ".w_border {color:%s; border:1px solid grey;}", COLOR_RED);
-    sprintf(mob, ".w_border {color:%s; border:2px solid grey;}", COLOR_RED);
-
-    // .no_border style used in .....
-    sprintf(dsk, " %s .no_border {color:%s; border:0;}", dsk, COLOR_RED);
-    sprintf(mob, " %s .no_border {color:%s; border:0;}", mob, COLOR_RED);
-    // ...
-
-    silgy_minify(dsk_min, dsk);
-    silgy_add_to_static_res("dsk.css", dsk_min);
-
-    silgy_minify(mob_min, mob);
-    silgy_add_to_static_res("mob.css", mob_min);
-}
-```
-
 ### char \*silgy_html_esc(const char \*str)
 HTML-escape *str*, return pointer to a new string. Max length is 64 kB.
 
@@ -525,53 +492,6 @@ SQL-escape *str*, return pointer to a new string. Max length is 64 kB.
 
 ### int silgy_minify(char \*dest, const char \*src)
 Minify CSS or JS. Return new length. Example: see [silgy_add_to_static_res()](https://github.com/silgy/silgy#void-silgy_add_to_static_resconst-char-name-char-src).
-
-### void silgy_random(char \*dest, int len)
-Generate random string of *len* length and copy it to *dest*. Generated string can contain letters (lower- and upper-case) and digits.
-
-### bool silgy_read_param(const char \*param, char \*dest)
-Copy config file parameter to a variable. Returns true if found. *dest* can be NULL to only do presence check.
-
-Example:
-```source.c++
-static char M_someSetting[256]=SOME_SETTING_DEFAULT_VALUE;
-
-    // in app_init()
-    silgy_read_param("someSetting", M_someSetting);
-```
-
-### bool silgy_read_param_int(const char \*param, int \*dest)
-Copy config file parameter to an integer variable. Returns true if found. *dest* can be NULL to only do presence check.
-
-Example:
-```source.c++
-static int M_someSetting=SOME_SETTING_DEFAULT_VALUE;
-
-    // in app_init()
-    silgy_read_param_int("someSetting", &M_someSetting);
-```
-
-### void silgy_set_auth_level(const char \*resource, char level)
-Set required authorization level for a resource.
-
-*level* can have one of the following values:
-
-macro|notes
------|-----
-AUTH_LEVEL_NONE|No user session is required.
-AUTH_LEVEL_ANONYMOUS|Anonymous user session is required. If there's no valid **as** cookie, anonymous user session is started.
-AUTH_LEVEL_LOGGEDIN|Logged in user session is required. If request does not have valid **ls** cookie, it's redirected to URI defined in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_LOGIN_URI.
-AUTH_LEVEL_ADMIN|Logged in as admin is required. If USERSBYLOGIN is used, current user must be "admin" or — if USERSBYEMAIL is used — current user must be equal to APP_ADMIN_EMAIL in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h). Otherwise request will receive 404.
-
-Resources not set with silgy_set_auth_level() get default level specified in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) APP_DEF_AUTH_LEVEL.  
-[Static resources](https://github.com/silgy/silgy#static-resources) always have AUTH_LEVEL_NONE.  
-Example:
-```source.c++
-// in app_init()
-silgy_set_auth_level("about", AUTH_LEVEL_NONE);
-silgy_set_auth_level("dashboard", AUTH_LEVEL_LOGGEDIN);
-silgy_set_auth_level("blockIP", AUTH_LEVEL_ADMIN);
-```
 
 ## Engine callbacks
 
