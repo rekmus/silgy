@@ -293,22 +293,6 @@ Example:
 ```source.c++
 RES_CONTENT_DISPOSITION("attachment; filename=\"%s.csv\"", doc_name);
 ```
-### void ALWAYS(const char \*str[, ...]), void ERR(const char \*str[, ...]), void WAR(const char \*str[, ...]), void INF(const char \*str[, ...]), void DBG(const char \*str[, ...])
-Write *str* to log, depending on log level set in [conf file](https://github.com/silgy/silgy/wiki/Silgy-configuration-parameters). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
-```
-ALWAYS - regardless of log level  
-ERR - only if log level >= 1, writes ERROR: before string  
-WAR - only if log level >= 2, writes WARNING: before string  
-INF - only if log level >= 3  
-DBG - only if log level >= 4  
-```
-Log file is created on every start in `$SILGYDIR/logs`. File name contains date and time: *YYYYMMDD_HHmm.log* or — if test=1 in config — *YYYYMMDD_HHmm_t.log*. Every midnight new log file is started.  
-Examples:
-```source.c++
-ALWAYS("Server is starting");
-DBG("in a while loop, i = %d", i);
-```
-If log level is set to 4, there's quite a lot of information logged, including full request and response HTTP headers, and every call flushes the buffer straight away, to help in investigation in case of crash.
 
 ## Asynchronous calls
 
