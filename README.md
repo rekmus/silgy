@@ -194,10 +194,10 @@ Static resources are read into memory on startup from **res** directory. Static 
 
 Static resources are handled automatically, you don't have to add anything in your app.
 
-In addition to placing your statics in res and resmin directories, you can generate text statics from within your code at the start, and add them to the statics using [silgy_add_to_static_res()](https://github.com/silgy/silgy#void-silgy_add_to_static_resconst-char-name-char-src).
+In addition to placing your statics in res and resmin directories, you can generate text statics from within your code at the start, and add them to the statics using [silgy_add_to_static_res()](https://github.com/silgy/silgy/wiki/silgy_add_to_static_res).
 
 ## Response Header
-Response header is generated automatically, however you can overwrite defaults with a couple of [macros](https://github.com/silgy/silgy#void-res_statusint-code).
+Response header is generated automatically, however you can overwrite defaults with a couple of [macros](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros#response).
 
 ## Hello World
 Simplest Hello World:
@@ -288,7 +288,7 @@ int app_process_req(int ci)
 ```
 
 ## Configuration File
-You can change default behaviour with [configuration parameters](https://github.com/silgy/silgy/wiki/Silgy-configuration-parameters). Note that you can also use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy#bool-silgy_read_paramconst-char-param-char-dest).
+You can change default behaviour with [configuration parameters](https://github.com/silgy/silgy/wiki/Silgy-configuration-parameters). Note that you can also use config file to pass your own parameters which you can read with [silgy_read_param()](https://github.com/silgy/silgy/wiki/silgy_read_param_str).
 
 ## Compilation Switches
 Because speed is Silgy's priority, every possible decision is taken at a compile time rather than at runtime. Therefore, unless you specify you want to use some features, they won't be in your executable.
