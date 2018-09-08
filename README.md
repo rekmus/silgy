@@ -64,125 +64,10 @@ Every project on Earth has them. So you'd better know.
 5. *What does deployment mean?* If you've written your app in Silgy, it means copying executable file to production machine which has nothing but operating system installed. OK, add jpegs and css. Oh — wait a minute — you prefer to learn [how to develop on Kubernetes](https://kubernetes.io/blog/2018/05/01/developing-on-kubernetes/) first, because everyone talks so cool about it... Then I can't help you. I'm actually learning it but only because my organization handles tens or hundreds of thousands requests per second, we have money for servers, development teams, admin teams and my boss made me. If you're Google or Amazon then you definitely need to have something. There is also a [hundred or so](https://en.wikipedia.org/wiki/List_of_build_automation_software) of other build automation software. Good luck with choosing the right one. And good luck with paying for the infrastructure. One of my priorities was to make Silgy app not needing this at all.
 
 ## Step-by-Step on Windows
-
-### 0. Install C++ compiler
-I recommend free, open source [MinGW](http://mingw.org).
-
-### 1. Create project folder
-I.e. `C:\cpp\silgy_app`
-
-### 2. Download Silgy
-On the [Silgy project's main page](https://github.com/silgy/silgy/tree/master/src) click **Clone or download** button, then choose ZIP version, open it and unpack **src** folder to your project folder.
-
-### 3. Open a command line window
-
-### 4. Go to your project folder (directory)
-and then src:
-```source.sh
-cd \cpp\silgy_app\src
-```
-
-### 5. Compile:
-```source.sh
-m
-```
-
-### 6. Run:
-```source.sh
-silgy_app
-```
-
-### 7. Open browser and navigate to `localhost`
-You should see something like this:
-
-<img src="https://minishare.com/show?p=v1EcflRY&i=2">
+[Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Windows)
 
 ## Step-by-Step on Linux
-I assume that you know how to log in to your Linux. If not, and you're on Windows, like me, I recommend installing [PuTTY](https://www.putty.org/) and [WinSCP](https://winscp.net/eng/index.php).
-
-I've managed to produce a [step by step video tutorial](https://www.youtube.com/watch?v=OtatIkHQAzs) on how to set Silgy Hello World up on a free AWS EC2 instance. It shows AWS part (creating an instance, assigning public IP address, connecting to it via WinSCP and PuTTY) as well as the below steps.
-
-### 0. Install C++ compiler
-```source.sh
-sudo yum install gcc-c++
-```
-Optionally, if you're planning to use [HTTPS](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#https):
-```source.sh
-sudo yum install openssl-devel
-```
-Optionally, if you're planning to use MySQL:
-```source.sh
-sudo yum install mysql-devel
-```
-
-### 1. In your $HOME, create a project directory, i.e. web:  
-```source.sh
-mkdir web
-```
-
-### 2. Set SILGYDIR environment variable to your project directory
-If you use bash, that would be in .bash_profile in your home directory:
-```source.sh
-export SILGYDIR=/home/ec2-user/web
-```
-Then you need to either restart your shell session or execute above command.
-
-### 3. Add SILGYDIR to sudoers
-Without it sudo won't see it.
-```source.sh
-sudo visudo
-```
-then find the block starting with:
-```
-Defaults    env_reset
-```
-and add a new line like this:
-```
-Defaults    env_keep += "SILGYDIR"
-```
-(If you don't know **vi** editor yet, here is a [cheat sheet](http://www.atmos.albany.edu/daes/atmclasses/atm350/vi_cheat_sheet.pdf).)
-
-### 4. In your project directory, create some others:
-```source.sh
-cd web
-mkdir src      # all the sources from this repository's src
-mkdir bin      # executable(s), silgy.conf, blacklist.txt will be there
-mkdir res      # static resources like pictures, html-s, robots.txt etc.
-mkdir resmin   # resources to be minified (CSS and JS)
-mkdir logs     # peek there if there's something wrong
-```
-
-### 5. Throw all the files from [src](https://github.com/silgy/silgy/tree/master/src) directory here to your src.
-If you are on Windows, click **Clone or download** button, then choose ZIP version, unpack it locally and copy content of **src** to your instance — I use WinSCP for this.
-
-Back to terminal window and **m** and **te** scripts must have executable flag:
-```source.sh
-cd src
-chmod u+x m
-chmod u+x te
-```
-
-### 6. Compile:
-```source.sh
-./m
-```
-
-### 7. Run:
-```source.sh
-sudo ../bin/silgy_app
-```
-That's it. Your app should now be online.
-
-In a 'no-hung-up mode' you'll be able to exit terminal after starting the app:
-```source.sh
-sudo nohup ../bin/silgy_app &
-```
-or you can just use scripts provided in [bin](https://github.com/silgy/silgy/tree/master/bin) directory: [silgystart](https://github.com/silgy/silgy/blob/master/bin/silgystart) and [silgystop](https://github.com/silgy/silgy/blob/master/bin/silgystop).
-
-There will also be a daemon mode in the near future.
-
-### Note for Amazon Web Services (AWS) users
-For your own good, fresh EC2 instances have a very restricted security policy with only SSH port (22) open. If you haven't done so, you need to edit that policy and add HTTP port (80) before AWS lets your browser in.
+[Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Linux)
 
 ## Where's my program?
 Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and [app_process_req()](https://github.com/silgy/silgy#int-app_process_reqint-ci) is your main, called with every browser request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy#hello-world) there to help you get on.
@@ -335,7 +220,8 @@ OUT("<!DOCTYPE html>");
 OUT("<p>There are %d records in the table.</p>", records);
 ```
 ### bool QS(const char \*param, QSVAL variable)
-Search query string for *param* and if found, URI-decode it, copy its value to *variable* and return TRUE. Otherwise return FALSE. For POST, PUT and DELETE methods it assumes query string is in payload.  
+Search query string for *param* and if found, URI-decode it, copy its value to *variable* and return TRUE. Otherwise return FALSE. For POST, PUT and DELETE methods it assumes query string is in payload.
+
 QSVAL is just a typedef for C-style string, long enough to hold the value, as QS makes the check.
 
 Example:  
@@ -356,24 +242,6 @@ And the fifth one:
   
 QS_RAW - value is not URI-decoded  
 
-### char* REQ_URI
-Request URI.
-
-### bool REQ_GET
-Return TRUE if request method is GET.
-
-### bool REQ_POST
-Return TRUE if request method is POST.
-
-### bool REQ_PUT
-Return TRUE if request method is PUT.
-
-### bool REQ_DELETE
-Return TRUE if request method is DELETE.
-
-### bool REQ_DSK
-Return TRUE if request user agent is desktop.
-
 ### bool REQ_MOB
 Return TRUE if request user agent is mobile.  
 Example:  
@@ -389,9 +257,6 @@ Example:
 if ( !REQ_BOT )
     ++real_visits;
 ```
-### char* REQ_LANG
-User agent primary language code.
-
 ### bool HOST(const char \*string)
 Return TRUE if HTTP request *Host* header matches *string*. Case is ignored.
 
@@ -428,12 +293,6 @@ Example:
 ```source.c++
 RES_CONTENT_DISPOSITION("attachment; filename=\"%s.csv\"", doc_name);
 ```
-### void RES_DONT_CACHE
-Prevent response from being cached by browser.
-
-### void REDIRECT_TO_LANDING
-Redirect browser to landing page.
-
 ### void ALWAYS(const char \*str[, ...]), void ERR(const char \*str[, ...]), void WAR(const char \*str[, ...]), void INF(const char \*str[, ...]), void DBG(const char \*str[, ...])
 Write *str* to log, depending on log level set in [conf file](https://github.com/silgy/silgy/wiki/Silgy-configuration-parameters). Optionally it takes additional arguments, as per [printf function family specification](https://en.wikipedia.org/wiki/Printf_format_string).
 ```
