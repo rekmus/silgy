@@ -2,7 +2,9 @@
 
 In 1995, when I landed my first computer job, my PC had an Intel 286 processor and 1 MB of RAM. Disks had spinning plates, nobody heard of SSD. Our office had Novell file server. And whatever we'd do, programs responded **immediately**.
 
-Fast forward to 2018 and my PC has Intel i5 processor and 8 GB of RAM. Everyone can download GCC for free and there's Stackoverflow.com. And guess what? Web applications doing the same things in my intranet now are **painfully slow**. Not only this. When I compile and boot my Java or Node.js projects, I have to waste my health for making zillionth coffee that day or to waste my time for waiting, because my computer is useless for a loooong time.
+Fast forward to 2018 and my PC has Intel i5 processor and 8 GB of RAM. Everyone can download GCC for free and there's Stackoverflow.com. And guess what? Web applications doing the same things in my intranet now are **painfully slow**.
+
+Not only this. When I compile and boot my Java or Node.js projects, I have to waste my health for making zillionth coffee that day or to waste my time for waiting, because my computer is useless for a loooong time.
 
 That's why I've written Silgy. I think all the web applications in the world should be written in it. World would be much better off.
 
@@ -18,9 +20,9 @@ What you get with Silgy:
 - **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around.
 - **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro), not even mentioning planet-friendliness.
 
-Silgy is written in ANSI C in order to support as many platforms as possible and it's C++ compilers compatible. Sample [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) source module can be C as well as C++ code. Typical application code will look almost the same as in any of the C family language: C++, Java, JavaScript (before it has been destroyed with ES6 and all that arrow functions hell everyone thinks must be used, and hardly anyone really understands). All that could be automated, is automated.
+Silgy is written in ANSI C in order to support as many platforms as possible and it's C++ compilers compatible. Sample [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) source module can be C as well as C++ code. Typical application code will look almost the same as in any of the C family language: C++, Java, JavaScript (before it has been destroyed with ES6 and all that arrow functions hell). All that could be automated, is automated.
 
-It aims to be All-In-One solution for writing typical web application — traditional HTML rendering model, SPA or mixed. It handles HTTPS, and anonymous and registered user sessions — even with forgotten passwords. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues in an asynchronous manner, using Silgy's [ASYNC](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#async) facility. Macros [CALL_ASYNC](https://github.com/silgy/silgy#void-call_asyncconst-char-service-const-char-data-int-timeout) and [CALL_ASYNC_NR](https://github.com/silgy/silgy#void-call_async_nrconst-char-service-const-char-data) make it as simple as possible.
+It aims to be All-In-One solution for writing typical web application — traditional HTML rendering model, SPA or mixed. It handles HTTPS, and anonymous and registered user sessions — even with forgotten passwords. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues in an asynchronous manner, using Silgy's [ASYNC](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#async) facility. [CALL_ASYNC](https://github.com/silgy/silgy/wiki/CALL_ASYNC) macros make it as simple as possible.
 
 Web applications like [Budgeter](https://budgeter.org) or [minishare](https://minishare.com) based on Silgy, fit in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds). Even with the network latency [it still shows](https://tools.pingdom.com/#!/bu4p3i/https://budgeter.org).
   
