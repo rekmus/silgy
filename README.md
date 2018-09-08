@@ -64,10 +64,10 @@ Every project on Earth has them. So you'd better know.
 5. *What does deployment mean?* If you've written your app in Silgy, it means copying executable file to production machine which has nothing but operating system installed. OK, add jpegs and css. Oh — wait a minute — you prefer to learn [how to develop on Kubernetes](https://kubernetes.io/blog/2018/05/01/developing-on-kubernetes/) first, because everyone talks so cool about it... Then I can't help you. I'm actually learning it but only because my organization handles tens or hundreds of thousands requests per second, we have money for servers, development teams, admin teams and my boss made me. If you're Google or Amazon then you definitely need to have something. There is also a [hundred or so](https://en.wikipedia.org/wiki/List_of_build_automation_software) of other build automation software. Good luck with choosing the right one. And good luck with paying for the infrastructure. One of my priorities was to make Silgy app not needing this at all.
 
 ## Step-by-Step on Windows
-[Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Windows)
+### [Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Windows)
 
 ## Step-by-Step on Linux
-[Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Linux)
+### [Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Linux)
 
 ## Where's my program?
 Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and [app_process_req()](https://github.com/silgy/silgy#int-app_process_reqint-ci) is your main, called with every browser request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy#hello-world) there to help you get on.
@@ -183,10 +183,10 @@ Add your switches to [m](https://github.com/silgy/silgy/blob/master/src/m) befor
 g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
 -D HTTPS -D DBMYSQL ...
 ```
-[Compilation switches specification](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches)
+### [Compilation switches specification](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches)
 
 ## Functions and macros
-[Full reference is now moving to Wiki](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros).
+### [Full reference is now moving to Wiki](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros).
 
 Below I'll leave just the most basic ones that are essential for building any web application in Silgy ([REQ](https://github.com/silgy/silgy/wiki/REQ), [OUT](https://github.com/silgy/silgy/wiki/OUT) and [QS](https://github.com/silgy/silgy/wiki/QS)).
 
