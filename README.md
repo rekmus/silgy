@@ -2,7 +2,7 @@
 
 In 1995, when I landed my first computer job, my PC had an Intel 286 processor and 1 MB of RAM. Disks had spinning plates, nobody heard of SSD. Our office had Novell file server. And whatever we'd do, programs responded **immediately**.
 
-Fast forward to 2018 and my PC has Intel i5 processor and 8 GB of RAM. Everyone can download GCC for free and there's Stackoverflow.com. And guess what? Web applications doing the same things in my intranet now are **painfully slow**.
+Fast forward to 2018 and my PC has Intel i5 processor and 8 GB of RAM. Everyone can download GCC for free and there's Stackoverflow.com. And guess what? Web applications doing the same things in my intranet are now **painfully slow**.
 
 Not only this. When I compile and boot my Java or Node.js projects, I have to waste my health for making zillionth coffee that day or to waste my time for waiting, because my computer is useless for a loooong time.
 
