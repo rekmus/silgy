@@ -181,7 +181,8 @@ Because speed is Silgy's priority, every possible decision is taken at a compile
 Add your switches to [m](https://github.com/silgy/silgy/blob/master/src/m) before compilation, i.e.:
 ```
 g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
--D HTTPS -D DBMYSQL ...
+-s -O3 \
+-D MEM_SMALL -D HTTPS -D DBMYSQL ...
 ```
 ### [Compilation switches specification](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches)
 
