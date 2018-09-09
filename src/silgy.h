@@ -658,7 +658,7 @@ extern "C" {
     void eng_uses_close(int usi);
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
-    void silgy_add_to_static_res(const char *name, char *src);
+    void silgy_add_to_static_res(const char *name, const char *src);
     void eng_send_ajax_msg(int ci, int errcode);
     void eng_block_ip(const char *value, bool autoblocked);
     void eng_get_msg_str(int ci, char *dest, int errcode);

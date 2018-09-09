@@ -3726,7 +3726,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 /* --------------------------------------------------------------------------
    Set internal (generated) static resource data & size
 -------------------------------------------------------------------------- */
-void silgy_add_to_static_res(const char *name, char *src)
+void silgy_add_to_static_res(const char *name, const char *src)
 {
     int i;
 
