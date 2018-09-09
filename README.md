@@ -22,7 +22,7 @@ What you get with Silgy:
 
 Silgy is written in ANSI C in order to support as many platforms as possible and it's C++ compilers compatible. Sample [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) source module can be C as well as C++ code. Typical application code will look almost the same as in any of the C family language: C++, Java, JavaScript (before it has been destroyed with ES6 and all that arrow functions hell). All that could be automated, is automated.
 
-It aims to be All-In-One solution for writing typical web application — traditional HTML rendering model, SPA or mixed. It handles HTTPS, and anonymous and registered user sessions — even with forgotten passwords. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues in an asynchronous manner, using Silgy's [ASYNC](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#async) facility. [CALL_ASYNC](https://github.com/silgy/silgy/wiki/CALL_ASYNC) macros make it as simple as possible.
+It aims to be All-In-One solution for writing typical web application — traditional HTML rendering model, SPA or mixed. It handles HTTPS, and anonymous and registered user sessions. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues in an asynchronous manner, using Silgy's [ASYNC](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#async) facility. [CALL_ASYNC](https://github.com/silgy/silgy/wiki/CALL_ASYNC) macros make it as simple as possible.
 
 Web applications like [Budgeter](https://budgeter.org) or [minishare](https://minishare.com) based on Silgy, fit in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds). Even with the network latency [it still shows](https://tools.pingdom.com/#!/bu4p3i/https://budgeter.org).
   
@@ -240,37 +240,6 @@ QS_DONT_ESCAPE - value is not escaped
 And the fifth one:  
   
 QS_RAW - value is not URI-decoded  
-
-
-## Asynchronous calls
-
-### void CALL_ASYNC(const char \*service, const char \*data)
-Call *service* with default timeout (ASYNC_DEF_TIMEOUT, currently 30 seconds). When the response arrives or timeout passes, [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-int-err_code) will be called with the same *service*.
-
-Example:
-```source.c++
-CALL_ASYNC("getCustomer", cust_id);
-```
-
-### void CALL_ASYNC_TM(const char \*service, const char \*data, int timeout)
-Call *service*. *timeout* is in seconds. When the response arrives or timeout passes, [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-int-err_code) will be called with the same *service*. If timeout is < 1 or > ASYNC_MAX_TIMEOUT (currently 1800 seconds), it is set to ASYNC_MAX_TIMEOUT.
-
-Example:
-```source.c++
-CALL_ASYNC_TM("getCustomer", cust_id, 10);
-```
-
-### void CALL_ASYNC_NR(const char \*service, const char \*data)
-Call *service*. Response is not required.
-
-Example:
-```source.c++
-CALL_ASYNC_NR("setCounter", counter);
-```
-
-### bool S(const char \*string)
-Return TRUE if service matches *string*.  
-Example: see [app_async_done()](https://github.com/silgy/silgy#void-app_async_doneint-ci-const-char-service-const-char-data-int-err_code).
 
 ## Goodies
 
