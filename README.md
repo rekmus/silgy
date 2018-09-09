@@ -253,7 +253,7 @@ HTML-unescape *str*, return pointer to a new string. Max length is 64 kB.
 SQL-escape *str*, return pointer to a new string. Max length is 64 kB.
 
 ### int silgy_minify(char \*dest, const char \*src)
-Minify CSS or JS. Return new length. Example: see [silgy_add_to_static_res()](https://github.com/silgy/silgy#void-silgy_add_to_static_resconst-char-name-char-src).
+Minify CSS or JS. Return new length. Example: see [silgy_add_to_static_res()](https://github.com/silgy/silgy/wiki/silgy_add_to_static_res).
 
 ## Engine callbacks
 
