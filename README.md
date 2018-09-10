@@ -242,19 +242,6 @@ And the fifth one:
   
 QS_RAW - value is not URI-decoded  
 
-## Goodies
-
-### char \*silgy_html_esc(const char \*str)
-HTML-escape *str*, return pointer to a new string. Max length is 64 kB.
-
-### char \*silgy_html_unesc(const char \*str)
-HTML-unescape *str*, return pointer to a new string. Max length is 64 kB.
-
-### char \*silgy_sql_esc(const char \*str)
-SQL-escape *str*, return pointer to a new string. Max length is 64 kB.
-
-### int silgy_minify(char \*dest, const char \*src)
-Minify CSS or JS. Return new length. Example: see [silgy_add_to_static_res()](https://github.com/silgy/silgy/wiki/silgy_add_to_static_res).
 
 ## Engine callbacks
 
