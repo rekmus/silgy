@@ -750,7 +750,7 @@ int silgy_usr_create_account(int ci)
         else if ( !valid_email(email) )             /* invalid email format */
             return ERR_EMAIL_FORMAT;
 #else
-        if ( strlen(login) < MIN_USER_NAME_LEN )    /* user name too short */
+        if ( strlen(login) < MIN_USERNAME_LEN )    /* user name too short */
             return ERR_USERNAME_TOO_SHORT;
         else if ( !valid_username(login) )          /* only certain chars are allowed in user name */
             return ERR_USERNAME_CHARS;
@@ -1529,7 +1529,7 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
     else if ( errcode == MSG_CHANGES_SAVED )
         strcpy(dest, "Your changes have been saved.");
     else if ( errcode == ERR_USERNAME_TOO_SHORT )
-        sprintf(dest, "User name must be at least %d characters long", MIN_USER_NAME_LEN);
+        sprintf(dest, "User name must be at least %d characters long", MIN_USERNAME_LEN);
     else if ( errcode == ERR_USERNAME_CHARS )
         sprintf(dest, "User name may only contain letters, digits, dots, hyphens, underscores or apostrophes");
     else if ( errcode == ERR_USERNAME_TAKEN )

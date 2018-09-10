@@ -18,8 +18,8 @@
 #define APP_COPYRIGHT               "Author"
 #define APP_LOGIN_URI               "login"                     /* redirect here if login required */
 #define APP_DEF_AUTH_LEVEL          AUTH_LEVEL_ANONYMOUS        /* default authorization level */
-#define APP_MIN_USER_NAME_LEN       2                           /* minimum user name length */
-#define APP_MIN_PASSWD_LEN          5                           /* minimum password length */
+#define APP_MIN_USERNAME_LEN        2                           /* minimum user name length */
+#define APP_MIN_PASSWORD_LEN        5                           /* minimum password length */
 #define APP_ADMIN_EMAIL             "admin@example.com"
 #define APP_CONTACT_EMAIL           "contact@example.com"
 
