@@ -1586,7 +1586,7 @@ struct rusage usage;
 /* --------------------------------------------------------------------------
    Filter everything but basic letters and digits off
 ---------------------------------------------------------------------------*/
-char *lib_filter_strict(const char *src)
+char *silgy_filter_strict(const char *src)
 {
 static char dst[1024];
     int     i=0, j=0;

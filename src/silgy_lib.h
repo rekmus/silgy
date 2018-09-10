@@ -220,7 +220,7 @@ extern "C" {
     double lib_elapsed(struct timespec *start);
     long lib_get_memory(void);
     void lib_log_memory(void);
-    char *lib_filter_strict(const char *src);
+    char *silgy_filter_strict(const char *src);
     char *lib_add_spaces(const char *src, int len);
     char *lib_add_lspaces(const char *src, int len);
     char get_res_type(const char *fname);

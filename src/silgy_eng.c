@@ -792,11 +792,7 @@ static void set_state(int ci, long bytes)
         else    /* data received */
         {
             conn[ci].data[conn[ci].was_read] = EOS;
-#ifdef DUMP     /* low-level tests */
-//          log_long(conn[ci].data, conn[ci].was_read, "POST data received");
-#else
             DBG("POST data received");
-#endif
 //          DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
             conn[ci].conn_state = CONN_STATE_READY_FOR_PROCESS;
         }
@@ -917,11 +913,7 @@ static void set_state_sec(int ci, long bytes)
         else    /* data received */
         {
             conn[ci].data[conn[ci].was_read] = EOS;
-#ifdef DUMP     /* low-level tests */
-//          log_long(conn[ci].data, conn[ci].was_read, "POST data received");
-#else
             DBG("POST data received");
-#endif
 //          DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
             conn[ci].conn_state = CONN_STATE_READY_FOR_PROCESS;
         }
@@ -2259,6 +2251,11 @@ static void process_req(int ci)
     int     ret=OK;
 
     DBG("process_req, ci=%d", ci);
+
+#ifdef DUMP
+    if ( conn[ci].post )
+        log_long(conn[ci].data, conn[ci].was_read, "POST data");
+#endif
 
     conn[ci].p_curr_c = conn[ci].out_data;
 
