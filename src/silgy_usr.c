@@ -663,7 +663,7 @@ unsigned long   sql_records;
    ERR_INVALID_REQUEST
    ERR_WEBSITE_FIRST_LETTER
    ERR_USERNAME_TOO_SHORT
-   ERR_USER_NAME_CHARS
+   ERR_USERNAME_CHARS
    ERR_USERNAME_TAKEN
    ERR_EMAIL_FORMAT_OR_EMPTY
    ERR_PASSWORD_TOO_SHORT
@@ -753,7 +753,7 @@ int silgy_usr_create_account(int ci)
         if ( strlen(login) < MIN_USER_NAME_LEN )    /* user name too short */
             return ERR_USERNAME_TOO_SHORT;
         else if ( !valid_username(login) )          /* only certain chars are allowed in user name */
-            return ERR_USER_NAME_CHARS;
+            return ERR_USERNAME_CHARS;
         else if ( OK != (ret=user_exists(login)) )  /* user name taken */
             return ret;
         else if ( email[0] && !valid_email(email) )     /* invalid email format */
@@ -1442,7 +1442,7 @@ unsigned long   sql_records;
 /* --------------------------------------------------------------------------
    Save user number setting
 -------------------------------------------------------------------------- */
-int silgy_usr_set_num(int ci, const char *us_key, long us_val)
+int silgy_usr_set_int(int ci, const char *us_key, long us_val)
 {
     char    val[32];
 
@@ -1454,7 +1454,7 @@ int silgy_usr_set_num(int ci, const char *us_key, long us_val)
 /* --------------------------------------------------------------------------
    Read user number setting
 -------------------------------------------------------------------------- */
-int silgy_usr_get_num(int ci, const char *us_key, long *us_val)
+int silgy_usr_get_int(int ci, const char *us_key, long *us_val)
 {
     int     ret;
     char    val[32];
@@ -1530,7 +1530,7 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
         strcpy(dest, "Your changes have been saved.");
     else if ( errcode == ERR_USERNAME_TOO_SHORT )
         sprintf(dest, "User name must be at least %d characters long", MIN_USER_NAME_LEN);
-    else if ( errcode == ERR_USER_NAME_CHARS )
+    else if ( errcode == ERR_USERNAME_CHARS )
         sprintf(dest, "User name may only contain letters, digits, dots, hyphens, underscores or apostrophes");
     else if ( errcode == ERR_USERNAME_TAKEN )
         strcpy(dest, "Unfortunately this login has already been taken!");

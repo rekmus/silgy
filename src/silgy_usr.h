@@ -30,7 +30,7 @@
 /* login */
 #define ERR_INVALID_LOGIN           10
 #define ERR_USERNAME_TOO_SHORT      11
-#define ERR_USER_NAME_CHARS         12
+#define ERR_USERNAME_CHARS         12
 #define ERR_USERNAME_TAKEN          13
 /* email */
 #define ERR_EMAIL_EMPTY             20
@@ -86,8 +86,8 @@
 
 #define SET_USER_STR(key, val)      silgy_usr_set_str(ci, key, val)
 #define GET_USER_STR(key, val)      silgy_usr_get_str(ci, key, val)
-#define SET_USER_NUM(key, val)      silgy_usr_set_num(ci, key, val)
-#define GET_USER_NUM(key, val)      silgy_usr_get_num(ci, key, val)
+#define SET_USER_INT(key, val)      silgy_usr_set_int(ci, key, val)
+#define GET_USER_INT(key, val)      silgy_usr_get_int(ci, key, val)
 
 
 #ifdef __cplusplus
@@ -104,8 +104,8 @@ extern "C" {
     void silgy_usr_logout(int ci);
     int silgy_usr_set_str(int ci, const char *us_key, const char *us_val);
     int silgy_usr_get_str(int ci, const char *us_key, char *us_val);
-    int silgy_usr_set_num(int ci, const char *us_key, long us_val);
-    int silgy_usr_get_num(int ci, const char *us_key, long *us_val);
+    int silgy_usr_set_int(int ci, const char *us_key, long us_val);
+    int silgy_usr_get_int(int ci, const char *us_key, long *us_val);
     /* for the engine */
     int libusr_l_usession_ok(int ci);
     void libusr_close_luses_timeout(void);
