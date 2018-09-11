@@ -116,35 +116,35 @@ typedef json_buf_t JSON;
 
 
 #define JSON_ADD_STR(json, name, val)       lib_json_add(json, name, val, 0, 0, JSON_STRING, -1)
-#define JSON_ADD_ARRAY_STR(json, i, val)    lib_json_add(json, NULL, val, 0, 0, JSON_STRING, i)
+#define JSON_ADD_STR_A(json, i, val)        lib_json_add(json, NULL, val, 0, 0, JSON_STRING, i)
 #define JSON_ADD_INT(json, name, val)       lib_json_add(json, name, NULL, val, 0, JSON_INTEGER, -1)
-#define JSON_ADD_ARRAY_INT(json, i, val)    lib_json_add(json, NULL, NULL, val, 0, JSON_INTEGER, i)
+#define JSON_ADD_INT_A(json, i, val)        lib_json_add(json, NULL, NULL, val, 0, JSON_INTEGER, i)
 #define JSON_ADD_FLOAT(json, name, val)     lib_json_add(json, name, NULL, 0, val, JSON_FLOAT, -1)
-#define JSON_ADD_ARRAY_FLOAT(json, i, val)  lib_json_add(json, NULL, NULL, 0, val, JSON_FLOAT, i)
+#define JSON_ADD_FLOAT_A(json, i, val)      lib_json_add(json, NULL, NULL, 0, val, JSON_FLOAT, i)
 #define JSON_ADD_BOOL(json, name, val)      lib_json_add(json, name, NULL, val, 0, JSON_BOOL, -1)
-#define JSON_ADD_ARRAY_BOOL(json, i, val)   lib_json_add(json, NULL, NULL, val, 0, JSON_BOOL, i)
+#define JSON_ADD_BOOL_A(json, i, val)       lib_json_add(json, NULL, NULL, val, 0, JSON_BOOL, i)
 
 #define JSON_ADD_RECORD(json, name, val)    lib_json_add_record(json, name, val, FALSE, -1)
-#define JSON_ADD_ARRAY_RECORD(json, i ,val) lib_json_add_record(json, NULL, val, FALSE, i)
+#define JSON_ADD_RECORD_A(json, i ,val)     lib_json_add_record(json, NULL, val, FALSE, i)
 
 #define JSON_ADD_ARRAY(json, name, val)     lib_json_add_record(json, name, val, TRUE, -1)
-#define JSON_ADD_ARRAY_ARRAY(json, i, val)  lib_json_add_record(json, NULL, val, TRUE, i)
+#define JSON_ADD_ARRAY_A(json, i, val)      lib_json_add_record(json, NULL, val, TRUE, i)
 
 
 #define JSON_GET_STR(json, name)            lib_json_get_str(json, name, -1)
-#define JSON_GET_ARRAY_STR(json, i)         lib_json_get_str(json, NULL, i)
+#define JSON_GET_STR_A(json, i)             lib_json_get_str(json, NULL, i)
 #define JSON_GET_INT(json, name)            lib_json_get_int(json, name, -1)
-#define JSON_GET_ARRAY_INT(json, i)         lib_json_get_int(json, NULL, i)
+#define JSON_GET_INT_A(json, i)             lib_json_get_int(json, NULL, i)
 #define JSON_GET_FLOAT(json, name)          lib_json_get_float(json, name, -1)
-#define JSON_GET_ARRAY_FLOAT(json, i)       lib_json_get_float(json, NULL, i)
+#define JSON_GET_FLOAT_A(json, i)           lib_json_get_float(json, NULL, i)
 #define JSON_GET_BOOL(json, name)           lib_json_get_bool(json, name, -1)
-#define JSON_GET_ARRAY_BOOL(json, i)        lib_json_get_bool(json, NULL, i)
+#define JSON_GET_BOOL_A(json, i)            lib_json_get_bool(json, NULL, i)
 
 #define JSON_GET_RECORD(json, name, val)    lib_json_get_record(json, name, val, -1)
-#define JSON_GET_ARRAY_RECORD(json, i, val) lib_json_get_record(json, NULL, val, i)
+#define JSON_GET_RECORD_A(json, i, val)     lib_json_get_record(json, NULL, val, i)
 
 #define JSON_GET_ARRAY(json, name, val)     lib_json_get_record(json, name, val, -1)
-#define JSON_GET_ARRAY_ARRAY(json, i, val)  lib_json_get_record(json, NULL, val, i)
+#define JSON_GET_ARRAY_A(json, i, val)      lib_json_get_record(json, NULL, val, i)
 
 
 #define JSON_RESET(json)                    lib_json_reset(json)
@@ -161,35 +161,35 @@ typedef json_buf_t JSON;
 
 
 #define JSON_ADD_STR(json, name, val)       lib_json_add(&json, name, val, 0, 0, JSON_STRING, -1)
-#define JSON_ADD_ARRAY_STR(json, i, val)    lib_json_add(&json, NULL, val, 0, 0, JSON_STRING, i)
+#define JSON_ADD_STR_A(json, i, val)        lib_json_add(&json, NULL, val, 0, 0, JSON_STRING, i)
 #define JSON_ADD_INT(json, name, val)       lib_json_add(&json, name, NULL, val, 0, JSON_INTEGER, -1)
-#define JSON_ADD_ARRAY_INT(json, i, val)    lib_json_add(&json, NULL, NULL, val, 0, JSON_INTEGER, i)
+#define JSON_ADD_INT_A(json, i, val)        lib_json_add(&json, NULL, NULL, val, 0, JSON_INTEGER, i)
 #define JSON_ADD_FLOAT(json, name, val)     lib_json_add(&json, name, NULL, 0, val, JSON_FLOAT, -1)
-#define JSON_ADD_ARRAY_FLOAT(json, i, val)  lib_json_add(&json, NULL, NULL, 0, val, JSON_FLOAT, i)
+#define JSON_ADD_FLOAT_A(json, i, val)      lib_json_add(&json, NULL, NULL, 0, val, JSON_FLOAT, i)
 #define JSON_ADD_BOOL(json, name, val)      lib_json_add(&json, name, NULL, val, 0, JSON_BOOL, -1)
-#define JSON_ADD_ARRAY_BOOL(json, i, val)   lib_json_add(&json, NULL, NULL, val, 0, JSON_BOOL, i)
+#define JSON_ADD_BOOL_A(json, i, val)       lib_json_add(&json, NULL, NULL, val, 0, JSON_BOOL, i)
 
 #define JSON_ADD_RECORD(json, name, val)    lib_json_add_record(&json, name, &val, FALSE, -1)
-#define JSON_ADD_ARRAY_RECORD(json, i, val) lib_json_add_record(&json, NULL, &val, FALSE, i)
+#define JSON_ADD_RECORD_A(json, i, val)     lib_json_add_record(&json, NULL, &val, FALSE, i)
 
 #define JSON_ADD_ARRAY(json, name, val)     lib_json_add_record(&json, name, &val, TRUE, -1)
-#define JSON_ADD_ARRAY_ARRAY(json, i, val)  lib_json_add_record(&json, NULL, &val, TRUE, i)
+#define JSON_ADD_ARRAY_A(json, i, val)      lib_json_add_record(&json, NULL, &val, TRUE, i)
 
 
 #define JSON_GET_STR(json, name)            lib_json_get_str(&json, name, -1)
-#define JSON_GET_ARRAY_STR(json, i)         lib_json_get_str(&json, NULL, i)
+#define JSON_GET_STR_A(json, i)             lib_json_get_str(&json, NULL, i)
 #define JSON_GET_INT(json, name)            lib_json_get_int(&json, name, -1)
-#define JSON_GET_ARRAY_INT(json, i)         lib_json_get_int(&json, NULL, i)
+#define JSON_GET_INT_A(json, i)             lib_json_get_int(&json, NULL, i)
 #define JSON_GET_FLOAT(json, name)          lib_json_get_float(&json, name, -1)
-#define JSON_GET_ARRAY_FLOAT(json, i)       lib_json_get_float(&json, NULL, i)
+#define JSON_GET_FLOAT_A(json, i)           lib_json_get_float(&json, NULL, i)
 #define JSON_GET_BOOL(json, name)           lib_json_get_bool(&json, name, -1)
-#define JSON_GET_ARRAY_BOOL(json, i)        lib_json_get_bool(&json, NULL, i)
+#define JSON_GET_BOOL_A(json, i)            lib_json_get_bool(&json, NULL, i)
 
 #define JSON_GET_RECORD(json, name, val)    lib_json_get_record(&json, name, &val, -1)
-#define JSON_GET_ARRAY_RECORD(json, i, val) lib_json_get_record(&json, NULL, &val, i)
+#define JSON_GET_RECORD_A(json, i, val)     lib_json_get_record(&json, NULL, &val, i)
 
 #define JSON_GET_ARRAY(json, name, val)     lib_json_get_record(&json, name, &val, -1)
-#define JSON_GET_ARRAY_ARRAY(json, i, val)  lib_json_get_record(&json, NULL, &val, i)
+#define JSON_GET_ARRAY_A(json, i, val)      lib_json_get_record(&json, NULL, &val, i)
 
 
 #define JSON_RESET(json)                    lib_json_reset(&json)
