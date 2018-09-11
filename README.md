@@ -20,7 +20,7 @@ What you get with Silgy:
 - **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around.
 - **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro), not even mentioning planet-friendliness.
 
-Silgy is written in ANSI C in order to support as many platforms as possible and it's C++ compilers compatible. Sample [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) source module can be C as well as C++ code. Typical application code will look almost the same as in any of the C family language: C++, Java, JavaScript (before it has been destroyed with ES6 and all that arrow functions hell). All that could be automated, is automated.
+Silgy is written in ANSI C in order to support as many platforms as possible and it's C++ compilers compatible. Sample [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) source module can be C as well as C++ code. Typical application code will look almost the same as in any of the C family language: C++, Java or JavaScript. All that could be automated, is automated.
 
 It aims to be All-In-One solution for writing typical web application — traditional HTML rendering model, SPA or mixed. It handles HTTPS, and anonymous and registered user sessions. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues in an asynchronous manner, using Silgy's [ASYNC](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#async) facility. [CALL_ASYNC](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros#asynchronous-services) macros make it as simple as possible.
 
