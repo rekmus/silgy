@@ -252,7 +252,7 @@ extern "C" {
     void lib_json_reset(JSON *json);
     char *lib_json_to_string(JSON *json);
     char *lib_json_to_string_pretty(JSON *json);
-    void lib_json_from_string(JSON *json, const char *src, int len, int level);
+    bool lib_json_from_string(JSON *json, const char *src, int len, int level);
     bool lib_json_add(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type, int i);
     bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_array, int i);
     bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type);

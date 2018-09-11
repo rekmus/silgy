@@ -2862,7 +2862,7 @@ static char *get_json_closing_square_bracket(const char *src)
 /* --------------------------------------------------------------------------
    Convert JSON string to Silgy JSON format
 -------------------------------------------------------------------------- */
-void lib_json_from_string(JSON *json, const char *src, int len, int level)
+bool lib_json_from_string(JSON *json, const char *src, int len, int level)
 {
     int     i=0, j=0;
     char    key[32];
@@ -2881,7 +2881,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
         if ( src[i] != '{' )    /* no opening bracket */
         {
             ERR("JSON syntax error -- no opening curly bracket");
-            return;
+            return FALSE;
         }
 
         ++i;    /* skip '{' */
@@ -2951,7 +2951,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
                 if ( src[i] != ':' )
                 {
                     ERR("JSON syntax error -- no colon after name");
-                    return;
+                    return FALSE;
                 }
 
                 ++i;    /* skip ':' */
@@ -2962,7 +2962,7 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
             if ( i==len )
             {
                 ERR("JSON syntax error -- expected value");
-                return;
+                return FALSE;
             }
 
             /* value starts here --------------------------------------------------- */
@@ -3111,6 +3111,8 @@ void lib_json_from_string(JSON *json, const char *src, int len, int level)
         if ( src[i-2]=='}' && !now_value && level==0 )
             break;
     }
+
+    return TRUE;
 }
 
 
