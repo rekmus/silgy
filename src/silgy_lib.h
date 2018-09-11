@@ -86,23 +86,23 @@ typedef struct {
 #define JSON_POOL_SIZE          1000    /* for storing sub-JSONs */
 
 
-/* JSON record */
+/* single JSON element */
 
 typedef struct {
     char    name[32];
     char    value[256];
     char    type;
-} json_rec_t;
+} json_elem_t;
 
-/* JSON buffer */
+/* JSON object */
 
 typedef struct {
     int         cnt;
     char        array;
-    json_rec_t  rec[JSON_MAX_ELEMS];
-} json_buf_t;
+    json_elem_t rec[JSON_MAX_ELEMS];
+} json_t;
 
-typedef json_buf_t JSON;
+typedef json_t JSON;
 
 
 #define JSON_BUFSIZE                        32784
