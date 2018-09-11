@@ -1058,7 +1058,7 @@ unsigned long   sql_records;
     char        subject[64];
     char        message[1024];
 
-    DBG("libusr_do_forgot");
+    DBG("silgy_usr_send_passwd_reset_email");
 
     if ( !QS_HTML_ESCAPE("email", email) )
     {
