@@ -829,8 +829,8 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
 
     strcpy(US.email_tmp, email);
 
-    sprintf(sql_query, "INSERT INTO messages (user_id,msg_id,email,message,created) VALUES (%ld,%ld,'%s','%s','%s')", US.uid, get_max(ci, "messages")+1, email, sanmessage, G_dt);
-    DBG("sql_query: INSERT INTO messages (user_id,msg_id,email,...) VALUES (%ld,get_max(),'%s',...)", US.uid, email);
+    sprintf(sql_query, "INSERT INTO users_messages (user_id,msg_id,email,message,created) VALUES (%ld,%ld,'%s','%s','%s')", US.uid, get_max(ci, "messages")+1, email, sanmessage, G_dt);
+    DBG("sql_query: INSERT INTO users_messages (user_id,msg_id,email,...) VALUES (%ld,get_max(),'%s',...)", US.uid, email);
 
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -1479,7 +1479,7 @@ static long get_max(int ci, const char *table)
     /* US.uid = 0 for anonymous session */
 
     if ( 0==strcmp(table, "messages") )
-        sprintf(sql_query, "SELECT MAX(msg_id) FROM messages WHERE user_id=%ld", US.uid);
+        sprintf(sql_query, "SELECT MAX(msg_id) FROM users_messages WHERE user_id=%ld", US.uid);
     else
         return 0;
 
