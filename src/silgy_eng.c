@@ -1267,7 +1267,6 @@ static bool init(int argc, char **argv)
     ALWAYS("           APP_WEBSITE = %s", APP_WEBSITE);
     ALWAYS("            APP_DOMAIN = %s", APP_DOMAIN);
     ALWAYS("           APP_VERSION = %s", APP_VERSION);
-    ALWAYS("         APP_COPYRIGHT = %s", APP_COPYRIGHT);
     ALWAYS("         APP_LOGIN_URI = %s", APP_LOGIN_URI);
     if ( APP_DEF_AUTH_LEVEL == AUTH_LEVEL_NONE )
         ALWAYS("    APP_DEF_AUTH_LEVEL = AUTH_LEVEL_NONE");
@@ -1277,8 +1276,12 @@ static bool init(int argc, char **argv)
         ALWAYS("    APP_DEF_AUTH_LEVEL = AUTH_LEVEL_LOGGEDIN");
     else if ( APP_DEF_AUTH_LEVEL == AUTH_LEVEL_ADMIN )
         ALWAYS("    APP_DEF_AUTH_LEVEL = AUTH_LEVEL_ADMIN");
+#ifdef APP_ADMIN_EMAIL
     ALWAYS("       APP_ADMIN_EMAIL = %s", APP_ADMIN_EMAIL);
+#endif
+#ifdef APP_CONTACT_EMAIL
     ALWAYS("     APP_CONTACT_EMAIL = %s", APP_CONTACT_EMAIL);
+#endif
 #ifdef USERS
     ALWAYS("");
 #ifdef USERSBYEMAIL
@@ -3298,6 +3301,7 @@ static bool check_block_ip(int ci, const char *rule, const char *value)
 {
     if ( G_test ) return FALSE;     // don't block for tests
 
+#ifdef BLACKLISTAUTOUPDATE
     if ( (rule[0]=='H' && conn[ci].post && 0==strcmp(value, APP_IP))        /* Host */
             || (rule[0]=='U' && 0==strcmp(value, "Mozilla/5.0 Jorgee"))     /* User-Agent */
             || (rule[0]=='R' && 0==strcmp(value, "wp-login.php"))           /* Resource */
@@ -3309,6 +3313,7 @@ static bool check_block_ip(int ci, const char *rule, const char *value)
         conn[ci].keep_alive = FALSE;    /* disconnect */
         return TRUE;
     }
+#endif
 
     return FALSE;
 }
@@ -3964,6 +3969,12 @@ void eng_out_html_header(int ci)
     OUT("<html>");
     OUT("<head>");
     OUT("<title>%s</title>", APP_WEBSITE);
+#ifdef APP_DESCRIPTION
+	OUT("<meta name=\"description\" content=\"%s\">", APP_DESCRIPTION);
+#endif
+#ifdef APP_KEYWORDS
+	OUT("<meta name=\"keywords\" content=\"%s\">", APP_KEYWORDS);
+#endif
     if ( REQ_MOB )  // if mobile request
         OUT("<meta name=\"viewport\" content=\"width=device-width\">");
     OUT("</head>");

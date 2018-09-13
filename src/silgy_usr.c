@@ -107,7 +107,7 @@ int libusr_l_usession_ok(int ci)
 {
     int         i;
     char        sanuagent[DB_UAGENT_LEN+1];
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
@@ -239,7 +239,7 @@ void libusr_close_luses_timeout()
 -------------------------------------------------------------------------- */
 void libusr_close_l_uses(int ci, int usi)
 {
-    char    sql_query[MAX_SQL_QUERY_LEN+1];
+    char    sql_query[SQLBUF];
 
     if ( ci != -1 )     /* explicit user logout -- downgrade to anonymous */
     {
@@ -280,7 +280,7 @@ void libusr_close_l_uses(int ci, int usi)
 -------------------------------------------------------------------------- */
 static int user_exists(const char *login)
 {
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     long        records;
 
@@ -321,7 +321,7 @@ static int user_exists(const char *login)
 -------------------------------------------------------------------------- */
 static int email_exists(const char *email)
 {
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     long        records;
 
@@ -360,7 +360,7 @@ static int email_exists(const char *email)
 -------------------------------------------------------------------------- */
 static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_about, long visits, const char *sesid)
 {
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
@@ -418,8 +418,10 @@ unsigned long   sql_records;
 
     /* admin? */
 #ifdef USERSBYEMAIL
+#ifdef APP_ADMIN_EMAIL
     if ( 0==strcmp(email, APP_ADMIN_EMAIL) )
         strcpy(login, "admin");
+#endif
 #endif
     /* add record to uses */
 
@@ -473,7 +475,7 @@ int silgy_usr_login(int ci)
     QSVAL       passwd;
     QSVAL       keep;
     char        ulogin[MAX_VALUE_LEN*2+1];
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     char        p1[32], p2[32];
     char        str1[32], str2[32];
     long        ula_cnt;
@@ -681,7 +683,7 @@ int silgy_usr_create_account(int ci)
     QSVAL   about;
     QSVAL   message;
     int     plen;
-    char    sql_query[MAX_SQL_QUERY_LEN+1];
+    char    sql_query[SQLBUF];
     char    str1[32], str2[32];
 
     DBG("silgy_usr_create_account");
@@ -840,7 +842,9 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
 
     /* send an email to admin */
 
+#ifdef APP_CONTACT_EMAIL
     sendemail(ci, APP_CONTACT_EMAIL, "New message!", message);
+#endif
 
     return OK;
 }
@@ -865,7 +869,7 @@ int silgy_usr_save_account(int ci)
     QSVAL       strdelconf;
     QSVAL       save;
     int         plen;
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     char        str1[32], str2[32];
     MYSQL_RES   *result;
 unsigned long   sql_records;
@@ -1048,7 +1052,7 @@ int silgy_usr_send_passwd_reset_email(int ci)
 {
     QSVAL       email;
     QSVAL       submit;
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
@@ -1123,7 +1127,9 @@ unsigned long   sql_records;
         sprintf(message, "%s%s://%s/preset?k=%s\n\n", message, PROTOCOL, conn[ci].host, linkkey);
         sprintf(message, "%sPlease keep in mind that this link will only be valid for the next 24 hours.\n\n", message);
         sprintf(message, "%sIf you did this by mistake or it wasn't you, you can safely ignore this email.\n\n", message);
-        sprintf(message, "%sIn case you needed any help, please contact us at %s.\n\n", message, APP_CONTACT_EMAIL);
+#ifdef APP_CONTACT_EMAIL
+        sprintf(message, "%sIn case you needed any help, please contact us at %s.\n", message, APP_CONTACT_EMAIL);
+#endif
         sprintf(message, "%sKind Regards\n%s\n", message, conn[ci].website);
 
         if ( !sendemail(ci, email, subject, message) )
@@ -1143,7 +1149,7 @@ unsigned long   sql_records;
 -------------------------------------------------------------------------- */
 int silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid)
 {
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
@@ -1211,7 +1217,7 @@ int silgy_usr_reset_password(int ci)
     QSVAL       rpasswd;
     QSVAL       submit;
     int         plen;
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     char        str1[32], str2[32];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
@@ -1356,7 +1362,7 @@ static void doit(char *result1, char *result2, const char *login, const char *em
 int silgy_usr_set_str(int ci, const char *us_key, const char *us_val)
 {
     int         ret=OK;
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
 
     ret = silgy_usr_get_str(ci, us_key, NULL);
 
@@ -1399,7 +1405,7 @@ int silgy_usr_set_str(int ci, const char *us_key, const char *us_val)
 -------------------------------------------------------------------------- */
 int silgy_usr_get_str(int ci, const char *us_key, char *us_val)
 {
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
@@ -1471,7 +1477,7 @@ int silgy_usr_get_int(int ci, const char *us_key, long *us_val)
 -------------------------------------------------------------------------- */
 static long get_max(int ci, const char *table)
 {
-    char        sql_query[MAX_SQL_QUERY_LEN+1];
+    char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
     long        max=0;

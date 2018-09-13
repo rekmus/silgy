@@ -61,6 +61,9 @@ typedef char                        bool;
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
 
+#include "silgy_app.h"
+
+
 /* for use with booleans */
 
 #ifndef FALSE
@@ -210,7 +213,6 @@ typedef char                        bool;
 #define MAX_RESOURCE_LEN            63              /* max resource's name length -- as a first part of URI */
 #define MAX_ID_LEN                  31              /* max id length -- as a second part of URI */
 #define MAX_RESOURCES               10000           /* for M_auth_levels */
-#define MAX_SQL_QUERY_LEN           1023            /* max SQL query length */
 
 /* mainly memory usage */
 
@@ -252,6 +254,24 @@ typedef char                        bool;
 
 #define MAX_BLACKLIST                   10000
 
+
+#ifndef APP_WEBSITE
+#define APP_WEBSITE                     "Silgy Web Application"
+#endif
+#ifndef APP_DOMAIN
+#define APP_DOMAIN                      ""
+#endif
+#ifndef APP_LOGIN_URI
+#define APP_LOGIN_URI                   "login"
+#endif
+#ifndef APP_VERSION
+#define APP_VERSION                     "1.0"
+#endif
+
+
+
+#define SQLBUF                          2048        /* SQL query buffer size */
+
 /* UTF-8 */
 
 #define CHAR_POUND                      "&#163;"
@@ -284,7 +304,11 @@ typedef char                        bool;
 #define VIEW_DESKTOP                    '1'
 #define VIEW_MOBILE                     '2'
 
+#ifdef APP_SESID_LEN
+#define SESID_LEN                       APP_SESID_LEN
+#else
 #define SESID_LEN                       15
+#endif
 
 #define EXPIRES_IN_DAYS                 30              /* from app start for Expires HTTP reponse header for static resources */
 
@@ -294,6 +318,10 @@ typedef char                        bool;
 #define AUTH_LEVEL_ANONYMOUS            '1'
 #define AUTH_LEVEL_LOGGEDIN             '2'
 #define AUTH_LEVEL_ADMIN                '3'
+
+#ifndef APP_DEF_AUTH_LEVEL
+#define APP_DEF_AUTH_LEVEL              AUTH_LEVEL_ANONYMOUS        /* default authorization level */
+#endif
 
 /* errors */
 
@@ -309,7 +337,11 @@ typedef char                        bool;
 #define ERR_ASYNC_TIMEOUT               -10
 
 #define NOT_STATIC                      -1
-#define MAX_STATICS                     1000            /* max static resources */
+#ifdef APP_MAX_STATICS                  /* max static resources */
+#define MAX_STATICS                     APP_MAX_STATICS
+#else
+#define MAX_STATICS                     1000
+#endif
 
 /* asynchronous calls */
 
@@ -632,8 +664,6 @@ extern counters_t G_cnts_day_before;        /* day before's counters */
 extern char     *G_shm_segptr;              /* SHM pointer */
 
 
-
-#include "silgy_app.h"
 
 #include "silgy_lib.h"
 
