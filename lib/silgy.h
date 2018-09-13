@@ -46,13 +46,14 @@
 typedef char                        bool;
 #define false                       ((char)0)
 #define true                        ((char)1)
+#endif  /* __cplusplus */
+
 #ifndef FALSE
 #define FALSE                       false
 #endif
 #ifndef TRUE
 #define TRUE                        true
 #endif
-#endif  /* __cplusplus */
 
 
 #include "silgy_app.h"
