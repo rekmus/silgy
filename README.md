@@ -30,23 +30,12 @@ Web applications like [Budgeter](https://budgeter.org) or [minishare](https://mi
 <img src="https://minishare.com/show?p=MWPcAbmY&i=2" width=418/>
 </div>
 
-## Simplicity
-In silgy_app.cpp:
-```source.c++
-int app_process_req(int ci)
-{
-    OUT("Hello World!");
-    return OK;
-}
-```
-Compile with `m` script and run `silgy_app` binary (`silgy_app.exe` on Windows). That's it, your application is now listening on the port 80 :) (If you want different port, add it as a command line argument)
-
 ## Requirements
 Silgy is being developed around the idea of using as much generic environment as possible. Therefore it requires only three things:
 
 1. Computer with operating system (Linux / UNIX / Windows),
 2. C/C++ compiler. I recommend GCC (which is known as MinGW on Windows, AFAIK it is also used by CodeBlocks).
-3. Silgy [src](https://github.com/silgy/silgy/tree/master/src).
+3. Silgy [lib](https://github.com/silgy/silgy/tree/master/lib) and [src](https://github.com/silgy/silgy/tree/master/src) directories.
 
 Fuss-free deployment and cloud vendor independency means that production machine requires only operating system and silgy_app executable file(s), and optionally database server if your application uses one.
 
@@ -75,11 +64,11 @@ Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/
 ## Static Resources
 Static resources are simply any content that you rarely change and keep as ordinary disk files, as opposed to dynamic content that is generated in your code, as a unique response to user request. In this regard, Silgy is like any other web server (except it's extremely fast). Statics usually include pictures, css, robots.txt etc.
 
-Static resources are read into memory on startup from **res** directory. Static resources you want to serve minified (CSS and JS), are read into memory and minified on startup from **resmin** directory. Then, every 60 seconds (provided no traffic, that is select() timeouted) both directories are scanned for changes.
+Static resources are read into memory on startup from `res` directory. Static resources you want to serve minified (CSS and JS), are read into memory and minified on startup from `resmin` directory. Then, every 60 seconds (provided no traffic, that is select() timeouted) both directories are scanned for changes.
 
 Static resources are handled automatically, you don't have to add anything in your app.
 
-In addition to placing your statics in res and resmin directories, you can generate text statics from within your code at the start, and add them to the statics using [silgy_add_to_static_res()](https://github.com/silgy/silgy/wiki/silgy_add_to_static_res).
+In addition to placing your statics in `res` and `resmin` directories, you can generate text statics from within your code at the start, and add them to the statics using [silgy_add_to_static_res()](https://github.com/silgy/silgy/wiki/silgy_add_to_static_res).
 
 ## Response Header
 Response header is generated automatically, however you can overwrite defaults with a couple of [macros](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros#response).
@@ -184,6 +173,8 @@ g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
 -s -O3 \
 -D MEM_SMALL -D HTTPS -D DBMYSQL ...
 ```
+Starting from version 3.6 you can define the switches in [silgy_app.h](https://github.com/silgy/silgy/blob/master/src/silgy_app.h) instead, without modifying the m script.
+
 ### [Compilation switches specification](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches)
 
 ## Functions and macros
