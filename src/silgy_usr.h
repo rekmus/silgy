@@ -80,6 +80,25 @@
 #endif
 #endif
 
+/* passwords' hashing */
+
+#ifndef STR_001
+#define STR_001                     "abcde"
+#endif
+#ifndef STR_002
+#define STR_002                     "fghij"
+#endif
+#ifndef STR_003
+#define STR_003                     "klmno"
+#endif
+#ifndef STR_004
+#define STR_004                     "pqrst"
+#endif
+#ifndef STR_005
+#define STR_005                     "uvwxy"
+#endif
+
+
 #define LOGGED                      US.logged
 #define ADMIN                       (LOGGED && 0==strcmp(US.login, "admin"))
 
