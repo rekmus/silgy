@@ -6,7 +6,7 @@
    Hello World Sample Silgy Web Application
 -------------------------------------------------------------------------- */
 
-#include "silgy.h"
+#include <silgy.h>
 
 /* --------------------------------------------------------------------------
    Main entry point for a single request

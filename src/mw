@@ -2,7 +2,9 @@
 
 echo Making silgy_watcher...
 
-gcc silgy_watcher.c silgy_lib.c \
+gcc ../lib/silgy_watcher.c \
+../lib/silgy_lib.c \
 -s -O3 \
 -D ASYNC_SERVICE \
+-I. -I../lib \
 -o ../bin/silgy_watcher

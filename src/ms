@@ -2,8 +2,10 @@
 
 echo Making silgy_services...
 
-g++ silgy_services.cpp silgy_eng.c silgy_lib.c \
+g++ silgy_services.cpp \
+../lib/silgy_eng.c ../lib/silgy_lib.c \
 -s -O3 \
 -D ASYNC_SERVICE \
+-I. -I../lib \
 -lrt \
 -o ../bin/silgy_services

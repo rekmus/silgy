@@ -2,7 +2,8 @@
 
 echo Making silgy_app...
 
-g++ silgy_app.cpp silgy_eng.c silgy_lib.c \
+g++ silgy_app.cpp \
+../lib/silgy_eng.c ../lib/silgy_lib.c \
 -s -O3 \
--D MEM_SMALL \
+-I. -I../lib \
 -o ../bin/silgy_app
