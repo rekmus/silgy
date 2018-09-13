@@ -1,0 +1,5 @@
+#!/bin/sh
+
+SILGYDIR=..
+
+../bin/silgy_app
