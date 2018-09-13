@@ -50,10 +50,18 @@
 #ifdef __cplusplus
 #include <iostream>
 #include <cctype>
-#else
+#else   /* C */
 #include <ctype.h>
 typedef char                        bool;
+#define false                       ((char)0)
+#define true                        ((char)1)
+#ifndef FALSE
+#define FALSE                       false
 #endif
+#ifndef TRUE
+#define TRUE                        true
+#endif
+#endif  /* __cplusplus */
 
 
 #define WEB_SERVER_VERSION          "3.5.5"
@@ -64,19 +72,10 @@ typedef char                        bool;
 #include "silgy_app.h"
 
 
-/* for use with booleans */
-
-#ifndef FALSE
-#define FALSE                       ((char)0)
-#endif
-#ifndef TRUE
-#define TRUE                        ((char)1)
-#endif
-
 #define OK                          0
 #define SUCCEED                     OK
 #define FAIL                        -1
-#define EOS                         (char)0         /* End Of String */
+#define EOS                         ((char)0)       /* End Of String */
 
 /* log levels */
 
