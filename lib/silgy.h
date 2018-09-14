@@ -359,7 +359,7 @@ typedef char                        bool;
 #define ASYNC_DEF_TIMEOUT               30                  /* in seconds */
 #define ASYNC_MAX_TIMEOUT               1800                /* in seconds ==> 30 minutes */
 #define S(svc)                          (0==strcmp(service, svc))
-#define CALL_ASYNC(svc, data)           eng_async_req(ci, svc, data, TRUE, ASYNC_DEF_TIMEOUT)
+#define CALL_ASYNC(svc, data)           eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout)
 #define CALL_ASYNC_TM(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, tmout)
 #define CALL_ASYNC_NR(svc, data)        eng_async_req(ci, svc, data, FALSE, 0)
 
@@ -620,6 +620,7 @@ extern char     G_dbName[128];
 extern char     G_dbUser[128];
 extern char     G_dbPassword[128];
 extern char     G_blockedIPList[256];
+extern int      G_ASYNCDefTimeout;
 extern int      G_RESTTimeout;
 extern int      G_test;
 /* end of config params */
