@@ -31,9 +31,9 @@ Use [REQ macros](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros#
 
 Use [OUT macros](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros#response) to write response to the output buffer.
 
-If you want to use Silgy as a regular web server, just to serve [statics](https://github.com/silgy/silgy#static-resources), leave `app_process_req()` empty and you'll have the fastest web server in the world.
-
 Unlike in other frameworks, you don't need to worry about the response header details, like Content-Type or status. It's all handled automatically, however you can overwrite that if you need, using [response macros](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros#response).
+
+If you want to use Silgy as a regular web server, just to serve [statics](https://github.com/silgy/silgy#static-resources), leave `app_process_req()` empty and you'll have the fastest web server in the world.
 
 ## Some more details
 Silgy is written in ANSI C in order to support as many platforms as possible and it's C++ compilers compatible. Sample [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) source module can be C as well as C++ code. Typical application code will look almost the same as in any of the C family language: C++, Java or JavaScript.
