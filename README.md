@@ -24,7 +24,7 @@ In Silgy you just compile and link your logic into one executable that responds 
 Application logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and [app_process_req()](https://github.com/silgy/silgy#int-app_process_reqint-ci) is the main entry point, called with every client request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy#hello-world) there to help you get on.
 
 <div align="center">
-<img src="https://minishare.com/preview?p=CNlfLatp&i=2" width=600>
+<img src="https://minishare.com/show?p=CNlfLatp&i=2" width=600>
 </div>
 
 ## Some more details
