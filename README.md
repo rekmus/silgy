@@ -12,7 +12,7 @@ In Silgy you just compile and link your logic into one executable that responds 
 
 ## Why Silgy
 
-- **Speed** − response measured in µ-seconds, compilation around one second, boot in a fraction of a second.
+- **Speed** − response measured in µ-seconds, compilation around one second, boot in a fraction of a second. Even for simple hosting it's faster than anything else, because all the statics are read into memory on startup.
 - **Safety** − nobody can ever see your application logic nor wander through your filesystem nor run scripts. It has build-in protection against most popular attacks.
 - **Small memory footprint** − a couple of MB for demo app − can be easily reduced for embedded apps.
 - **Simple coding** − straightforward approach, easy to understand even for a beginner programmer ([jump to Hello World](https://github.com/silgy/silgy#hello-world)).
@@ -21,11 +21,15 @@ In Silgy you just compile and link your logic into one executable that responds 
 - **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro), not even mentioning planet-friendliness.
 
 ## How it works
-Application logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and [app_process_req()](https://github.com/silgy/silgy#int-app_process_reqint-ci) is the main entry point, called with every client request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy#hello-world) there to help you get on.
+Your application logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and [app_process_req()](https://github.com/silgy/silgy#int-app_process_reqint-ci) is the main entry point, called with every client request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy#hello-world) there to help you get on.
 
 <div align="center">
 <img src="https://minishare.com/show?p=CNlfLatp&i=2" width=600>
 </div>
+
+Use [REQ macros](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros#request) to get information about the request.
+
+Use [OUT macros](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros#response) to write the response to the output buffer.
 
 ## Some more details
 Silgy is written in ANSI C in order to support as many platforms as possible and it's C++ compilers compatible. Sample [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) source module can be C as well as C++ code. Typical application code will look almost the same as in any of the C family language: C++, Java or JavaScript.
