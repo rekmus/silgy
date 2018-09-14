@@ -1206,7 +1206,7 @@ static bool init(int argc, char **argv)
     get_byteorder();
 
     ALWAYS("");
-    ALWAYS_LINE;
+    ALWAYS_LINE_LONG;
     ALWAYS("");
     ALWAYS("System:");
     ALWAYS("-------");
@@ -1296,7 +1296,7 @@ static bool init(int argc, char **argv)
     ALWAYS("");
     ALWAYS("           auses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(auses), sizeof(auses)/1024, (double)sizeof(auses)/1024/1024);
     ALWAYS("");
-    ALWAYS_LINE;
+    ALWAYS_LINE_LONG;
     ALWAYS("");
 
 #ifdef DUMP

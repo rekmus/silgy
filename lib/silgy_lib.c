@@ -3126,7 +3126,7 @@ void lib_json_log_dbg(JSON *json, const char *name)
     int     i;
     char    type[32];
 
-    DBG("-------------------------------------------------------------------------------");
+    DBG_LINE;
 
     if ( name )
         DBG("%s:", name);
@@ -3156,7 +3156,7 @@ void lib_json_log_dbg(JSON *json, const char *name)
         DBG("%d %s [%s] %s", i, json->array?"":json->rec[i].name, json->rec[i].value, type);
     }
 
-    DBG("-------------------------------------------------------------------------------");
+    DBG_LINE;
 }
 
 
@@ -3168,7 +3168,7 @@ void lib_json_log_inf(JSON *json, const char *name)
     int     i;
     char    type[32];
 
-    INF("-------------------------------------------------------------------------------");
+    INF_LINE;
 
     if ( name )
         INF("%s:", name);
@@ -3198,7 +3198,7 @@ void lib_json_log_inf(JSON *json, const char *name)
         INF("%d %s [%s] %s", i, json->array?"":json->rec[i].name, json->rec[i].value, type);
     }
 
-    INF("-------------------------------------------------------------------------------");
+    INF_LINE;
 }
 
 
@@ -4377,11 +4377,11 @@ bool log_start(const char *prefix, bool test)
         }
     }
 
-    fprintf(M_log_fd, LOG_LINE_N);
+    fprintf(M_log_fd, LOG_LINE_LONG_N);
 
     ALWAYS(" %s  Starting %s's log. Server version: %s, app version: %s", G_dt, APP_WEBSITE, WEB_SERVER_VERSION, APP_VERSION);
 
-    fprintf(M_log_fd, LOG_LINE_NN);
+    fprintf(M_log_fd, LOG_LINE_LONG_NN);
 
     return TRUE;
 }
