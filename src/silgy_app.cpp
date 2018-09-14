@@ -6,34 +6,12 @@
    Hello World Sample Silgy Web Application
 -------------------------------------------------------------------------- */
 
+
 #include <silgy.h>
 
+
 /* --------------------------------------------------------------------------
-   Main entry point for a single request
-
-   Returns OK or internal error code.
-
-   The engine will set response status code & content type automatically.
-
-   return                   status code
-   ------                   -----------
-   OK                       200
-   ERR_INVALID_REQUEST      400
-   ERR_UNAUTHORIZED         401
-   ERR_FORBIDDEN            403
-   ERR_NOT_FOUND            404
-   ERR_INT_SERVER_ERROR     500
-   ERR_SERVER_TOOBUSY       503
-
-   If you want to overwrite that, use:
-
-   o RES_STATUS to set response status code, i.e. RES_STATUS(501)
-
-   o RES_CONTENT_TYPE, i.e. RES_CONTENT_TYPE("text/plain")
-
-   If you want to redirect (with status 303), use RES_LOCATION(<new url>)
-
-   Most macros use ci (connection index) so always pass it down the calling stack.
+   Main entry point for HTTP request
 -------------------------------------------------------------------------- */
 int app_process_req(int ci)
 {
@@ -82,24 +60,21 @@ int app_process_req(int ci)
 }
 
 
+/* --------------------------------------------------------------------------
+   Finish page rendering after CALL_ASYNC has returned service response
+-------------------------------------------------------------------------- */
+void app_async_done(int ci, const char *service, const char *data, int err_code)
+{
+}
 
-
-
-
-
-
-
-/* ================================================================================================ */
-/* ENGINE CALLBACKS                                                                                 */
-/* ================================================================================================ */
 
 /* --------------------------------------------------------------------------
    App custom init
-   Return TRUE if successful
+   Return true if successful
 -------------------------------------------------------------------------- */
 bool app_init(int argc, char *argv[])
 {
-    return TRUE;
+    return true;
 }
 
 
@@ -119,14 +94,12 @@ void app_uses_init(int ci)
 }
 
 
-#ifdef USERS
 /* --------------------------------------------------------------------------
    Called when starting new logged in user session
 -------------------------------------------------------------------------- */
 void app_luses_init(int ci)
 {
 }
-#endif
 
 
 /* --------------------------------------------------------------------------
@@ -138,13 +111,13 @@ void app_uses_reset(int usi)
 
 
 /* --------------------------------------------------------------------------
-   Custom message page can be generated here
-   if return TRUE it means custom page has been generated
-   otherwise generic page will be displayed by the engine
+   Custom message page can be generated here.
+   If returns true it means custom page has been generated,
+   otherwise generic page will be displayed by the engine.
 -------------------------------------------------------------------------- */
 bool app_gen_page_msg(int ci, int msg)
 {
-    return FALSE;   /* use engine generic page */
+    return false;   /* use engine generic page */
 }
 
 
@@ -154,37 +127,3 @@ bool app_gen_page_msg(int ci, int msg)
 void app_get_msg_str(int ci, char *dest, int errcode)
 {
 }
-
-
-#ifdef ASYNC
-/* --------------------------------------------------------------------------
-
-   Finish page rendering after CALL_ASYNC has returned service response
-
-   Example:
-
-    if ( S("getCustomer") )
-    {
-        if ( err_code == ERR_ASYNC_TIMEOUT )
-        {
-            ERR("getCustomer timeout-ed");
-            OUT("<p>There was no response from getCustomer service</p>");
-        }
-        else if ( err_code != OK )
-        {
-            ERR("getCustomer failed with %d", err_code);
-            OUT("<p>getCustomer service returned an error %d</p>", err_code);
-        }
-        else
-        {
-            OUT("<p>Customer data: %s</p>", data);
-        }
-
-        OUT_HTML_FOOTER;
-    }
-
--------------------------------------------------------------------------- */
-void app_async_done(int ci, const char *service, const char *data, int err_code)
-{
-}
-#endif
