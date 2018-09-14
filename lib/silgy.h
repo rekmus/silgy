@@ -336,6 +336,9 @@ typedef char                        bool;
 #define ERR_REDIRECTION                 -8
 #define ERR_ASYNC_NO_SUCH_SERVICE       -9
 #define ERR_ASYNC_TIMEOUT               -10
+#define ERR_REMOTE_CALL                 -11
+
+/* statics */
 
 #define NOT_STATIC                      -1
 #ifdef APP_MAX_STATICS                  /* max static resources */

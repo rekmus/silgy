@@ -69,7 +69,7 @@ typedef struct {
 #define CALL_REST_HTTP(req, res, method, url, keep) lib_rest_req(req, res, method, url, FALSE, keep)
 #define CALL_REST_JSON(req, res, method, url, keep) lib_rest_req(req, res, method, url, TRUE, keep)
 #else
-#define CALL_REST_HTTP(req, res, method, url, keep) lib_rest_req(&req, &res, method, url, FALSE, keep)
+#define CALL_REST_HTTP(req, res, method, url, keep) lib_rest_req((char*)req, (char*)res, method, url, FALSE, keep)
 #define CALL_REST_JSON(req, res, method, url, keep) lib_rest_req(&req, &res, method, url, TRUE, keep)
 #endif
 
