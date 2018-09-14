@@ -10,7 +10,7 @@ That's why I've written Silgy. I think all the web applications in the world sho
 
 In Silgy you just compile and link your logic into one executable that responds immediately to HTTP requests, without creating a new thread or — God forbid — process. There's no VM layer (Hello, Java) nor interpreter, nor external modules' dependencies (Hello, Node.js frameworks). Compilation takes about a second (Hello, Java and Node.js again). You get non-blocking Node.js-like or better performance, with Java-like coding simplicity, C-like instant compilation and instant startup, on much cheaper hardware. By the time my Spring Boot application boots, I can have another RESTful service written and tested with Silgy.
 
-What you get with Silgy:
+## Why Silgy
 
 - **Speed** − response measured in µ-seconds, compilation around one second, boot in a fraction of a second.
 - **Safety** − nobody can ever see your application logic nor wander through your filesystem nor run scripts. It has build-in protection against most popular attacks.
@@ -20,6 +20,14 @@ What you get with Silgy:
 - **Simple deployment / cloud vendor independency** − only one executable file (or files in gateway/services model) to move around.
 - **Low TCO** − ~$3 per month for hosting small web application with MySQL server (AWS t2.micro), not even mentioning planet-friendliness.
 
+## How it works
+Application logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and [app_process_req()](https://github.com/silgy/silgy#int-app_process_reqint-ci) is the main entry point, called with every client request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy#hello-world) there to help you get on.
+
+<div align="center">
+<img src="https://minishare.com/preview?p=CNlfLatp&i=2" width=600>
+</div>
+
+## Some more details
 Silgy is written in ANSI C in order to support as many platforms as possible and it's C++ compilers compatible. Sample [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) source module can be C as well as C++ code. Typical application code will look almost the same as in any of the C family language: C++, Java or JavaScript.
 
 It is All-In-One solution for writing typical web application — traditional HTML rendering model, SPA or mixed. It handles HTTPS, and anonymous and registered user sessions. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues in an asynchronous manner, using Silgy's [ASYNC](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#async) facility. [CALL_ASYNC](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros#asynchronous-services) macros make it as simple as possible.
@@ -27,7 +35,7 @@ It is All-In-One solution for writing typical web application — traditional HT
 Web applications like [Budgeter](https://budgeter.org) or [minishare](https://minishare.com) based on Silgy, fit in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds). Even with the network latency [it still shows](https://tools.pingdom.com/#!/bu4p3i/https://budgeter.org).
   
 <div align="center">
-<img src="https://minishare.com/show?p=MWPcAbmY&i=2" width=418/>
+<img src="https://minishare.com/show?p=MWPcAbmY&i=2" width=418>
 </div>
 
 ## Requirements
@@ -57,9 +65,6 @@ Every project on Earth has them. So you'd better know.
 
 ## Step-by-Step on Linux
 ### [Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Linux)
-
-## Where's my program?
-Your app logic is in [silgy_app.cpp](https://github.com/silgy/silgy/blob/master/src/silgy_app.cpp) and [app_process_req()](https://github.com/silgy/silgy#int-app_process_reqint-ci) is your main, called with every browser request. After downloading Silgy, there's a third version of [Hello World](https://github.com/silgy/silgy#hello-world) there to help you get on.
 
 ## Static Resources
 Static resources are simply any content that you rarely change and keep as ordinary disk files, as opposed to dynamic content that is generated in your code, as a unique response to user request. In this regard, Silgy is like any other web server (except it's extremely fast). Statics usually include pictures, css, robots.txt etc.
