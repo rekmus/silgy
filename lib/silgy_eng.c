@@ -328,7 +328,7 @@ struct timeval  timeout;                    /* Timeout for select */
 
     lib_log_memory();
 
-    ALWAYS("Waiting for requests...\n");
+    ALWAYS("\nWaiting for requests...\n");
 
     log_flush();
 
@@ -1178,9 +1178,9 @@ static bool init(int argc, char **argv)
     ALWAYS("logCombined = %d", G_logCombined);
     if ( argc > 1 )
     {
-        ALWAYS("----------------------------------------------------------------------------------------------");
+        ALWAYS("------------------------------------------------------------------------------------------");
         WAR("httpPort = %d -- overwritten by a command line argument", G_httpPort);
-        ALWAYS("----------------------------------------------------------------------------------------------");
+        ALWAYS("------------------------------------------------------------------------------------------");
     }
     else
         ALWAYS("httpPort = %d", G_httpPort);
@@ -1206,7 +1206,7 @@ static bool init(int argc, char **argv)
     get_byteorder();
 
     ALWAYS("");
-    ALWAYS("-------------------------------------------------------------------------------------------------");
+    ALWAYS_LINE;
     ALWAYS("");
     ALWAYS("System:");
     ALWAYS("-------");
@@ -1296,7 +1296,7 @@ static bool init(int argc, char **argv)
     ALWAYS("");
     ALWAYS("           auses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(auses), sizeof(auses)/1024, (double)sizeof(auses)/1024/1024);
     ALWAYS("");
-    ALWAYS("-------------------------------------------------------------------------------------------------");
+    ALWAYS_LINE;
     ALWAYS("");
 
 #ifdef DUMP

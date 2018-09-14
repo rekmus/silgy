@@ -21,6 +21,13 @@
 #define INF_T(str, ...)         log_write_time(LOG_INF, str, ##__VA_ARGS__)
 #define DBG_T(str, ...)         log_write_time(LOG_DBG, str, ##__VA_ARGS__)
 
+#define LOG_LINE                "--------------------------------------------------------------------------------------------------"
+#define LOG_LINE_N              "--------------------------------------------------------------------------------------------------\n"
+#define LOG_LINE_NN             "--------------------------------------------------------------------------------------------------\n\n"
+#define ALWAYS_LINE             ALWAYS(LOG_LINE)
+#define INF_LINE                INF(LOG_LINE)
+#define DBG_LINE                DBG(LOG_LINE)
+
 #define LOREM_IPSUM             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
 #define PARAM(param)            (0==strcmp(label, param))
@@ -82,7 +89,7 @@ typedef struct {
 #ifdef APP_JSON_MAX_ELEMS       /* in one JSON struct */
 #define JSON_MAX_ELEMS          APP_JSON_MAX_ELEMS
 #else
-#define JSON_MAX_ELEMS          100
+#define JSON_MAX_ELEMS          10
 #endif
 
 #ifdef APP_JSON_MAX_LEVELS

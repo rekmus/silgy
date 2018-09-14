@@ -1502,7 +1502,9 @@ void lib_log_memory()
     amtd(mem_used_mb, (double)mem_used/1024);
     amtd(mem_used_gb, (double)mem_used/1024/1024);
 
+    ALWAYS_LINE;
     ALWAYS("Memory: %s kB (%s MB / %s GB)", mem_used_kb, mem_used_mb, mem_used_gb);
+    ALWAYS_LINE;
 }
 
 
@@ -4375,11 +4377,11 @@ bool log_start(const char *prefix, bool test)
         }
     }
 
-    fprintf(M_log_fd, "-------------------------------------------------------------------------------------------------\n");
+    fprintf(M_log_fd, LOG_LINE_N);
 
     ALWAYS(" %s  Starting %s's log. Server version: %s, app version: %s", G_dt, APP_WEBSITE, WEB_SERVER_VERSION, APP_VERSION);
 
-    fprintf(M_log_fd, "-------------------------------------------------------------------------------------------------\n\n");
+    fprintf(M_log_fd, LOG_LINE_NN);
 
     return TRUE;
 }
