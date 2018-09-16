@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <errno.h>
+
 #ifndef _WIN32
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -33,7 +34,8 @@
 #include <netdb.h>
 #include <sys/shm.h>
 #include <mqueue.h>
-#endif
+#endif  /* _WIN32 */
+
 #include <sys/stat.h>
 #include <signal.h>
 #include <dirent.h>
@@ -347,6 +349,12 @@ typedef char                        bool;
 #define MAX_STATICS                     1000
 #endif
 
+#define STATIC_PATH_LEN                 1024
+
+#define STATIC_SOURCE_INTERNAL          0
+#define STATIC_SOURCE_RES               1
+#define STATIC_SOURCE_RESMIN            2
+
 /* asynchronous calls */
 
 #define ASYNC_STATE_FREE                '0'
@@ -557,12 +565,8 @@ typedef struct {
 
 /* static resources */
 
-#define STATIC_SOURCE_INTERNAL      0
-#define STATIC_SOURCE_RES           1
-#define STATIC_SOURCE_RESMIN        2
-
 typedef struct {
-    char    name[256];
+    char    name[STATIC_PATH_LEN];
     char    type;
     char    *data;
     long    len;

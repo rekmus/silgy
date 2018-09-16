@@ -85,6 +85,23 @@ void silgy_lib_init()
 
 
 /* --------------------------------------------------------------------------
+   Return TRUE if file exists and it's readable
+-------------------------------------------------------------------------- */
+bool lib_file_exists(const char *fname)
+{
+    FILE *f=NULL;
+
+    if ( NULL != (f=fopen(fname, "r")) )
+    {
+        fclose(f);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
    Get the last part of path
 -------------------------------------------------------------------------- */
 void lib_get_exec_name(char *dst, const char *path)
@@ -1664,14 +1681,16 @@ static char ret[1024];
 
 
 /* --------------------------------------------------------------------------
-  determine resource type by its extension
+   Determine resource type by its extension
 -------------------------------------------------------------------------- */
 char get_res_type(const char *fname)
 {
     char    *ext=NULL;
     char    uext[8]="";
 
+#ifdef DUMP
 //  DBG("name: [%s]", fname);
+#endif
 
     if ( (ext=(char*)strrchr(fname, '.')) == NULL )     /* no dot */
         return RES_TEXT;
@@ -1684,7 +1703,9 @@ char get_res_type(const char *fname)
     if ( strlen(ext) > 4 )                          /* extension too long */
         return RES_TEXT;
 
+#ifdef DUMP
 //  DBG("ext: [%s]", ext);
+#endif
 
     strcpy(uext, upper(ext));
 

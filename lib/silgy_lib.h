@@ -235,6 +235,7 @@ typedef json_t JSON;
 extern "C" {
 #endif
     void silgy_lib_init(void);
+    bool lib_file_exists(const char *fname);
     void lib_get_exec_name(char *dst, const char *path);
     void lib_update_time_globals(void);
     void lib_setnonblocking(int sock);
