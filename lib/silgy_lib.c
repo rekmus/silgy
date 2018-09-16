@@ -7,11 +7,11 @@
    General purpose library
 -------------------------------------------------------------------------- */
 
+#include <silgy.h>
+
 #ifdef ICONV
 #include <iconv.h>
 #endif
-
-#include <silgy.h>
 
 
 /* globals */
