@@ -140,8 +140,10 @@ static struct sockaddr_in serv_addr;
 -------------------------------------------------------------------------- */
 void restart()
 {
+#ifdef APP_ADMIN_EMAIL
     if ( strlen(APP_ADMIN_EMAIL) )
         sendemail(0, APP_ADMIN_EMAIL, "Silgy restart", "Silgy Watcher had to restart web server.");
+#endif
 
     INF("Stopping...");
     system(STOP_COMMAND);
