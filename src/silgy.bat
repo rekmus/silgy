@@ -2,4 +2,4 @@
 
 set SILGYDIR=..
 
-..\bin\silgy_app
+..\bin\silgy_app 8080
