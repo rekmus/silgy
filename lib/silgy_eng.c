@@ -2445,7 +2445,10 @@ static void gen_response_header(int ci)
             PRINT_HTTP_VARY_UIR;    /* Upgrade-Insecure-Requests */
             sprintf(G_tmp, "Location: https://%s/%s\r\n", conn[ci].host, conn[ci].uri);
         }
-        else if ( conn[ci].location[COLON_POSITION] == ':' )        /* (2) full address already present */
+        else if ( conn[ci].location[0] == 'h'        /* (2) full address already present */
+                    && conn[ci].location[1] == 't'
+                    && conn[ci].location[2] == 't'
+                    && conn[ci].location[3] == 'p' )
         {
             sprintf(G_tmp, "Location: %s\r\n", conn[ci].location);
         }

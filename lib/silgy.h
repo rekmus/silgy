@@ -401,7 +401,7 @@ typedef char                        bool;
 #define RES_ZIP                         'Z'
 
 
-#define URI(uri)                        (0==strcmp(conn[ci].uri, uri))
+#define URI(uri_)                       (0==strcmp(conn[ci].uri, uri_))
 #define REQ(res)                        (0==strcmp(conn[ci].resource, res))
 #define ID(id)                          (0==strcmp(conn[ci].id, id))
 #define US                              uses[conn[ci].usi]
