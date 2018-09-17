@@ -170,16 +170,16 @@ static bool init_ssl_client()
 {
 #ifdef HTTPS
 
-#ifndef __linux__
-#ifndef _WIN32
+//#ifndef __linux__
+//#ifndef _WIN32
     /* AIX */
-    SSL_METHOD  *method;
-#else
+//    SSL_METHOD  *method;
+//#else
     const SSL_METHOD    *method;
-#endif
-#else
-    const SSL_METHOD    *method;
-#endif
+//#endif
+//#else
+//    const SSL_METHOD    *method;
+//#endif
 
     DBG("init_ssl (silgy_lib)");
 
@@ -664,6 +664,7 @@ static int addresses_cnt=0, addresses_last=0, i;
             ERR("SSL_set_fd failed, ret = %d", ret);
             close_conn(M_rest_sock);
             SSL_free(M_rest_ssl);
+            M_rest_ssl = NULL;
             return FALSE;
         }
 
@@ -686,6 +687,7 @@ static int addresses_cnt=0, addresses_last=0, i;
             ERR("SSL_connect failed");
             close_conn(M_rest_sock);
             SSL_free(M_rest_ssl);
+            M_rest_ssl = NULL;
             return FALSE;
         }
 
@@ -1046,7 +1048,7 @@ static char buffer[JSON_BUFSIZE];
 
     if ( content_length > JSON_BUFSIZE-1 )
     {
-        ERR("Response content is too big");
+        ERR("Response content is too big (%d)", content_length);
         rest_disconnect();
         connected = FALSE;
         return FALSE;
@@ -1068,7 +1070,7 @@ static char buffer[JSON_BUFSIZE];
 #define TRANSFER_MODE_CHUNKED    '3'
 #define TRANSFER_MODE_ERROR      '4'
 
-    char res_content[JSON_BUFSIZE];
+static char res_content[JSON_BUFSIZE];
     char mode;
 
     if ( content_length > 0 )     /* Content-Length present in response */

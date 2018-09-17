@@ -75,6 +75,7 @@ typedef struct {
 
 /* aliases -- highest level -- 'keep' always TRUE */
 #define CALL_REST_RAW(req, res, method, url)        CALL_REST_HTTP(req, res, method, url, TRUE)
+#define CALL_HTTP(req, res, method, url)            CALL_REST_HTTP(req, res, method, url, TRUE)
 #define CALL_REST(req, res, method, url)            CALL_REST_JSON(req, res, method, url, TRUE)
 
 
@@ -131,7 +132,7 @@ typedef json_t JSON;
 #ifdef APP_JSON_BUFSIZE
 #define JSON_BUFSIZE                        APP_JSON_BUFSIZE
 #else
-#define JSON_BUFSIZE                        32784
+#define JSON_BUFSIZE                        65568
 #endif
 
 

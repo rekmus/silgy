@@ -3513,16 +3513,16 @@ static void gen_page_msg(int ci, int msg)
 static bool init_ssl()
 {
 #ifdef HTTPS
-#ifndef __linux__
-#ifndef _WIN32
+//#ifndef __linux__
+//#ifndef _WIN32
     /* AIX */
-    SSL_METHOD  *method;
-#else
+//    SSL_METHOD  *method;
+//#else
     const SSL_METHOD    *method;
-#endif
-#else
-    const SSL_METHOD    *method;
-#endif
+//#endif
+//#else
+//    const SSL_METHOD    *method;
+//#endif
     /*
        From Hynek Schlawack's blog:
        https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers
