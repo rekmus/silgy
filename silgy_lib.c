@@ -170,16 +170,16 @@ static bool init_ssl_client()
 {
 #ifdef HTTPS
 
-#ifndef __linux__
-#ifndef _WIN32
+//#ifndef __linux__
+//#ifndef _WIN32
     /* AIX */
-    SSL_METHOD  *method;
-#else
+//    SSL_METHOD  *method;
+//#else
     const SSL_METHOD    *method;
-#endif
-#else
-    const SSL_METHOD    *method;
-#endif
+//#endif
+//#else
+//    const SSL_METHOD    *method;
+//#endif
 
     DBG("init_ssl (silgy_lib)");
 
