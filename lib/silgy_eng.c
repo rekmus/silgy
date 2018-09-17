@@ -3045,7 +3045,7 @@ static int parse_req(int ci, long len)
         DBG("resource: [%s]", conn[ci].resource);
         DBG("id: [%s]", conn[ci].id);
 
-        conn[ci].static_res = is_static_res(ci, conn[ci].resource);     /* statics --> set the flag!!! */
+        conn[ci].static_res = is_static_res(ci, conn[ci].uri);     /* statics --> set the flag!!! */
         /* now, it may have set conn[ci].status to 304 */
     }
 
