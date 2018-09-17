@@ -1727,6 +1727,8 @@ char get_res_type(const char *fname)
         return RES_PNG;
     else if ( 0==strcmp(uext, "BMP") )
         return RES_BMP;
+    else if ( 0==strcmp(uext, "SVG") )
+        return RES_SVG;
     else if ( 0==strcmp(uext, "MP3") )
         return RES_AMPEG;
     else if ( 0==strcmp(uext, "EXE") )

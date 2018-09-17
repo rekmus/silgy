@@ -395,6 +395,7 @@ typedef char                        bool;
 #define RES_ICO                         'I'
 #define RES_PNG                         'P'
 #define RES_BMP                         'B'
+#define RES_SVG                         'V'
 #define RES_PDF                         'A'
 #define RES_AMPEG                       'M'
 #define RES_EXE                         'X'
