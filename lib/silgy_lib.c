@@ -29,6 +29,8 @@ char        G_dt[20]="";                /* datetime for database or log (YYYY-MM
 char        G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
 char        *G_shm_segptr=NULL;         /* SHM pointer */
 
+int         G_rest_status;
+
 
 /* locals */
 
@@ -169,17 +171,7 @@ static void log_ssl()
 static bool init_ssl_client()
 {
 #ifdef HTTPS
-
-//#ifndef __linux__
-//#ifndef _WIN32
-    /* AIX */
-//    SSL_METHOD  *method;
-//#else
-    const SSL_METHOD    *method;
-//#endif
-//#else
-//    const SSL_METHOD    *method;
-//#endif
+    const SSL_METHOD *method;
 
     DBG("init_ssl (silgy_lib)");
 
@@ -443,6 +435,10 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
         {
             p = stpcpy(p, "Content-Type: application/json\r\n");
             strcpy(G_tmp, lib_json_to_string((JSON*)req));
+        }
+        else
+        {
+            p = stpcpy(p, "Content-Type: application/x-www-form-urlencoded\r\n");
         }
         char tmp[64];
         sprintf(tmp, "Content-Length: %d\r\n", strlen(json?G_tmp:(char*)req));
@@ -1020,6 +1016,7 @@ static char buffer[JSON_BUFSIZE];
 #endif /* DUMP */
         strncpy(status, res_header+9, 3);
         status[3] = EOS;
+        G_rest_status = atoi(status);
         INF("REST response status: %s", status);
     }
     else
@@ -1032,6 +1029,7 @@ static char buffer[JSON_BUFSIZE];
             DBG("Got %d bytes of response [%s]", bytes, res_header);
         }
 #endif
+        G_rest_status = 500;
         rest_disconnect();
         connected = FALSE;
         return FALSE;
