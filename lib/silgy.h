@@ -61,6 +61,16 @@ typedef char                        bool;
 #include "silgy_app.h"
 
 
+#ifdef ASYNC_SERVICE
+#ifdef DBMYSQL
+#undef DBMYSQL
+#endif
+#ifdef USERS
+#undef USERS
+#endif
+#endif /* ASYNC_SERVICE */
+
+
 #ifdef DBMYSQL
 #include <mysql.h>
 #include <mysqld_error.h>
@@ -91,12 +101,13 @@ typedef char                        bool;
 
 /* request macros */
 
-#define REQ_METHOD(str)             (0==strcmp(conn[ci].method, str))
+#define REQ_METHOD                  conn[ci].method
 #define REQ_GET                     (0==strcmp(conn[ci].method, "GET"))
 #define REQ_POST                    (0==strcmp(conn[ci].method, "POST"))
 #define REQ_PUT                     (0==strcmp(conn[ci].method, "PUT"))
 #define REQ_DELETE                  (0==strcmp(conn[ci].method, "DELETE"))
 #define REQ_URI                     conn[ci].uri
+#define REQ_CONTENT_TYPE            conn[ci].in_ctypestr
 #define REQ_DSK                     !conn[ci].mobile
 #define REQ_MOB                     conn[ci].mobile
 #define REQ_BOT                     conn[ci].bot
@@ -500,6 +511,7 @@ typedef struct {
     char    website[64];
     char    lang[8];
     time_t  if_mod_since;
+    char    in_ctypestr[256];               /* content type as an original string */
     char    in_ctype;                       /* content type */
     char    boundary[256];                  /* for POST multipart/form-data type */
     /* what goes out */
@@ -672,6 +684,7 @@ extern counters_t G_cnts_yesterday;         /* yesterday's counters */
 extern counters_t G_cnts_day_before;        /* day before's counters */
 /* SHM */
 extern char     *G_shm_segptr;              /* SHM pointer */
+extern int      G_rest_status;
 
 
 
