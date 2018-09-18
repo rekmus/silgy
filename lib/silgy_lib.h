@@ -85,6 +85,10 @@ typedef struct {
 #define REST_ADDRESSES_CACHE_SIZE                   100
 
 
+#define CALL_HTTP_STATUS                            G_rest_status
+#define CALL_REST_STATUS                            CALL_HTTP_STATUS
+
+
 /* JSON */
 
 #define JSON_STRING             0
