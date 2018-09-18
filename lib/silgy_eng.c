@@ -2761,6 +2761,7 @@ static void reset_conn(int ci, char conn_state)
     strcpy(conn[ci].website, APP_WEBSITE);
     conn[ci].lang[0] = EOS;
     conn[ci].if_mod_since = 0;
+    conn[ci].in_ctypestr[0] = EOS;
     conn[ci].in_ctype = CONTENT_TYPE_URLENCODED;
     conn[ci].boundary[0] = EOS;
     conn[ci].auth_level = APP_DEF_AUTH_LEVEL;
@@ -3316,6 +3317,8 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     }
     else if ( 0==strcmp(ulabel, "CONTENT-TYPE") )
     {
+        strcpy(conn[ci].in_ctypestr, value);
+
         len = strlen(value);
         if ( len > 18 && 0==strncmp(value, "multipart/form-data", 19) )
         {
@@ -3513,16 +3516,7 @@ static void gen_page_msg(int ci, int msg)
 static bool init_ssl()
 {
 #ifdef HTTPS
-//#ifndef __linux__
-//#ifndef _WIN32
-    /* AIX */
-//    SSL_METHOD  *method;
-//#else
-    const SSL_METHOD    *method;
-//#endif
-//#else
-//    const SSL_METHOD    *method;
-//#endif
+    const SSL_METHOD *method;
     /*
        From Hynek Schlawack's blog:
        https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers
