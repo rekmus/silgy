@@ -9,6 +9,7 @@
 #ifndef SILGY_USR_H
 #define SILGY_USR_H
 
+
 #define LUSES_TIMEOUT               1800            /* logged in user session timeout in seconds (120 for tests / 1800 live) */
                                                     /* it's now how long it stays in cache */
 
