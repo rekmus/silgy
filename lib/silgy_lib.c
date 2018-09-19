@@ -5125,7 +5125,7 @@ char *stpcpy(char *dest, const char *src)
 
 
 /* --------------------------------------------------------------------------
-   Windows port of stpcpy
+   Windows port of stpncpy
 -------------------------------------------------------------------------- */
 char *stpncpy(char *dest, const char *src, unsigned long len)
 {
