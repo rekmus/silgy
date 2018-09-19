@@ -2407,13 +2407,16 @@ static void process_req(int ci)
 
         if ( ret==ERR_REDIRECTION || ret==ERR_INVALID_REQUEST || ret==ERR_UNAUTHORIZED || ret==ERR_FORBIDDEN || ret==ERR_NOT_FOUND || ret==ERR_INT_SERVER_ERROR || ret==ERR_SERVER_TOOBUSY )
         {
-            conn[ci].p_curr_c = conn[ci].out_data;      /* reset out buffer pointer as it could have contained something already */
 #ifdef USERS
             if ( conn[ci].usi && !LOGGED ) close_a_uses(conn[ci].usi);
 #else
             if ( conn[ci].usi ) close_a_uses(conn[ci].usi);
 #endif
-            gen_page_msg(ci, ret);
+            if ( !conn[ci].keep_content )
+            {
+                conn[ci].p_curr_c = conn[ci].out_data;      /* reset out buffer pointer as it could have contained something already */
+                gen_page_msg(ci, ret);
+            }
         }
     }
 }
@@ -2778,6 +2781,7 @@ static void reset_conn(int ci, char conn_state)
     REQ_BOT = FALSE;
     conn[ci].expect100 = FALSE;
     conn[ci].dont_cache = FALSE;
+    conn[ci].keep_content = FALSE;
 }
 
 

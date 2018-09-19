@@ -283,8 +283,8 @@ typedef char                        bool;
 #endif
 
 
-
 #define SQLBUF                          2048        /* SQL query buffer size */
+
 
 /* UTF-8 */
 
@@ -326,6 +326,7 @@ typedef char                        bool;
 
 #define EXPIRES_IN_DAYS                 30              /* from app start for Expires HTTP reponse header for static resources */
 
+
 /* authorization levels */
 
 #define AUTH_LEVEL_NONE                 '0'
@@ -336,6 +337,7 @@ typedef char                        bool;
 #ifndef APP_DEF_AUTH_LEVEL
 #define APP_DEF_AUTH_LEVEL              AUTH_LEVEL_ANONYMOUS        /* default authorization level */
 #endif
+
 
 /* errors */
 
@@ -351,6 +353,7 @@ typedef char                        bool;
 #define ERR_ASYNC_TIMEOUT               -10
 #define ERR_REMOTE_CALL                 -11
 
+
 /* statics */
 
 #define NOT_STATIC                      -1
@@ -365,6 +368,7 @@ typedef char                        bool;
 #define STATIC_SOURCE_INTERNAL          0
 #define STATIC_SOURCE_RES               1
 #define STATIC_SOURCE_RESMIN            2
+
 
 /* asynchronous calls */
 
@@ -421,12 +425,14 @@ typedef char                        bool;
 #define HOST(str)                       eng_host(ci, str)
 #define REQ_DATA                        conn[ci].data
 
+
 /* response macros */
 
 #define RES_STATUS(val)                 eng_set_res_status(ci, val)
 #define RES_CONTENT_TYPE(str)           eng_set_res_content_type(ci, str)
 #define RES_LOCATION(str, ...)          eng_set_res_location(ci, str, ##__VA_ARGS__)
 #define RES_DONT_CACHE                  conn[ci].dont_cache=TRUE
+#define RES_KEEP_CONTENT                conn[ci].keep_content=TRUE
 #define RES_CONTENT_DISPOSITION(str, ...) eng_set_res_content_disposition(ci, str, ##__VA_ARGS__)
 
 #define REDIRECT_TO_LANDING             sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host)
@@ -550,6 +556,7 @@ typedef struct {
     bool    bot;
     bool    expect100;
     bool    dont_cache;
+    bool    keep_content;
 } conn_t;
 
 

@@ -9,6 +9,7 @@
 #ifndef SILGY_LIB_H
 #define SILGY_LIB_H
 
+
 #define ALWAYS(str, ...)        log_write(LOG_ALWAYS, str, ##__VA_ARGS__)
 #define ERR(str, ...)           log_write(LOG_ERR, str, ##__VA_ARGS__)
 #define WAR(str, ...)           log_write(LOG_WAR, str, ##__VA_ARGS__)
@@ -38,6 +39,7 @@
 #define LOREM_IPSUM             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
 #define PARAM(param)            (0==strcmp(label, param))
+
 
 /* Query String Value */
 
