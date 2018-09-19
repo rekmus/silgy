@@ -57,11 +57,11 @@ int service_app_process_req(const char *service, const char *req, char *res)
 
 /* --------------------------------------------------------------------------
    Server start
-   Return TRUE if successful
+   Return true if successful
 -------------------------------------------------------------------------- */
 bool services_init()
 {
-    return TRUE;
+    return true;
 }
 
 
