@@ -332,6 +332,7 @@ typedef char                        bool;
 #define AUTH_LEVEL_NONE                 '0'
 #define AUTH_LEVEL_ANONYMOUS            '1'
 #define AUTH_LEVEL_LOGGEDIN             '2'
+#define AUTH_LEVEL_LOGGED               '2'
 #define AUTH_LEVEL_ADMIN                '3'
 
 #ifndef APP_DEF_AUTH_LEVEL
