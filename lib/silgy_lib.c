@@ -413,6 +413,28 @@ static bool rest_parse_url(const char *url, char *host, char *port, char *uri, b
 
 
 /* --------------------------------------------------------------------------
+   REST call / return true if header is already present
+-------------------------------------------------------------------------- */
+static bool rest_header_present(const char *key)
+{
+    int i;
+    char uheader[MAX_LABEL_LEN+1];
+
+    strcpy(uheader, upper(key));
+
+    for ( i=0; i<M_rest_headers_cnt; ++i )
+    {
+        if ( 0==strcmp(upper(M_rest_headers[i].key), uheader) )
+        {
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
    REST call / render request
 -------------------------------------------------------------------------- */
 static int rest_render_req(char *buffer, const char *method, const char *host, const char *uri, const void *req, bool json, bool keep)
@@ -433,12 +455,15 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
     {
         if ( json )     /* JSON -> string conversion */
         {
-            p = stpcpy(p, "Content-Type: application/json\r\n");
+            if ( !rest_header_present("Content-Type") )
+                p = stpcpy(p, "Content-Type: application/json\r\n");
+
             strcpy(G_tmp, lib_json_to_string((JSON*)req));
         }
         else
         {
-            p = stpcpy(p, "Content-Type: application/x-www-form-urlencoded\r\n");
+            if ( !rest_header_present("Content-Type") )
+                p = stpcpy(p, "Content-Type: application/x-www-form-urlencoded\r\n");
         }
         char tmp[64];
         sprintf(tmp, "Content-Length: %d\r\n", strlen(json?G_tmp:(char*)req));

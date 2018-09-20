@@ -423,7 +423,10 @@ typedef char                        bool;
 #define US                              uses[conn[ci].usi]
 #define AUS                             auses[conn[ci].usi]
 #define HOST(str)                       eng_host(ci, str)
+#define REQ_GET_HEADER(header)          eng_get_header(ci, header)
 #define REQ_DATA                        conn[ci].data
+
+#define REST_HEADER_PASS(header)        eng_rest_header_pass(ci, header)
 
 
 /* response macros */
@@ -520,6 +523,7 @@ typedef struct {
     char    in_ctypestr[256];               /* content type as an original string */
     char    in_ctype;                       /* content type */
     char    boundary[256];                  /* for POST multipart/form-data type */
+    char    authorization[MAX_VALUE_LEN+1]; /* Authorization */
     /* what goes out */
     char    header[OUT_HEADER_BUFSIZE];     /* outgoing HTTP header */
 #ifdef OUTCHECKREALLOC
@@ -742,6 +746,8 @@ extern "C" {
     bool get_qs_param_long(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf);
     char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
+    char *eng_get_header(int ci, const char *header);
+    void eng_rest_header_pass(int ci, const char *header);
 
     /* public app functions */
 

@@ -2767,6 +2767,7 @@ static void reset_conn(int ci, char conn_state)
     conn[ci].in_ctypestr[0] = EOS;
     conn[ci].in_ctype = CONTENT_TYPE_URLENCODED;
     conn[ci].boundary[0] = EOS;
+    conn[ci].authorization[0] = EOS;
     conn[ci].auth_level = APP_DEF_AUTH_LEVEL;
     conn[ci].usi = 0;
     conn[ci].static_res = NOT_STATIC;
@@ -3334,6 +3335,10 @@ static int set_http_req_val(int ci, const char *label, const char *value)
                 DBG("boundary: [%s]", conn[ci].boundary);
             }
         }
+    }
+    else if ( 0==strcmp(ulabel, "AUTHORIZATION") )
+    {
+        strcpy(conn[ci].authorization, value);
     }
     else if ( 0==strcmp(ulabel, "FROM") )
     {
@@ -4817,6 +4822,48 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
 
     return cp;
 }
+
+
+/* --------------------------------------------------------------------------
+   Return request header value
+-------------------------------------------------------------------------- */
+char *eng_get_header(int ci, const char *header)
+{
+static char value[MAX_VALUE_LEN+1];
+    char uheader[MAX_LABEL_LEN+1];
+
+    strcpy(uheader, upper(header));
+
+    if ( 0==strcmp(uheader, "CONTENT-TYPE") )
+    {
+        strcpy(value, conn[ci].in_ctypestr);
+        return value;
+    }
+    else if ( 0==strcmp(uheader, "AUTHORIZATION") )
+    {
+        strcpy(value, conn[ci].authorization);
+        return value;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+
+/* --------------------------------------------------------------------------
+   REST call -- pass request header value from the original request
+-------------------------------------------------------------------------- */
+void eng_rest_header_pass(int ci, const char *key)
+{
+    char value[MAX_VALUE_LEN+1];
+
+    strcpy(value, eng_get_header(ci, key));
+
+    if ( value[0] )
+        REST_HEADER_SET(key, value);
+}
+
 
 
 #else   /* ASYNC_SERVICE ====================================================================================== */
