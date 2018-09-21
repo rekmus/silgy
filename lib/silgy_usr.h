@@ -20,9 +20,9 @@
 #define MIN_USERNAME_LEN            2               
 #endif
 #ifdef APP_MIN_PASSWORD_LEN                         /* minimum password length */
-#define MIN_PASSWD_LEN              APP_MIN_PASSWORD_LEN
+#define MIN_PASSWORD_LEN            APP_MIN_PASSWORD_LEN
 #else
-#define MIN_PASSWD_LEN              5               /* default minimal password length */
+#define MIN_PASSWORD_LEN            5               /* default minimal password length */
 #endif
 #define PASSWD_RESET_KEY_LEN        30              /* password reset key length */
 
@@ -39,7 +39,7 @@
 #define ERR_EMAIL_FORMAT_OR_EMPTY   22
 #define ERR_EMAIL_TAKEN             23
 /* password */
-#define ERR_INVALID_PASSWD          30
+#define ERR_INVALID_PASSWORD        30
 #define ERR_PASSWORD_TOO_SHORT      31
 /* repeat password */
 #define ERR_PASSWORD_DIFFERENT      40

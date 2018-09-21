@@ -765,7 +765,7 @@ int silgy_usr_create_account(int ci)
 
     if ( email[0] && OK != (ret=email_exists(email)) )  /* email in use */
         return ret;
-    else if ( plen < MIN_PASSWD_LEN )               /* password too short */
+    else if ( plen < MIN_PASSWORD_LEN )               /* password too short */
         return ERR_PASSWORD_TOO_SHORT;
     else if ( 0 != strcmp(passwd, rpasswd) )        /* passwords differ */
         return ERR_PASSWORD_DIFFERENT;
@@ -928,7 +928,7 @@ unsigned long   sql_records;
     if ( email[0] && !valid_email(email) )
         return ERR_EMAIL_FORMAT_OR_EMPTY;
 #endif
-    else if ( plen && plen < MIN_PASSWD_LEN )
+    else if ( plen && plen < MIN_PASSWORD_LEN )
         return ERR_PASSWORD_TOO_SHORT;
     else if ( plen && 0 != strcmp(passwd, rpasswd) )
         return ERR_PASSWORD_DIFFERENT;
@@ -1248,7 +1248,7 @@ unsigned long   sql_records;
 
     if ( !valid_email(email) )
         return ERR_EMAIL_FORMAT;
-    else if ( plen < MIN_PASSWD_LEN )       /* password too short */
+    else if ( plen < MIN_PASSWORD_LEN )       /* password too short */
         return ERR_PASSWORD_TOO_SHORT;
     else if ( 0 != strcmp(passwd, rpasswd) )    /* passwords differ */
         return ERR_PASSWORD_DIFFERENT;
@@ -1527,7 +1527,7 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
         sprintf(dest, "Welcome to %s! You can now log in:", conn[ci].website);
     else if ( errcode == MSG_USER_LOGGED_OUT )
         strcpy(dest, "You've been successfully logged out.");
-    else if ( errcode == ERR_INVALID_PASSWD )
+    else if ( errcode == ERR_INVALID_PASSWORD )
         sprintf(dest, "Please enter your existing password");
     else if ( errcode == WAR_NO_EMAIL )
         strcpy(dest, "You didn't provide your email address. This is fine, however please remember that in case you forget your password, there's no way for us to send you reset link.");
@@ -1544,7 +1544,7 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
     else if ( errcode == ERR_EMAIL_FORMAT_OR_EMPTY )
         strcpy(dest, "Please enter valid email address or leave this field empty");
     else if ( errcode == ERR_PASSWORD_TOO_SHORT )
-        sprintf(dest, "Password must be at least %d characters long", MIN_PASSWD_LEN);
+        sprintf(dest, "Password must be at least %d characters long", MIN_PASSWORD_LEN);
     else if ( errcode == ERR_PASSWORD_DIFFERENT )
         strcpy(dest, "Please retype password exactly like in the previous field");
     else if ( errcode == ERR_OLD_PASSWORD )
