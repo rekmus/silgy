@@ -370,10 +370,17 @@ struct timeval  timeout;                    /* Timeout for select */
         {
             ERR("select failed, errno = %d (%s)", errno, strerror(errno));
             /* protect from infinite loop */
-            if ( failed_select_cnt >= 100 )
+            if ( failed_select_cnt >= 10 )
             {
-                ERR("select failed 100-th time, check your server logic!");
-                break;
+                ERR("select failed for the 10-th time, entering emergency reset");
+                ALWAYS("Resetting all connections...");
+                int k;
+                for ( k=0; k<MAX_CONNECTIONS; ++k )
+                    close_conn(k);
+                failed_select_cnt = 0;
+                ALWAYS("Waiting for 1 second...");
+                msleep(1000);
+                continue;
             }
             else
             {
@@ -419,7 +426,10 @@ struct timeval  timeout;                    /* Timeout for select */
                     dump_counters();
                     log_finish();
                     if ( !log_start("", G_test) )
+                    {
+                        clean_up();
                         return EXIT_FAILURE;
+                    }
                     prev_day = G_ptm->tm_mday;
 
                     /* set new Expires date */
@@ -4898,18 +4908,33 @@ int main(int argc, char *argv[])
     char exec_name[256];
     lib_get_exec_name(exec_name, argv[0]);
 
+//    if ( G_appdir[0] )
+//    {
+//        sprintf(config, "%s/bin/%s.conf", G_appdir, exec_name);
+//        if ( !lib_read_conf(config) )   /* no config file there */
+//        {
+//            sprintf(config, "%s.conf", exec_name);
+//            lib_read_conf(config);
+//        }
+//    }
+//    else    /* no SILGYDIR -- try current dir */
+//    {
+//        sprintf(config, "%s.conf", exec_name);
+//        lib_read_conf(config);
+//    }
+
     if ( G_appdir[0] )
     {
-        sprintf(config, "%s/bin/%s.conf", G_appdir, exec_name);
+        sprintf(config, "%s/bin/silgy.conf", G_appdir);
         if ( !lib_read_conf(config) )   /* no config file there */
         {
-            sprintf(config, "%s.conf", exec_name);
+            strcpy(config, "silgy.conf");
             lib_read_conf(config);
         }
     }
     else    /* no SILGYDIR -- try current dir */
     {
-        sprintf(config, "%s.conf", exec_name);
+        strcpy(config, "silgy.conf");
         lib_read_conf(config);
     }
 
@@ -4918,7 +4943,11 @@ int main(int argc, char *argv[])
 
     /* start log --------------------------------------------------------- */
 
-    if ( !log_start(exec_name, G_test) )
+    char logprefix[64];
+
+    sprintf(logprefix, "s_%d", G_pid);
+
+    if ( !log_start(logprefix, G_test) )
 		return EXIT_FAILURE;
 
     /* pid file ---------------------------------------------------------- */
@@ -4945,11 +4974,6 @@ int main(int argc, char *argv[])
     strcpy(G_res_queue_name, ASYNC_RES_QUEUE);
 #endif
 
-/*    struct mq_attr attr={0};
-
-    attr.mq_maxmsg = ASYNC_MQ_MAXMSG;
-    attr.mq_msgsize = ASYNC_REQ_MSG_SIZE; */
-
 	G_queue_req = mq_open(G_req_queue_name, O_RDONLY, NULL, NULL);
 
 	if ( G_queue_req < 0 )
@@ -4960,8 +4984,6 @@ int main(int argc, char *argv[])
 	}
 
     INF("G_queue_req open OK");
-
-//    attr.mq_msgsize = ASYNC_RES_MSG_SIZE;   /* larger buffer */
 
 	G_queue_res = mq_open(G_res_queue_name, O_WRONLY, NULL, NULL);
 
@@ -4988,6 +5010,8 @@ int main(int argc, char *argv[])
     async_req_t req;
     async_res_t res;
 
+    int prev_day = G_ptm->tm_mday;
+
     INF("Waiting...\n");
 
     while (1)
@@ -4995,18 +5019,40 @@ int main(int argc, char *argv[])
         if ( mq_receive(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, NULL) != -1 )
         {
             lib_update_time_globals();
+            
+            /* start new log file every day */
+
+            if ( G_ptm->tm_mday != prev_day )
+            {
+                log_finish();
+
+                if ( !log_start(logprefix, G_test) )
+                {
+                    clean_up();
+                    return EXIT_FAILURE;
+                }
+
+                prev_day = G_ptm->tm_mday;
+            }
+
             DBG_T("Message received");
+
             if ( G_logLevel > LOG_INF )
                 DBG_T("ci = %d, service [%s], call_id = %ld", req.ci, req.service, req.call_id);
             else
                 INF_T("%s called (id=%ld)", req.service, req.call_id);
+
             res.call_id = req.call_id;
             res.ci = req.ci;
             strcpy(res.service, req.service);
+
             /* ----------------------------------------------------------- */
+
             DBG("Processing...");
             res.err_code = service_app_process_req(req.service, req.data, res.data);
+
             /* ----------------------------------------------------------- */
+
             if ( req.response )
             {
                 DBG("Sending response...");
