@@ -1,13 +1,32 @@
 #!/bin/sh
 
+echo "Stopping Silgy..."
+
+# ---------------------------------------------------------------------
+# Main app
+
 if [ -f $SILGYDIR/bin/silgy_app.pid ]
 then
 	kill `cat $SILGYDIR/bin/silgy_app.pid`
 fi
 
-# if process hadn't existed, pid needs manual removal...
+# ---------------------------------------------------------------------
+# Services
 
-if [ -f $SILGYDIR/bin/silgy_app.pid ]
-then
-	rm $SILGYDIR/bin/silgy_app.pid
-fi
+PIDFILES=$SILGYDIR/bin/s_*.pid
+
+for f in $PIDFILES
+do
+        kill `cat ${f}`
+done
+
+# ---------------------------------------------------------------------
+# Remove old pids
+
+sleep 1
+echo "Removing all pid files..."
+rm $SILGYDIR/bin/*.pid
+
+# ---------------------------------------------------------------------
+
+echo "Done"
