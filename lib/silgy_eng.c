@@ -4952,7 +4952,7 @@ int main(int argc, char *argv[])
 
     /* pid file ---------------------------------------------------------- */
 
-    if ( !(M_pidfile=lib_create_pid_file(argv[0])) )
+    if ( !(M_pidfile=lib_create_pid_file(logprefix)) )
 		return EXIT_FAILURE;
 
 	/* handle signals ---------------------------------------------------- */
