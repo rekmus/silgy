@@ -619,7 +619,6 @@ static int addresses_cnt=0, addresses_last=0;
     {
         ERR("Could not connect");
         if ( result && !addr_cached ) freeaddrinfo(result);
-        close_conn(M_rest_sock);
         return FALSE;
     }
 
