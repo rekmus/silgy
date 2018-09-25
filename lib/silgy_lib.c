@@ -514,10 +514,11 @@ static struct {
     struct addrinfo addr;
     struct sockaddr ai_addr;
 } addresses[REST_ADDRESSES_CACHE_SIZE];
-static int addresses_cnt=0, addresses_last=0, i;
+static int addresses_cnt=0, addresses_last=0;
+    int  i;
     bool addr_cached=FALSE;
 
-    DBG("rest_connect");
+    DBG("rest_connect [%s:%s]", host, port);
 
     struct addrinfo *result=NULL;
 
@@ -525,12 +526,15 @@ static int addresses_cnt=0, addresses_last=0, i;
 
     DBG("Trying cache...");
 
+#ifdef DUMP
+    DBG("addresses_cnt=%d", addresses_cnt);
+#endif
+
     for ( i=0; i<addresses_cnt; ++i )
     {
-//        if ( 0==strcmp(addresses[i].host, host) )
         if ( 0==strcmp(addresses[i].host, host) && 0==strcmp(addresses[i].port, port) )
         {
-            DBG("Host %s found in cache (%d)", host, i);
+            DBG("Host [%s:%s] found in cache (%d)", host, port, i);
             addr_cached = TRUE;
             result = &addresses[i].addr;
             break;
@@ -541,6 +545,9 @@ static int addresses_cnt=0, addresses_last=0, i;
 
     if ( !addr_cached )
     {
+#ifndef REST_CALL_DONT_CACHE_ADDRINFO
+        DBG("Host [%s:%s] not found in cache", host, port);
+#endif
         DBG("getaddrinfo...");   /* TODO: change to asynchronous, i.e. getaddrinfo_a */
 
         struct addrinfo hints;
@@ -611,7 +618,7 @@ static int addresses_cnt=0, addresses_last=0, i;
     if ( rp == NULL )     /* No address succeeded */
     {
         ERR("Could not connect");
-        if ( result ) freeaddrinfo(result);
+        if ( result && !addr_cached ) freeaddrinfo(result);
         close_conn(M_rest_sock);
         return FALSE;
     }
@@ -634,12 +641,12 @@ static int addresses_cnt=0, addresses_last=0, i;
         addresses[addresses_last].addr.ai_addr = &addresses[addresses_last].ai_addr;
         addresses[addresses_last].addr.ai_next = NULL;
 
-        DBG("Host cached (%d)", addresses_last);
+        DBG("Host [%s:%s] added to cache (%d)", host, port, addresses_last);
 
         if ( addresses_cnt < REST_ADDRESSES_CACHE_SIZE-1 )   /* first round */
         {
-            ++addresses_cnt;
-            ++addresses_last;
+            ++addresses_cnt;    /* cache usage */
+            ++addresses_last;   /* next to use index */
         }
         else    /* cache full -- reuse it from start */
         {
@@ -654,11 +661,11 @@ static int addresses_cnt=0, addresses_last=0, i;
         freeaddrinfo(result);
     }
 
+    DBG("Connected");
+
 #ifdef DUMP
     DBG("elapsed after plain connect: %.3lf ms", lib_elapsed(start));
 #endif
-
-    DBG("Connected");
 
     /* -------------------------------------------------------------------------- */
 
