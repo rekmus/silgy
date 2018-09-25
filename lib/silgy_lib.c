@@ -1228,10 +1228,11 @@ static char res_content[JSON_BUFSIZE];
     /* ------------------------------------------------------------------- */
 
     res_content[content_read] = EOS;
-#ifdef DUMP
-    DBG("Read %d bytes of content [%s]", content_read, res_content);
-#else
+
     DBG("Read %d bytes of content", content_read);
+
+#ifdef DUMP
+    log_long(res_content, content_read, "Content");
 #endif
 
     /* ------------------------------------------------------------------- */
