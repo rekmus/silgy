@@ -671,6 +671,9 @@ extern int      G_sessions;                 /* number of active user sessions */
 extern time_t   G_now;                      /* current time */
 extern struct tm *G_ptm;                    /* human readable current time */
 extern char     G_last_modified[32];        /* response header field with server's start time */
+#ifdef HTTPS
+extern bool     G_ssl_lib_initialized;
+#endif
 #ifdef DBMYSQL
 extern MYSQL    *G_dbconn;                  /* database connection */
 #endif

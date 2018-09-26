@@ -3548,9 +3548,15 @@ static bool init_ssl()
 
     DBG("init_ssl");
 
+    /* libssl init */
     SSL_library_init();
-    OpenSSL_add_all_algorithms();       /* load & register all cryptos, etc. */
-    SSL_load_error_strings();           /* load all error messages */
+    SSL_load_error_strings();
+
+    /* libcrypto init */
+    OpenSSL_add_all_algorithms();
+    ERR_load_crypto_strings();
+
+    G_ssl_lib_initialized = TRUE;
 
     method = SSLv23_server_method();    /* negotiate the highest protocol version supported by both the server and the client */
 //  method = TLS_server_method();       /* negotiate the highest protocol version supported by both the server and the client */

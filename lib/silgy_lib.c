@@ -27,6 +27,9 @@ time_t      G_now=0;                    /* current time (GMT) */
 struct tm   *G_ptm={0};                 /* human readable current time */
 char        G_dt[20]="";                /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 char        G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
+#ifdef HTTPS
+bool        G_ssl_lib_initialized=0;
+#endif
 char        *G_shm_segptr=NULL;         /* SHM pointer */
 
 int         G_rest_status;
@@ -50,7 +53,6 @@ static SOCKET M_rest_sock;
 #else
 static int M_rest_sock;
 #endif  /* _WIN32 */
-static int M_rest_connection;
 #ifdef HTTPS
 static SSL_CTX *M_ssl_ctx=NULL;
 static SSL *M_rest_ssl=NULL;
@@ -174,6 +176,21 @@ static bool init_ssl_client()
     const SSL_METHOD *method;
 
     DBG("init_ssl (silgy_lib)");
+
+    if ( !G_ssl_lib_initialized )
+    {
+        DBG("Initializing SSL_lib...");
+
+        /* libssl init */
+        SSL_library_init();
+        SSL_load_error_strings();
+
+        /* libcrypto init */
+        OpenSSL_add_all_algorithms();
+        ERR_load_crypto_strings();
+
+        G_ssl_lib_initialized = TRUE;
+    }
 
     method = SSLv23_client_method();    /* negotiate the highest protocol version supported by both the server and the client */
 
@@ -603,7 +620,7 @@ static int addresses_cnt=0, addresses_last=0;
 
         /* plain socket connection --------------------------------------- */
 
-        if ( (M_rest_connection=connect(M_rest_sock, rp->ai_addr, rp->ai_addrlen)) != -1 )
+        if ( connect(M_rest_sock, rp->ai_addr, rp->ai_addrlen) != -1 )
         {
             break;  /* immediate success */
         }
@@ -737,7 +754,6 @@ static void rest_disconnect()
 {
     DBG("rest_disconnect");
 
-    close(M_rest_connection);
     close_conn(M_rest_sock);
 #ifdef HTTPS
     if ( M_rest_ssl )
