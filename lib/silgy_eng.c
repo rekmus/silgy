@@ -1972,7 +1972,10 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
     if ( (dir=opendir(ressubdir)) == NULL )
     {
-        DBG("Couldn't open directory [%s]", ressubdir);
+//#ifdef DUMP
+        if ( first_scan )
+            DBG("Couldn't open directory [%s]", ressubdir);
+//#endif
         return TRUE;    /* don't panic, just no external resources will be used */
     }
 
