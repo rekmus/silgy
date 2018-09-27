@@ -3783,9 +3783,18 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     req.hdr.call_id = ++G_last_call_id;
     req.hdr.ci = ci;
-    if ( service ) strcpy(req.hdr.service, service);
+
+    if ( service )
+        strcpy(req.hdr.service, service);
+    else
+        req.hdr.service[0] = EOS;
+
     req.hdr.response = response;
-    if ( data ) strcpy(req.data, data);
+
+    if ( data )
+        strcpy(req.data, data);
+    else
+        req.data[0] = EOS;
 
     DBG("Sending a message on behalf of ci=%d, call_id=%ld, service [%s]", ci, req.hdr.call_id, req.hdr.service);
 
