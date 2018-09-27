@@ -792,7 +792,9 @@ static void set_state(int ci, long bytes)
 
     if ( conn[ci].conn_state == CONN_STATE_CONNECTED )  /* assume the whole header has been read */
     {
-//      DBG("Changing state to CONN_STATE_READY_FOR_PARSE");
+#ifdef DUMP
+        DBG("Changing state to CONN_STATE_READY_FOR_PARSE");
+#endif
         conn[ci].conn_state = CONN_STATE_READY_FOR_PARSE;
     }
     else if ( conn[ci].conn_state == CONN_STATE_READING_DATA )  /* it could have been received only partially */
@@ -805,7 +807,9 @@ static void set_state(int ci, long bytes)
         {
             conn[ci].data[conn[ci].was_read] = EOS;
             DBG("POST data received");
-//          DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
+#ifdef DUMP
+            DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
+#endif
             conn[ci].conn_state = CONN_STATE_READY_FOR_PROCESS;
         }
     }
@@ -813,7 +817,9 @@ static void set_state(int ci, long bytes)
     {
         if ( conn[ci].clen > 0 )
         {
-//          DBG("Changing state to CONN_STATE_READY_TO_SEND_BODY");
+#ifdef DUMP
+            DBG("Changing state to CONN_STATE_READY_TO_SEND_BODY");
+#endif
             conn[ci].conn_state = CONN_STATE_READY_TO_SEND_BODY;
         }
         else /* no body to send */
@@ -836,7 +842,9 @@ static void set_state(int ci, long bytes)
     {
         if ( bytes < conn[ci].clen )
         {
-//          DBG("Changing state to CONN_STATE_SENDING_BODY");
+#ifdef DUMP
+            DBG("Changing state to CONN_STATE_SENDING_BODY");
+#endif
             conn[ci].conn_state = CONN_STATE_SENDING_BODY;
         }
         else /* assuming the whole body has been sent at once */
@@ -913,7 +921,9 @@ static void set_state_sec(int ci, long bytes)
     // we have no way of knowing if accept finished before reading actual request
     if ( conn[ci].conn_state == CONN_STATE_ACCEPTING || conn[ci].conn_state == CONN_STATE_CONNECTED )   /* assume the whole header has been read */
     {
-//      DBG("Changing state to CONN_STATE_READY_FOR_PARSE");
+#ifdef DUMP
+        DBG("Changing state to CONN_STATE_READY_FOR_PARSE");
+#endif
         conn[ci].conn_state = CONN_STATE_READY_FOR_PARSE;
     }
     else if ( conn[ci].conn_state == CONN_STATE_READING_DATA )
@@ -926,7 +936,9 @@ static void set_state_sec(int ci, long bytes)
         {
             conn[ci].data[conn[ci].was_read] = EOS;
             DBG("POST data received");
-//          DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
+#ifdef DUMP
+            DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
+#endif
             conn[ci].conn_state = CONN_STATE_READY_FOR_PROCESS;
         }
     }
@@ -934,7 +946,9 @@ static void set_state_sec(int ci, long bytes)
     {
         if ( conn[ci].clen > 0 )
         {
-//          DBG("Changing state to CONN_STATE_READY_TO_SEND_BODY");
+#ifdef DUMP
+            DBG("Changing state to CONN_STATE_READY_TO_SEND_BODY");
+#endif
             conn[ci].conn_state = CONN_STATE_READY_TO_SEND_BODY;
         }
         else /* no body to send */
@@ -3157,6 +3171,9 @@ static int parse_req(int ci, long len)
         if ( len < conn[ci].clen )      /* the whole content not received yet */
         {                               /* this is the only case when conn_state != received */
             DBG("The whole content not received yet");
+#ifdef DUMP
+            DBG("Changing state to CONN_STATE_READING_DATA");
+#endif
             conn[ci].conn_state = CONN_STATE_READING_DATA;
             return ret;
         }
