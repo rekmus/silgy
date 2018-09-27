@@ -621,8 +621,13 @@ typedef struct {
     int     ci;
     char    service[32];
     char    response;
-    char    data[ASYNC_REQ_MSG_SIZE-sizeof(long)-sizeof(int)-33];
+} async_req_hdr_t;
+
+typedef struct {
+    async_req_hdr_t hdr;
+    char            data[ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t)];
 } async_req_t;
+
 
 typedef struct {
     long    call_id;
@@ -632,11 +637,16 @@ typedef struct {
     time_t  sent;
     int     timeout;
     int     err_code;
-    char    data[ASYNC_RES_MSG_SIZE-sizeof(long)-(sizeof(int)*3)-sizeof(time_t)-33];
+} async_res_hdr_t;
+
+typedef struct {
+    async_res_hdr_t hdr;
+    char            data[ASYNC_RES_MSG_SIZE-sizeof(async_res_hdr_t)];
 } async_res_t;
 
 
 /* read from the config file */
+
 extern int      G_logLevel;
 extern int      G_logToStdout;
 extern int      G_logCombined;

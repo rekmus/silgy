@@ -357,10 +357,10 @@ struct timeval  timeout;                    /* Timeout for select */
 
         for ( j=0; j<MAX_ASYNC; ++j )
         {
-            if ( ares[j].state==ASYNC_STATE_SENT && ares[j].sent < G_now-ares[j].timeout )
+            if ( ares[j].hdr.state==ASYNC_STATE_SENT && ares[j].hdr.sent < G_now-ares[j].hdr.timeout )
             {
                 DBG("Async request %d timeout-ed", j);
-                ares[j].state = ASYNC_STATE_TIMEOUTED;
+                ares[j].hdr.state = ASYNC_STATE_TIMEOUTED;
             }
         }
 #endif
@@ -567,20 +567,20 @@ struct timeval  timeout;                    /* Timeout for select */
 #endif
                             for ( j=0; j<MAX_ASYNC; ++j )
                             {
-                                if ( (ares[j].state==ASYNC_STATE_RECEIVED || ares[j].state==ASYNC_STATE_TIMEOUTED) && ares[j].ci == i )
+                                if ( (ares[j].hdr.state==ASYNC_STATE_RECEIVED || ares[j].hdr.state==ASYNC_STATE_TIMEOUTED) && ares[j].hdr.ci == i )
                                 {
-                                    if ( ares[j].state == ASYNC_STATE_RECEIVED )
+                                    if ( ares[j].hdr.state == ASYNC_STATE_RECEIVED )
                                     {
                                         DBG("Async response in an array for ci=%d, processing", i);
-                                        app_async_done(i, ares[j].service, ares[j].data, ares[j].err_code);
+                                        app_async_done(i, ares[j].hdr.service, ares[j].data, ares[j].hdr.err_code);
                                     }
-                                    else if ( ares[j].state == ASYNC_STATE_TIMEOUTED )
+                                    else if ( ares[j].hdr.state == ASYNC_STATE_TIMEOUTED )
                                     {
                                         DBG("Async response done as timeout-ed for ci=%d", i);
-                                        app_async_done(i, ares[j].service, "", ERR_ASYNC_TIMEOUT);
+                                        app_async_done(i, ares[j].hdr.service, "", ERR_ASYNC_TIMEOUT);
                                     }
                                     gen_response_header(i);
-                                    ares[j].state = ASYNC_STATE_FREE;
+                                    ares[j].hdr.state = ASYNC_STATE_FREE;
                                     break;
                                 }
                             }
@@ -725,17 +725,17 @@ struct timeval  timeout;                    /* Timeout for select */
 #endif /* DUMP */
         {
             DBG("Message received!");
-            DBG("res.call_id = %ld", res.call_id);
-            DBG("res.ci = %d", res.ci);
-            DBG("res.service [%s]", res.service);
+            DBG("res.hdr.call_id = %ld", res.hdr.call_id);
+            DBG("res.hdr.ci = %d", res.hdr.ci);
+            DBG("res.hdr.service [%s]", res.hdr.service);
 
             for ( j=0; j<MAX_ASYNC; ++j )
             {
-                if ( ares[j].call_id == res.call_id )
+                if ( ares[j].hdr.call_id == res.hdr.call_id )
                 {
                     DBG("ares record found");
-                    memcpy(&ares[j], (char*)&res, ASYNC_RES_MSG_SIZE);
-                    ares[j].state = ASYNC_STATE_RECEIVED;
+                    memcpy(&ares[j], (char*)&res, sizeof(async_res_t));
+                    ares[j].hdr.state = ASYNC_STATE_RECEIVED;
                     break;
                 }
             }
@@ -759,9 +759,9 @@ struct timeval  timeout;                    /* Timeout for select */
 
         for ( j=0; j<MAX_ASYNC; ++j )
         {
-            if ( ares[j].state==ASYNC_STATE_TIMEOUTED )     /* apparently closed browser connection */
+            if ( ares[j].hdr.state==ASYNC_STATE_TIMEOUTED )     /* apparently closed browser connection */
             {
-                ares[j].state = ASYNC_STATE_FREE;
+                ares[j].hdr.state = ASYNC_STATE_FREE;
             }
         }
 #endif
@@ -1498,7 +1498,7 @@ static bool init(int argc, char **argv)
     /* ------------------------------------------------------------------- */
 
     for (i=0; i<MAX_ASYNC; ++i)
-        ares[i].state = ASYNC_STATE_FREE;
+        ares[i].hdr.state = ASYNC_STATE_FREE;
 
     G_last_call_id = 0;
 
@@ -3764,13 +3764,13 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     if ( G_last_call_id > 10000000 ) G_last_call_id = 0;
 
-    req.call_id = ++G_last_call_id;
-    req.ci = ci;
-    if ( service ) strcpy(req.service, service);
-    req.response = response;
+    req.hdr.call_id = ++G_last_call_id;
+    req.hdr.ci = ci;
+    if ( service ) strcpy(req.hdr.service, service);
+    req.hdr.response = response;
     if ( data ) strcpy(req.data, data);
 
-    DBG("Sending a message on behalf of ci=%d, call_id=%ld, service [%s]", ci, req.call_id, req.service);
+    DBG("Sending a message on behalf of ci=%d, call_id=%ld, service [%s]", ci, req.hdr.call_id, req.hdr.service);
 
     mq_send(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, 0);
 
@@ -3782,17 +3782,17 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
         for ( j=0; j<MAX_ASYNC; ++j )
         {
-            if ( ares[j].state == ASYNC_STATE_FREE )        /* free slot */
+            if ( ares[j].hdr.state == ASYNC_STATE_FREE )        /* free slot */
             {
                 DBG("free slot %d found in ares", j);
-                ares[j].call_id = req.call_id;
-                ares[j].ci = ci;
-                strcpy(ares[j].service, service);
-                ares[j].state = ASYNC_STATE_SENT;
-                ares[j].sent = G_now;
+                ares[j].hdr.call_id = req.hdr.call_id;
+                ares[j].hdr.ci = ci;
+                strcpy(ares[j].hdr.service, service);
+                ares[j].hdr.state = ASYNC_STATE_SENT;
+                ares[j].hdr.sent = G_now;
                 if ( timeout < 0 ) timeout = 0;
                 if ( timeout == 0 || timeout > ASYNC_MAX_TIMEOUT ) timeout = ASYNC_MAX_TIMEOUT;
-                ares[j].timeout = timeout;
+                ares[j].hdr.timeout = timeout;
                 break;
             }
         }
@@ -5047,22 +5047,22 @@ int main(int argc, char *argv[])
             DBG_T("Message received");
 
             if ( G_logLevel > LOG_INF )
-                DBG_T("ci = %d, service [%s], call_id = %ld", req.ci, req.service, req.call_id);
+                DBG_T("ci = %d, service [%s], call_id = %ld", req.hdr.ci, req.hdr.service, req.hdr.call_id);
             else
-                INF_T("%s called (id=%ld)", req.service, req.call_id);
+                INF_T("%s called (id=%ld)", req.hdr.service, req.hdr.call_id);
 
-            res.call_id = req.call_id;
-            res.ci = req.ci;
-            strcpy(res.service, req.service);
+            res.hdr.call_id = req.hdr.call_id;
+            res.hdr.ci = req.hdr.ci;
+            strcpy(res.hdr.service, req.hdr.service);
 
             /* ----------------------------------------------------------- */
 
             DBG("Processing...");
-            res.err_code = service_app_process_req(req.service, req.data, res.data);
+            res.hdr.err_code = service_app_process_req(req.hdr.service, req.data, res.data);
 
             /* ----------------------------------------------------------- */
 
-            if ( req.response )
+            if ( req.hdr.response )
             {
                 DBG("Sending response...");
                 mq_send(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, 0);
