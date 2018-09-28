@@ -637,6 +637,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
                                 DBG("state == %s", conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
                                 DBG("Trying to write %ld bytes to fd=%d", conn[i].clen-conn[i].data_sent, conn[i].fd);
+//                                log_long(conn[i].out_data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, "Body to send");
 #endif /* DUMP */
                                 if ( conn[i].static_res == NOT_STATIC )
                                 {
@@ -1432,6 +1433,8 @@ static bool init(int argc, char **argv)
     signal(SIGTERM, sigdisp);
     signal(SIGQUIT, sigdisp);   /* Ctrl-\ */
     signal(SIGTSTP, sigdisp);   /* Ctrl-Z */
+
+    signal(SIGPIPE, SIG_IGN);   /* ignore SIGPIPE */
 #endif
 
     /* initialize SSL connection */
