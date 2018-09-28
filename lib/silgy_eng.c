@@ -4976,8 +4976,16 @@ int main(int argc, char *argv[])
         lib_read_conf(config);
     }
 
+    /* ------------------------------------------------------------------- */
+
     if ( !silgy_read_param_int("logLevel", &G_logLevel) )
         G_logLevel = 3;  /* info */
+
+    if ( !silgy_read_param_int("logToStdout", &G_logToStdout) )
+        G_logToStdout = 0;
+
+    if ( !silgy_read_param_int("RESTTimeout", &G_RESTTimeout) )
+        G_RESTTimeout = CALL_REST_DEFAULT_TIMEOUT;
 
     /* start log --------------------------------------------------------- */
 
@@ -5000,6 +5008,8 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, sigdisp);
 	signal(SIGQUIT, sigdisp);	/* Ctrl-\ */
 	signal(SIGTSTP, sigdisp);	/* Ctrl-Z */
+
+    signal(SIGPIPE, SIG_IGN);   /* ignore SIGPIPE */
 #endif
 
     /* open queues ------------------------------------------------------- */
