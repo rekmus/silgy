@@ -754,7 +754,6 @@ static void rest_disconnect()
 {
     DBG("rest_disconnect");
 
-    close_conn(M_rest_sock);
 #ifdef HTTPS
     if ( M_rest_ssl )
     {
@@ -762,7 +761,9 @@ static void rest_disconnect()
 //        DBG("Should be NULL: M_rest_ssl = %d", M_rest_ssl);
         M_rest_ssl = NULL;
     }
-#endif
+#endif /* HTTPS */
+
+    close_conn(M_rest_sock);
 }
 
 

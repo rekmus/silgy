@@ -462,19 +462,19 @@ struct timeval  timeout;                    /* Timeout for select */
         }
         else    /* readsocks > 0 */
         {
-            if (FD_ISSET(M_listening_fd, &M_readfds))
+            if ( FD_ISSET(M_listening_fd, &M_readfds) )
             {
                 accept_http();
             }
 #ifdef HTTPS
-            else if (FD_ISSET(M_listening_sec_fd, &M_readfds))
+            else if ( FD_ISSET(M_listening_sec_fd, &M_readfds) )
             {
                 accept_https();
             }
 #endif
             else    /* existing connections have something going on on them ---------------------------------- */
             {
-                for (i=0; i<MAX_CONNECTIONS; ++i)
+                for ( i=0; i<MAX_CONNECTIONS; ++i )
                 {
                     /* --------------------------------------------------------------------------------------- */
                     if ( FD_ISSET(conn[i].fd, &M_readfds) )     /* incoming data ready */
@@ -545,7 +545,8 @@ struct timeval  timeout;                    /* Timeout for select */
 #else
                                 bytes = read(conn[i].fd, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read);
 #endif  /* _WIN32 */
-                                conn[i].was_read += bytes;
+                                if ( bytes > 0 )
+                                    conn[i].was_read += bytes;
                                 set_state(i, bytes);    /* possibly:    CONN_STATE_DISCONNECTED (if error or closed by peer) */
                                                         /*              CONN_STATE_READY_FOR_PROCESS */
                             }
@@ -1128,9 +1129,15 @@ static void log_proc_time(int ci)
 -------------------------------------------------------------------------- */
 static void close_conn(int ci)
 {
+#ifdef DUMP
+    DBG("Closing connection ci=%d, fd=%d", ci, conn[ci].fd);
+#endif
 #ifdef HTTPS
-    if ( conn[ci].secure )
+    if ( conn[ci].ssl )
+    {
         SSL_free(conn[ci].ssl);
+        conn[ci].ssl = NULL;
+    }
 #endif
 #ifdef _WIN32   /* Windows */
     closesocket(conn[ci].fd);
@@ -1327,9 +1334,9 @@ static bool init(int argc, char **argv)
     ALWAYS(" Users' authentication = USERSBYLOGIN");
 #endif
 #endif /* USERS */
-    ALWAYS("");
-    ALWAYS("           auses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(auses), sizeof(auses)/1024, (double)sizeof(auses)/1024/1024);
-    ALWAYS("");
+//    ALWAYS("");
+//    ALWAYS("           auses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(auses), sizeof(auses)/1024, (double)sizeof(auses)/1024/1024);
+//    ALWAYS("");
     ALWAYS_LINE_LONG;
     ALWAYS("");
 
@@ -1444,7 +1451,7 @@ static bool init(int argc, char **argv)
     signal(SIGPIPE, SIG_IGN);   /* ignore SIGPIPE */
 #endif
 
-    /* initialize SSL connection */
+    /* initialize SSL connection ----------------------------------------- */
 
 #ifdef HTTPS
     if ( !init_ssl() )
@@ -1454,9 +1461,9 @@ static bool init(int argc, char **argv)
     }
 #endif
 
-    /* init conn array */
+    /* init conn array --------------------------------------------------- */
 
-    for (i=0; i<MAX_CONNECTIONS; ++i)
+    for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
 #ifdef OUTCHECKREALLOC
         if ( !(conn[i].out_data = (char*)malloc(OUT_BUFSIZE)) )
@@ -1464,21 +1471,27 @@ static bool init(int argc, char **argv)
             ERR("malloc for conn[%d].out_data failed", i);
             return FALSE;
         }
-#endif
+#endif /* OUTCHECKREALLOC */
+
         conn[i].out_data_allocated = OUT_BUFSIZE;
+        conn[i].data = NULL;
         reset_conn(i, CONN_STATE_DISCONNECTED);
+
+#ifdef HTTPS
+        conn[i].ssl = NULL;
+#endif
         conn[i].req = 0;
     }
 
-    /* init user sessions */
+    /* init user sessions ------------------------------------------------ */
 
-    for (i=0; i<MAX_SESSIONS+1; ++i)
+    for ( i=0; i<MAX_SESSIONS+1; ++i )
     {
         eng_uses_reset(i);
         app_uses_reset(i);
     }
 
-    /* read blocked IPs list */
+    /* read blocked IPs list --------------------------------------------- */
 
     read_blocked_ips();
 
@@ -1570,7 +1583,7 @@ static void build_select_list()
             }
             else
             {
-#endif
+#endif /* HTTPS */
                 if ( conn[i].conn_state != CONN_STATE_CONNECTED
                         && conn[i].conn_state != CONN_STATE_READING_DATA )
                     FD_SET(conn[i].fd, &M_writefds);
@@ -1579,6 +1592,7 @@ static void build_select_list()
 #endif
             if (conn[i].fd > M_highsock)
                 M_highsock = conn[i].fd;
+
             ++G_open_conn;
         }
     }
@@ -1608,7 +1622,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
     connection = accept(M_listening_fd, (struct sockaddr*)&cli_addr, &addr_len);
 
-    if (connection < 0)
+    if ( connection < 0 )
     {
         ERR("accept failed, errno = %d (%s)", errno, strerror(errno));
         return;
@@ -1636,7 +1650,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
     /* find a free slot in conn */
 
-    for ( i=0; (i<MAX_CONNECTIONS) && (connection != -1); ++i )
+    for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
         if ( conn[i].conn_state == CONN_STATE_DISCONNECTED )    /* free connection slot -- we'll use it */
         {
@@ -1651,6 +1665,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
             conn[i].conn_state = CONN_STATE_CONNECTED;
             conn[i].last_activity = G_now;
             connection = -1;                        /* mark as OK */
+            break;
         }
     }
 
@@ -1699,7 +1714,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
     connection = accept(M_listening_sec_fd, (struct sockaddr*)&cli_addr, &addr_len);
 
-    if (connection < 0)
+    if ( connection < 0 )
     {
         ERR("accept failed, errno = %d (%s)", errno, strerror(errno));
         return;
@@ -1727,7 +1742,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
     /* find a free slot in conn */
 
-    for ( i=0; (i<MAX_CONNECTIONS) && (connection != -1); ++i )
+    for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
         if ( conn[i].conn_state == CONN_STATE_DISCONNECTED )    /* free connection slot -- we'll use it */
         {
@@ -1741,7 +1756,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
             {
                 ERR("SSL_new failed");
                 close_conn(i);
-                break;
+                return;
             }
 
             /* SSL_set_fd() sets the file descriptor fd as the input/output facility
@@ -1784,6 +1799,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
             conn[i].conn_state = CONN_STATE_ACCEPTING;
             conn[i].last_activity = G_now;
             connection = -1;                        /* mark as OK */
+            break;
         }
     }
 
@@ -2354,7 +2370,7 @@ static void process_req(int ci)
     DBG("process_req, ci=%d", ci);
 
 #ifdef DUMP
-    if ( conn[ci].post )
+    if ( conn[ci].post && conn[ci].data )
         log_long(conn[ci].data, conn[ci].was_read, "POST data");
 #endif
 
@@ -2736,7 +2752,7 @@ static void close_old_conn()
 
     last_allowed = G_now - CONN_TIMEOUT;
 
-    for (i=0; i<MAX_CONNECTIONS; ++i)
+    for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
         if ( conn[i].conn_state != CONN_STATE_DISCONNECTED && conn[i].last_activity < last_allowed )
         {
@@ -2757,7 +2773,7 @@ static void close_uses_timeout()
 
     last_allowed = G_now - USES_TIMEOUT;
 
-    for (i=1; i<=MAX_SESSIONS; ++i)
+    for ( i=1; i<=MAX_SESSIONS; ++i )
     {
         if ( uses[i].sesid[0] && !uses[i].logged && uses[i].last_activity < last_allowed )
             close_a_uses(i);
@@ -2780,8 +2796,13 @@ static void close_a_uses(int usi)
 -------------------------------------------------------------------------- */
 static void reset_conn(int ci, char conn_state)
 {
-    conn[ci].status = 200;
+#ifdef DUMP
+    DBG("Resetting connection ci=%d, fd=%d, new state=%s", ci, conn[ci].fd, conn[ci].conn_state==CONN_STATE_CONNECTED?"CONN_STATE_CONNECTED":"CONN_STATE_DISCONNECTED");
+#endif
+
     conn[ci].conn_state = conn_state;
+
+    conn[ci].status = 200;
     conn[ci].method[0] = EOS;
     conn[ci].head_only = FALSE;
     conn[ci].post = FALSE;
@@ -2862,7 +2883,7 @@ static int parse_req(int ci, long len)
     ++G_cnts_today.req;
     conn[ci].req = G_cnts_today.req;    /* superfluous? */
 
-    DBG("\n------------------------------------------------\n %s  Request %lu\n------------------------------------------------\n", G_dt, conn[ci].req);
+    DBG("\n------------------------------------------------\n %s  Request %ld\n------------------------------------------------\n", G_dt, conn[ci].req);
 
 //  if ( conn[ci].conn_state != STATE_SENDING ) /* ignore Range requests for now */
 //      conn[ci].conn_state = STATE_RECEIVED;   /* by default */
