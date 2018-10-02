@@ -505,7 +505,7 @@ struct timeval  timeout;                    /* Timeout for select */
                             {
 #ifdef DUMP
                                 DBG("state == CONN_STATE_READING_DATA");
-                                DBG("Trying to read %ld bytes of POST data from fd=%d", conn[i].clen-conn[i].was_read, conn[i].fd);
+                                DBG("Trying SSL_read %ld bytes of POST data from fd=%d", conn[i].clen-conn[i].was_read, conn[i].fd);
 #endif /* DUMP */
                                 bytes = SSL_read(conn[i].ssl, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read);
                                 if ( bytes > 0 )
@@ -514,7 +514,7 @@ struct timeval  timeout;                    /* Timeout for select */
                             }
                         }
                         else        /* HTTP */
-#endif
+#endif /* HTTPS */
                         {
 //                          DBG("not secure, state=%c", conn[i].conn_state);
 
@@ -585,7 +585,7 @@ struct timeval  timeout;                    /* Timeout for select */
                                 }
                             }
                         }
-#endif
+#endif /* ASYNC */
 #ifdef HTTPS
                         if ( conn[i].secure )   /* HTTPS */
                         {
@@ -595,7 +595,7 @@ struct timeval  timeout;                    /* Timeout for select */
                             {
 #ifdef DUMP
                                 DBG("state == CONN_STATE_READY_TO_SEND_HEADER");
-                                DBG("Trying to write %ld bytes to fd=%d", strlen(conn[i].header), conn[i].fd);
+                                DBG("Trying SSL_write %ld bytes to fd=%d", strlen(conn[i].header), conn[i].fd);
 #endif /* DUMP */
                                 bytes = SSL_write(conn[i].ssl, conn[i].header, strlen(conn[i].header));
                                 set_state_sec(i, bytes);
@@ -604,7 +604,7 @@ struct timeval  timeout;                    /* Timeout for select */
                             {
 #ifdef DUMP
                                 DBG("state == %s", conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
-                                DBG("Trying to write %ld bytes to fd=%d", conn[i].clen, conn[i].fd);
+                                DBG("Trying SSL_write %ld bytes to fd=%d", conn[i].clen, conn[i].fd);
 #endif /* DUMP */
                                 if ( conn[i].static_res == NOT_STATIC )
                                     bytes = SSL_write(conn[i].ssl, conn[i].out_data, conn[i].clen);
@@ -614,7 +614,7 @@ struct timeval  timeout;                    /* Timeout for select */
                             }
                         }
                         else    /* HTTP */
-#endif
+#endif /* HTTPS */
                         {
 //                          DBG("not secure, state=%c", conn[i].conn_state);
 
@@ -676,9 +676,14 @@ struct timeval  timeout;                    /* Timeout for select */
                         if ( !conn[i].secure && conn[i].upgrade2https && 0!=strcmp(conn[i].host, APP_DOMAIN) )
                             conn[i].upgrade2https = FALSE;
 #endif
-#endif
+#endif /* HTTPS */
                         if ( conn[i].conn_state != CONN_STATE_READING_DATA )
+                        {
+#ifdef DUMP
+                            DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
+#endif
                             conn[i].conn_state = CONN_STATE_READY_FOR_PROCESS;
+                        }
                     }
 
                     /* received Expect: 100-continue before content */
@@ -754,7 +759,7 @@ struct timeval  timeout;                    /* Timeout for select */
                 last_time = G_now;
             }
         }
-#endif
+#endif /* DUMP */
 
         /* free timeout-ed */
 
@@ -765,7 +770,9 @@ struct timeval  timeout;                    /* Timeout for select */
                 ares[j].hdr.state = ASYNC_STATE_FREE;
             }
         }
-#endif
+
+#endif /* ASYNC */
+
         ++time_elapsed;
     }
 
@@ -1629,7 +1636,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
     /* find a free slot in conn */
 
-    for (i=0; (i<MAX_CONNECTIONS) && (connection != -1); ++i)
+    for ( i=0; (i<MAX_CONNECTIONS) && (connection != -1); ++i )
     {
         if ( conn[i].conn_state == CONN_STATE_DISCONNECTED )    /* free connection slot -- we'll use it */
         {
@@ -1638,6 +1645,9 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
             conn[i].secure = FALSE;
             strcpy(conn[i].ip, remote_addr);        /* possibly client IP */
             strcpy(conn[i].pip, remote_addr);       /* possibly proxy IP */
+#ifdef DUMP
+            DBG("Changing state to CONN_STATE_CONNECTED");
+#endif
             conn[i].conn_state = CONN_STATE_CONNECTED;
             conn[i].last_activity = G_now;
             connection = -1;                        /* mark as OK */
@@ -1717,7 +1727,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
     /* find a free slot in conn */
 
-    for (i=0; (i<MAX_CONNECTIONS) && (connection != -1); ++i)
+    for ( i=0; (i<MAX_CONNECTIONS) && (connection != -1); ++i )
     {
         if ( conn[i].conn_state == CONN_STATE_DISCONNECTED )    /* free connection slot -- we'll use it */
         {
@@ -1768,6 +1778,9 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
             strcpy(conn[i].ip, remote_addr);        /* possibly client IP */
             strcpy(conn[i].pip, remote_addr);       /* possibly proxy IP */
+#ifdef DUMP
+            DBG("Changing state to CONN_STATE_ACCEPTING");
+#endif
             conn[i].conn_state = CONN_STATE_ACCEPTING;
             conn[i].last_activity = G_now;
             connection = -1;                        /* mark as OK */
@@ -2641,7 +2654,7 @@ static void gen_response_header(int ci)
 
 #ifdef DUMP     /* low-level tests */
     if ( G_logLevel>=LOG_DBG && conn[ci].clen > 0 && !conn[ci].head_only && conn[ci].static_res == NOT_STATIC && (conn[ci].ctype == CONTENT_TYPE_UNSET || conn[ci].ctype == RES_TEXT || conn[ci].ctype == RES_HTML) )
-        log_long(conn[ci].out_data, conn[ci].clen, "Sent");
+        log_long(conn[ci].out_data, conn[ci].clen, "Content to send");
 #endif
 
     conn[ci].last_activity = G_now;
