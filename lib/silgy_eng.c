@@ -2797,7 +2797,7 @@ static void close_a_uses(int usi)
 static void reset_conn(int ci, char conn_state)
 {
 #ifdef DUMP
-    DBG("Resetting connection ci=%d, fd=%d, new state == %s", ci, conn[ci].fd, conn_state==CONN_STATE_CONNECTED?"CONN_STATE_CONNECTED":"CONN_STATE_DISCONNECTED");
+    DBG("Resetting connection ci=%d, fd=%d, new state == %s\n", ci, conn[ci].fd, conn_state==CONN_STATE_CONNECTED?"CONN_STATE_CONNECTED":"CONN_STATE_DISCONNECTED");
 #endif
 
     conn[ci].conn_state = conn_state;
