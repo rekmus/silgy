@@ -100,6 +100,9 @@ typedef struct {
 #define JSON_RECORD             4
 #define JSON_ARRAY              5
 
+#define JSON_KEY_LEN            31
+#define JSON_VAL_LEN            255
+
 #ifdef APP_JSON_MAX_ELEMS       /* in one JSON struct */
 #define JSON_MAX_ELEMS          APP_JSON_MAX_ELEMS
 #else
@@ -119,8 +122,8 @@ typedef struct {
 /* single JSON element */
 
 typedef struct {
-    char    name[32];
-    char    value[256];
+    char    name[JSON_KEY_LEN+1];
+    char    value[JSON_VAL_LEN+1];
     char    type;
 } json_elem_t;
 

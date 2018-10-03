@@ -59,12 +59,11 @@ static SSL *M_rest_ssl=NULL;
 #else
 static void *M_rest_ssl=NULL;    /* dummy */
 #endif /* HTTPS */
+
 #ifdef AUTO_INIT_EXPERIMENT
 static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers for auto-init */
 static int M_jsons_cnt=0;
 #endif /* AUTO_INIT_EXPERIMENT */
-static JSON M_json_pool[JSON_POOL_SIZE*JSON_MAX_LEVELS];    /* for lib_json_from_string */
-static int M_json_pool_cnt[JSON_MAX_LEVELS]={0};
 
 static void minify_1(char *dest, const char *src);
 static int minify_2(char *dest, const char *src);
@@ -2939,10 +2938,13 @@ static char *get_json_closing_square_bracket(const char *src)
 bool lib_json_from_string(JSON *json, const char *src, int len, int level)
 {
     int     i=0, j=0;
-    char    key[32];
-    char    value[256];
+    char    key[JSON_KEY_LEN+1];
+    char    value[JSON_VAL_LEN+1];
     int     index;
     char    now_key=0, now_value=0, inside_array=0, type;
+
+static JSON json_pool[JSON_POOL_SIZE*JSON_MAX_LEVELS];
+static int  json_pool_cnt[JSON_MAX_LEVELS]={0};
 
     if ( len == 0 ) len = strlen(src);
 
@@ -2972,10 +2974,12 @@ bool lib_json_from_string(JSON *json, const char *src, int len, int level)
     }
 
 #ifdef DUMP
-    char tmp[32784];
+static char tmp[JSON_BUFSIZE];
     strncpy(tmp, src+i, len-i);
     tmp[len-i] = EOS;
-    DBG("lib_json_from_string level %d [%s]", level, tmp);
+    char debug[64];
+    sprintf(debug, "lib_json_from_string level %d", level);
+    log_long(tmp, len, debug);
     if ( inside_array ) DBG("inside_array");
 #endif /* DUMP */
 
@@ -3060,22 +3064,22 @@ bool lib_json_from_string(JSON *json, const char *src, int len, int level)
 
                 if ( level < JSON_MAX_LEVELS-1 )
                 {
-                    if ( M_json_pool_cnt[level] >= JSON_POOL_SIZE ) M_json_pool_cnt[level] = 0;   /* overwrite previous ones */
+                    if ( json_pool_cnt[level] >= JSON_POOL_SIZE ) json_pool_cnt[level] = 0;   /* overwrite previous ones */
 
-                    lib_json_reset(&M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
-
+                    int pool_idx = JSON_POOL_SIZE*level + json_pool_cnt[level];
+                    lib_json_reset(&json_pool[pool_idx]);
                     /* save the pointer first as a parent record */
                     if ( inside_array )
-                        lib_json_add_record(json, NULL, &M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], FALSE, index);
+                        lib_json_add_record(json, NULL, &json_pool[pool_idx], FALSE, index);
                     else
-                        lib_json_add_record(json, key, &M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], FALSE, -1);
+                        lib_json_add_record(json, key, &json_pool[pool_idx], FALSE, -1);
                     /* fill in the destination (children) */
                     char *closing;
                     if ( (closing=get_json_closing_bracket(src+i)) )
                     {
 //                        DBG("closing [%s], len=%d", closing, closing-(src+i));
-                        lib_json_from_string(&M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], src+i, closing-(src+i)+1, level+1);
-                        ++M_json_pool_cnt[level];
+                        lib_json_from_string(&json_pool[pool_idx], src+i, closing-(src+i)+1, level+1);
+                        ++json_pool_cnt[level];
                         i += closing-(src+i);
 //                        DBG("after closing record bracket [%s]", src+i);
                     }
@@ -3095,22 +3099,22 @@ bool lib_json_from_string(JSON *json, const char *src, int len, int level)
 
                 if ( level < JSON_MAX_LEVELS-1 )
                 {
-                    if ( M_json_pool_cnt[level] >= JSON_POOL_SIZE ) M_json_pool_cnt[level] = 0;   /* overwrite previous ones */
+                    if ( json_pool_cnt[level] >= JSON_POOL_SIZE ) json_pool_cnt[level] = 0;   /* overwrite previous ones */
 
-                    lib_json_reset(&M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]]);
-
+                    int pool_idx = JSON_POOL_SIZE*level + json_pool_cnt[level];
+                    lib_json_reset(&json_pool[pool_idx]);
                     /* save the pointer first as a parent record */
                     if ( inside_array )
-                        lib_json_add_record(json, NULL, &M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], TRUE, index);
+                        lib_json_add_record(json, NULL, &json_pool[pool_idx], TRUE, index);
                     else
-                        lib_json_add_record(json, key, &M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], TRUE, -1);
+                        lib_json_add_record(json, key, &json_pool[pool_idx], TRUE, -1);
                     /* fill in the destination (children) */
                     char *closing;
                     if ( (closing=get_json_closing_square_bracket(src+i)) )
                     {
 //                        DBG("closing [%s], len=%d", closing, closing-(src+i));
-                        lib_json_from_string(&M_json_pool[JSON_POOL_SIZE*level+M_json_pool_cnt[level]], src+i, closing-(src+i)+1, level+1);
-                        ++M_json_pool_cnt[level];
+                        lib_json_from_string(&json_pool[pool_idx], src+i, closing-(src+i)+1, level+1);
+                        ++json_pool_cnt[level];
                         i += closing-(src+i);
 //                        DBG("after closing array bracket [%s]", src+i);
                     }
@@ -3169,16 +3173,16 @@ bool lib_json_from_string(JSON *json, const char *src, int len, int level)
 
             now_value = 0;
 
-            if ( src[i]==',' ) i--;     /* we need it to recognize the next array element */
+            if ( src[i]==',' ) i--;     /* we need it to detect the next array element */
         }
         else if ( now_key )
         {
-            if ( j < 30 )
+            if ( j < JSON_KEY_LEN )
                 key[j++] = src[i];
         }
         else if ( now_value )
         {
-            if ( j < 254 )
+            if ( j < JSON_VAL_LEN )
                 value[j++] = src[i];
         }
 
