@@ -3,15 +3,26 @@
    Jurek Muszynski
 -------------------------------------------------------------------------- */
 
+
 #include "silgy.h"
 
-#define BUFSIZE       8196
 
-#define STOP_COMMAND  "sudo $SILGYDIR/bin/silgystop"
-#define START_COMMAND "sudo $SILGYDIR/bin/silgystart"
+#define BUFSIZE         8196
+
+#define REASON_CONNECT  1
+#define REASON_WRITE    2
+#define REASON_READ     3
+
+#define STOP_COMMAND    "sudo $SILGYDIR/bin/silgystop"
+#define START_COMMAND   "sudo $SILGYDIR/bin/silgystart"
 
 
-void restart(void);
+char     M_watcherStopCmd[256];
+char     M_watcherStartCmd[256];
+int      M_watcherLogRestart;
+
+
+void restart(char reason);
 
 
 /* --------------------------------------------------------------------------
@@ -35,27 +46,56 @@ static struct sockaddr_in serv_addr;
     char exec_name[256];
     lib_get_exec_name(exec_name, argv[0]);
 
+//    if ( G_appdir[0] )
+//    {
+//        sprintf(config, "%s/bin/%s.conf", G_appdir, exec_name);
+//        if ( !lib_read_conf(config) )   /* no config file there */
+//        {
+//            sprintf(config, "%s.conf", exec_name);
+//            lib_read_conf(config);
+//        }
+//    }
+//    else    /* no SILGYDIR -- try current dir */
+//    {
+//        sprintf(config, "%s.conf", exec_name);
+//        lib_read_conf(config);
+//    }
+
     if ( G_appdir[0] )
     {
-        sprintf(config, "%s/bin/%s.conf", G_appdir, exec_name);
+        sprintf(config, "%s/bin/silgy.conf", G_appdir);
         if ( !lib_read_conf(config) )   /* no config file there */
         {
-            sprintf(config, "%s.conf", exec_name);
+            strcpy(config, "silgy.conf");
             lib_read_conf(config);
         }
     }
     else    /* no SILGYDIR -- try current dir */
     {
-        sprintf(config, "%s.conf", exec_name);
+        strcpy(config, "silgy.conf");
         lib_read_conf(config);
     }
 
-    if ( !silgy_read_param_int("logLevel", &G_logLevel) )
+    /* ------------------------------------------------------------------- */
+
+    if ( !silgy_read_param_int("watcherLogLevel", &G_logLevel) )
         G_logLevel = 0;  /* don't create log file */
+
+    if ( !silgy_read_param_int("watcherLogToStdout", &G_logToStdout) )
+        G_logToStdout = 0;
+
+    if ( !silgy_read_param_str("watcherStopCmd", M_watcherStopCmd) )
+        strcpy(M_watcherStopCmd, STOP_COMMAND);
+
+    if ( !silgy_read_param_str("watcherStartCmd", M_watcherStartCmd) )
+        strcpy(M_watcherStartCmd, START_COMMAND);
+
+    if ( !silgy_read_param_int("watcherLogRestart", &M_watcherLogRestart) )
+        M_watcherLogRestart = 3;
 
     /* start log --------------------------------------------------------- */
 
-    if ( !log_start("watcher", G_test) )
+    if ( !log_start("watcher", FALSE) )
 		return EXIT_FAILURE;
 
     /* ------------------------------------------------------------------- */
@@ -77,8 +117,7 @@ static struct sockaddr_in serv_addr;
     {
         ERR("connect failed, errno = %d (%s)", errno, strerror(errno));
         close(sockfd);
-        INF("Restarting...");
-        restart();
+        restart(REASON_CONNECT);
         log_finish();
         return EXIT_SUCCESS;
     }
@@ -93,7 +132,7 @@ static struct sockaddr_in serv_addr;
 
     p = stpcpy(p, "GET / HTTP/1.1\r\n");
     p = stpcpy(p, "Host: 127.0.0.1\r\n");
-    p = stpcpy(p, "User-Agent: Silgy Watcher (Bot)\r\n");   /* don't bother Silgy with creating a user session */
+    p = stpcpy(p, "User-Agent: Silgy Watcher Bot\r\n");   /* don't bother Silgy with creating a user session */
     p = stpcpy(p, "Connection: close\r\n");
     p = stpcpy(p, "\r\n");
 
@@ -104,6 +143,7 @@ static struct sockaddr_in serv_addr;
         ERR("write failed, errno = %d (%s)", errno, strerror(errno));
         close(conn);
         close(sockfd);
+        restart(REASON_WRITE);
         log_finish();
         return EXIT_SUCCESS;
     }
@@ -120,8 +160,12 @@ static struct sockaddr_in serv_addr;
     }
     else
     {
-        WAR("Response NOT OK, restarting...");
-        restart();
+        ERR("read failed, errno = %d (%s)", errno, strerror(errno));
+        close(conn);
+        close(sockfd);
+        restart(REASON_READ);
+        log_finish();
+        return EXIT_SUCCESS;
     }
 
     /* ------------------------------------------------------------------- */
@@ -138,19 +182,34 @@ static struct sockaddr_in serv_addr;
 /* --------------------------------------------------------------------------
    Restart
 -------------------------------------------------------------------------- */
-void restart()
+void restart(char reason)
 {
-#ifdef APP_ADMIN_EMAIL
-    if ( strlen(APP_ADMIN_EMAIL) )
-        sendemail(0, APP_ADMIN_EMAIL, "Silgy restart", "Silgy Watcher had to restart web server.");
-#endif
+    if ( M_watcherLogRestart > 0 )
+    {
+        G_logLevel = M_watcherLogRestart;
+        log_start("watcher", FALSE);
+    }
+
+    if ( reason == REASON_CONNECT )
+        ALWAYS("Couldn't connect");
+    else if ( reason == REASON_WRITE )
+        ALWAYS("Couldn't send the request");
+    else if ( reason == REASON_READ )
+        ALWAYS("Couldn't read the response");
+
+    ALWAYS("Restarting...");
 
     INF("Stopping...");
-    system(STOP_COMMAND);
+    system(M_watcherStopCmd);
 
     INF("Waiting 1 second...");
     sleep(1);
 
     INF("Starting...");
-    system(START_COMMAND);
+    system(M_watcherStartCmd);
+
+#ifdef APP_ADMIN_EMAIL
+    if ( strlen(APP_ADMIN_EMAIL) )
+        sendemail(0, APP_ADMIN_EMAIL, "Silgy restart", "Silgy Watcher had to restart web server.");
+#endif
 }

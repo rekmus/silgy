@@ -81,7 +81,7 @@ typedef char                        bool;
 #endif
 
 
-#define WEB_SERVER_VERSION          "3.6.2"
+#define WEB_SERVER_VERSION          "3.6.3"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
