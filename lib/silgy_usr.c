@@ -1224,9 +1224,9 @@ unsigned long   sql_records;
 
     tries = atoi(sql_row[2]);
 
-    if ( tries > 9 )
+    if ( tries > 12 )
     {
-        WAR("Key tried more than 9 times");
+        WAR("Key tried more than 12 times");
         mysql_free_result(result);
         return ERR_LINK_TOO_MANY_TRIES;
     }
@@ -1261,12 +1261,13 @@ unsigned long   sql_records;
 int silgy_usr_reset_password(int ci)
 {
     int         ret;
-    QSVAL       linkkey;
     QSVAL       email;
+    QSVAL       linkkey;
     QSVAL       passwd;
     QSVAL       rpasswd;
     QSVAL       submit;
     int         plen;
+    long        uid;
     char        sql_query[SQLBUF];
     char        str1[32], str2[32];
     MYSQL_RES   *result;
@@ -1275,9 +1276,10 @@ unsigned long   sql_records;
 
     DBG("silgy_usr_reset_password");
 
-    strcpy(linkkey, US.additional);   /* from here instead of URI */
+//    strcpy(linkkey, US.additional);   /* from here instead of URI */
 
     if ( !QS_HTML_ESCAPE("email", email)
+            || !QS_HTML_ESCAPE("k", linkkey)
             || !QS_HTML_ESCAPE("passwd", passwd)
             || !QS_HTML_ESCAPE("rpasswd", rpasswd) )
     {
@@ -1291,7 +1293,7 @@ unsigned long   sql_records;
 
     /* remember form fields */
 
-    strcpy(US.email, email);
+    strcpy(US.email_tmp, email);
 
     /* general validation */
 
@@ -1302,20 +1304,21 @@ unsigned long   sql_records;
     else if ( 0 != strcmp(passwd, rpasswd) )    /* passwords differ */
         return ERR_PASSWORD_DIFFERENT;
 
-    /* verify the email-key pair */
+    /* verify the key */
+
+	if ( (ret=silgy_usr_verify_passwd_reset_key(ci, linkkey, &uid)) != OK )
+		return ret;
+
+    /* verify that emails match each other */
 
 #ifdef USERSBYEMAIL
-    sprintf(sql_query, "SELECT name, email FROM users WHERE id=%ld", US.uid);
+    sprintf(sql_query, "SELECT name, email FROM users WHERE id=%ld", uid);
 #else
-    sprintf(sql_query, "SELECT login, email FROM users WHERE id=%ld", US.uid);
+    sprintf(sql_query, "SELECT login, email FROM users WHERE id=%ld", uid);
 #endif
-
     DBG("sql_query: %s", sql_query);
-
     mysql_query(G_dbconn, sql_query);
-
     result = mysql_store_result(G_dbconn);
-
     if ( !result )
     {
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
@@ -1351,7 +1354,7 @@ unsigned long   sql_records;
 
     mysql_free_result(result);
 
-    sprintf(sql_query, "UPDATE users SET passwd1='%s', passwd2='%s' WHERE id=%ld", str1, str2, US.uid);
+    sprintf(sql_query, "UPDATE users SET passwd1='%s', passwd2='%s' WHERE id=%ld", str1, str2, uid);
 // !!!!!!   DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -1361,7 +1364,7 @@ unsigned long   sql_records;
 
     /* remove all password reset keys */
 
-    sprintf(sql_query, "DELETE FROM users_p_resets WHERE user_id=%ld", US.uid);
+    sprintf(sql_query, "DELETE FROM users_p_resets WHERE user_id=%ld", uid);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
