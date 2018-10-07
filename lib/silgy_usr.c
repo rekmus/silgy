@@ -844,7 +844,7 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
     /* send an email to admin */
 
 #ifdef APP_CONTACT_EMAIL
-    sendemail(ci, APP_CONTACT_EMAIL, "New message!", message);
+    silgy_email(APP_CONTACT_EMAIL, "New message!", message);
 #endif
 
     return OK;
@@ -1059,9 +1059,9 @@ int silgy_usr_send_passwd_reset_email(int ci)
 unsigned long   sql_records;
     long        uid;
     char        login_name[LOGIN_LEN+1];
-    char        linkkey[32];
-    char        subject[64];
-    char        message[1024];
+    char        linkkey[256];
+    char        subject[256];
+    char        message[4096];
 
     DBG("silgy_usr_send_passwd_reset_email");
 
@@ -1111,7 +1111,7 @@ unsigned long   sql_records;
 
         silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
 
-        sprintf(sql_query, "INSERT INTO users_p_resets (user_id,linkkey,created) VALUES (%ld,'%s','%s')", uid, linkkey, G_dt);
+        sprintf(sql_query, "INSERT INTO users_p_resets (linkkey,user_id,created,tries) VALUES ('%s',%ld,'%s',0)", linkkey, uid, G_dt);
         DBG("sql_query: %s", sql_query);
 
         if ( mysql_query(G_dbconn, sql_query) )
@@ -1122,24 +1122,46 @@ unsigned long   sql_records;
 
         /* send an email */
 
+        char tmp[1024];
+        char *p=message;
+
+        sprintf(tmp, "Dear %s,\n\n", login_name);
+        p = stpcpy(p, tmp);
+        sprintf(tmp, "You have requested to have your password reset for your account at %s. Please visit this URL to reset your password:\n\n", conn[ci].website);
+        p = stpcpy(p, tmp);
+
+#ifdef HTTPS
+        if ( G_test )
+            sprintf(tmp, "http://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
+        else
+            sprintf(tmp, "https://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
+#else
+        sprintf(tmp, "http://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
+#endif
+        p = stpcpy(p, tmp);
+
+        p = stpcpy(p, "Please keep in mind that this link will only be valid for the next 24 hours.\n\n");
+        p = stpcpy(p, "If you did this by mistake or it wasn't you, you can safely ignore this email.\n\n");
+#ifdef APP_CONTACT_EMAIL
+        sprintf(tmp, "In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
+        p = stpcpy(p, tmp);
+#endif
+        p = stpcpy(p, "Kind Regards\n");
+
+        sprintf(tmp, "%s\n", conn[ci].website);
+        p = stpcpy(p, tmp);
+
         sprintf(subject, "%s Password Reset", conn[ci].website);
 
-        sprintf(message, "Dear %s,\n\nYou have requested to have your password reset for your account at %s. Please visit this URL to reset your password:\n\n", login_name, conn[ci].host);
-        sprintf(message, "%s%s://%s/preset?k=%s\n\n", message, PROTOCOL, conn[ci].host, linkkey);
-        sprintf(message, "%sPlease keep in mind that this link will only be valid for the next 24 hours.\n\n", message);
-        sprintf(message, "%sIf you did this by mistake or it wasn't you, you can safely ignore this email.\n\n", message);
-#ifdef APP_CONTACT_EMAIL
-        sprintf(message, "%sIn case you needed any help, please contact us at %s.\n", message, APP_CONTACT_EMAIL);
-#endif
-        sprintf(message, "%sKind Regards\n%s\n", message, conn[ci].website);
-
-        if ( !sendemail(ci, email, subject, message) )
+        if ( !silgy_email(email, subject, message) )
             return ERR_INT_SERVER_ERROR;
     }
     else
     {
         mysql_free_result(result);
     }
+
+    INF("Password reset link requested for [%s]", email);
 
     return OK;
 }
@@ -1154,13 +1176,17 @@ int silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid)
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
+    char        esc_linkkey[256];
+    int         tries;
 
     DBG("silgy_usr_verify_passwd_reset_key");
 
     if ( strlen(linkkey) != PASSWD_RESET_KEY_LEN )
         return ERR_LINK_BROKEN;
 
-    sprintf(sql_query, "SELECT user_id, created FROM users_p_resets WHERE linkkey='%s'", silgy_sql_esc(linkkey));
+    strcpy(esc_linkkey, silgy_sql_esc(linkkey));
+
+    sprintf(sql_query, "SELECT user_id, created, tries FROM users_p_resets WHERE linkkey='%s'", esc_linkkey);
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -1187,20 +1213,43 @@ unsigned long   sql_records;
 
     /* validate expiry time */
 
-    if ( db2epoch(sql_row[1]) < G_now-3600*24 ) /* older than 24 hours? */
+    if ( db2epoch(sql_row[1]) < G_now-3600*24 )  /* older than 24 hours? */
     {
-        DBG("Key created more than 24 hours ago");
+        WAR("Key created more than 24 hours ago");
         mysql_free_result(result);
         return ERR_LINK_MAY_BE_EXPIRED;
     }
 
-    /* otherwise everything's OK */
+    /* validate tries */
+
+    tries = atoi(sql_row[2]);
+
+    if ( tries > 9 )
+    {
+        WAR("Key tried more than 9 times");
+        mysql_free_result(result);
+        return ERR_LINK_TOO_MANY_TRIES;
+    }
+
+    /* otherwise everything's OK ----------------------------------------- */
+
+    /* get the user id */
 
     *uid = atol(sql_row[0]);
 
     mysql_free_result(result);
 
     DBG("Key ok, uid = %ld", *uid);
+
+    /* update tries counter */
+
+    sprintf(sql_query, "UPDATE users_p_resets SET tries=%d WHERE linkkey='%s'", tries+1, esc_linkkey);
+    DBG("sql_query: %s", sql_query);
+    if ( mysql_query(G_dbconn, sql_query) )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
 
     return OK;
 }
@@ -1308,6 +1357,16 @@ unsigned long   sql_records;
     {
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
+    }
+
+    /* remove all password reset keys */
+
+    sprintf(sql_query, "DELETE FROM users_p_resets WHERE user_id=%ld", US.uid);
+    DBG("sql_query: %s", sql_query);
+    if ( mysql_query(G_dbconn, sql_query) )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+//        return ERR_INT_SERVER_ERROR;  ignore it
     }
 
     return OK;
@@ -1565,7 +1624,7 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
         strcpy(dest, "It looks like this password-reset link is broken. If you clicked on the link you've received from us in email, you can try to copy and paste it in your browser's address instead.");
     else if ( errcode == ERR_LINK_MAY_BE_EXPIRED )
         strcpy(dest, "Your password-reset link is invalid or may be expired. In this case you can <a href=\"forgot\">request password reset link again</a>.");
-    else if ( errcode == ERR_LINK_EXPIRED )
+    else if ( errcode == ERR_LINK_EXPIRED || errcode == ERR_LINK_TOO_MANY_TRIES )
         strcpy(dest, "It looks like you entered email that doesn't exist in our database or your password-reset link has expired. In this case you can <a href=\"forgot\">request password reset link again</a>.");
     else if ( errcode == MSG_PASSWORD_CHANGED )
         strcpy(dest, "Your password has been changed. You can now log in:");

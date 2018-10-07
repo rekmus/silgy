@@ -47,6 +47,13 @@ typedef char                    QSVAL[QSBUF];
 //typedef struct QSVAL          { char x[QSBUF]; } QSVAL;
 
 
+#ifdef APP_EMAIL_FROM_USER
+#define EMAIL_FROM_USER         APP_EMAIL_FROM_USER
+#else
+#define EMAIL_FROM_USER         "noreply"
+#endif
+
+
 #define CONNECT 0
 #define READ    1
 #define WRITE   2
@@ -303,7 +310,7 @@ extern "C" {
     void lib_json_log_inf(JSON *json, const char *name);
     void get_byteorder(void);
     time_t db2epoch(const char *str);
-    bool sendemail(int ci, const char *to, const char *subject, const char *message);
+    bool silgy_email(const char *to, const char *subject, const char *message);
     int silgy_minify(char *dest, const char *src);
     void date_inc(char *str, int days, int *dow);
     int date_cmp(const char *str1, const char *str2);

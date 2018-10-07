@@ -3756,28 +3756,28 @@ struct tm   t={0};
 /* --------------------------------------------------------------------------
    Send an email
 -------------------------------------------------------------------------- */
-bool sendemail(int ci, const char *to, const char *subject, const char *message)
+bool silgy_email(const char *to, const char *subject, const char *message)
 {
 #ifndef _WIN32
-    char    sender[256];
-    char    *colon;
-    char    comm[256];
+    char    sender[512];
+    char    comm[512];
 
-#ifndef ASYNC_SERVICE   /* web server mode */
+//#ifndef ASYNC_SERVICE   /* web server mode */
 
-    sprintf(sender, "%s <noreply@%s>", conn[ci].website, conn[ci].host);
+//    sprintf(sender, "%s <noreply@%s>", conn[ci].website, conn[ci].host);
 
     /* happens when using non-standard port */
 
-    if ( G_test && (colon=strchr(sender, ':')) )
-    {
-        *colon = '>';
-        *(++colon) = EOS;
-        DBG("sender truncated to [%s]", sender);
-    }
-#else
-    sprintf(sender, "%s <noreply@%s>", APP_WEBSITE, APP_DOMAIN);
-#endif
+//    char    *colon;
+//    if ( G_test && (colon=strchr(sender, ':')) )
+//    {
+//        *colon = '>';
+//        *(++colon) = EOS;
+//        DBG("sender truncated to [%s]", sender);
+//    }
+//#else
+    sprintf(sender, "%s <%s@%s>", APP_WEBSITE, EMAIL_FROM_USER, APP_DOMAIN);
+//#endif
 
     sprintf(comm, "/usr/lib/sendmail -t -f \"%s\"", sender);
 
@@ -3799,9 +3799,14 @@ bool sendemail(int ci, const char *to, const char *subject, const char *message)
         pclose(mailpipe);
     }
 
-#endif  /* _WIN32 */
-
     return TRUE;
+
+#else   /* Windows */
+
+    WAR("There's no email service for Windows");
+    return FALSE;
+
+#endif  /* _WIN32 */
 }
 
 

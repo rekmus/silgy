@@ -50,8 +50,9 @@
 #define ERR_LINK_BROKEN             61
 #define ERR_LINK_MAY_BE_EXPIRED     62
 #define ERR_LINK_EXPIRED            63
-#define ERR_ROBOT                   64
-#define ERR_WEBSITE_FIRST_LETTER    65
+#define ERR_LINK_TOO_MANY_TRIES     64
+#define ERR_ROBOT                   65
+#define ERR_WEBSITE_FIRST_LETTER    66
 /* internal errors */
 
 /* warnings -- yellow */

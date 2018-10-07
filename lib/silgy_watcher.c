@@ -210,6 +210,6 @@ void restart(char reason)
 
 #ifdef APP_ADMIN_EMAIL
     if ( strlen(APP_ADMIN_EMAIL) )
-        sendemail(0, APP_ADMIN_EMAIL, "Silgy restart", "Silgy Watcher had to restart web server.");
+        silgy_email(APP_ADMIN_EMAIL, "Silgy restart", "Silgy Watcher had to restart web server.");
 #endif
 }
