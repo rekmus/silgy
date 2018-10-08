@@ -661,6 +661,7 @@ extern int      G_dbPort;
 extern char     G_dbName[128];
 extern char     G_dbUser[128];
 extern char     G_dbPassword[128];
+extern int      G_usersRequireAccountActivation;
 extern char     G_blockedIPList[256];
 extern int      G_ASYNCDefTimeout;
 extern int      G_RESTTimeout;

@@ -10,69 +10,78 @@
 #define SILGY_USR_H
 
 
-#define LUSES_TIMEOUT               1800            /* logged in user session timeout in seconds (120 for tests / 1800 live) */
-                                                    /* it's now how long it stays in cache */
+#define LUSES_TIMEOUT                   1800                    /* logged in user session timeout in seconds (120 for tests / 1800 live) */
+                                                                /* it's now how long it stays in cache */
 
-#define DB_UAGENT_LEN               120             /* User-Agent length stored in ulogins table */
-#ifdef APP_MIN_USERNAME_LEN                         /* minimum user name length */
-#define MIN_USERNAME_LEN            APP_MIN_USERNAME_LEN               
+#define DB_UAGENT_LEN                   120                     /* User-Agent length stored in ulogins table */
+#ifdef APP_MIN_USERNAME_LEN                                     /* minimum user name length */
+#define MIN_USERNAME_LEN                APP_MIN_USERNAME_LEN               
 #else
-#define MIN_USERNAME_LEN            2               
+#define MIN_USERNAME_LEN                2               
 #endif
-#ifdef APP_MIN_PASSWORD_LEN                         /* minimum password length */
-#define MIN_PASSWORD_LEN            APP_MIN_PASSWORD_LEN
+#ifdef APP_MIN_PASSWORD_LEN                                     /* minimum password length */
+#define MIN_PASSWORD_LEN                APP_MIN_PASSWORD_LEN
 #else
-#define MIN_PASSWORD_LEN            5               /* default minimal password length */
+#define MIN_PASSWORD_LEN                5                       /* default minimal password length */
 #endif
-#define PASSWD_RESET_KEY_LEN        30              /* password reset key length */
+#define PASSWD_RESET_KEY_LEN            30                      /* password reset key length */
+
+
+/* user status */
+
+#define USER_STATUS_INACTIVE            0
+#define USER_STATUS_ACTIVE              1
+
 
 /* errors -- red */
 
 /* login */
-#define ERR_INVALID_LOGIN           10
-#define ERR_USERNAME_TOO_SHORT      11
-#define ERR_USERNAME_CHARS          12
-#define ERR_USERNAME_TAKEN          13
+#define ERR_INVALID_LOGIN               10
+#define ERR_USERNAME_TOO_SHORT          11
+#define ERR_USERNAME_CHARS              12
+#define ERR_USERNAME_TAKEN              13
 /* email */
-#define ERR_EMAIL_EMPTY             20
-#define ERR_EMAIL_FORMAT            21
-#define ERR_EMAIL_FORMAT_OR_EMPTY   22
-#define ERR_EMAIL_TAKEN             23
+#define ERR_EMAIL_EMPTY                 20
+#define ERR_EMAIL_FORMAT                21
+#define ERR_EMAIL_FORMAT_OR_EMPTY       22
+#define ERR_EMAIL_TAKEN                 23
 /* password */
-#define ERR_INVALID_PASSWORD        30
-#define ERR_PASSWORD_TOO_SHORT      31
+#define ERR_INVALID_PASSWORD            30
+#define ERR_PASSWORD_TOO_SHORT          31
 /* repeat password */
-#define ERR_PASSWORD_DIFFERENT      40
+#define ERR_PASSWORD_DIFFERENT          40
 /* old password */
-#define ERR_OLD_PASSWORD            50
+#define ERR_OLD_PASSWORD                50
 /* session / link / other */
-#define ERR_SESSION_EXPIRED         60
-#define ERR_LINK_BROKEN             61
-#define ERR_LINK_MAY_BE_EXPIRED     62
-#define ERR_LINK_EXPIRED            63
-#define ERR_LINK_TOO_MANY_TRIES     64
-#define ERR_ROBOT                   65
-#define ERR_WEBSITE_FIRST_LETTER    66
+#define ERR_SESSION_EXPIRED             60
+#define ERR_LINK_BROKEN                 61
+#define ERR_LINK_MAY_BE_EXPIRED         62
+#define ERR_LINK_EXPIRED                63
+#define ERR_LINK_TOO_MANY_TRIES         64
+#define ERR_ROBOT                       65
+#define ERR_WEBSITE_FIRST_LETTER        66
+#define ERR_NOT_ACTIVATED               67
 /* internal errors */
 
 /* warnings -- yellow */
 
-#define WAR_NO_EMAIL                101
-#define WAR_BEFORE_DELETE           102
-#define WAR_ULA                     103
+#define WAR_NO_EMAIL                    101
+#define WAR_BEFORE_DELETE               102
+#define WAR_ULA                         103
 
 /* messages -- green */
 
-#define MSG_WELCOME                 202
-#define MSG_USER_LOGGED_OUT         203
-#define MSG_CHANGES_SAVED           204
-#define MSG_REQUEST_SENT            205
-#define MSG_PASSWORD_CHANGED        206
-#define MSG_MESSAGE_SENT            207
-#define MSG_ACCOUNT_DELETED         208
+#define MSG_WELCOME                     202
+#define MSG_WELCOME_AFTER_ACTIVATION    203
+#define MSG_USER_LOGGED_OUT             204
+#define MSG_CHANGES_SAVED               205
+#define MSG_REQUEST_SENT                206
+#define MSG_PASSWORD_CHANGED            207
+#define MSG_MESSAGE_SENT                208
+#define MSG_ACCOUNT_DELETED             209
 
-#define LUSES_TIMEOUT               1800            /* logged in user session timeout in seconds (120 for tests / 1800 live) */
-                                                    /* it's now how long it stays in cache */
+#define LUSES_TIMEOUT                   1800                /* logged in user session timeout in seconds (120 for tests / 1800 live) */
+                                                            /* it's now how long it stays in cache */
 
 /* user authentication */
 
@@ -121,6 +130,7 @@ extern "C" {
     int silgy_usr_email_registered(int ci);
     int silgy_usr_send_passwd_reset_email(int ci);
     int silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid);
+    int silgy_usr_activate(int ci);
     int silgy_usr_reset_password(int ci);
     void silgy_usr_logout(int ci);
     int silgy_usr_set_str(int ci, const char *us_key, const char *us_val);

@@ -57,6 +57,7 @@ int         G_dbPort;
 char        G_dbName[128];
 char        G_dbUser[128];
 char        G_dbPassword[128];
+int         G_usersRequireAccountActivation;
 char        G_blockedIPList[256];
 int         G_ASYNCDefTimeout;
 /* end of config params */
@@ -1016,6 +1017,7 @@ static void read_conf()
     G_dbName[0] = EOS;
     G_dbUser[0] = EOS;
     G_dbPassword[0] = EOS;
+    G_usersRequireAccountActivation = 0;
     G_blockedIPList[0] = EOS;
     G_ASYNCDefTimeout = ASYNC_DEF_TIMEOUT;
     G_RESTTimeout = CALL_REST_DEFAULT_TIMEOUT;
@@ -1050,6 +1052,7 @@ static void read_conf()
         silgy_read_param_str("dbName", G_dbName);
         silgy_read_param_str("dbUser", G_dbUser);
         silgy_read_param_str("dbPassword", G_dbPassword);
+        silgy_read_param_int("usersRequireAccountActivation", &G_usersRequireAccountActivation);
         silgy_read_param_str("blockedIPList", G_blockedIPList);
         silgy_read_param_int("ASYNCDefTimeout", &G_ASYNCDefTimeout);
         silgy_read_param_int("RESTTimeout", &G_RESTTimeout);

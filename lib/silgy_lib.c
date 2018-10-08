@@ -3805,6 +3805,8 @@ struct tm   t={0};
 -------------------------------------------------------------------------- */
 bool silgy_email(const char *to, const char *subject, const char *message)
 {
+    DBG("Sending email to [%s], subject [%s]", to, subject);
+
 #ifndef _WIN32
     char    sender[512];
     char    comm[512];
@@ -3837,7 +3839,6 @@ bool silgy_email(const char *to, const char *subject, const char *message)
     }
     else
     {
-        DBG("Sending email to: [%s], subject: [%s]", to, subject);
         fprintf(mailpipe, "To: %s\n", to);
         fprintf(mailpipe, "From: %s\n", sender);
         fprintf(mailpipe, "Subject: %s\n\n", subject);

@@ -356,8 +356,8 @@ static int email_exists(const char *email)
 
 
 /* --------------------------------------------------------------------------
-  log user in -- called either by l_usession_ok or silgy_usr_login
-  Authentication has already been done prior to calling this
+   Log user in -- called either by l_usession_ok or silgy_usr_login
+   Authentication has already been done prior to calling this
 -------------------------------------------------------------------------- */
 static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_about, long visits, const char *sesid)
 {
@@ -453,19 +453,81 @@ unsigned long   sql_records;
 }
 
 
+/* --------------------------------------------------------------------------
+   Send activation link
+-------------------------------------------------------------------------- */
+static int send_activation_link(int ci, const char *login, const char *email)
+{
+    char linkkey[PASSWD_RESET_KEY_LEN+1];
+    char sql_query[SQLBUF];
+    char subject[256];
+    char message[4096];
+    
+    /* generate the key */
+
+    silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
+
+    sprintf(sql_query, "INSERT INTO users_activations (linkkey,user_id,created,tries) VALUES ('%s',%ld,'%s',0)", linkkey, US.uid, G_dt);
+    DBG("sql_query: %s", sql_query);
+
+    if ( mysql_query(G_dbconn, sql_query) )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    /* send an email */
+
+    char tmp[1024];
+    char *p=message;
+
+    sprintf(tmp, "Dear %s,\n\n", login[0]?login:"User");
+    p = stpcpy(p, tmp);
+    sprintf(tmp, "Welcome to %s! Your account requires activation. Please visit this URL to activate your account:\n\n", conn[ci].website);
+    p = stpcpy(p, tmp);
+
+#ifdef HTTPS
+    if ( G_test )
+        sprintf(tmp, "http://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
+    else
+        sprintf(tmp, "https://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
+#else
+    sprintf(tmp, "http://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
+#endif
+    p = stpcpy(p, tmp);
+
+    p = stpcpy(p, "Please keep in mind that this link will only be valid for the next 24 hours.\n\n");
+    p = stpcpy(p, "If you did this by mistake or it wasn't you, you can safely ignore this email.\n\n");
+#ifdef APP_CONTACT_EMAIL
+    sprintf(tmp, "In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
+    p = stpcpy(p, tmp);
+#endif
+    p = stpcpy(p, "Kind Regards\n");
+
+    sprintf(tmp, "%s\n", conn[ci].website);
+    p = stpcpy(p, tmp);
+
+    sprintf(subject, "%s Account Activation", conn[ci].website);
+
+    if ( !silgy_email(email, subject, message) )
+        return ERR_INT_SERVER_ERROR;
+
+    return OK;
+}
+
 
 /* ------------------------------------------------------------------------------------------------------------
     Public user functions
 ------------------------------------------------------------------------------------------------------------ */
 
 /* --------------------------------------------------------------------------
-  log user in / explicit from Log In page
-  return OK or
-  ERR_INVALID_REQUEST
-  ERR_INT_SERVER_ERROR
-  ERR_INVALID_LOGIN
-  and through do_login:
-  ERR_SERVER_TOOBUSY
+   Log user in / explicit from Log In page
+   Return OK or:
+   ERR_INVALID_REQUEST
+   ERR_INT_SERVER_ERROR
+   ERR_INVALID_LOGIN
+   and through do_login:
+   ERR_SERVER_TOOBUSY
 -------------------------------------------------------------------------- */
 int silgy_usr_login(int ci)
 {
@@ -473,6 +535,7 @@ int silgy_usr_login(int ci)
     QSVAL       email;
     char        name[UNAME_LEN+1];
     char        about[256];
+    short       user_status;
     QSVAL       passwd;
     QSVAL       keep;
     char        ulogin[MAX_VALUE_LEN*2+1];
@@ -514,7 +577,7 @@ unsigned long   sql_records;
     }
     stp_right(login);
     strcpy(ulogin, upper(login));
-    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,ula_time,ula_cnt,visits,deleted FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
+    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,status,ula_time,ula_cnt,visits,deleted FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
 
 #endif
 
@@ -551,12 +614,15 @@ unsigned long   sql_records;
     strcpy(p1, sql_row[4]);
     strcpy(p2, sql_row[5]);
     strcpy(about, sql_row[6]?sql_row[6]:"");
-    strcpy(ula_time, sql_row[7]?sql_row[7]:"");
-    ula_cnt = atol(sql_row[8]);
-    visits = atol(sql_row[9]);
-    strcpy(deleted, sql_row[10]?sql_row[10]:"N");
+    user_status = atoi(sql_row[7]);
+    strcpy(ula_time, sql_row[8]?sql_row[8]:"");
+    ula_cnt = atol(sql_row[9]);
+    visits = atol(sql_row[10]);
+    strcpy(deleted, sql_row[11]?sql_row[11]:"N");
 
     mysql_free_result(result);
+
+    /* deleted? */
 
     if ( deleted[0]=='Y' )
     {
@@ -599,6 +665,14 @@ unsigned long   sql_records;
         return ERR_INVALID_LOGIN;   /* invalid user and/or password */
     }
 
+    /* activated? */
+
+    if ( user_status != USER_STATUS_ACTIVE )
+    {
+        WAR("User not activated");
+        return ERR_NOT_ACTIVATED;
+    }
+
     /* successful login ------------------------------------------------------------ */
 
     if ( ula_cnt )  /* clear it */
@@ -612,11 +686,6 @@ unsigned long   sql_records;
             return ERR_INT_SERVER_ERROR;
         }
     }
-
-    /* generate sesid */
-
-//  silgy_random(sesid, SESID_LEN);
-//  DBG("Generated new sesid: [%s]", sesid);
 
     /* use anonymous sesid */
 
@@ -711,6 +780,12 @@ int silgy_usr_create_account(int ci)
         strcpy(US.email, email);
     }
 
+    if ( G_usersRequireAccountActivation && !email[0] )
+    {
+        WAR("Invalid request (email missing)");
+        return ERR_INVALID_REQUEST;
+    }
+
 #ifdef USERSBYEMAIL
     if ( !email[0] )
     {
@@ -750,16 +825,16 @@ int silgy_usr_create_account(int ci)
         return ERR_ROBOT;
 
 #ifdef USERSBYEMAIL
-        if ( !email[0] )                            /* email empty */
+        if ( !email[0] )                                /* email empty */
             return ERR_EMAIL_EMPTY;
-        else if ( !valid_email(email) )             /* invalid email format */
+        else if ( !valid_email(email) )                 /* invalid email format */
             return ERR_EMAIL_FORMAT;
 #else
-        if ( strlen(login) < MIN_USERNAME_LEN )    /* user name too short */
+        if ( strlen(login) < MIN_USERNAME_LEN )         /* user name too short */
             return ERR_USERNAME_TOO_SHORT;
-        else if ( !valid_username(login) )          /* only certain chars are allowed in user name */
+        else if ( !valid_username(login) )              /* only certain chars are allowed in user name */
             return ERR_USERNAME_CHARS;
-        else if ( OK != (ret=user_exists(login)) )  /* user name taken */
+        else if ( OK != (ret=user_exists(login)) )      /* user name taken */
             return ret;
         else if ( email[0] && !valid_email(email) )     /* invalid email format */
             return ERR_EMAIL_FORMAT_OR_EMPTY;
@@ -767,16 +842,12 @@ int silgy_usr_create_account(int ci)
 
     if ( email[0] && OK != (ret=email_exists(email)) )  /* email in use */
         return ret;
-    else if ( plen < MIN_PASSWORD_LEN )               /* password too short */
+    else if ( plen < MIN_PASSWORD_LEN )                 /* password too short */
         return ERR_PASSWORD_TOO_SHORT;
-    else if ( 0 != strcmp(passwd, rpasswd) )        /* passwords differ */
+    else if ( 0 != strcmp(passwd, rpasswd) )            /* passwords differ */
         return ERR_PASSWORD_DIFFERENT;
 
     /* welcome! -- and generate password hashes ------------------------------------------------------- */
-
-//    strcpy(login_san, silgy_sql_esc(login));
-//    strcpy(email_san, silgy_sql_esc(email));
-//    strcpy(name_san, silgy_sql_esc(name));
 
 #ifdef USERSBYEMAIL
     doit(str1, str2, email, email, passwd);
@@ -787,7 +858,14 @@ int silgy_usr_create_account(int ci)
     strcpy(login_u, upper(login));
     strcpy(email_u, upper(email));
 
-    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,passwd1,passwd2,about,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s',0,'%s',0,0,0,'N')", login, login_u, email, email_u, name, str1, str2, about, G_dt);
+    short user_status;
+
+    if ( G_usersRequireAccountActivation )
+        user_status = USER_STATUS_INACTIVE;
+    else
+        user_status = USER_STATUS_ACTIVE;
+
+    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,passwd1,passwd2,about,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s',%hd,'%s',0,0,0,'N')", login, login_u, email, email_u, name, str1, str2, about, user_status, G_dt);
 
     DBG("sql_query: INSERT INTO users (id,login,email,name,...) VALUES (0,'%s','%s','%s',...)", login, email, name);
 
@@ -798,6 +876,12 @@ int silgy_usr_create_account(int ci)
     }
 
     US.uid = mysql_insert_id(G_dbconn);
+
+    if ( G_usersRequireAccountActivation )
+    {
+        if ( (ret=send_activation_link(ci, login, email)) != OK )
+            return ret;
+    }
 
 #ifdef USERSBYEMAIL
     INF("User [%s] created", email);
@@ -1261,6 +1345,58 @@ unsigned long   sql_records;
 
 
 /* --------------------------------------------------------------------------
+   Activate user account
+-------------------------------------------------------------------------- */
+int silgy_usr_activate(int ci)
+{
+    int         ret;
+    QSVAL       linkkey;
+    long        uid;
+    char        sql_query[SQLBUF];
+    MYSQL_RES   *result;
+    MYSQL_ROW   sql_row;
+unsigned long   sql_records;
+
+    DBG("silgy_usr_activate");
+
+    if ( !QS_HTML_ESCAPE("k", linkkey) )
+    {
+        WAR("Invalid request (URI val missing?)");
+        return ERR_INVALID_REQUEST;
+    }
+
+    /* verify the key */
+
+	if ( (ret=silgy_usr_verify_passwd_reset_key(ci, linkkey, &uid)) != OK )
+		return ret;
+
+    /* everything's OK -- activate user -------------------- */
+
+    mysql_free_result(result);
+
+    sprintf(sql_query, "UPDATE users SET status=%d WHERE id=%ld", USER_STATUS_ACTIVE, uid);
+    DBG("sql_query: %s", sql_query);
+    if ( mysql_query(G_dbconn, sql_query) )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    /* remove activation links */
+
+    sprintf(sql_query, "DELETE FROM users_activations WHERE user_id=%ld", uid);
+    DBG("sql_query: %s", sql_query);
+    if ( mysql_query(G_dbconn, sql_query) )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+//        return ERR_INT_SERVER_ERROR;  ignore it
+    }
+
+    return OK;
+}
+
+
+/* --------------------------------------------------------------------------
    Save new password after reset
 -------------------------------------------------------------------------- */
 int silgy_usr_reset_password(int ci)
@@ -1591,7 +1727,14 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
     if ( errcode == ERR_INVALID_LOGIN )
         strcpy(dest, "Invalid login and/or password");
     else if ( errcode == MSG_WELCOME )
-        sprintf(dest, "Welcome to %s! You can now log in:", conn[ci].website);
+    {
+        if ( G_usersRequireAccountActivation )
+            sprintf(dest, "Welcome to %s! Your account requires activation. Please check your mailbox for a message from %s.", conn[ci].website, conn[ci].website);
+        else
+            sprintf(dest, "Welcome to %s! You can now log in:", conn[ci].website);
+    }
+    else if ( errcode == MSG_WELCOME_AFTER_ACTIVATION )
+        strcpy(dest, "Very well! You can now log in:");
     else if ( errcode == MSG_USER_LOGGED_OUT )
         strcpy(dest, "You've been successfully logged out.");
     else if ( errcode == ERR_INVALID_PASSWORD )
@@ -1620,6 +1763,8 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
         strcpy(dest, "I'm afraid you are a robot?");
     else if ( errcode == ERR_WEBSITE_FIRST_LETTER )
         sprintf(dest, "The first letter of this website's name should be %c", conn[ci].website[0]);
+    else if ( errcode == ERR_NOT_ACTIVATED )
+        sprintf(dest, "Your account requires activation. Please check your mailbox for a message from %s.", conn[ci].website);
     else if ( errcode == ERR_EMAIL_EMPTY )
         strcpy(dest, "Your email address can't be empty");
     else if ( errcode == ERR_EMAIL_FORMAT )
