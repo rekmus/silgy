@@ -290,7 +290,7 @@ static int user_exists(const char *login)
 //  if ( 0==strcmp(sanlogin, "ADMIN") )
 //      return ERR_USERNAME_TAKEN;
 
-    sprintf(sql_query, "SELECT id FROM users WHERE UPPER(login)='%s'", upper(login));
+    sprintf(sql_query, "SELECT id FROM users WHERE login_u='%s'", upper(login));
 
     DBG("sql_query: %s", sql_query);
 
@@ -328,7 +328,7 @@ static int email_exists(const char *email)
 
     DBG("email_exists, email [%s]", email);
 
-    sprintf(sql_query, "SELECT id FROM users WHERE UPPER(email)='%s'", upper(email));
+    sprintf(sql_query, "SELECT id FROM users WHERE email_u='%s'", upper(email));
 
     DBG("sql_query: %s", sql_query);
 
@@ -503,7 +503,7 @@ unsigned long   sql_records;
         return ERR_INVALID_REQUEST;
     }
     stp_right(email);
-    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,ula_time,ula_cnt,visits,deleted FROM users WHERE UPPER(email)='%s'", upper(email));
+    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,ula_time,ula_cnt,visits,deleted FROM users WHERE email_u='%s'", upper(email));
 
 #else    /* by login */
 
@@ -514,7 +514,7 @@ unsigned long   sql_records;
     }
     stp_right(login);
     strcpy(ulogin, upper(login));
-    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,ula_time,ula_cnt,visits,deleted FROM users WHERE (UPPER(login)='%s' OR UPPER(email)='%s')", ulogin, ulogin);
+    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,ula_time,ula_cnt,visits,deleted FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
 
 #endif
 
@@ -677,7 +677,9 @@ int silgy_usr_create_account(int ci)
 {
     int     ret=OK;
     QSVAL   login;
+    QSVAL   login_u;
     QSVAL   email;
+    QSVAL   email_u;
     QSVAL   name;
     QSVAL   passwd;
     QSVAL   rpasswd;
@@ -782,7 +784,10 @@ int silgy_usr_create_account(int ci)
     doit(str1, str2, login, email[0]?email:STR_005, passwd);
 #endif
 
-    sprintf(sql_query, "INSERT INTO users (id,login,email,name,passwd1,passwd2,about,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s','%s',0,'%s',0,0,0,'N')", login, email, name, str1, str2, about, G_dt);
+    strcpy(login_u, upper(login));
+    strcpy(email_u, upper(email));
+
+    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,passwd1,passwd2,about,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s',0,'%s',0,0,0,'N')", login, login_u, email, email_u, name, str1, str2, about, G_dt);
 
     DBG("sql_query: INSERT INTO users (id,login,email,name,...) VALUES (0,'%s','%s','%s',...)", login, email, name);
 
@@ -945,12 +950,12 @@ unsigned long   sql_records;
 
 #ifdef USERSBYEMAIL
     doit(str1, str2, email, email, opasswd);
-    sprintf(sql_query, "SELECT id FROM users WHERE UPPER(email)='%s' AND passwd1='%s'", upper(email), str1);
-    DBG("sql_query: SELECT id FROM users WHERE UPPER(email)='%s' AND passwd1=...", upper(email));
+    sprintf(sql_query, "SELECT id FROM users WHERE email_u='%s' AND passwd1='%s'", upper(email), str1);
+    DBG("sql_query: SELECT id FROM users WHERE email_u='%s' AND passwd1=...", upper(email));
 #else
     doit(str1, str2, login, login, opasswd);
-    sprintf(sql_query, "SELECT id FROM users WHERE UPPER(login)='%s' AND passwd1='%s'", upper(login), str1);
-    DBG("sql_query: SELECT id FROM users WHERE UPPER(login)='%s' AND passwd1=...", upper(login));
+    sprintf(sql_query, "SELECT id FROM users WHERE login_u='%s' AND passwd1='%s'", upper(login), str1);
+    DBG("sql_query: SELECT id FROM users WHERE login_u='%s' AND passwd1=...", upper(login));
 #endif
 
     mysql_query(G_dbconn, sql_query);
@@ -1077,9 +1082,9 @@ unsigned long   sql_records;
         return ERR_EMAIL_FORMAT;
 
 #ifdef USERSBYEMAIL
-    sprintf(sql_query, "SELECT id, name FROM users WHERE UPPER(email)='%s'", upper(email));
+    sprintf(sql_query, "SELECT id, name FROM users WHERE email_u='%s'", upper(email));
 #else
-    sprintf(sql_query, "SELECT id, login FROM users WHERE UPPER(email)='%s'", upper(email));
+    sprintf(sql_query, "SELECT id, login FROM users WHERE email_u='%s'", upper(email));
 #endif
 
     DBG("sql_query: %s", sql_query);

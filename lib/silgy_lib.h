@@ -96,6 +96,8 @@ typedef struct {
 
 #define CALL_HTTP_STATUS                            G_rest_status
 #define CALL_REST_STATUS                            CALL_HTTP_STATUS
+#define CALL_HTTP_CONTENT_TYPE                      G_rest_content_type
+#define CALL_REST_CONTENT_TYPE                      CALL_HTTP_CONTENT_TYPE
 
 
 /* JSON */

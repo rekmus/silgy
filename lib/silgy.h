@@ -710,6 +710,7 @@ extern counters_t G_cnts_day_before;        /* day before's counters */
 /* SHM */
 extern char     *G_shm_segptr;              /* SHM pointer */
 extern int      G_rest_status;
+extern char     G_rest_content_type[MAX_VALUE_LEN+1];
 
 
 

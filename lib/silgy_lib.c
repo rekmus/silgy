@@ -33,6 +33,7 @@ bool        G_ssl_lib_initialized=0;
 char        *G_shm_segptr=NULL;         /* SHM pointer */
 
 int         G_rest_status;
+char        G_rest_content_type[MAX_VALUE_LEN+1];
 
 
 /* locals */
@@ -885,6 +886,69 @@ static int chunked2content(char *res_content, const char *buffer, int src_len, i
 
 
 /* --------------------------------------------------------------------------
+   REST call / parse response
+-------------------------------------------------------------------------- */
+bool lib_rest_res_parse(char *res_header, int bytes)
+{
+    /* HTTP/1.1 200 OK <== 15 chars */
+
+    char status[4];
+
+    if ( bytes > 14 && 0==strncmp(res_header, "HTTP/1.", 7) )
+    {
+        res_header[bytes] = EOS;
+#ifdef DUMP
+        DBG("Got %d bytes of response [%s]", bytes, res_header);
+#else
+        DBG("Got %d bytes of response", bytes);
+#endif /* DUMP */
+
+        /* Status */
+
+        strncpy(status, res_header+9, 3);
+        status[3] = EOS;
+        G_rest_status = atoi(status);
+        INF("REST response status: %s", status);
+
+        /* Content-Type */
+
+        const char *p;
+
+        if ( (p=strstr(res_header, "\nContent-Type: ")) == NULL
+                && (p=strstr(res_header, "\nContent-type: ")) == NULL
+                && (p=strstr(res_header, "\ncontent-type: ")) == NULL )
+        {
+            G_rest_content_type[0] = EOS;
+            return TRUE;
+        }
+
+        if ( bytes < (p-res_header) + 16 )
+        {
+            G_rest_content_type[0] = EOS;
+            return TRUE;
+        }
+        
+        char i=0;
+
+        p += 15;
+
+        while ( *p != '\r' && *p != '\n' && *p && i<255 )
+        {
+            G_rest_content_type[i++] = *p++;
+        }
+
+        G_rest_content_type[i] = EOS;
+        DBG("REST content type [%s]", G_rest_content_type);
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
+
+
+/* --------------------------------------------------------------------------
    REST call
 -------------------------------------------------------------------------- */
 bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json, bool keep)
@@ -1049,24 +1113,7 @@ static char buffer[JSON_BUFSIZE];
     /* parse the response                                                         */
     /* we assume that at least response header arrived at once                    */
 
-    /* HTTP/1.1 200 OK <== 15 chars */
-
-    char status[4];
-
-    if ( bytes > 14 && 0==strncmp(res_header, "HTTP/1.", 7) )
-    {
-        res_header[bytes] = EOS;
-#ifdef DUMP
-        DBG("Got %d bytes of response [%s]", bytes, res_header);
-#else
-        DBG("Got %d bytes of response", bytes);
-#endif /* DUMP */
-        strncpy(status, res_header+9, 3);
-        status[3] = EOS;
-        G_rest_status = atoi(status);
-        INF("REST response status: %s", status);
-    }
-    else
+    if ( !lib_rest_res_parse(res_header, bytes) )
     {
         ERR("No or incomplete response");
 #ifdef DUMP
