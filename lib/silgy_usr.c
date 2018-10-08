@@ -516,6 +516,96 @@ static int send_activation_link(int ci, const char *login, const char *email)
 }
 
 
+/* --------------------------------------------------------------------------
+   Verify activation key
+-------------------------------------------------------------------------- */
+static int silgy_usr_verify_activation_key(int ci, char *linkkey, long *uid)
+{
+    char        sql_query[SQLBUF];
+    MYSQL_RES   *result;
+    MYSQL_ROW   sql_row;
+unsigned long   sql_records;
+    char        esc_linkkey[256];
+    int         tries;
+
+    DBG("silgy_usr_verify_activation_key");
+
+    if ( strlen(linkkey) != PASSWD_RESET_KEY_LEN )
+        return ERR_LINK_BROKEN;
+
+    strcpy(esc_linkkey, silgy_sql_esc(linkkey));
+
+    sprintf(sql_query, "SELECT user_id, created, tries FROM users_activations WHERE linkkey='%s'", esc_linkkey);
+    DBG("sql_query: %s", sql_query);
+
+    mysql_query(G_dbconn, sql_query);
+
+    result = mysql_store_result(G_dbconn);
+
+    if ( !result )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    sql_records = mysql_num_rows(result);
+
+    DBG("users_activations: %lu row(s) found", sql_records);
+
+    if ( !sql_records )     /* no records with this key in users_activations -- link broken? */
+    {
+        mysql_free_result(result);
+        return ERR_LINK_MAY_BE_EXPIRED;
+    }
+
+    sql_row = mysql_fetch_row(result);
+
+    /* validate expiry time */
+
+    if ( db2epoch(sql_row[1]) < G_now-3600*24 )  /* older than 24 hours? */
+    {
+        WAR("Key created more than 24 hours ago");
+        mysql_free_result(result);
+        return ERR_LINK_MAY_BE_EXPIRED;
+    }
+
+    /* validate tries */
+
+    tries = atoi(sql_row[2]);
+
+    if ( tries > 12 )
+    {
+        WAR("Key tried more than 12 times");
+        mysql_free_result(result);
+        return ERR_LINK_TOO_MANY_TRIES;
+    }
+
+    /* otherwise everything's OK ----------------------------------------- */
+
+    /* get the user id */
+
+    *uid = atol(sql_row[0]);
+
+    mysql_free_result(result);
+
+    DBG("Key ok, uid = %ld", *uid);
+
+    /* update tries counter */
+
+    sprintf(sql_query, "UPDATE users_activations SET tries=%d WHERE linkkey='%s'", tries+1, esc_linkkey);
+    DBG("sql_query: %s", sql_query);
+    if ( mysql_query(G_dbconn, sql_query) )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    return OK;
+}
+
+
+
+
 /* ------------------------------------------------------------------------------------------------------------
     Public user functions
 ------------------------------------------------------------------------------------------------------------ */
@@ -566,7 +656,7 @@ unsigned long   sql_records;
         return ERR_INVALID_REQUEST;
     }
     stp_right(email);
-    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,ula_time,ula_cnt,visits,deleted FROM users WHERE email_u='%s'", upper(email));
+    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,status,ula_time,ula_cnt,visits,deleted FROM users WHERE email_u='%s'", upper(email));
 
 #else    /* by login */
 
@@ -1367,7 +1457,7 @@ unsigned long   sql_records;
 
     /* verify the key */
 
-	if ( (ret=silgy_usr_verify_passwd_reset_key(ci, linkkey, &uid)) != OK )
+	if ( (ret=silgy_usr_verify_activation_key(ci, linkkey, &uid)) != OK )
 		return ret;
 
     /* everything's OK -- activate user -------------------- */
@@ -1774,11 +1864,11 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
     else if ( errcode == MSG_REQUEST_SENT )
         sprintf(dest, "Your request has been sent. Please check your mailbox for a message from %s.", conn[ci].website);
     else if ( errcode == ERR_LINK_BROKEN )
-        strcpy(dest, "It looks like this password-reset link is broken. If you clicked on the link you've received from us in email, you can try to copy and paste it in your browser's address instead.");
+        strcpy(dest, "It looks like this link is broken. If you clicked on the link you've received from us in email, you can try to copy and paste it in your browser's address bar instead.");
     else if ( errcode == ERR_LINK_MAY_BE_EXPIRED )
-        strcpy(dest, "Your password-reset link is invalid or may be expired. In this case you can <a href=\"forgot\">request password reset link again</a>.");
+        strcpy(dest, "Your link is invalid or may be expired.");
     else if ( errcode == ERR_LINK_EXPIRED || errcode == ERR_LINK_TOO_MANY_TRIES )
-        strcpy(dest, "It looks like you entered email that doesn't exist in our database or your password-reset link has expired. In this case you can <a href=\"forgot\">request password reset link again</a>.");
+        strcpy(dest, "It looks like you entered email that doesn't exist in our database or your link has expired.");
     else if ( errcode == MSG_PASSWORD_CHANGED )
         strcpy(dest, "Your password has been changed. You can now log in:");
     else if ( errcode == MSG_MESSAGE_SENT )
