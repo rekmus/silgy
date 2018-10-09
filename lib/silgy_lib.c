@@ -806,7 +806,7 @@ static int chunked2content(char *res_content, const char *buffer, int src_len, i
 {
     char *res=res_content;
     char chunk_size_str[8];
-    int  chunk_size=1;
+    int  chunk_size=src_len;
     const char *p=buffer;
     int  was_read=0, written=0;
 
@@ -816,7 +816,7 @@ static int chunked2content(char *res_content, const char *buffer, int src_len, i
 
         int i=0;
 
-        while ( *p!='\r' && i<6 && i<src_len )
+        while ( *p!='\r' && *p!='\n' && i<6 && i<src_len )
             chunk_size_str[i++] = *p++;
 
         chunk_size_str[i] = EOS;
@@ -1257,6 +1257,39 @@ static char res_content[JSON_BUFSIZE];
 
         while ( bytes > 0 && timeout_remain > 1 )   /* read whatever we can within timeout */
         {
+#ifdef DUMP
+            DBG("Has the last chunk been read?");
+            DBG("buffer_read = %d", buffer_read);
+            if ( buffer_read > 5 )
+            {
+                int ii;
+                for ( ii=buffer_read-6; ii<buffer_read; ++ii )
+                {
+                    if ( buffer[ii] == '\r' )
+                        DBG("buffer[%d] '\\r'", ii);
+                    else if ( buffer[ii] == '\n' )
+                        DBG("buffer[%d] '\\n'", ii);
+                    else
+                        DBG("buffer[%d] '%c'", ii, buffer[ii]);
+                }
+            }
+#endif
+            if ( buffer_read>5 && buffer[buffer_read-6]=='\n' && buffer[buffer_read-5]=='0' && buffer[buffer_read-4]=='\r' && buffer[buffer_read-3]=='\n' && buffer[buffer_read-2]=='\r' && buffer[buffer_read-1]=='\n' )
+            {
+                DBG("Last chunk detected (with \\r\\n\\r\\n)");
+                break;
+            }
+            else if ( buffer_read>3 && buffer[buffer_read-4]=='\n' && buffer[buffer_read-3]=='0' && buffer[buffer_read-2]=='\r' && buffer[buffer_read-1]=='\n' )
+            {
+                DBG("Last chunk detected (with \\r\\n)");
+                break;
+            }
+/*            else if ( buffer_read>1 && buffer[buffer_read-2]=='\n' && buffer[buffer_read-1]=='0' )
+            {
+                DBG("Last chunk detected (without \\r\\n)");
+                break;
+            } */
+
 #ifdef DUMP
             DBG("trying again (chunked)");
 #endif
