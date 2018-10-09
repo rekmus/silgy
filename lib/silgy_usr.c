@@ -138,7 +138,8 @@ unsigned long   sql_records;
     if ( sanuagent[DB_UAGENT_LEN-1]=='\'' && sanuagent[DB_UAGENT_LEN-2]!='\'' )
         sanuagent[DB_UAGENT_LEN-1] = EOS;
 
-    sprintf(sql_query, "SELECT user_id, created FROM users_logins WHERE sesid='%s' AND uagent='%s'", silgy_sql_esc(conn[ci].cookie_in_l), sanuagent);
+//    sprintf(sql_query, "SELECT user_id, created FROM users_logins WHERE sesid='%s' AND uagent='%s'", silgy_sql_esc(conn[ci].cookie_in_l), sanuagent);
+    sprintf(sql_query, "SELECT uagent, user_id, created FROM users_logins WHERE sesid='%s'", silgy_sql_esc(conn[ci].cookie_in_l));
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -168,19 +169,32 @@ unsigned long   sql_records;
 
     sql_row = mysql_fetch_row(result);
 
-    uid = atol(sql_row[0]);
+    /* verify uagent */
+
+    if ( 0 != strcmp(sanuagent, sql_row[0]) )
+    {
+        mysql_free_result(result);
+        DBG("Different uagent in database for sesid [%s]", conn[ci].cookie_in_l);
+        strcpy(conn[ci].cookie_out_l, "x");
+        strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* expire ls cookie */
+        return ERR_SESSION_EXPIRED;
+    }
+
+    /* -------------------------------------- */
+
+    uid = atol(sql_row[1]);
 
     /* Verify time. If created more than 30 days ago -- refuse */
 
-    created = db2epoch(sql_row[1]);
+    created = db2epoch(sql_row[2]);
 
     if ( created < G_now - 3600*24*30 )
     {
-        DBG("Closing old logged in session, usi=%d, sesid [%s], created %s", conn[ci].usi, conn[ci].cookie_in_l, sql_row[1]);
+        DBG("Closing old logged in session, usi=%d, sesid [%s], created %s", conn[ci].usi, conn[ci].cookie_in_l, sql_row[2]);
 
         mysql_free_result(result);
 
-        sprintf(sql_query, "DELETE FROM users_logins WHERE sesid='%s' AND uagent='%s'", conn[ci].cookie_in_l, sanuagent);
+        sprintf(sql_query, "DELETE FROM users_logins WHERE sesid='%s'", conn[ci].cookie_in_l);
         DBG("sql_query: %s", sql_query);
 
         if ( mysql_query(G_dbconn, sql_query) )
@@ -203,7 +217,7 @@ unsigned long   sql_records;
 
     DBG("Logged in session found in database");
 
-    sprintf(sql_query, "UPDATE users_logins SET last_used='%s' WHERE sesid='%s' AND uagent='%s'", G_dt, conn[ci].cookie_in_l, sanuagent);
+    sprintf(sql_query, "UPDATE users_logins SET last_used='%s' WHERE sesid='%s'", G_dt, conn[ci].cookie_in_l);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -246,7 +260,8 @@ void libusr_close_l_uses(int ci, int usi)
     {
         DBG("Downgrading logged in session to anonymous, usi=%d, sesid [%s]", usi, uses[usi].sesid);
 
-        sprintf(sql_query, "DELETE FROM users_logins WHERE user_id=%ld", uses[usi].uid);
+//        sprintf(sql_query, "DELETE FROM users_logins WHERE user_id=%ld", uses[usi].uid);  /* use indexes */
+        sprintf(sql_query, "DELETE FROM users_logins WHERE sesid='%s'", uses[usi].sesid);
         DBG("sql_query: %s", sql_query);
 
         if ( mysql_query(G_dbconn, sql_query) )
@@ -467,7 +482,7 @@ static int send_activation_link(int ci, const char *login, const char *email)
 
     silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
 
-    sprintf(sql_query, "INSERT INTO users_activations (linkkey,user_id,created,tries) VALUES ('%s',%ld,'%s',0)", linkkey, US.uid, G_dt);
+    sprintf(sql_query, "INSERT INTO users_activations (linkkey,user_id,created) VALUES ('%s',%ld,'%s')", linkkey, US.uid, G_dt);
     DBG("sql_query: %s", sql_query);
 
     if ( mysql_query(G_dbconn, sql_query) )
@@ -496,7 +511,8 @@ static int send_activation_link(int ci, const char *login, const char *email)
 #endif
     p = stpcpy(p, tmp);
 
-    p = stpcpy(p, "Please keep in mind that this link will only be valid for the next 24 hours.\n\n");
+    sprintf(tmp, "Please keep in mind that this link will only be valid for the next %d hours.\n\n", USER_ACTIVATION_HOURS);
+    p = stpcpy(p, tmp);
     p = stpcpy(p, "If you did this by mistake or it wasn't you, you can safely ignore this email.\n\n");
 #ifdef APP_CONTACT_EMAIL
     sprintf(tmp, "In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
@@ -526,7 +542,7 @@ static int silgy_usr_verify_activation_key(int ci, char *linkkey, long *uid)
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
     char        esc_linkkey[256];
-    int         tries;
+//    int         tries;
 
     DBG("silgy_usr_verify_activation_key");
 
@@ -535,7 +551,7 @@ unsigned long   sql_records;
 
     strcpy(esc_linkkey, silgy_sql_esc(linkkey));
 
-    sprintf(sql_query, "SELECT user_id, created, tries FROM users_activations WHERE linkkey='%s'", esc_linkkey);
+    sprintf(sql_query, "SELECT user_id, created FROM users_activations WHERE linkkey='%s'", esc_linkkey);
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -562,23 +578,23 @@ unsigned long   sql_records;
 
     /* validate expiry time */
 
-    if ( db2epoch(sql_row[1]) < G_now-3600*24 )  /* older than 24 hours? */
+    if ( db2epoch(sql_row[1]) < G_now-3600*USER_ACTIVATION_HOURS )
     {
-        WAR("Key created more than 24 hours ago");
+        WAR("Key created more than %d hours ago", USER_ACTIVATION_HOURS);
         mysql_free_result(result);
         return ERR_LINK_MAY_BE_EXPIRED;
     }
 
     /* validate tries */
 
-    tries = atoi(sql_row[2]);
+/*    tries = atoi(sql_row[2]);
 
     if ( tries > 12 )
     {
         WAR("Key tried more than 12 times");
         mysql_free_result(result);
         return ERR_LINK_TOO_MANY_TRIES;
-    }
+    } */
 
     /* otherwise everything's OK ----------------------------------------- */
 
@@ -592,13 +608,13 @@ unsigned long   sql_records;
 
     /* update tries counter */
 
-    sprintf(sql_query, "UPDATE users_activations SET tries=%d WHERE linkkey='%s'", tries+1, esc_linkkey);
+/*    sprintf(sql_query, "UPDATE users_activations SET tries=%d WHERE linkkey='%s'", tries+1, esc_linkkey);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
-    }
+    } */
 
     return OK;
 }
@@ -789,7 +805,7 @@ unsigned long   sql_records;
     if ( sanuagent[DB_UAGENT_LEN-1]=='\'' && sanuagent[DB_UAGENT_LEN-2]!='\'' )
         sanuagent[DB_UAGENT_LEN-1] = EOS;
 
-    sprintf(sql_query, "INSERT INTO users_logins (ip,uagent,sesid,user_id,created,last_used) VALUES ('%s','%s','%s',%ld,'%s','%s')", conn[ci].ip, sanuagent, sesid, uid, G_dt, G_dt);
+    sprintf(sql_query, "INSERT INTO users_logins (sesid,uagent,ip,user_id,created,last_used) VALUES ('%s','%s','%s',%ld,'%s','%s')", sesid, sanuagent, conn[ci].ip, uid, G_dt, G_dt);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -1053,6 +1069,7 @@ int silgy_usr_save_account(int ci)
     char        str1[32], str2[32];
     MYSQL_RES   *result;
 unsigned long   sql_records;
+    MYSQL_ROW   sql_row;
 
     DBG("silgy_usr_save_account");
 
@@ -1124,13 +1141,12 @@ unsigned long   sql_records;
 
 #ifdef USERSBYEMAIL
     doit(str1, str2, email, email, opasswd);
-    sprintf(sql_query, "SELECT id FROM users WHERE email_u='%s' AND passwd1='%s'", upper(email), str1);
-    DBG("sql_query: SELECT id FROM users WHERE email_u='%s' AND passwd1=...", upper(email));
+    sprintf(sql_query, "SELECT passwd1 FROM users WHERE email_u='%s'", upper(email));
 #else
     doit(str1, str2, login, login, opasswd);
-    sprintf(sql_query, "SELECT id FROM users WHERE login_u='%s' AND passwd1='%s'", upper(login), str1);
-    DBG("sql_query: SELECT id FROM users WHERE login_u='%s' AND passwd1=...", upper(login));
+    sprintf(sql_query, "SELECT passwd1 FROM users WHERE login_u='%s'", upper(login));
 #endif
+    DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
 
@@ -1144,13 +1160,23 @@ unsigned long   sql_records;
 
     sql_records = mysql_num_rows(result);
 
-    mysql_free_result(result);
-
     if ( 0 == sql_records )
     {
+        ERR("Weird: no such user");
+        mysql_free_result(result);
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    sql_row = mysql_fetch_row(result);
+
+    if ( 0 != strcmp(str1, sql_row[0]) )
+    {
         ERR("Invalid old password");
+        mysql_free_result(result);
         return ERR_OLD_PASSWORD;
     }
+
+    mysql_free_result(result);
 
     /* Old password OK ---------------------------------------- */
 
@@ -1234,8 +1260,8 @@ int silgy_usr_send_passwd_reset_email(int ci)
     QSVAL       submit;
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
-    MYSQL_ROW   sql_row;
 unsigned long   sql_records;
+    MYSQL_ROW   sql_row;
     long        uid;
     char        login_name[LOGIN_LEN+1];
     char        linkkey[256];
@@ -1472,9 +1498,9 @@ unsigned long   sql_records;
         return ERR_INT_SERVER_ERROR;
     }
 
-    /* remove activation links */
+    /* remove activation link */
 
-    sprintf(sql_query, "DELETE FROM users_activations WHERE user_id=%ld", uid);
+    sprintf(sql_query, "DELETE FROM users_activations WHERE linkkey='%s'", linkkey);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {

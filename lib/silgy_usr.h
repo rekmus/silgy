@@ -32,6 +32,12 @@
 #define USER_STATUS_INACTIVE            0
 #define USER_STATUS_ACTIVE              1
 
+#ifdef APP_USER_ACTIVATION_HOURS                                /* activate user account within */
+#define USER_ACTIVATION_HOURS           APP_USER_ACTIVATION_HOURS
+#else
+#define USER_ACTIVATION_HOURS           24
+#endif
+
 
 /* errors -- red */
 
