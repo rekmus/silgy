@@ -71,6 +71,19 @@ typedef char                        bool;
 #endif /* ASYNC_SERVICE */
 
 
+#ifdef SILGY_WATCHER
+#ifdef DBMYSQL
+#undef DBMYSQL
+#endif
+#ifdef USERS
+#undef USERS
+#endif
+#ifdef HTTPS
+#undef HTTPS
+#endif
+#endif /* SILGY_WATCHER */
+
+
 #ifdef DBMYSQL
 #include <mysql.h>
 #include <mysqld_error.h>

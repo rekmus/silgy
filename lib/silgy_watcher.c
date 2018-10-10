@@ -4,6 +4,9 @@
 -------------------------------------------------------------------------- */
 
 
+#define SILGY_WATCHER
+
+
 #include "silgy.h"
 
 
@@ -15,6 +18,9 @@
 
 #define STOP_COMMAND    "sudo $SILGYDIR/bin/silgystop"
 #define START_COMMAND   "sudo $SILGYDIR/bin/silgystart"
+
+
+int      G_httpPort;
 
 
 char     M_watcherStopCmd[256];
@@ -84,6 +90,9 @@ static struct sockaddr_in serv_addr;
     if ( !silgy_read_param_int("watcherLogToStdout", &G_logToStdout) )
         G_logToStdout = 0;
 
+    if ( !silgy_read_param_int("httpPort", &G_httpPort) )
+        G_httpPort = 80;
+
     if ( !silgy_read_param_str("watcherStopCmd", M_watcherStopCmd) )
         strcpy(M_watcherStopCmd, STOP_COMMAND);
 
@@ -111,7 +120,7 @@ static struct sockaddr_in serv_addr;
 
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    serv_addr.sin_port = htons(80);
+    serv_addr.sin_port = htons(G_httpPort);
 
     if ( (conn=connect(sockfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) < 0 )
     {
@@ -200,12 +209,14 @@ void restart(char reason)
     ALWAYS("Restarting...");
 
     INF("Stopping...");
+    INF(M_watcherStopCmd);
     system(M_watcherStopCmd);
 
     INF("Waiting 1 second...");
     sleep(1);
 
     INF("Starting...");
+    INF(M_watcherStartCmd);
     system(M_watcherStartCmd);
 
 #ifdef APP_ADMIN_EMAIL
