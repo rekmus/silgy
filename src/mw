@@ -5,6 +5,6 @@ echo Making silgy_watcher...
 gcc ../lib/silgy_watcher.c \
 ../lib/silgy_lib.c \
 -s -O3 \
--D ASYNC_SERVICE \
+-D SILGY_WATCHER \
 -I. -I../lib \
 -o ../bin/silgy_watcher
