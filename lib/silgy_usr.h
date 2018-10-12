@@ -84,7 +84,8 @@
 #define MSG_REQUEST_SENT                206
 #define MSG_PASSWORD_CHANGED            207
 #define MSG_MESSAGE_SENT                208
-#define MSG_ACCOUNT_DELETED             209
+#define MSG_USER_ALREADY_ACTIVATED      209
+#define MSG_ACCOUNT_DELETED             210
 
 #define LUSES_TIMEOUT                   1800                /* logged in user session timeout in seconds (120 for tests / 1800 live) */
                                                             /* it's now how long it stays in cache */

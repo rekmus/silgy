@@ -542,7 +542,6 @@ static int silgy_usr_verify_activation_key(int ci, char *linkkey, long *uid)
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
     char        esc_linkkey[256];
-//    int         tries;
 
     DBG("silgy_usr_verify_activation_key");
 
@@ -582,7 +581,7 @@ unsigned long   sql_records;
     {
         mysql_free_result(result);
         DBG("User already activated");
-        return OK;
+        return MSG_USER_ALREADY_ACTIVATED;
     }
 
     /* validate expiry time */
@@ -603,16 +602,6 @@ unsigned long   sql_records;
     mysql_free_result(result);
 
     DBG("Key ok, uid = %ld", *uid);
-
-    /* update tries counter */
-
-/*    sprintf(sql_query, "UPDATE users_activations SET tries=%d WHERE linkkey='%s'", tries+1, esc_linkkey);
-    DBG("sql_query: %s", sql_query);
-    if ( mysql_query(G_dbconn, sql_query) )
-    {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-        return ERR_INT_SERVER_ERROR;
-    } */
 
     return OK;
 }
@@ -1896,6 +1885,8 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
         strcpy(dest, "Your password has been changed. You can now log in:");
     else if ( errcode == MSG_MESSAGE_SENT )
         strcpy(dest, "Your message has been sent.");
+    else if ( errcode == MSG_USER_ALREADY_ACTIVATED )
+        strcpy(dest, "Your account has already been activated.");
     else if ( errcode == WAR_ULA )
         strcpy(dest, "Someone tried to log in to this account unsuccessfully more than 3 times. To protect your account from brute-force attack, this system requires some wait: 1 minute, then 10 minutes, then 1 hour before trying again.");
     else if ( errcode == WAR_BEFORE_DELETE )
