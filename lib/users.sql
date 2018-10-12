@@ -66,7 +66,7 @@ create table users_p_resets (
     linkkey char(30) primary key,
     user_id integer not null,
     created datetime not null,
-    tries integer not null
+    tries tinyint not null
 );
 
 create index users_p_resets_uid on users_p_resets (user_id);
