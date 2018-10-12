@@ -1756,7 +1756,7 @@ unsigned long   sql_records;
 -------------------------------------------------------------------------- */
 int silgy_usr_set_int(int ci, const char *us_key, long us_val)
 {
-    char    val[32];
+    char    val[64];
 
     sprintf(val, "%ld", us_val);
     return silgy_usr_set_str(ci, us_key, val);
@@ -1769,7 +1769,7 @@ int silgy_usr_set_int(int ci, const char *us_key, long us_val)
 int silgy_usr_get_int(int ci, const char *us_key, long *us_val)
 {
     int     ret;
-    char    val[32];
+    char    val[64];
 
     if ( (ret=silgy_usr_get_str(ci, us_key, val)) == OK )
         *us_val = atol(val);
