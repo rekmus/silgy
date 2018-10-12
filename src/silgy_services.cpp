@@ -20,7 +20,7 @@
 -------------------------------------------------------------------------- */
 int getCustomer(const char *req, char *res)
 {
-    strcpy(res, "Hello from getCustomer service!");
+    OUT("Hello from getCustomer service!");
     return OK;
 }
 
@@ -30,7 +30,7 @@ int getCustomer(const char *req, char *res)
 -------------------------------------------------------------------------- */
 int getAccounts(const char *req, char *res)
 {
-    strcpy(res, "Hello from getAccounts service!");
+    OUT("Hello from getAccounts service!");
     return OK;
 }
 
