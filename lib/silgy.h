@@ -721,11 +721,13 @@ extern mqd_t    G_queue_res;                /* response queue */
 #ifdef ASYNC
 extern async_res_t ares[MAX_ASYNC];         /* async response array */
 extern long     G_last_call_id;             /* counter */
-extern char     *G_res;
 #endif /* ASYNC */
 #endif /* _WIN32 */
 extern char     G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 extern bool     G_index_present;            /* index.html present in res? */
+#ifdef ASYNC_SERVICE
+extern char     *G_res;
+#endif
 
 extern char     G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
 extern int      G_blacklist_cnt;            /* M_blacklist length */
