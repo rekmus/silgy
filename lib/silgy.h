@@ -157,7 +157,7 @@ typedef char                        bool;
 
 #ifdef ASYNC_SERVICE
 
-    #define OUTSS(str)                  (res = stpcpy(res, str))
+    #define OUTSS(str)                  (G_res = stpcpy(G_res, str))
     #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(res, data, len), res += len)
 
 #else
@@ -721,6 +721,7 @@ extern mqd_t    G_queue_res;                /* response queue */
 #ifdef ASYNC
 extern async_res_t ares[MAX_ASYNC];         /* async response array */
 extern long     G_last_call_id;             /* counter */
+extern char     *G_res;
 #endif /* ASYNC */
 #endif /* _WIN32 */
 extern char     G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */

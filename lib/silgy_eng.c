@@ -4958,6 +4958,7 @@ char        G_req_queue_name[256];
 char        G_res_queue_name[256];
 mqd_t       G_queue_req;                /* request queue */
 mqd_t       G_queue_res;                /* response queue */
+char        *G_res;
 
 
 static char *M_pidfile;                 /* pid file name */
@@ -5134,6 +5135,7 @@ int main(int argc, char *argv[])
             /* ----------------------------------------------------------- */
 
             DBG("Processing...");
+            G_res = res.data;
             res.hdr.err_code = service_app_process_req(req.hdr.service, req.data, res.data);
 
             /* ----------------------------------------------------------- */
