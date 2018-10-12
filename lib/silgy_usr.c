@@ -1269,9 +1269,9 @@ unsigned long   sql_records;
         return ERR_EMAIL_FORMAT;
 
 #ifdef USERSBYEMAIL
-    sprintf(sql_query, "SELECT id, name FROM users WHERE email_u='%s'", upper(email));
+    sprintf(sql_query, "SELECT id, name, deleted FROM users WHERE email_u='%s'", upper(email));
 #else
-    sprintf(sql_query, "SELECT id, login FROM users WHERE email_u='%s'", upper(email));
+    sprintf(sql_query, "SELECT id, login, deleted FROM users WHERE email_u='%s'", upper(email));
 #endif
 
     DBG("sql_query: %s", sql_query);
@@ -1293,6 +1293,13 @@ unsigned long   sql_records;
     if ( sql_records )
     {
         sql_row = mysql_fetch_row(result);
+
+        if ( sql_row[2][0]=='Y' )   /* deleted */
+        {
+            mysql_free_result(result);
+            WAR("Password reset link requested for [%s] but user is deleted", email);
+            return OK;
+        }
 
         uid = atol(sql_row[0]);     /* user id */
         strcpy(login_name, sql_row[1]);
