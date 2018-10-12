@@ -1237,7 +1237,7 @@ static bool init(int argc, char **argv)
 
     /* pid file ---------------------------------------------------------- */
 
-    if ( !(M_pidfile=lib_create_pid_file(argv[0])) )
+    if ( !(M_pidfile=lib_create_pid_file("silgy_app")) )
         return FALSE;
 
     /* empty static resources list */

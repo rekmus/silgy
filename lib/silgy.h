@@ -155,13 +155,12 @@ typedef char                        bool;
 
 /* generate output as fast as possible */
 
-#ifdef NOSTPCPY /* alas! */
+#ifdef ASYNC_SERVICE
 
-    #define HOUT(str)                   (strcpy(conn[ci].p_curr_h, str), conn[ci].p_curr_h += strlen(str))
-    #define OUTSS(str)                  (strcpy(conn[ci].p_curr_c, str), conn[ci].p_curr_c += strlen(str))
-    #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
+    #define OUTSS(str)                  (res = stpcpy(res, str))
+    #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(res, data, len), res += len)
 
-#else   /* faster */
+#else
 
     #define HOUT(str)                   (conn[ci].p_curr_h = stpcpy(conn[ci].p_curr_h, str))
 
@@ -178,7 +177,7 @@ typedef char                        bool;
         #endif
     #endif  /* OUTFAST */
 
-#endif  /* NOSTPCPY */
+#endif  /* ASYNC_SERVICE */
 
 
 #define OUTM(str, ...)              (sprintf(G_tmp, str, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
@@ -371,7 +370,7 @@ typedef char                        bool;
 /* statics */
 
 #define NOT_STATIC                      -1
-#ifdef APP_MAX_STATICS                  /* max static resources */
+#ifdef APP_MAX_STATICS                                          /* max static resources */
 #define MAX_STATICS                     APP_MAX_STATICS
 #else
 #define MAX_STATICS                     1000
@@ -390,14 +389,26 @@ typedef char                        bool;
 #define ASYNC_STATE_SENT                '1'
 #define ASYNC_STATE_RECEIVED            '2'
 #define ASYNC_STATE_TIMEOUTED           '3'
+#ifdef APP_ASYNC_MQ_MAXMSG                                      /* max messages in a message queue */
+#define ASYNC_MQ_MAXMSG                 APP_ASYNC_MQ_MAXMSG
+#else
 #define ASYNC_MQ_MAXMSG                 10
-#define MAX_ASYNC                       ASYNC_MQ_MAXMSG*2   /* max queued async responses */
-#define ASYNC_REQ_MSG_SIZE              4096                /* async message size */
-#define ASYNC_RES_MSG_SIZE              8192                /* async message size */
-#define ASYNC_REQ_QUEUE                 "/silgy_req"        /* request queue name */
-#define ASYNC_RES_QUEUE                 "/silgy_res"        /* response queue name */
-#define ASYNC_DEF_TIMEOUT               30                  /* in seconds */
-#define ASYNC_MAX_TIMEOUT               1800                /* in seconds ==> 30 minutes */
+#endif
+#define MAX_ASYNC                       ASYNC_MQ_MAXMSG*2       /* max queued async responses */
+#ifdef APP_ASYNC_REQ_MSG_SIZE                                   /* request message size */
+#define ASYNC_REQ_MSG_SIZE              APP_ASYNC_REQ_MSG_SIZE
+#else
+#define ASYNC_REQ_MSG_SIZE              4096
+#endif
+#ifdef APP_ASYNC_RES_MSG_SIZE                                   /* response message size */
+#define ASYNC_RES_MSG_SIZE              APP_ASYNC_RES_MSG_SIZE
+#else
+#define ASYNC_RES_MSG_SIZE              8192
+#endif
+#define ASYNC_REQ_QUEUE                 "/silgy_req"            /* request queue name */
+#define ASYNC_RES_QUEUE                 "/silgy_res"            /* response queue name */
+#define ASYNC_DEF_TIMEOUT               30                      /* in seconds */
+#define ASYNC_MAX_TIMEOUT               1800                    /* in seconds ==> 30 minutes */
 #define S(svc)                          (0==strcmp(service, svc))
 #define CALL_ASYNC(svc, data)           eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout)
 #define CALL_ASYNC_TM(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, tmout)

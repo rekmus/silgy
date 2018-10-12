@@ -4355,13 +4355,13 @@ bool silgy_read_param_int(const char *param, int *dest)
 -------------------------------------------------------------------------- */
 char *lib_create_pid_file(const char *name)
 {
-static char pidfilename[256];
+static char pidfilename[512];
     FILE    *fpid=NULL;
-    char    command[256];
+    char    command[512];
 
     G_pid = getpid();
 
-    sprintf(pidfilename, "%s.pid", name);
+    sprintf(pidfilename, "%s/bin/%s.pid", G_appdir, name);
 
     /* check if the pid file already exists */
 
@@ -4378,14 +4378,14 @@ static char pidfilename[256];
         }
         fseek(fpid, 0, SEEK_END);     /* determine the file size */
         int fsize = ftell(fpid);
-        if ( fsize < 1 || fsize > 30 )
+        if ( fsize < 1 || fsize > 60 )
         {
             fclose(fpid);
             ERR("Something's wrong with the pid file size (%d bytes)", fsize);
             return NULL;
         }
         rewind(fpid);
-        char oldpid[32];
+        char oldpid[64];
         fread(oldpid, fsize, 1, fpid);
         fclose(fpid);
         oldpid[fsize] = EOS;
