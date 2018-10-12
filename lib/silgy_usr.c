@@ -482,7 +482,7 @@ static int send_activation_link(int ci, const char *login, const char *email)
 
     silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
 
-    sprintf(sql_query, "INSERT INTO users_activations (linkkey,user_id,created) VALUES ('%s',%ld,'%s')", linkkey, US.uid, G_dt);
+    sprintf(sql_query, "INSERT INTO users_activations (linkkey,user_id,created,activated) VALUES ('%s',%ld,'%s','N')", linkkey, US.uid, G_dt);
     DBG("sql_query: %s", sql_query);
 
     if ( mysql_query(G_dbconn, sql_query) )
@@ -551,7 +551,7 @@ unsigned long   sql_records;
 
     strcpy(esc_linkkey, silgy_sql_esc(linkkey));
 
-    sprintf(sql_query, "SELECT user_id, created FROM users_activations WHERE linkkey='%s'", esc_linkkey);
+    sprintf(sql_query, "SELECT user_id, created, activated FROM users_activations WHERE linkkey='%s'", esc_linkkey);
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -576,6 +576,15 @@ unsigned long   sql_records;
 
     sql_row = mysql_fetch_row(result);
 
+    /* already activated? */
+
+    if ( sql_row[2] && sql_row[2][0]=='Y' )
+    {
+        mysql_free_result(result);
+        DBG("User already activated");
+        return OK;
+    }
+
     /* validate expiry time */
 
     if ( db2epoch(sql_row[1]) < G_now-3600*USER_ACTIVATION_HOURS )
@@ -584,17 +593,6 @@ unsigned long   sql_records;
         mysql_free_result(result);
         return ERR_LINK_MAY_BE_EXPIRED;
     }
-
-    /* validate tries */
-
-/*    tries = atoi(sql_row[2]);
-
-    if ( tries > 12 )
-    {
-        WAR("Key tried more than 12 times");
-        mysql_free_result(result);
-        return ERR_LINK_TOO_MANY_TRIES;
-    } */
 
     /* otherwise everything's OK ----------------------------------------- */
 
@@ -1488,8 +1486,6 @@ unsigned long   sql_records;
 
     /* everything's OK -- activate user -------------------- */
 
-    mysql_free_result(result);
-
     sprintf(sql_query, "UPDATE users SET status=%d WHERE id=%ld", USER_STATUS_ACTIVE, uid);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
@@ -1500,7 +1496,8 @@ unsigned long   sql_records;
 
     /* remove activation link */
 
-    sprintf(sql_query, "DELETE FROM users_activations WHERE linkkey='%s'", linkkey);
+//    sprintf(sql_query, "DELETE FROM users_activations WHERE linkkey='%s'", linkkey);
+    sprintf(sql_query, "UPDATE users_activations SET activated='Y' WHERE linkkey='%s'", linkkey);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
