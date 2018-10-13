@@ -172,7 +172,7 @@ unsigned long   hit=0;
 struct timeval  timeout;                    /* Timeout for select */
     int         readsocks=0;                /* Number of sockets ready for I/O */
     int         i=0;                        /* Current item in conn_sockets for for loops */
-    int         time_elapsed=0;             /* time unit, currently 250 ms */
+    int         time_elapsed=0;             /* time unit, currently 1 second */
     time_t      sometimeahead;
     long        bytes=0;
     int         failed_select_cnt=0;
@@ -222,7 +222,8 @@ struct timeval  timeout;                    /* Timeout for select */
     setsockopt(M_listening_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
 #endif 
 
-    /* Set socket to non-blocking with our lib_setnonblocking routine */
+    /* Set socket to non-blocking */
+
     lib_setnonblocking(M_listening_fd);
 
     /* bind socket to a port */
@@ -273,7 +274,8 @@ struct timeval  timeout;                    /* Timeout for select */
     setsockopt(M_listening_sec_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
 #endif
 
-    /* Set socket to non-blocking with our lib_setnonblocking routine */
+    /* Set socket to non-blocking */
+
     lib_setnonblocking(M_listening_sec_fd);
 
     /* bind socket to a port */
@@ -789,7 +791,7 @@ struct timeval  timeout;                    /* Timeout for select */
 -------------------------------------------------------------------------- */
 static void set_state(int ci, long bytes)
 {
-    if ( bytes <= 0 )   /* read failure stop now */
+    if ( bytes <= 0 )
     {
         DBG("bytes = %ld, errno = %d (%s), disconnecting slot %d\n", bytes, errno, strerror(errno), ci);
         close_conn(ci);
@@ -1616,7 +1618,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     long    bytes;
 
     /* We have a new connection coming in! We'll
-       try to find a spot for it in conn_sockets.  */
+       try to find a spot for it in conn array  */
 
     addr_len = sizeof(cli_addr);
 
@@ -1708,7 +1710,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     int     ret, ssl_err;
 
     /* We have a new connection coming in! We'll
-       try to find a spot for it in conn_sockets.  */
+       try to find a spot for it in conn array  */
 
     addr_len = sizeof(cli_addr);
 
