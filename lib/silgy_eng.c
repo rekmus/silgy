@@ -5140,7 +5140,7 @@ int main(int argc, char *argv[])
 
             DBG("Processing...");
             G_res = res.data;
-            res.hdr.err_code = service_app_process_req(req.hdr.service, req.data, res.data);
+            res.hdr.err_code = service_app_process_req(req.hdr.service, req.data);
 
             /* ----------------------------------------------------------- */
 

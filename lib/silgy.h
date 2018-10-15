@@ -796,7 +796,7 @@ extern "C" {
 
 #ifdef ASYNC_SERVICE
     bool services_init(void);
-    int service_app_process_req(const char *service, const char *req, char *res);
+    int service_app_process_req(const char *service, const char *req);
     void services_done(void);
 #else /* not ASYNC_SERVICE */
     bool app_init(int argc, char *argv[]);
