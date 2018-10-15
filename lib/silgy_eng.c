@@ -13,36 +13,6 @@
 
 #ifndef ASYNC_SERVICE
 
-http_status_t   M_http_status[]={
-        {200, "OK"},
-        {201, "Created"},
-        {206, "Partial Content"},
-        {301, "Moved Permanently"},
-        {302, "Found"},
-        {303, "See Other"},
-        {304, "Not Modified"},
-        {400, "Bad Request"},
-        {401, "Unauthorized"},
-        {403, "Forbidden"},
-        {404, "Not Found"},
-        {405, "Method Not Allowed\r\nAllow: GET, POST, PUT, DELETE, OPTIONS, HEAD"},
-        {413, "Request Entity Too Large"},
-        {414, "Request-URI Too Long"},
-        {416, "Range Not Satisfiable"},
-        {500, "Internal Server Error"},
-        {501, "Not Implemented"},
-        {503, "Service Unavailable"},
-        { -1, ""}
-    };
-
-
-static struct {                         /* default auth level is set in app.h -- no need to set those */
-    char    resource[MAX_RESOURCE_LEN+1];
-    char    level;
-    }       M_auth_levels[MAX_RESOURCES] = {
-        {"-", EOS}
-    };
-
 /* globals */
 
 /* read from the config file */
@@ -92,6 +62,38 @@ counters_t  G_cnts_day_before;          /* day before's counters */
 
 
 /* locals */
+
+http_status_t   M_http_status[]={
+        {200, "OK"},
+        {201, "Created"},
+        {206, "Partial Content"},
+        {301, "Moved Permanently"},
+        {302, "Found"},
+        {303, "See Other"},
+        {304, "Not Modified"},
+        {400, "Bad Request"},
+        {401, "Unauthorized"},
+        {403, "Forbidden"},
+        {404, "Not Found"},
+        {405, "Method Not Allowed\r\nAllow: GET, POST, PUT, DELETE, OPTIONS, HEAD"},
+        {413, "Request Entity Too Large"},
+        {414, "Request-URI Too Long"},
+        {416, "Range Not Satisfiable"},
+        {500, "Internal Server Error"},
+        {501, "Not Implemented"},
+        {503, "Service Unavailable"},
+        { -1, ""}
+    };
+
+
+/* authorization levels */
+
+static struct {
+    char    resource[MAX_RESOURCE_LEN+1];
+    char    level;
+    }       M_auth_levels[MAX_RESOURCES] = {
+        {"-", EOS}
+    };
 
 static char         *M_pidfile;                 /* pid file name */
 #ifdef _WIN32   /* Windows */
@@ -243,7 +245,7 @@ struct timeval  timeout;                    /* Timeout for select */
 
     /* listen to a port */
 
-    DBG("Trying listen...");
+    DBG("Trying listen...\n");
 
     if ( listen(M_listening_fd, SOMAXCONN) < 0 )
     {
@@ -295,7 +297,7 @@ struct timeval  timeout;                    /* Timeout for select */
 
     /* listen to a port */
 
-    DBG("Trying listen...");
+    DBG("Trying listen...\n");
 
     if ( listen(M_listening_sec_fd, SOMAXCONN) < 0 )
     {
