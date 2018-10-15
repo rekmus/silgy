@@ -18,7 +18,7 @@
 /* --------------------------------------------------------------------------
    Service
 -------------------------------------------------------------------------- */
-int getCustomer(const char *req, char *res)
+int getCustomer(const char *req)
 {
     OUT("Hello from getCustomer service!");
     return OK;
@@ -28,7 +28,7 @@ int getCustomer(const char *req, char *res)
 /* --------------------------------------------------------------------------
    Service
 -------------------------------------------------------------------------- */
-int getAccounts(const char *req, char *res)
+int getAccounts(const char *req)
 {
     OUT("Hello from getAccounts service!");
     return OK;
@@ -44,12 +44,12 @@ int getAccounts(const char *req, char *res)
 /* --------------------------------------------------------------------------
    Entry point
 -------------------------------------------------------------------------- */
-int service_app_process_req(const char *service, const char *req, char *res)
+int service_app_process_req(const char *service, const char *req)
 {
     if ( S("getCustomer") )
-        return getCustomer(req, res);
+        return getCustomer(req);
     else if ( S("getAccounts") )
-        return getAccounts(req, res);
+        return getAccounts(req);
 
     return ERR_ASYNC_NO_SUCH_SERVICE;
 }
