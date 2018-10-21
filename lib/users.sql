@@ -6,14 +6,14 @@
 
 create table users (
     id integer auto_increment primary key,
-    login char(30) character set utf8 not null,
-    login_u char(30) character set utf8 not null,  -- uppercase version
-    email char(120) character set utf8,
-    email_u char(120) character set utf8,  -- uppercase version
-    name char(60) character set utf8,
+    login char(30) not null,
+    login_u char(30) not null,      -- uppercase version
+    email char(120),
+    email_u char(120),              -- uppercase version
+    name char(60),
     passwd1 char(30) not null,
     passwd2 char(30) not null,
-    about varchar(250) character set utf8,
+    about varchar(250),
     status tinyint not null,        -- 0 = inactive, 1 = active
     created datetime not null,
     last_login datetime,
@@ -33,7 +33,7 @@ create index users_email on users (email_u);
 create table users_settings (
     user_id integer,
     us_key char(30),
-    us_val varchar(250) character set utf8,
+    us_val varchar(250),
     primary key (user_id, us_key)
 );
 
@@ -77,8 +77,8 @@ create index users_p_resets_uid on users_p_resets (user_id);
 create table users_messages (
     user_id integer,
     msg_id integer,
-    email varchar(120) character set utf8,
-    message text character set utf8,    -- 64 kB limit
+    email varchar(120),
+    message text,               -- 64 kB limit
     created datetime not null,
     primary key (user_id, msg_id)
 );
