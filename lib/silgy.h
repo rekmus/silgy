@@ -459,6 +459,7 @@ typedef char                        bool;
 #define RES_STATUS(val)                 eng_set_res_status(ci, val)
 #define RES_CONTENT_TYPE(str)           eng_set_res_content_type(ci, str)
 #define RES_LOCATION(str, ...)          eng_set_res_location(ci, str, ##__VA_ARGS__)
+#define RES_REDIRECT(str, ...)          RES_LOCATION(str, ##__VA_ARGS__)
 #define RES_DONT_CACHE                  conn[ci].dont_cache=TRUE
 #define RES_KEEP_CONTENT                conn[ci].keep_content=TRUE
 #define RES_CONTENT_DISPOSITION(str, ...) eng_set_res_content_disposition(ci, str, ##__VA_ARGS__)
@@ -796,7 +797,7 @@ extern "C" {
 
 #ifdef ASYNC_SERVICE
     bool services_init(void);
-    int service_app_process_req(const char *service, const char *req);
+    int service_app_process_req(const char *service, const char *req, char *res);
     void services_done(void);
 #else /* not ASYNC_SERVICE */
     bool app_init(int argc, char *argv[]);
