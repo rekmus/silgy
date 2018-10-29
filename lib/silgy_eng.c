@@ -5154,6 +5154,10 @@ int main(int argc, char *argv[])
             {
                 DBG("Response not required\n");
             }
+
+            /* ----------------------------------------------------------- */
+
+			log_flush();
         }
     }
 
