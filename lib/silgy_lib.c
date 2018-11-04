@@ -2661,7 +2661,9 @@ static unsigned long req=0;
     int     i;
 
     srand((G_now-1520000000)+G_pid+req);
-
+#ifdef DUMP
+    DBG("seed = %d", (G_now-1520000000)+G_pid+req);
+#endif
     ++req;
 
     for ( i=0; i<len; ++i )
@@ -2672,8 +2674,8 @@ static unsigned long req=0;
 
 
 /* --------------------------------------------------------------------------
-  sleep for n miliseconds
-  n must be less than 1 second (< 1000)!
+   Sleep for n miliseconds
+   n must be less than 1 second (< 1000)!
 -------------------------------------------------------------------------- */
 void msleep(int msec)
 {
