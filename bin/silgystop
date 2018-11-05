@@ -3,14 +3,6 @@
 echo "Stopping Silgy..."
 
 # ---------------------------------------------------------------------
-# Main app
-
-if [ -f $SILGYDIR/bin/silgy_app.pid ]
-then
-    kill `cat $SILGYDIR/bin/silgy_app.pid`
-fi
-
-# ---------------------------------------------------------------------
 # Services
 
 if [ -f $SILGYDIR/bin/s_*.pid ]
@@ -21,6 +13,16 @@ then
     do
         kill `cat ${f}`
     done
+
+    sleep 1
+fi
+
+# ---------------------------------------------------------------------
+# Main app
+
+if [ -f $SILGYDIR/bin/silgy_app.pid ]
+then
+    kill `cat $SILGYDIR/bin/silgy_app.pid`
 fi
 
 # ---------------------------------------------------------------------
