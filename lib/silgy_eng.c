@@ -4962,6 +4962,7 @@ char        G_req_queue_name[256];
 char        G_res_queue_name[256];
 mqd_t       G_queue_req;                /* request queue */
 mqd_t       G_queue_res;                /* response queue */
+char        *G_req;
 char        *G_res;
 
 
@@ -5139,6 +5140,7 @@ int main(int argc, char *argv[])
             /* ----------------------------------------------------------- */
 
             DBG("Processing...");
+            G_req = req.data;
             G_res = res.data;
             res.hdr.err_code = service_app_process_req(req.hdr.service, req.data);
 
