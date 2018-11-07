@@ -449,7 +449,12 @@ typedef char                        bool;
 #define AUS                             auses[conn[ci].usi]
 #define HOST(str)                       eng_host(ci, str)
 #define REQ_GET_HEADER(header)          eng_get_header(ci, header)
+
+#ifdef ASYNC_SERVICE
+#define REQ_DATA                        G_req
+#else
 #define REQ_DATA                        conn[ci].data
+#endif
 
 #define REST_HEADER_PASS(header)        eng_rest_header_pass(ci, header)
 
@@ -727,6 +732,7 @@ extern long     G_last_call_id;             /* counter */
 extern char     G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 extern bool     G_index_present;            /* index.html present in res? */
 #ifdef ASYNC_SERVICE
+extern char     *G_req;
 extern char     *G_res;
 #endif
 
