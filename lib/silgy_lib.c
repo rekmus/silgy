@@ -4363,7 +4363,11 @@ static char pidfilename[512];
 
     G_pid = getpid();
 
+#ifdef _WIN32   /* Windows */
+    sprintf(pidfilename, "%s\\bin\\%s.pid", G_appdir, name);
+#else
     sprintf(pidfilename, "%s/bin/%s.pid", G_appdir, name);
+#endif
 
     /* check if the pid file already exists */
 
