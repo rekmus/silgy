@@ -118,6 +118,7 @@ static bool         M_robots_exists=FALSE;      /* -''- */
 static bool         M_appleicon_exists=FALSE;   /* -''- */
 #ifdef _WIN32   /* Windows */
 WSADATA             wsa;
+static bool         M_shutdown=FALSE;
 #endif
 
 
@@ -373,6 +374,9 @@ struct timeval  timeout;                    /* Timeout for select */
 
         if (readsocks < 0)
         {
+#ifdef _WIN32
+            if ( M_shutdown ) break;
+#endif
             ERR("select failed, errno = %d (%s)", errno, strerror(errno));
             /* protect from infinite loop */
             if ( failed_select_cnt >= 10 )
@@ -384,7 +388,11 @@ struct timeval  timeout;                    /* Timeout for select */
                     close_conn(k);
                 failed_select_cnt = 0;
                 ALWAYS("Waiting for 1 second...");
-                msleep(1000);
+#ifdef _WIN32
+                Sleep(1000);
+#else
+                sleep(1);
+#endif
                 continue;
             }
             else
@@ -781,8 +789,6 @@ struct timeval  timeout;                    /* Timeout for select */
 
         ++time_elapsed;
     }
-
-    clean_up();
 
     return EXIT_SUCCESS;
 }
@@ -1445,9 +1451,9 @@ static bool init(int argc, char **argv)
 
 	/* handle signals ---------------------------------------------------- */
 
-#ifndef _WIN32
     signal(SIGINT,  sigdisp);   /* Ctrl-C */
     signal(SIGTERM, sigdisp);
+#ifndef _WIN32
     signal(SIGQUIT, sigdisp);   /* Ctrl-\ */
     signal(SIGTSTP, sigdisp);   /* Ctrl-Z */
 
@@ -1627,6 +1633,13 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
     if ( connection < 0 )
     {
+#ifdef _WIN32
+        if ( errno == 34 )  /* most likely a shutdown */
+        {
+            M_shutdown = TRUE;
+            return;
+        }
+#endif
         ERR("accept failed, errno = %d (%s)", errno, strerror(errno));
         return;
     }
@@ -3504,6 +3517,8 @@ static void clean_up()
 {
     char    command[256];
 
+    M_shutdown = TRUE;
+
     ALWAYS("");
     ALWAYS("Cleaning up...\n");
     lib_log_memory();
@@ -5042,9 +5057,9 @@ int main(int argc, char *argv[])
 
 	/* handle signals ---------------------------------------------------- */
 
-#ifndef _WIN32
 	signal(SIGINT,  sigdisp);	/* Ctrl-C */
 	signal(SIGTERM, sigdisp);
+#ifndef _WIN32
 	signal(SIGQUIT, sigdisp);	/* Ctrl-\ */
 	signal(SIGTSTP, sigdisp);	/* Ctrl-Z */
 
