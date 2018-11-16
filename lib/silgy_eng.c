@@ -118,8 +118,8 @@ static bool         M_robots_exists=FALSE;      /* -''- */
 static bool         M_appleicon_exists=FALSE;   /* -''- */
 #ifdef _WIN32   /* Windows */
 WSADATA             wsa;
-static bool         M_shutdown=FALSE;
 #endif
+static bool         M_shutdown=FALSE;
 
 
 /* prototypes */
@@ -180,6 +180,10 @@ struct timeval  timeout;                    /* Timeout for select */
     long        bytes=0;
     int         failed_select_cnt=0;
     int         j=0;
+#ifdef DUMP
+    time_t      dbg_last_time1=0;
+    time_t      dbg_last_time2=0;
+#endif /* DUMP */
 
     if ( !init(argc, argv) )
     {
@@ -570,15 +574,23 @@ struct timeval  timeout;                    /* Timeout for select */
                     if ( FD_ISSET(conn[i].fd, &M_writefds) )        /* ready for outgoing data */
                     {
 #ifdef DUMP
-//                        DBG("fd=%d is ready for outgoing data, conn_state = %c", conn[i].fd, conn[i].conn_state);
-#endif
+                        if ( G_now != dbg_last_time1 )   /* only once in a second */
+                        {
+                            DBG("ci=%d, fd=%d is ready for outgoing data, conn_state = %c", i, conn[i].fd, conn[i].conn_state);
+                            dbg_last_time1 = G_now;
+                        }
+#endif /* DUMP */
                         /* async processing */
 #ifdef ASYNC
                         if ( conn[i].conn_state == CONN_STATE_WAITING_FOR_ASYNC )
                         {
 #ifdef DUMP
-//                            DBG("state == CONN_STATE_WAITING_FOR_ASYNC");
-#endif
+                            if ( G_now != dbg_last_time2 )   /* only once in a second */
+                            {
+                                DBG("ci=%d, state == CONN_STATE_WAITING_FOR_ASYNC", i);
+                                dbg_last_time2 = G_now;
+                            }
+#endif /* DUMP */
                             for ( j=0; j<MAX_ASYNC; ++j )
                             {
                                 if ( (ares[j].hdr.state==ASYNC_STATE_RECEIVED || ares[j].hdr.state==ASYNC_STATE_TIMEOUTED) && ares[j].hdr.ci == i )
@@ -1573,37 +1585,39 @@ static void build_select_list()
 
     for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
-        if ( conn[i].conn_state != CONN_STATE_DISCONNECTED )
+        if ( conn[i].conn_state == CONN_STATE_DISCONNECTED ) continue;
+
+        /* reading */
+
+        FD_SET(conn[i].fd, &M_readfds);
+
+        /* writing -- only for certain states */
+
+#ifdef HTTPS
+        if ( conn[i].secure )
         {
-            FD_SET(conn[i].fd, &M_readfds);
-
-            /* only for certain states */
-
-#ifdef HTTPS
-            if ( conn[i].secure )
+            if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER
+                    || conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY
+                    || conn[i].conn_state == CONN_STATE_SENDING_BODY
+                    || conn[i].conn_state == CONN_STATE_WAITING_FOR_ASYNC
+                    || conn[i].ssl_err == SSL_ERROR_WANT_WRITE )
             {
-                if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER
-                        || conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY
-                        || conn[i].conn_state == CONN_STATE_SENDING_BODY
-                        || conn[i].ssl_err == SSL_ERROR_WANT_WRITE )
-                {
-                    FD_SET(conn[i].fd, &M_writefds);
-                }
+                FD_SET(conn[i].fd, &M_writefds);
             }
-            else
-            {
-#endif /* HTTPS */
-                if ( conn[i].conn_state != CONN_STATE_CONNECTED
-                        && conn[i].conn_state != CONN_STATE_READING_DATA )
-                    FD_SET(conn[i].fd, &M_writefds);
-#ifdef HTTPS
-            }
-#endif
-            if (conn[i].fd > M_highsock)
-                M_highsock = conn[i].fd;
-
-            ++G_open_conn;
         }
+        else
+        {
+#endif /* HTTPS */
+            if ( conn[i].conn_state != CONN_STATE_CONNECTED
+                    && conn[i].conn_state != CONN_STATE_READING_DATA )
+                FD_SET(conn[i].fd, &M_writefds);
+#ifdef HTTPS
+        }
+#endif
+        if (conn[i].fd > M_highsock)
+            M_highsock = conn[i].fd;
+
+        ++G_open_conn;
     }
 }
 
@@ -1634,11 +1648,8 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     if ( connection < 0 )
     {
 #ifdef _WIN32
-        if ( errno == 34 )  /* most likely a shutdown */
-        {
-            M_shutdown = TRUE;
+        if ( M_shutdown )
             return;
-        }
 #endif
         ERR("accept failed, errno = %d (%s)", errno, strerror(errno));
         return;
