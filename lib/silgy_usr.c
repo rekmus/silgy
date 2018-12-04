@@ -1892,6 +1892,10 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
         strcpy(dest, "Your password has been changed. You can now log in:");
     else if ( errcode == MSG_MESSAGE_SENT )
         strcpy(dest, "Your message has been sent.");
+    else if ( errcode == MSG_PROVIDE_FEEDBACK )
+        sprintf(dest, "%s would suit me better if...", conn[ci].website);
+    else if ( errcode == MSG_FEEDBACK_SENT )
+        strcpy(dest, "Thank you for your feedback!");
     else if ( errcode == MSG_USER_ALREADY_ACTIVATED )
         strcpy(dest, "Your account has already been activated.");
     else if ( errcode == WAR_ULA )

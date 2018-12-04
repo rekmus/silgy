@@ -10,9 +10,6 @@
 #define SILGY_USR_H
 
 
-#define LUSES_TIMEOUT                   1800                    /* logged in user session timeout in seconds (120 for tests / 1800 live) */
-                                                                /* it's now how long it stays in cache */
-
 #define DB_UAGENT_LEN                   120                     /* User-Agent length stored in ulogins table */
 #ifdef APP_MIN_USERNAME_LEN                                     /* minimum user name length */
 #define MIN_USERNAME_LEN                APP_MIN_USERNAME_LEN               
@@ -39,53 +36,91 @@
 #endif
 
 
+/* Silgy engine errors are 0 ... 99 */
+
+/* ------------------------------------- */
 /* errors -- red */
 
 /* login */
-#define ERR_INVALID_LOGIN               10
-#define ERR_USERNAME_TOO_SHORT          11
-#define ERR_USERNAME_CHARS              12
-#define ERR_USERNAME_TAKEN              13
+#define ERR_INVALID_LOGIN               101
+#define ERR_USERNAME_TOO_SHORT          102
+#define ERR_USERNAME_CHARS              103
+#define ERR_USERNAME_TAKEN              104
+/* ------------------------------------- */
+#define ERR_MAX_USR_LOGIN_ERROR         110
+/* ------------------------------------- */
 /* email */
-#define ERR_EMAIL_EMPTY                 20
-#define ERR_EMAIL_FORMAT                21
-#define ERR_EMAIL_FORMAT_OR_EMPTY       22
-#define ERR_EMAIL_TAKEN                 23
+#define ERR_EMAIL_EMPTY                 111
+#define ERR_EMAIL_FORMAT                112
+#define ERR_EMAIL_FORMAT_OR_EMPTY       113
+#define ERR_EMAIL_TAKEN                 114
+/* ------------------------------------- */
+#define ERR_MAX_USR_EMAIL_ERROR         120
+/* ------------------------------------- */
 /* password */
-#define ERR_INVALID_PASSWORD            30
-#define ERR_PASSWORD_TOO_SHORT          31
+#define ERR_INVALID_PASSWORD            121
+#define ERR_PASSWORD_TOO_SHORT          122
+/* ------------------------------------- */
+#define ERR_MAX_USR_PASSWORD_ERROR      130
+/* ------------------------------------- */
 /* repeat password */
-#define ERR_PASSWORD_DIFFERENT          40
+#define ERR_PASSWORD_DIFFERENT          131
+/* ------------------------------------- */
+#define ERR_MAX_USR_REPEAT_PASSWORD_ERROR 140
+/* ------------------------------------- */
 /* old password */
-#define ERR_OLD_PASSWORD                50
+#define ERR_OLD_PASSWORD                141
+/* ------------------------------------- */
+#define ERR_MAX_USR_OLD_PASSWORD_ERROR  150
+/* ------------------------------------- */
 /* session / link / other */
-#define ERR_SESSION_EXPIRED             60
-#define ERR_LINK_BROKEN                 61
-#define ERR_LINK_MAY_BE_EXPIRED         62
-#define ERR_LINK_EXPIRED                63
-#define ERR_LINK_TOO_MANY_TRIES         64
-#define ERR_ROBOT                       65
-#define ERR_WEBSITE_FIRST_LETTER        66
-#define ERR_NOT_ACTIVATED               67
-/* internal errors */
+#define ERR_SESSION_EXPIRED             151
+#define ERR_LINK_BROKEN                 152
+#define ERR_LINK_MAY_BE_EXPIRED         153
+#define ERR_LINK_EXPIRED                154
+#define ERR_LINK_TOO_MANY_TRIES         155
+#define ERR_ROBOT                       156
+#define ERR_WEBSITE_FIRST_LETTER        157
+#define ERR_NOT_ACTIVATED               158
+/* ------------------------------------- */
+#define ERR_MAX_USR_ERROR               199
+/* ------------------------------------- */
 
+/* ------------------------------------- */
 /* warnings -- yellow */
 
-#define WAR_NO_EMAIL                    101
-#define WAR_BEFORE_DELETE               102
-#define WAR_ULA                         103
+#define WAR_NO_EMAIL                    201
+#define WAR_BEFORE_DELETE               202
+#define WAR_ULA                         203
+/* ------------------------------------- */
+#define WAR_MAX_USR_WARNING             299
+/* ------------------------------------- */
 
+/* ------------------------------------- */
 /* messages -- green */
 
-#define MSG_WELCOME                     202
-#define MSG_WELCOME_AFTER_ACTIVATION    203
-#define MSG_USER_LOGGED_OUT             204
-#define MSG_CHANGES_SAVED               205
-#define MSG_REQUEST_SENT                206
-#define MSG_PASSWORD_CHANGED            207
-#define MSG_MESSAGE_SENT                208
-#define MSG_USER_ALREADY_ACTIVATED      209
-#define MSG_ACCOUNT_DELETED             210
+#define MSG_WELCOME                     301
+#define MSG_WELCOME_AFTER_ACTIVATION    302
+#define MSG_USER_LOGGED_OUT             303
+#define MSG_CHANGES_SAVED               304
+#define MSG_REQUEST_SENT                305
+#define MSG_PASSWORD_CHANGED            306
+#define MSG_MESSAGE_SENT                307
+#define MSG_PROVIDE_FEEDBACK            308
+#define MSG_FEEDBACK_SENT               309
+#define MSG_USER_ALREADY_ACTIVATED      310
+#define MSG_ACCOUNT_DELETED             311
+/* ------------------------------------- */
+#define MSG_MAX_USR_MESSAGE             399
+/* ------------------------------------- */
+
+
+#define ERR_CAT_USR_LOGIN               "loginError"
+#define ERR_CAT_USR_EMAIL               "emailError"
+#define ERR_CAT_USR_PASSWORD            "passwordError"
+#define ERR_CAT_USR_REPEAT_PASSWORD     "repeatPasswordError"
+#define ERR_CAT_USR_OLD_PASSWORD        "oldPasswordError"
+
 
 #define LUSES_TIMEOUT                   1800                /* logged in user session timeout in seconds (120 for tests / 1800 live) */
                                                             /* it's now how long it stays in cache */
@@ -101,30 +136,30 @@
 /* passwords' hashing */
 
 #ifndef STR_001
-#define STR_001                     "abcde"
+#define STR_001                         "abcde"
 #endif
 #ifndef STR_002
-#define STR_002                     "fghij"
+#define STR_002                         "fghij"
 #endif
 #ifndef STR_003
-#define STR_003                     "klmno"
+#define STR_003                         "klmno"
 #endif
 #ifndef STR_004
-#define STR_004                     "pqrst"
+#define STR_004                         "pqrst"
 #endif
 #ifndef STR_005
-#define STR_005                     "uvwxy"
+#define STR_005                         "uvwxy"
 #endif
 
 
-#define LOGGED                      US.logged
-#define ADMIN                       (LOGGED && 0==strcmp(US.login, "admin"))
+#define LOGGED                          US.logged
+#define ADMIN                           (LOGGED && 0==strcmp(US.login, "admin"))
 
 
-#define SET_USER_STR(key, val)      silgy_usr_set_str(ci, key, val)
-#define GET_USER_STR(key, val)      silgy_usr_get_str(ci, key, val)
-#define SET_USER_INT(key, val)      silgy_usr_set_int(ci, key, val)
-#define GET_USER_INT(key, val)      silgy_usr_get_int(ci, key, val)
+#define SET_USER_STR(key, val)          silgy_usr_set_str(ci, key, val)
+#define GET_USER_STR(key, val)          silgy_usr_get_str(ci, key, val)
+#define SET_USER_INT(key, val)          silgy_usr_set_int(ci, key, val)
+#define GET_USER_INT(key, val)          silgy_usr_get_int(ci, key, val)
 
 
 #ifdef __cplusplus

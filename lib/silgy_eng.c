@@ -4195,61 +4195,66 @@ void eng_append_script(int ci, const char *fname, bool first)
 
 
 /* --------------------------------------------------------------------------
-   Send error description as plain, pipe-delimited text
+   Send error description as plain, pipe-delimited text as follows:
+   <category>|<description>
 -------------------------------------------------------------------------- */
-void eng_send_ajax_msg(int ci, int errcode)
+void eng_send_error_description(int ci, int errcode)
 {
-    char    id[4]="msg";        /* HTML id */
-    char    msg[256];
-    char    cat='E';            /* category = 'Error' by default */
+    char    cat[256]=ERR_CAT_ENGINE;
+    char    msg[256]="";
 
     if ( errcode == OK )
     {
-        strcpy(id, "0");
-        cat = 'I';
+        strcpy(cat, ERR_CAT_OK);
     }
-//  else if ( errcode < 0 )     /* server error */
-//  {
-//  }
-    else if ( errcode > 0 && errcode < 20 ) /* login */
+    else if ( errcode < ERR_MAX_ENGINE_ERROR )
     {
-        strcpy(id, "loe");
+        /* keep default category */
     }
-    else if ( errcode < 30 )    /* email */
+#ifdef USERS
+    else if ( errcode < ERR_MAX_USR_LOGIN_ERROR )
     {
-        strcpy(id, "eme");
+        strcpy(cat, ERR_CAT_USR_LOGIN);
     }
-    else if ( errcode < 40 )    /* password */
+    else if ( errcode < ERR_MAX_USR_EMAIL_ERROR )
     {
-        strcpy(id, "pae");
+        strcpy(cat, ERR_CAT_USR_EMAIL);
     }
-    else if ( errcode < 50 )    /* repeat password */
+    else if ( errcode < ERR_MAX_USR_PASSWORD_ERROR )
     {
-        strcpy(id, "pre");
+        strcpy(cat, ERR_CAT_USR_PASSWORD);
     }
-    else if ( errcode < 60 )    /* old password */
+    else if ( errcode < ERR_MAX_USR_REPEAT_PASSWORD_ERROR )
     {
-        strcpy(id, "poe");
+        strcpy(cat, ERR_CAT_USR_REPEAT_PASSWORD);
     }
-//  else if ( errcode < 100 )   /* other error */
-//  {
-//  }
-    else if ( errcode < 200 )   /* warning (yellow) */
+    else if ( errcode < ERR_MAX_USR_OLD_PASSWORD_ERROR )
     {
-        cat = 'W';
+        strcpy(cat, ERR_CAT_USR_OLD_PASSWORD);
     }
-    else if ( errcode < 1000 )  /* info (green) */
+    else if ( errcode < ERR_MAX_USR_ERROR )
     {
-        cat = 'I';
+        /* keep default category */
     }
-//  else    /* app error */
-//  {
-//  }
+    else if ( errcode < WAR_MAX_USR_WARNING )
+    {
+        strcpy(cat, ERR_CAT_WARNING);
+    }
+    else if ( errcode < MSG_MAX_USR_MESSAGE )
+    {
+        strcpy(cat, ERR_CAT_MESSAGE);
+    }
+#endif /* USERS */
+    else    /* app error */
+    {
+        /* keep default category */
+    }
 
     eng_get_msg_str(ci, msg, errcode);
-    OUT("%s|%s|%c", id, msg, cat);
 
-    DBG("lib_send_ajax_msg: [%s]", G_tmp);
+    OUT("%s|%s", cat, msg);
+
+    DBG("eng_send_error_description: [%s]", G_tmp);
 
     conn[ci].ctype = RES_TEXT;
     RES_DONT_CACHE;

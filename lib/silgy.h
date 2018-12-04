@@ -50,6 +50,12 @@ typedef char                        bool;
 #define true                        ((char)1)
 #endif  /* __cplusplus */
 
+
+#define WEB_SERVER_VERSION          "3.6.6"
+/* alias */
+#define SILGY_VERSION               WEB_SERVER_VERSION
+
+
 #ifndef FALSE
 #define FALSE                       false
 #endif
@@ -92,11 +98,6 @@ typedef char                        bool;
 #ifdef HTTPS
 #include <openssl/ssl.h>
 #endif
-
-
-#define WEB_SERVER_VERSION          "3.6.5"
-/* alias */
-#define SILGY_VERSION               WEB_SERVER_VERSION
 
 
 #define OK                          0
@@ -180,85 +181,85 @@ typedef char                        bool;
 #endif  /* ASYNC_SERVICE */
 
 
-#define OUTM(str, ...)              (sprintf(G_tmp, str, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
+#define OUTM(str, ...)                  (sprintf(G_tmp, str, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
 
 #define CHOOSE_OUT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME          /* single or multiple? */
-#define OUT(...)                    CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
+#define OUT(...)                        CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
 
 /* HTTP header -- resets respbuf! */
-#define PRINT_HTTP_STATUS(val)      (sprintf(G_tmp, "HTTP/1.1 %d %s\r\n", val, get_http_descr(val)), HOUT(G_tmp))
+#define PRINT_HTTP_STATUS(val)          (sprintf(G_tmp, "HTTP/1.1 %d %s\r\n", val, get_http_descr(val)), HOUT(G_tmp))
 
 /* date */
-#define PRINT_HTTP_DATE             (sprintf(G_tmp, "Date: %s\r\n", M_resp_date), HOUT(G_tmp))
+#define PRINT_HTTP_DATE                 (sprintf(G_tmp, "Date: %s\r\n", M_resp_date), HOUT(G_tmp))
 
 /* cache control */
-#define PRINT_HTTP_NO_CACHE         HOUT("Cache-Control: private, must-revalidate, no-store, no-cache, max-age=0\r\n")
-#define PRINT_HTTP_EXPIRES          (sprintf(G_tmp, "Expires: %s\r\n", M_expires), HOUT(G_tmp))
-#define PRINT_HTTP_LAST_MODIFIED(str) (sprintf(G_tmp, "Last-Modified: %s\r\n", str), HOUT(G_tmp))
+#define PRINT_HTTP_NO_CACHE             HOUT("Cache-Control: private, must-revalidate, no-store, no-cache, max-age=0\r\n")
+#define PRINT_HTTP_EXPIRES              (sprintf(G_tmp, "Expires: %s\r\n", M_expires), HOUT(G_tmp))
+#define PRINT_HTTP_LAST_MODIFIED(str)   (sprintf(G_tmp, "Last-Modified: %s\r\n", str), HOUT(G_tmp))
 
 /* connection */
-#define PRINT_HTTP_CONNECTION(ci)   (sprintf(G_tmp, "Connection: %s\r\n", conn[ci].keep_alive?"Keep-Alive":"close"), HOUT(G_tmp))
+#define PRINT_HTTP_CONNECTION(ci)       (sprintf(G_tmp, "Connection: %s\r\n", conn[ci].keep_alive?"Keep-Alive":"close"), HOUT(G_tmp))
 
 /* vary */
-#define PRINT_HTTP_VARY_DYN         HOUT("Vary: Accept-Encoding, User-Agent\r\n")
-#define PRINT_HTTP_VARY_STAT        HOUT("Vary: Accept-Encoding\r\n")
-#define PRINT_HTTP_VARY_UIR         HOUT("Vary: Upgrade-Insecure-Requests\r\n")
+#define PRINT_HTTP_VARY_DYN             HOUT("Vary: Accept-Encoding, User-Agent\r\n")
+#define PRINT_HTTP_VARY_STAT            HOUT("Vary: Accept-Encoding\r\n")
+#define PRINT_HTTP_VARY_UIR             HOUT("Vary: Upgrade-Insecure-Requests\r\n")
 
 /* content language */
-#define PRINT_HTTP_LANGUAGE         HOUT("Content-Language: en-us\r\n")
+#define PRINT_HTTP_LANGUAGE             HOUT("Content-Language: en-us\r\n")
 
 /* framing */
-#define PRINT_HTTP_FRAME_OPTIONS    HOUT("X-Frame-Options: SAMEORIGIN\r\n")
+#define PRINT_HTTP_FRAME_OPTIONS        HOUT("X-Frame-Options: SAMEORIGIN\r\n")
 
 /* cookie */
-#define PRINT_HTTP_COOKIE_A(ci)     (sprintf(G_tmp, "Set-Cookie: as=%s; HttpOnly\r\n", conn[ci].cookie_out_a), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_L(ci)     (sprintf(G_tmp, "Set-Cookie: ls=%s; HttpOnly\r\n", conn[ci].cookie_out_l), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_A_EXP(ci) (sprintf(G_tmp, "Set-Cookie: as=%s; Expires=%s; HttpOnly\r\n", conn[ci].cookie_out_a, conn[ci].cookie_out_a_exp), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_L_EXP(ci) (sprintf(G_tmp, "Set-Cookie: ls=%s; Expires=%s; HttpOnly\r\n", conn[ci].cookie_out_l, conn[ci].cookie_out_l_exp), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_A(ci)         (sprintf(G_tmp, "Set-Cookie: as=%s; HttpOnly\r\n", conn[ci].cookie_out_a), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_L(ci)         (sprintf(G_tmp, "Set-Cookie: ls=%s; HttpOnly\r\n", conn[ci].cookie_out_l), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_A_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: as=%s; Expires=%s; HttpOnly\r\n", conn[ci].cookie_out_a, conn[ci].cookie_out_a_exp), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_L_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: ls=%s; Expires=%s; HttpOnly\r\n", conn[ci].cookie_out_l, conn[ci].cookie_out_l_exp), HOUT(G_tmp))
 
 /* content length */
-#define PRINT_HTTP_CONTENT_LEN(len) (sprintf(G_tmp, "Content-Length: %d\r\n", len), HOUT(G_tmp))
+#define PRINT_HTTP_CONTENT_LEN(len)     (sprintf(G_tmp, "Content-Length: %d\r\n", len), HOUT(G_tmp))
 
 /* identity */
-#define PRINT_HTTP_SERVER           HOUT("Server: Silgy\r\n")
+#define PRINT_HTTP_SERVER               HOUT("Server: Silgy\r\n")
 
 /* must be last! */
-#define PRINT_HTTP_END_OF_HEADER    HOUT("\r\n")
+#define PRINT_HTTP_END_OF_HEADER        HOUT("\r\n")
 
 
-#define IN_BUFSIZE                  8192            /* incoming request buffer length (8 kB) */
-#define OUT_HEADER_BUFSIZE          4096            /* response header buffer length */
-#define OUT_BUFSIZE                 262144          /* initial HTTP response buffer length (256 kB) */
-#define TMP_BUFSIZE                 1048576         /* temporary string buffer size (1 MB) */
-#define MAX_POST_DATA_BUFSIZE       16777216+1048576    /* max incoming POST data length (16+1 MB) */
-#define MAX_LOG_STR_LEN             4095            /* max log string length */
-#define MAX_METHOD_LEN              7               /* method length */
-#define MAX_URI_LEN                 2047            /* max request URI length */
-#define MAX_LABEL_LEN               63              /* max request label length */
-#define MAX_VALUE_LEN               255             /* max request value length */
-#define MAX_RESOURCE_LEN            63              /* max resource's name length -- as a first part of URI */
-#define MAX_ID_LEN                  31              /* max id length -- as a second part of URI */
-#define MAX_RESOURCES               10000           /* for M_auth_levels */
+#define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
+#define OUT_HEADER_BUFSIZE              4096            /* response header buffer length */
+#define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
+#define TMP_BUFSIZE                     1048576         /* temporary string buffer size (1 MB) */
+#define MAX_POST_DATA_BUFSIZE           16777216+1048576    /* max incoming POST data length (16+1 MB) */
+#define MAX_LOG_STR_LEN                 4095            /* max log string length */
+#define MAX_METHOD_LEN                  7               /* method length */
+#define MAX_URI_LEN                     2047            /* max request URI length */
+#define MAX_LABEL_LEN                   63              /* max request label length */
+#define MAX_VALUE_LEN                   255             /* max request value length */
+#define MAX_RESOURCE_LEN                63              /* max resource's name length -- as a first part of URI */
+#define MAX_ID_LEN                      31              /* max id length -- as a second part of URI */
+#define MAX_RESOURCES                   10000           /* for M_auth_levels */
 
 /* mainly memory usage */
 
 #ifdef MEM_MEDIUM
-#define MAX_CONNECTIONS             500             /* max TCP connections (5 per user session) */
-#define MAX_SESSIONS                100             /* max user sessions */
+#define MAX_CONNECTIONS                 500             /* max TCP connections (5 per user session) */
+#define MAX_SESSIONS                    100             /* max user sessions */
 #elif MEM_BIG
-#define MAX_CONNECTIONS             2500            /* max TCP connections */
-#define MAX_SESSIONS                500             /* max user sessions */
+#define MAX_CONNECTIONS                 2500            /* max TCP connections */
+#define MAX_SESSIONS                    500             /* max user sessions */
 #elif MEM_HUGE
-#define MAX_CONNECTIONS             10000           /* max TCP connections */
-#define MAX_SESSIONS                2000            /* max user sessions */
+#define MAX_CONNECTIONS                 10000           /* max TCP connections */
+#define MAX_SESSIONS                    2000            /* max user sessions */
 #else   /* MEM_SMALL -- default */
-#define MAX_CONNECTIONS             50              /* max TCP connections */
-#define MAX_SESSIONS                10              /* max user sessions */
+#define MAX_CONNECTIONS                 50              /* max TCP connections */
+#define MAX_SESSIONS                    10              /* max user sessions */
 #endif
 
-#define CONN_TIMEOUT                180             /* idle connection timeout in seconds */
+#define CONN_TIMEOUT                    180             /* idle connection timeout in seconds */
 
-#define USES_TIMEOUT                300             /* anonymous user session timeout in seconds */
+#define USES_TIMEOUT                    300             /* anonymous user session timeout in seconds */
 
 #define CONN_STATE_DISCONNECTED         '0'
 #define CONN_STATE_ACCEPTING            'a'
@@ -354,17 +355,27 @@ typedef char                        bool;
 
 /* errors */
 
-#define ERR_INVALID_REQUEST             -1
-#define ERR_UNAUTHORIZED                -2
-#define ERR_FORBIDDEN                   -3
-#define ERR_NOT_FOUND                   -4
-#define ERR_INT_SERVER_ERROR            -5
-#define ERR_SERVER_TOOBUSY              -6
-#define ERR_FILE_TOO_BIG                -7
-#define ERR_REDIRECTION                 -8
-#define ERR_ASYNC_NO_SUCH_SERVICE       -9
-#define ERR_ASYNC_TIMEOUT               -10
-#define ERR_REMOTE_CALL                 -11
+/* 0 always means OK */
+#define ERR_INVALID_REQUEST             1
+#define ERR_UNAUTHORIZED                2
+#define ERR_FORBIDDEN                   3
+#define ERR_NOT_FOUND                   4
+#define ERR_INT_SERVER_ERROR            5
+#define ERR_SERVER_TOOBUSY              6
+#define ERR_FILE_TOO_BIG                7
+#define ERR_REDIRECTION                 8
+#define ERR_ASYNC_NO_SUCH_SERVICE       9
+#define ERR_ASYNC_TIMEOUT               10
+#define ERR_REMOTE_CALL                 11
+/* ------------------------------------- */
+#define ERR_MAX_ENGINE_ERROR            99
+/* ------------------------------------- */
+
+
+#define ERR_CAT_OK                      "OK"
+#define ERR_CAT_ENGINE                  "ERR"
+#define ERR_CAT_WARNING                 "WAR"
+#define ERR_CAT_MESSAGE                 "MSG"
 
 
 /* statics */
@@ -471,6 +482,7 @@ typedef char                        bool;
 
 #define REDIRECT_TO_LANDING             sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host)
 
+#define OUT_ERR_MSG(code)               eng_send_error_description(ci, code)
 #define OUT_HTML_HEADER                 eng_out_html_header(ci)
 #define OUT_HTML_FOOTER                 eng_out_html_footer(ci)
 #define APPEND_CSS(name, first)         eng_append_css(ci, name, first)
@@ -773,7 +785,7 @@ extern "C" {
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
     void silgy_add_to_static_res(const char *name, const char *src);
-    void eng_send_ajax_msg(int ci, int errcode);
+    void eng_send_error_description(int ci, int errcode);
     void eng_block_ip(const char *value, bool autoblocked);
     void eng_get_msg_str(int ci, char *dest, int errcode);
     bool eng_host(int ci, const char *host);
@@ -788,7 +800,7 @@ extern "C" {
     void eng_out_html_footer(int ci);
     void eng_append_css(int ci, const char *fname, bool first);
     void eng_append_script(int ci, const char *fname, bool first);
-    void eng_send_ajax_msg(int ci, int errcode);
+    void eng_send_error_description(int ci, int errcode);
     bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param(int ci, const char *fieldname, char *retbuf);
