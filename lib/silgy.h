@@ -456,7 +456,11 @@ typedef char                        bool;
 #define URI(uri_)                       (0==strcmp(conn[ci].uri, uri_))
 #define REQ(res)                        (0==strcmp(conn[ci].resource, res))
 #define ID(id)                          (0==strcmp(conn[ci].id, id))
+#ifndef ASYNC_SERVICE
 #define US                              uses[conn[ci].usi]
+#else
+#define US                              uses
+#endif /* ASYNC_SERVICE */
 #define AUS                             auses[conn[ci].usi]
 #define HOST(str)                       eng_host(ci, str)
 #define REQ_GET_HEADER(header)          eng_get_header(ci, header)
@@ -626,7 +630,7 @@ typedef struct {
     char    referer[MAX_VALUE_LEN+1];
     char    lang[8];
     time_t  last_activity;
-    char    additional[64];         /* password reset key */
+//    char    additional[64];         /* password reset key */
 } usession_t;
 
 
@@ -663,6 +667,7 @@ typedef struct {
     int     ci;
     char    service[32];
     char    response;
+    usession_t uses;
 } async_req_hdr_t;
 
 typedef struct {
@@ -719,7 +724,9 @@ extern int      G_open_conn;                /* number of open connections */
 extern char     G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
 #ifndef ASYNC_SERVICE
 extern usession_t uses[MAX_SESSIONS+1];     /* user sessions -- they start from 1 */
-#endif
+#else
+extern usession_t uses;
+#endif /* ASYNC_SERVICE */
 extern int      G_sessions;                 /* number of active user sessions */
 extern time_t   G_now;                      /* current time */
 extern struct tm *G_ptm;                    /* human readable current time */
