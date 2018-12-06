@@ -3832,7 +3832,7 @@ void eng_uses_reset(int usi)
     uses[usi].uagent[0] = EOS;
     uses[usi].referer[0] = EOS;
     uses[usi].lang[0] = EOS;
-    uses[usi].additional[0] = EOS;
+//    uses[usi].additional[0] = EOS;
 }
 
 
@@ -3856,6 +3856,11 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         req.hdr.service[0] = EOS;
 
     req.hdr.response = response;
+
+    /* pass user session */
+
+    if ( conn[ci].usi )
+        memcpy(&req.hdr.uses, &US, sizeof(usession_t));
 
     if ( data )
         strcpy(req.data, data);
@@ -4991,6 +4996,7 @@ mqd_t       G_queue_req;                /* request queue */
 mqd_t       G_queue_res;                /* response queue */
 char        *G_req;
 char        *G_res;
+usession_t  uses;                       /* user session */
 
 
 static char *M_pidfile;                 /* pid file name */
@@ -5169,6 +5175,8 @@ int main(int argc, char *argv[])
             DBG("Processing...");
             G_req = req.data;
             G_res = res.data;
+            memcpy(&uses, &req.hdr.uses, sizeof(usession_t));
+            
             res.hdr.err_code = service_app_process_req(req.hdr.service, req.data);
 
             /* ----------------------------------------------------------- */
