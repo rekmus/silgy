@@ -4037,6 +4037,7 @@ static int minify_2(char *dest, const char *src)
         {
             word[wi] = EOS;
             if ( 0==strcmp(word, "var")
+                    || 0==strcmp(word, "let")
                     || (0==strcmp(word, "function") && src[i]!='(')
                     || (0==strcmp(word, "else") && src[i]!='{')
                     || 0==strcmp(word, "new")
