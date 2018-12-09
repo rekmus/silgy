@@ -334,6 +334,14 @@ struct timeval  timeout;                    /* Timeout for select */
 
         ALWAYS("Database connected");
     }
+#ifdef DBMYSQL
+    else
+    {
+        ERR("dbName parameter is required in silgy.conf");
+        clean_up();
+        return EXIT_FAILURE;
+    }
+#endif
 
     /* log currently used memory */
 
