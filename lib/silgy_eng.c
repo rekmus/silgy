@@ -3026,8 +3026,31 @@ static int parse_req(int ci, long len)
         }
     }
 
+#ifdef APP_ROOT_URI
+    /*
+       If i.e. APP_ROOT_URI: "app"
+       then with URL: example.com/app/something
+       we want conn[ci].uri to be "something"
+
+       Initial conn[ci].uri: app/something
+       root_uri_len = 3
+    */
+    int root_uri_len = strlen(APP_ROOT_URI);
+    if ( 0==strncmp(conn[ci].uri, APP_ROOT_URI, root_uri_len) )
+    {
+        char tmp[MAX_URI_LEN+1];
+        strcpy(tmp, conn[ci].uri+root_uri_len+1);
+#ifdef DUMP
+        DBG("tmp: [%s]", tmp);
+#endif
+        strcpy(conn[ci].uri, tmp);
+    }
+#endif
+
     /* only for low-level tests ------------------------------------- */
-//  DBG("URI: [%s]", conn[ci].uri);
+#ifdef DUMP
+    DBG("URI: [%s]", conn[ci].uri);
+#endif
     /* -------------------------------------------------------------- */
 
     j = 0;
@@ -4200,54 +4223,54 @@ void eng_append_script(int ci, const char *fname, bool first)
 
 
 /* --------------------------------------------------------------------------
-   Send error description as plain, pipe-delimited text as follows:
+   Send message description as plain, pipe-delimited text as follows:
    <category>|<description>
 -------------------------------------------------------------------------- */
-void eng_send_error_description(int ci, int errcode)
+void eng_send_msg_description(int ci, int code)
 {
-    char    cat[256]=ERR_CAT_ENGINE;
-    char    msg[256]="";
+    char    cat[256]=MSG_CAT_ERROR;
+    char    msg[1024]="";
 
-    if ( errcode == OK )
+    if ( code == OK )
     {
-        strcpy(cat, ERR_CAT_OK);
+        strcpy(cat, MSG_CAT_OK);
     }
-    else if ( errcode < ERR_MAX_ENGINE_ERROR )
+    else if ( code < ERR_MAX_ENGINE_ERROR )
     {
         /* keep default category */
     }
 #ifdef USERS
-    else if ( errcode < ERR_MAX_USR_LOGIN_ERROR )
+    else if ( code < ERR_MAX_USR_LOGIN_ERROR )
     {
-        strcpy(cat, ERR_CAT_USR_LOGIN);
+        strcpy(cat, MSG_CAT_USR_LOGIN);
     }
-    else if ( errcode < ERR_MAX_USR_EMAIL_ERROR )
+    else if ( code < ERR_MAX_USR_EMAIL_ERROR )
     {
-        strcpy(cat, ERR_CAT_USR_EMAIL);
+        strcpy(cat, MSG_CAT_USR_EMAIL);
     }
-    else if ( errcode < ERR_MAX_USR_PASSWORD_ERROR )
+    else if ( code < ERR_MAX_USR_PASSWORD_ERROR )
     {
-        strcpy(cat, ERR_CAT_USR_PASSWORD);
+        strcpy(cat, MSG_CAT_USR_PASSWORD);
     }
-    else if ( errcode < ERR_MAX_USR_REPEAT_PASSWORD_ERROR )
+    else if ( code < ERR_MAX_USR_REPEAT_PASSWORD_ERROR )
     {
-        strcpy(cat, ERR_CAT_USR_REPEAT_PASSWORD);
+        strcpy(cat, MSG_CAT_USR_REPEAT_PASSWORD);
     }
-    else if ( errcode < ERR_MAX_USR_OLD_PASSWORD_ERROR )
+    else if ( code < ERR_MAX_USR_OLD_PASSWORD_ERROR )
     {
-        strcpy(cat, ERR_CAT_USR_OLD_PASSWORD);
+        strcpy(cat, MSG_CAT_USR_OLD_PASSWORD);
     }
-    else if ( errcode < ERR_MAX_USR_ERROR )
+    else if ( code < ERR_MAX_USR_ERROR )
     {
         /* keep default category */
     }
-    else if ( errcode < WAR_MAX_USR_WARNING )
+    else if ( code < WAR_MAX_USR_WARNING )
     {
-        strcpy(cat, ERR_CAT_WARNING);
+        strcpy(cat, MSG_CAT_WARNING);
     }
-    else if ( errcode < MSG_MAX_USR_MESSAGE )
+    else if ( code < MSG_MAX_USR_MESSAGE )
     {
-        strcpy(cat, ERR_CAT_MESSAGE);
+        strcpy(cat, MSG_CAT_MESSAGE);
     }
 #endif /* USERS */
     else    /* app error */
@@ -4255,11 +4278,15 @@ void eng_send_error_description(int ci, int errcode)
         /* keep default category */
     }
 
-    eng_get_msg_str(ci, msg, errcode);
+    eng_get_msg_str(ci, msg, code);
 
-    OUT("%s|%s", cat, msg);
+#ifdef MSG_FORMAT_JSON
+    OUT("{\"code\":%d,\"category\":\"%s\",\"message\":\"%s\"}", code, cat, msg);
+#else
+    OUT("%d|%s|%s", code, cat, msg);
+#endif
 
-    DBG("eng_send_error_description: [%s]", G_tmp);
+    DBG("eng_send_msg_description: [%s]", G_tmp);
 
     conn[ci].ctype = RES_TEXT;
     RES_DONT_CACHE;

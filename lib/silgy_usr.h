@@ -115,11 +115,11 @@
 /* ------------------------------------- */
 
 
-#define ERR_CAT_USR_LOGIN               "loginError"
-#define ERR_CAT_USR_EMAIL               "emailError"
-#define ERR_CAT_USR_PASSWORD            "passwordError"
-#define ERR_CAT_USR_REPEAT_PASSWORD     "repeatPasswordError"
-#define ERR_CAT_USR_OLD_PASSWORD        "oldPasswordError"
+#define MSG_CAT_USR_LOGIN               "msgLogin"
+#define MSG_CAT_USR_EMAIL               "msgEmail"
+#define MSG_CAT_USR_PASSWORD            "msgPassword"
+#define MSG_CAT_USR_REPEAT_PASSWORD     "msgPasswordRepeat"
+#define MSG_CAT_USR_OLD_PASSWORD        "msgPasswordOld"
 
 
 #define LUSES_TIMEOUT                   1800                /* logged in user session timeout in seconds (120 for tests / 1800 live) */

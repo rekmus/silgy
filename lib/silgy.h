@@ -372,10 +372,10 @@ typedef char                        bool;
 /* ------------------------------------- */
 
 
-#define ERR_CAT_OK                      "OK"
-#define ERR_CAT_ENGINE                  "ERR"
-#define ERR_CAT_WARNING                 "WAR"
-#define ERR_CAT_MESSAGE                 "MSG"
+#define MSG_CAT_OK                      "OK"
+#define MSG_CAT_ERROR                   "err"
+#define MSG_CAT_WARNING                 "war"
+#define MSG_CAT_MESSAGE                 "msg"
 
 
 /* statics */
@@ -486,7 +486,7 @@ typedef char                        bool;
 
 #define REDIRECT_TO_LANDING             sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host)
 
-#define OUT_ERR_MSG(code)               eng_send_error_description(ci, code)
+#define OUT_MSG_DESCRIPTION(code)       eng_send_msg_description(ci, code)
 #define OUT_HTML_HEADER                 eng_out_html_header(ci)
 #define OUT_HTML_FOOTER                 eng_out_html_footer(ci)
 #define APPEND_CSS(name, first)         eng_append_css(ci, name, first)
@@ -792,7 +792,7 @@ extern "C" {
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
     void silgy_add_to_static_res(const char *name, const char *src);
-    void eng_send_error_description(int ci, int errcode);
+    void eng_send_msg_description(int ci, int errcode);
     void eng_block_ip(const char *value, bool autoblocked);
     void eng_get_msg_str(int ci, char *dest, int errcode);
     bool eng_host(int ci, const char *host);
@@ -807,7 +807,7 @@ extern "C" {
     void eng_out_html_footer(int ci);
     void eng_append_css(int ci, const char *fname, bool first);
     void eng_append_script(int ci, const char *fname, bool first);
-    void eng_send_error_description(int ci, int errcode);
+    void eng_send_msg_description(int ci, int errcode);
     bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param(int ci, const char *fieldname, char *retbuf);
