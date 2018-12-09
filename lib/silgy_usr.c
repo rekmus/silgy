@@ -23,7 +23,7 @@ static long get_max(int ci, const char *table);
 
 
 /* --------------------------------------------------------------------------
-  return TRUE if user name contains only valid characters
+   Return TRUE if user name contains only valid characters
 -------------------------------------------------------------------------- */
 static bool valid_username(const char *login)
 {
@@ -40,12 +40,12 @@ static bool valid_username(const char *login)
 
 
 /* --------------------------------------------------------------------------
-  return TRUE if email has valid format
+   Return TRUE if email has valid format
 -------------------------------------------------------------------------- */
 static bool valid_email(const char *email)
 {
     int     len;
-    char    *at;
+    const char *at;
     int     i;
 
     len = strlen(email);
