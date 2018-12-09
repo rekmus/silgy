@@ -2536,13 +2536,16 @@ static void gen_response_header(int ci)
            2 - app new page version, ignore URI, use location (303)
            3 - redirect to final domain, keep URI (301)
         */
-
+#ifdef HTTPS
         if ( conn[ci].upgrade2https )   /* (1) */
         {
             PRINT_HTTP_VARY_UIR;    /* Upgrade-Insecure-Requests */
             sprintf(G_tmp, "Location: https://%s/%s\r\n", conn[ci].host, conn[ci].uri);
         }
         else if ( conn[ci].location[0] == 'h'        /* (2) full address already present */
+#else
+             if ( conn[ci].location[0] == 'h'        /* (2) full address already present */
+#endif /* HTTPS */
                     && conn[ci].location[1] == 't'
                     && conn[ci].location[2] == 't'
                     && conn[ci].location[3] == 'p' )
