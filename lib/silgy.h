@@ -323,9 +323,11 @@ typedef char                        bool;
 #define CHAR_DOWN_ARROWHEAD2            "&#65088;"
 #define CHAR_FULLW_PLUS                 "&#65291;"
 
-#define LOGIN_LEN                       63
-#define EMAIL_LEN                       127
-#define UNAME_LEN                       63
+#define LOGIN_LEN                       30
+#define EMAIL_LEN                       120
+#define UNAME_LEN                       60
+#define PHONE_LEN                       30
+#define ABOUT_LEN                       250
 
 #define VIEW_DEFAULT                    '0'
 #define VIEW_DESKTOP                    '1'
@@ -619,18 +621,19 @@ typedef struct {
     char    login[LOGIN_LEN+1];
     char    email[EMAIL_LEN+1];
     char    name[UNAME_LEN+1];
-    char    about[256];
+    char    phone[PHONE_LEN+1];
+    char    about[ABOUT_LEN+1];
     char    login_tmp[LOGIN_LEN+1];     /* while My Profile isn't saved */
     char    email_tmp[EMAIL_LEN+1];
     char    name_tmp[UNAME_LEN+1];
-    char    about_tmp[256];
+    char    phone_tmp[PHONE_LEN+1];
+    char    about_tmp[ABOUT_LEN+1];
     char    sesid[SESID_LEN+1];
     char    ip[INET_ADDRSTRLEN];
     char    uagent[MAX_VALUE_LEN+1];
     char    referer[MAX_VALUE_LEN+1];
     char    lang[8];
     time_t  last_activity;
-//    char    additional[64];         /* password reset key */
 } usession_t;
 
 

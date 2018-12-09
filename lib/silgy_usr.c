@@ -14,10 +14,10 @@
 
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
-static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *about, const char *sesid);
+static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, const char *sesid);
 static int user_exists(const char *login);
 static int email_exists(const char *email);
-static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_about, long visits, const char *sesid);
+static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits, const char *sesid);
 static void doit(char *result1, char *result2, const char *usr, const char *email, const char *src);
 static long get_max(int ci, const char *table);
 
@@ -71,7 +71,7 @@ static bool valid_email(const char *email)
 /* --------------------------------------------------------------------------
    Start new logged in user session
 -------------------------------------------------------------------------- */
-static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *about, const char *sesid)
+static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, const char *sesid)
 {
     DBG("start_new_luses");
 
@@ -89,10 +89,12 @@ static bool start_new_luses(int ci, long uid, const char *login, const char *ema
     strcpy(US.login, login);
     strcpy(US.email, email);
     strcpy(US.name, name);
+    strcpy(US.phone, phone);
     strcpy(US.about, about);
     strcpy(US.login_tmp, login);
     strcpy(US.email_tmp, email);
     strcpy(US.name_tmp, name);
+    strcpy(US.phone_tmp, phone);
     strcpy(US.about_tmp, about);
     US.uid = uid;
 
@@ -225,7 +227,7 @@ unsigned long   sql_records;
         return ERR_INT_SERVER_ERROR;
     }
 
-    return do_login(ci, uid, NULL, NULL, NULL, NULL, 0, conn[ci].cookie_in_l);
+    return do_login(ci, uid, NULL, NULL, NULL, NULL, NULL, 0, conn[ci].cookie_in_l);
 }
 
 
@@ -277,10 +279,12 @@ void libusr_close_l_uses(int ci, int usi)
         uses[usi].login[0] = EOS;
         uses[usi].email[0] = EOS;
         uses[usi].name[0] = EOS;
+        uses[usi].phone[0] = EOS;
         uses[usi].about[0] = EOS;
         uses[usi].login_tmp[0] = EOS;
         uses[usi].email_tmp[0] = EOS;
         uses[usi].name_tmp[0] = EOS;
+        uses[usi].phone_tmp[0] = EOS;
         uses[usi].about_tmp[0] = EOS;
     }
     else    /* timeout'ed */
@@ -374,7 +378,7 @@ static int email_exists(const char *email)
    Log user in -- called either by l_usession_ok or silgy_usr_login
    Authentication has already been done prior to calling this
 -------------------------------------------------------------------------- */
-static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_about, long visits, const char *sesid)
+static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits, const char *sesid)
 {
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
@@ -383,6 +387,7 @@ unsigned long   sql_records;
     char        login[LOGIN_LEN+1];
     char        email[EMAIL_LEN+1];
     char        name[UNAME_LEN+1];
+    char        phone[PHONE_LEN+1];
     char        about[256];
 
     DBG("do_login");
@@ -391,7 +396,7 @@ unsigned long   sql_records;
 
     if ( !p_login )  /* login from cookie */
     {
-        sprintf(sql_query, "SELECT login,email,name,about,visits FROM users WHERE id=%ld", uid);
+        sprintf(sql_query, "SELECT login,email,name,phone,about,visits FROM users WHERE id=%ld", uid);
         DBG("sql_query: %s", sql_query);
         mysql_query(G_dbconn, sql_query);
         result = mysql_store_result(G_dbconn);
@@ -419,8 +424,9 @@ unsigned long   sql_records;
         strcpy(login, sql_row[0]?sql_row[0]:"");
         strcpy(email, sql_row[1]?sql_row[1]:"");
         strcpy(name, sql_row[2]?sql_row[2]:"");
-        strcpy(about, sql_row[3]?sql_row[3]:"");
-        visits = atol(sql_row[4]);
+        strcpy(phone, sql_row[3]?sql_row[3]:"");
+        strcpy(about, sql_row[4]?sql_row[4]:"");
+        visits = atol(sql_row[5]);
 
         mysql_free_result(result);
     }
@@ -429,6 +435,7 @@ unsigned long   sql_records;
         strcpy(login, p_login);
         strcpy(email, p_email);
         strcpy(name, p_name);
+        strcpy(phone, p_phone);
         strcpy(about, p_about);
     }
 
@@ -441,7 +448,7 @@ unsigned long   sql_records;
 #endif
     /* add record to uses */
 
-    if ( !start_new_luses(ci, uid, login, email, name, about, sesid) )
+    if ( !start_new_luses(ci, uid, login, email, name, phone, about, sesid) )
         return ERR_SERVER_TOOBUSY;
 
     /* update user record */
@@ -627,6 +634,7 @@ int silgy_usr_login(int ci)
     QSVAL       login;
     QSVAL       email;
     char        name[UNAME_LEN+1];
+    char        phone[PHONE_LEN+1];
     char        about[256];
     short       user_status;
     QSVAL       passwd;
@@ -659,7 +667,7 @@ unsigned long   sql_records;
         return ERR_INVALID_REQUEST;
     }
     stp_right(email);
-    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,status,ula_time,ula_cnt,visits,deleted FROM users WHERE email_u='%s'", upper(email));
+    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,status,ula_time,ula_cnt,visits,deleted FROM users WHERE email_u='%s'", upper(email));
 
 #else    /* by login */
 
@@ -670,7 +678,7 @@ unsigned long   sql_records;
     }
     stp_right(login);
     strcpy(ulogin, upper(login));
-    sprintf(sql_query, "SELECT id,login,email,name,passwd1,passwd2,about,status,ula_time,ula_cnt,visits,deleted FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
+    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,status,ula_time,ula_cnt,visits,deleted FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
 
 #endif
 
@@ -704,14 +712,15 @@ unsigned long   sql_records;
     strcpy(login, sql_row[1]?sql_row[1]:"");
     strcpy(email, sql_row[2]?sql_row[2]:"");
     strcpy(name, sql_row[3]?sql_row[3]:"");
-    strcpy(p1, sql_row[4]);
-    strcpy(p2, sql_row[5]);
-    strcpy(about, sql_row[6]?sql_row[6]:"");
-    user_status = atoi(sql_row[7]);
-    strcpy(ula_time, sql_row[8]?sql_row[8]:"");
-    ula_cnt = atol(sql_row[9]);
-    visits = atol(sql_row[10]);
-    strcpy(deleted, sql_row[11]?sql_row[11]:"N");
+    strcpy(phone, sql_row[4]?sql_row[4]:"");
+    strcpy(p1, sql_row[5]);
+    strcpy(p2, sql_row[6]);
+    strcpy(about, sql_row[7]?sql_row[7]:"");
+    user_status = atoi(sql_row[8]);
+    strcpy(ula_time, sql_row[9]?sql_row[9]:"");
+    ula_cnt = atol(sql_row[10]);
+    visits = atol(sql_row[11]);
+    strcpy(deleted, sql_row[12]?sql_row[12]:"N");
 
     mysql_free_result(result);
 
@@ -818,7 +827,7 @@ unsigned long   sql_records;
 
     /* finish logging user in */
 
-    return do_login(ci, uid, login, email, name, about, visits, sesid);
+    return do_login(ci, uid, login, email, name, phone, about, visits, sesid);
 }
 
 
@@ -843,9 +852,10 @@ int silgy_usr_create_account(int ci)
     QSVAL   email;
     QSVAL   email_u;
     QSVAL   name;
+    QSVAL   phone;
+    QSVAL   about;
     QSVAL   passwd;
     QSVAL   rpasswd;
-    QSVAL   about;
     QSVAL   message;
     int     plen;
     char    sql_query[SQLBUF];
@@ -856,7 +866,8 @@ int silgy_usr_create_account(int ci)
     if ( QS_HTML_ESCAPE("login", login) )
     {
         stp_right(login);
-        strcpy(US.login, login);
+        strncpy(US.login, login, LOGIN_LEN);
+        US.login[LOGIN_LEN] = EOS;
     }
 
 #ifndef USERSBYEMAIL
@@ -870,20 +881,21 @@ int silgy_usr_create_account(int ci)
     if ( QS_HTML_ESCAPE("email", email) )
     {
         stp_right(email);
-        strcpy(US.email, email);
+        strncpy(US.email, email, EMAIL_LEN);
+        US.email[EMAIL_LEN] = EOS;
     }
 
     if ( G_usersRequireAccountActivation && !email[0] )
     {
         WAR("Invalid request (email missing)");
-        return ERR_INVALID_REQUEST;
+        return ERR_EMAIL_EMPTY;
     }
 
 #ifdef USERSBYEMAIL
     if ( !email[0] )
     {
         WAR("Invalid request (email missing)");
-        return ERR_INVALID_REQUEST;
+        return ERR_EMAIL_EMPTY;
     }
 #endif
 
@@ -901,13 +913,22 @@ int silgy_usr_create_account(int ci)
     if ( QS_HTML_ESCAPE("name", name) )
     {
         stp_right(name);
-        strcpy(US.name, name);
+        strncpy(US.name, name, UNAME_LEN);
+        US.name[UNAME_LEN] = EOS;
+    }
+
+    if ( QS_HTML_ESCAPE("phone", phone) )
+    {
+        stp_right(phone);
+        strncpy(US.phone, phone, PHONE_LEN);
+        US.phone[PHONE_LEN] = EOS;
     }
 
     if ( QS_HTML_ESCAPE("about", about) )
     {
         stp_right(about);
-        strcpy(US.about, about);
+        strncpy(US.about, about, ABOUT_LEN);
+        US.about[ABOUT_LEN] = EOS;
     }
 
     /* ----------------------------------------------------------------- */
@@ -958,9 +979,9 @@ int silgy_usr_create_account(int ci)
     else
         user_status = USER_STATUS_ACTIVE;
 
-    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,passwd1,passwd2,about,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s',%hd,'%s',0,0,0,'N')", login, login_u, email, email_u, name, str1, str2, about, user_status, G_dt);
+    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,about,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%hd,'%s',0,0,0,'N')", login, login_u, email, email_u, name, phone, str1, str2, about, user_status, G_dt);
 
-    DBG("sql_query: INSERT INTO users (id,login,email,name,...) VALUES (0,'%s','%s','%s',...)", login, email, name);
+    DBG("sql_query: INSERT INTO users (id,login,email,name,phone,...) VALUES (0,'%s','%s','%s','%s',...)", login, email, name, phone);
 
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -1042,9 +1063,10 @@ int silgy_usr_save_account(int ci)
     QSVAL       login;
     QSVAL       email;
     QSVAL       name;
+    QSVAL       phone;
+    QSVAL       about;
     QSVAL       passwd;
     QSVAL       rpasswd;
-    QSVAL       about;
     QSVAL       opasswd;
     QSVAL       uemail_old;
     QSVAL       uemail_new;
@@ -1082,20 +1104,30 @@ unsigned long   sql_records;
     if ( QS_HTML_ESCAPE("name", name) ) /* optional */
         stp_right(name);
 
+    if ( QS_HTML_ESCAPE("phone", phone) ) /* optional */
+        stp_right(phone);
+
     if ( QS_HTML_ESCAPE("about", about) ) /* optional */
         stp_right(about);
 
     /* remember form fields */
     /* US.email contains old email */
 
-    strcpy(US.login_tmp, login);
-    strcpy(US.email_tmp, email);
-    strcpy(US.name_tmp, name);
-    strcpy(US.about_tmp, about);
+    strncpy(US.login_tmp, login, LOGIN_LEN);
+    US.login_tmp[LOGIN_LEN] = EOS;
+    strncpy(US.email_tmp, email, EMAIL_LEN);
+    US.email_tmp[EMAIL_LEN] = EOS;
+    strncpy(US.name_tmp, name, UNAME_LEN);
+    US.name_tmp[UNAME_LEN] = EOS;
+    strncpy(US.phone_tmp, phone, PHONE_LEN);
+    US.phone_tmp[PHONE_LEN] = EOS;
+    strncpy(US.about_tmp, about, ABOUT_LEN);
+    US.about_tmp[ABOUT_LEN] = EOS;
 
     DBG("login_tmp: [%s]", US.login_tmp);
     DBG("email_tmp: [%s]", US.email_tmp);
-    DBG("name_tmp: [%s]", US.name_tmp);
+    DBG(" name_tmp: [%s]", US.name_tmp);
+    DBG("phone_tmp: [%s]", US.phone_tmp);
     DBG("about_tmp: [%s]", US.about_tmp);
 
     /* basic validation */
@@ -1189,7 +1221,7 @@ unsigned long   sql_records;
         }
     }
 
-    /* anything else than deleting account -- changin email and/or name and/or password */
+    /* anything else than deleting account -- changing email and/or name and/or password */
 
 #ifdef USERSBYEMAIL
     doit(str1, str2, email, email, plen?passwd:opasswd);
@@ -1197,8 +1229,8 @@ unsigned long   sql_records;
     doit(str1, str2, login, email[0]?email:STR_005, plen?passwd:opasswd);
 #endif
 
-    sprintf(sql_query, "UPDATE users SET login='%s', email='%s', name='%s', passwd1='%s', passwd2='%s', about='%s' WHERE id=%ld", login, email, name, str1, str2, about, US.uid);
-    DBG("sql_query: UPDATE users SET login='%s', email='%s', name='%s',... WHERE id=%ld", login, email, name, US.uid);
+    sprintf(sql_query, "UPDATE users SET login='%s', email='%s', name='%s', phone='%s', passwd1='%s', passwd2='%s', about='%s' WHERE id=%ld", login, email, name, phone, str1, str2, about, US.uid);
+    DBG("sql_query: UPDATE users SET login='%s', email='%s', name='%s', phone='%s',... WHERE id=%ld", login, email, name, phone, US.uid);
 
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -1206,11 +1238,12 @@ unsigned long   sql_records;
         return ERR_INT_SERVER_ERROR;
     }
 
-    DBG("Updating login, email & name in user session");
+    DBG("Updating login, email, name, phone & about in user session");
 
     strcpy(US.login, US.login_tmp);
     strcpy(US.email, US.email_tmp);
     strcpy(US.name, US.name_tmp);
+    strcpy(US.phone, US.phone_tmp);
     strcpy(US.about, US.about_tmp);
 
     return OK;
@@ -1641,7 +1674,7 @@ void silgy_usr_logout(int ci)
 -------------------------------------------------------------------------- */
 static void doit(char *result1, char *result2, const char *login, const char *email, const char *src)
 {
-    char    tmp[512];
+    char    tmp[4096];
     unsigned char digest[SHA1_DIGEST_SIZE];
     int     i, j=0;
 

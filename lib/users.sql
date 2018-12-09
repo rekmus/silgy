@@ -11,6 +11,7 @@ create table users (
     email char(120),
     email_u char(120),              -- uppercase version
     name char(60),
+    phone char(30),
     passwd1 char(30) not null,
     passwd2 char(30) not null,
     about varchar(250),
