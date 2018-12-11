@@ -423,9 +423,10 @@ typedef char                        bool;
 #define ASYNC_DEF_TIMEOUT               30                      /* in seconds */
 #define ASYNC_MAX_TIMEOUT               1800                    /* in seconds ==> 30 minutes */
 #define S(svc)                          (0==strcmp(service, svc))
-#define CALL_ASYNC(svc, data)           eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout)
-#define CALL_ASYNC_TM(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, tmout)
-#define CALL_ASYNC_NR(svc, data)        eng_async_req(ci, svc, data, FALSE, 0)
+#define CALL_ASYNC(svc, data)           eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout, 0)
+#define CALL_ASYNC_TM(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, tmout, 0)
+#define CALL_ASYNC_NR(svc, data)        eng_async_req(ci, svc, data, FALSE, 0, 0)
+#define CALL_ASYNC_BIN(svc, data, size) eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout, size)
 
 
 /* resource / content types */
@@ -460,10 +461,11 @@ typedef char                        bool;
 #define ID(id)                          (0==strcmp(conn[ci].id, id))
 #ifndef ASYNC_SERVICE
 #define US                              uses[conn[ci].usi]
+#define AUS                             auses[conn[ci].usi]
 #else
 #define US                              uses
+#define AUS                             auses
 #endif /* ASYNC_SERVICE */
-#define AUS                             auses[conn[ci].usi]
 #define HOST(str)                       eng_host(ci, str)
 #define REQ_GET_HEADER(header)          eng_get_header(ci, header)
 
@@ -665,12 +667,17 @@ typedef struct {
 
 /* asynchorous processing */
 
+/* request */
+
 typedef struct {
     long    call_id;
     int     ci;
     char    service[32];
     char    response;
     usession_t uses;
+#ifdef ASYNC_AUSES
+    ausession_t auses;
+#endif
 } async_req_hdr_t;
 
 typedef struct {
@@ -678,6 +685,7 @@ typedef struct {
     char            data[ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t)];
 } async_req_t;
 
+/* response */
 
 typedef struct {
     long    call_id;
@@ -687,6 +695,10 @@ typedef struct {
     time_t  sent;
     int     timeout;
     int     err_code;
+    usession_t uses;
+#ifdef ASYNC_AUSES
+    ausession_t auses;
+#endif
 } async_res_hdr_t;
 
 typedef struct {
@@ -726,9 +738,11 @@ extern conn_t   conn[MAX_CONNECTIONS];      /* HTTP connections & requests -- by
 extern int      G_open_conn;                /* number of open connections */
 extern char     G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
 #ifndef ASYNC_SERVICE
-extern usession_t uses[MAX_SESSIONS+1];     /* user sessions -- they start from 1 */
+extern usession_t uses[MAX_SESSIONS+1];     /* engine user sessions -- they start from 1 */
+extern ausession_t auses[MAX_SESSIONS+1];   /* app user sessions, using the same index (usi) */
 #else
 extern usession_t uses;
+extern ausession_t auses;
 #endif /* ASYNC_SERVICE */
 extern int      G_sessions;                 /* number of active user sessions */
 extern time_t   G_now;                      /* current time */
@@ -778,8 +792,6 @@ extern char     G_rest_content_type[MAX_VALUE_LEN+1];
 #endif
 
 
-extern ausession_t  auses[MAX_SESSIONS+1];  /* app user sessions */
-
 
 /* prototypes */
 
@@ -793,7 +805,7 @@ extern "C" {
     bool eng_uses_start(int ci);
     void eng_uses_close(int usi);
     void eng_uses_reset(int usi);
-    void eng_async_req(int ci, const char *service, const char *data, char response, int timeout);
+    void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size);
     void silgy_add_to_static_res(const char *name, const char *src);
     void eng_send_msg_description(int ci, int errcode);
     void eng_block_ip(const char *value, bool autoblocked);

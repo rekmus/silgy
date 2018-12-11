@@ -606,6 +606,15 @@ struct timeval  timeout;                    /* Timeout for select */
                                     if ( ares[j].hdr.state == ASYNC_STATE_RECEIVED )
                                     {
                                         DBG("Async response in an array for ci=%d, processing", i);
+
+                                        if ( conn[i].usi )  /* update user session */
+                                        {
+                                            memcpy(&uses[conn[i].usi], &ares[j].hdr.uses, sizeof(usession_t));
+#ifdef ASYNC_AUSES
+                                            memcpy(&auses[conn[i].usi], &ares[j].hdr.auses, sizeof(ausession_t));
+#endif
+                                        }
+
                                         app_async_done(i, ares[j].hdr.service, ares[j].data, ares[j].hdr.err_code);
                                     }
                                     else if ( ares[j].hdr.state == ASYNC_STATE_TIMEOUTED )
@@ -3874,7 +3883,7 @@ void eng_uses_reset(int usi)
 /* --------------------------------------------------------------------------
    Send asynchronous request
 -------------------------------------------------------------------------- */
-void eng_async_req(int ci, const char *service, const char *data, char response, int timeout)
+void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size)
 {
 #ifdef ASYNC
 
@@ -3895,12 +3904,24 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     /* pass user session */
 
     if ( conn[ci].usi )
+    {
         memcpy(&req.hdr.uses, &US, sizeof(usession_t));
+#ifdef ASYNC_AUSES
+        memcpy(&req.hdr.auses, &AUS, sizeof(ausession_t));
+#endif
+    }
 
     if ( data )
-        strcpy(req.data, data);
+    {
+        if ( size )     /* binary */
+            memcpy(req.data, data, size);
+        else    /* text */
+            strcpy(req.data, data);
+    }
     else
+    {
         req.data[0] = EOS;
+    }
 
     DBG("Sending a message on behalf of ci=%d, call_id=%ld, service [%s]", ci, req.hdr.call_id, req.hdr.service);
 
@@ -5215,6 +5236,9 @@ int main(int argc, char *argv[])
             G_req = req.data;
             G_res = res.data;
             memcpy(&uses, &req.hdr.uses, sizeof(usession_t));
+#ifdef ASYNC_AUSES
+            memcpy(&auses, &req.hdr.auses, sizeof(ausession_t));
+#endif
             
             res.hdr.err_code = service_app_process_req(req.hdr.service, req.data);
 
@@ -5223,6 +5247,10 @@ int main(int argc, char *argv[])
             if ( req.hdr.response )
             {
                 DBG("Sending response...");
+                memcpy(&res.hdr.uses, &uses, sizeof(usession_t));
+#ifdef ASYNC_AUSES
+                memcpy(&res.hdr.auses, &auses, sizeof(ausession_t));
+#endif
                 mq_send(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, 0);
                 DBG("Sent\n");
             }

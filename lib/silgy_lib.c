@@ -3071,7 +3071,7 @@ static char tmp[JSON_BUFSIZE];
         {
             while ( i<len && (src[i]==' ' || src[i]=='\t' || src[i]=='\r' || src[i]=='\n') ) ++i;
 
-            if ( !inside_array && src[i]=='"' )
+            if ( !inside_array && src[i]=='"' )  /* start of key */
             {
                 now_key = 1;
                 j = 0;
@@ -3212,6 +3212,8 @@ static char tmp[JSON_BUFSIZE];
 #ifdef DUMP
                 DBG("JSON_INTEGER || JSON_FLOAT || JSON_BOOL");
 #endif
+                type = JSON_INTEGER;    /* we're not sure yet but need to mark it's definitely not STRING */
+
                 i--;
 
                 now_value = 1;
@@ -3224,7 +3226,9 @@ static char tmp[JSON_BUFSIZE];
 #ifdef DUMP
             DBG("value [%s]", value);
 #endif
-            if ( type==JSON_STRING ) ++i;   /* skip '"' */
+            if ( type==JSON_STRING ) ++i;   /* skip closing '"' */
+
+            /* src[i] should now be at ',' */
 
             if ( inside_array )
             {
@@ -4041,9 +4045,9 @@ static int minify_2(char *dest, const char *src)
                     || (0==strcmp(word, "function") && src[i]!='(')
                     || (0==strcmp(word, "else") && src[i]!='{')
                     || 0==strcmp(word, "new")
-                    || (0==strcmp(word, "return") && src[i]!=';')
-                    || 0==strcmp(word, "||")
-                    || 0==strcmp(word, "&&") )
+//                    || 0==strcmp(word, "||")
+//                    || 0==strcmp(word, "&&")
+                    || (0==strcmp(word, "return") && src[i]!=';') )
                 dest[j++] = ' ';
             openwo = FALSE;
             wi = 0;
