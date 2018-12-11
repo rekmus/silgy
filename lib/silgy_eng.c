@@ -4028,36 +4028,38 @@ void eng_block_ip(const char *value, bool autoblocked)
 
 
 /* --------------------------------------------------------------------------
-  Get error description for user.
-
-  There are 3 groups of messages:
-  < 0               -- server errors
-  > 0 && < 1000     -- user library errors/messages
-  >= 1000           -- app errors/messages
+   Get error description for user
 -------------------------------------------------------------------------- */
-void eng_get_msg_str(int ci, char *dest, int errcode)
+void eng_get_msg_str(int ci, char *dest, int code)
 {
-    if ( errcode == OK )
+    if ( code == OK )
         strcpy(dest, "OK");
-    else if ( errcode == ERR_INT_SERVER_ERROR )
-//      strcpy(dest, "Apologies, this is our fault. This service is still under intense development and the problem will probably be solved in a few hours.");
+    else if ( code == ERR_INT_SERVER_ERROR )
         strcpy(dest, "Apologies, this is our fault. Please try again later.");
-    else if ( errcode == ERR_SERVER_TOOBUSY )
+    else if ( code == ERR_SERVER_TOOBUSY )
         strcpy(dest, "Apologies, we are experiencing very high demand right now, please try again in a few minutes.");
-    else if ( errcode == ERR_INVALID_REQUEST )
+    else if ( code == ERR_INVALID_REQUEST )
         strcpy(dest, "Invalid HTTP request");
-    else if ( errcode == ERR_NOT_FOUND )
+    else if ( code == ERR_NOT_FOUND )
         strcpy(dest, "The page you're trying to access does not exist here.");
-    else if ( errcode == ERR_UNAUTHORIZED )
+    else if ( code == ERR_UNAUTHORIZED || code == ERR_FORBIDDEN )
         strcpy(dest, "I'm sorry but you don't have permission to see this.");
-    else if ( errcode == ERR_FILE_TOO_BIG )
+    else if ( code == ERR_FILE_TOO_BIG )
         strcpy(dest, "I'm sorry but your file is too big.");
+    else if ( code == ERR_REDIRECTION )
+        strcpy(dest, "Redirection error");
+    else if ( code == ERR_ASYNC_NO_SUCH_SERVICE )
+        strcpy(dest, "No such service");
+    else if ( code == ERR_ASYNC_TIMEOUT )
+        strcpy(dest, "Asynchronous service timeout");
+    else if ( code == ERR_REMOTE_CALL )
+        strcpy(dest, "Remote service call error");
 #ifdef USERS
-    else if ( errcode < 1000 )
-        libusr_get_msg_str(ci, dest, errcode);
+    else if ( code <= MSG_MAX_USR_MESSAGE )
+        libusr_get_msg_str(ci, dest, code);
 #endif
     else
-        app_get_msg_str(ci, dest, errcode);
+        app_get_msg_str(ci, dest, code);
 }
 
 

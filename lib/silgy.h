@@ -807,9 +807,9 @@ extern "C" {
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size);
     void silgy_add_to_static_res(const char *name, const char *src);
-    void eng_send_msg_description(int ci, int errcode);
+    void eng_send_msg_description(int ci, int code);
     void eng_block_ip(const char *value, bool autoblocked);
-    void eng_get_msg_str(int ci, char *dest, int errcode);
+    void eng_get_msg_str(int ci, char *dest, int code);
     bool eng_host(int ci, const char *host);
     void eng_set_res_status(int ci, int status);
     void eng_set_res_content_type(int ci, const char *str);
