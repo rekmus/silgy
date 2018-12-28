@@ -284,6 +284,7 @@ extern "C" {
     void samts(char *stramt, const char *in_amt);
     void lib_normalize_float(char *str);
     void ftm(char *strtm, long in_tm);
+    char *fmt_date(short year, short month, short day);
     char const *san(const char *str);
     char *san_long(const char *str);
     char *silgy_sql_esc(const char *str);

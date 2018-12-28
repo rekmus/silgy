@@ -154,6 +154,7 @@
 
 #define LOGGED                          US.logged
 #define ADMIN                           (LOGGED && 0==strcmp(US.login, "admin"))
+#define UID                             US.uid
 
 
 #define SET_USER_STR(key, val)          silgy_usr_set_str(ci, key, val)
