@@ -3514,8 +3514,10 @@ static bool check_block_ip(int ci, const char *rule, const char *value)
     if ( (rule[0]=='H' && conn[ci].post && 0==strcmp(value, APP_IP))        /* Host */
             || (rule[0]=='U' && 0==strcmp(value, "Mozilla/5.0 Jorgee"))     /* User-Agent */
             || (rule[0]=='R' && 0==strcmp(value, "wp-login.php"))           /* Resource */
+            || (rule[0]=='R' && 0==strcmp(value, "wp-config.php"))          /* Resource */
             || (rule[0]=='R' && 0==strcmp(value, "administrator"))          /* Resource */
             || (rule[0]=='R' && 0==strcmp(value, "phpmyadmin"))             /* Resource */
+            || (rule[0]=='R' && 0==strcmp(value, "java.php"))               /* Resource */
             || (rule[0]=='R' && strstr(value, "setup.php")) )               /* Resource */
     {
         eng_block_ip(conn[ci].ip, TRUE);
