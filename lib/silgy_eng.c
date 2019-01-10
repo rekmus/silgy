@@ -1899,7 +1899,7 @@ static void read_blocked_ips()
 
     while ( EOF != (c=fgetc(h_file)) )
     {
-        if ( c == ' ' || c == ' ' || c == '\r' ) continue;  /* omit whitespaces */
+        if ( c == ' ' || c == '\t' || c == '\r' ) continue;  /* omit whitespaces */
 
         if ( c == '\n' )    /* end of value or end of comment or empty line */
         {
