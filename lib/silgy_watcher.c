@@ -22,6 +22,7 @@ int      G_httpPort;
 
 char     M_watcherStopCmd[256];
 char     M_watcherStartCmd[256];
+int      M_watcherWait;
 int      M_watcherLogRestart;
 
 
@@ -95,6 +96,9 @@ static struct sockaddr_in serv_addr;
 
     if ( !silgy_read_param_str("watcherStartCmd", M_watcherStartCmd) )
         strcpy(M_watcherStartCmd, START_COMMAND);
+
+    if ( !silgy_read_param_int("watcherWait", &M_watcherWait) )
+        M_watcherWait = 10;
 
     if ( !silgy_read_param_int("watcherLogRestart", &M_watcherLogRestart) )
         M_watcherLogRestart = 3;
@@ -209,8 +213,8 @@ void restart(char reason)
     INF(M_watcherStopCmd);
     system(M_watcherStopCmd);
 
-    INF("Waiting 1 second...");
-    sleep(1);
+    INF("Waiting %d second(s)...", M_watcherWait);
+    sleep(M_watcherWait);
 
     INF("Starting...");
     INF(M_watcherStartCmd);
