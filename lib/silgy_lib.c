@@ -3270,8 +3270,8 @@ static char tmp[JSON_BUFSIZE];
                 value[j++] = src[i];
         }
 
-        if ( src[i-2]=='}' && !now_value && level==0 )
-            break;
+//        if ( src[i-2]=='}' && !now_value && level==0 )
+//            break;
     }
 
     return TRUE;
