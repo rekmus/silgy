@@ -38,7 +38,7 @@ Silgy is written in ANSI C in order to support as many platforms as possible and
 
 It is All-In-One solution for writing typical web application — traditional HTML rendering model, SPA or mixed. It handles HTTPS, and anonymous and registered user sessions. Larger applications or those using potentially blocking resources may want to split logic into the set of services talking to the gateway via POSIX queues in an asynchronous manner, using Silgy's [ASYNC](https://github.com/silgy/silgy/wiki/Silgy-compilation-switches#async) facility. [CALL_ASYNC](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros#asynchronous-services) macros make it as simple as possible.
 
-Web applications like [Budgeter](https://budgeter.org) or [minishare](https://minishare.com) based on Silgy, fit in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds). Even with the network latency [it still shows](https://tools.pingdom.com/#!/bu4p3i/https://budgeter.org).
+Web applications like [Budgeter](https://budgeter.org) or [minishare](https://minishare.com) based on Silgy, fit in free 1GB AWS t2.micro instance, together with MySQL server. Typical processing time (between reading HTTP request and writing response to a socket) on 1 CPU t2.micro is around 100 µs (microseconds). Even with the network latency [it still shows](https://minishare.com/show?p=NKEs7ybn).
   
 <div align="center">
 <img src="https://minishare.com/show?p=MWPcAbmY&i=2" width=418>
