@@ -6,7 +6,7 @@ Fast forward to 2018 and my PC has Intel i5 processor and 8 GB of RAM. Everyone 
 
 That's why I've written Silgy. I think all the web applications in the world should be written in it. World would be much better off.
 
-In Silgy you just compile and link your logic into one executable that responds immediately to HTTP requests, without creating a new thread or — God forbid — process. There's no VM layer (Hello, Java) nor interpreter, nor external modules' dependencies (Hello, Node.js frameworks). Compilation takes about a second (Hello, Java and Node.js again). You get non-blocking Node.js-like or better performance, with Java-like coding simplicity, C-like instant compilation and instant startup, on much cheaper hardware. By the time my Spring Boot application boots, I can have another RESTful service written and tested with Silgy.
+In Silgy you just compile and link your logic into one executable that responds immediately to HTTP requests, without creating a new thread or — God forbid — process. There's no VM layer (Hello, Java) nor interpreter, nor external modules' dependencies (Hello, Node.js frameworks). Compilation takes about a second (Hello, Java and Node.js again). You get non-blocking Node.js-like or better performance, with Java-like coding simplicity, C-like instant compilation and instant startup, on much cheaper hardware. While my Spring Boot application is booting, I can have another RESTful service written and tested with Silgy.
 
 ## Why Silgy
 
