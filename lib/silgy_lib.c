@@ -266,26 +266,26 @@ void lib_rest_header_set(const char *key, const char *value)
     {
         if ( M_rest_headers[i].key[0]==EOS )
         {
-            strncpy(M_rest_headers[M_rest_headers_cnt].key, key, 63);
-            M_rest_headers[M_rest_headers_cnt].key[63] = EOS;
-            strncpy(M_rest_headers[i].value, value, 255);
-            M_rest_headers[i].value[255] = EOS;
+            strncpy(M_rest_headers[M_rest_headers_cnt].key, key, REST_HEADER_KEY_LEN);
+            M_rest_headers[M_rest_headers_cnt].key[REST_HEADER_KEY_LEN] = EOS;
+            strncpy(M_rest_headers[i].value, value, REST_HEADER_VAL_LEN);
+            M_rest_headers[i].value[REST_HEADER_VAL_LEN] = EOS;
             return;
         }
         else if ( 0==strcmp(M_rest_headers[i].key, key) )
         {
-            strncpy(M_rest_headers[i].value, value, 255);
-            M_rest_headers[i].value[255] = EOS;
+            strncpy(M_rest_headers[i].value, value, REST_HEADER_VAL_LEN);
+            M_rest_headers[i].value[REST_HEADER_VAL_LEN] = EOS;
             return;
         }
     }
 
     if ( M_rest_headers_cnt >= REST_MAX_HEADERS ) return;
 
-    strncpy(M_rest_headers[M_rest_headers_cnt].key, key, 63);
-    M_rest_headers[M_rest_headers_cnt].key[63] = EOS;
-    strncpy(M_rest_headers[M_rest_headers_cnt].value, value, 255);
-    M_rest_headers[M_rest_headers_cnt].value[255] = EOS;
+    strncpy(M_rest_headers[M_rest_headers_cnt].key, key, REST_HEADER_KEY_LEN);
+    M_rest_headers[M_rest_headers_cnt].key[REST_HEADER_KEY_LEN] = EOS;
+    strncpy(M_rest_headers[M_rest_headers_cnt].value, value, REST_HEADER_VAL_LEN);
+    M_rest_headers[M_rest_headers_cnt].value[REST_HEADER_VAL_LEN] = EOS;
     ++M_rest_headers_cnt;
 }
 
