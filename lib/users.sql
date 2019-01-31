@@ -43,7 +43,7 @@ create table users_settings (
 
 create table users_logins (
     sesid char(15) primary key,
-    uagent varchar(120) not null,
+    uagent varchar(250) not null,
     ip char(15) not null,
     user_id integer not null,
     created datetime not null,
