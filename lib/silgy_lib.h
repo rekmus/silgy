@@ -62,8 +62,8 @@ typedef char                    QSVAL[QSBUF];
 
 /* REST calls */
 
-#define REST_HEADER_KEY_LEN                         63
-#define REST_HEADER_VAL_LEN                         511
+#define REST_HEADER_KEY_LEN                         255
+#define REST_HEADER_VAL_LEN                         1023
 
 typedef struct {
     char    key[REST_HEADER_KEY_LEN+1];
