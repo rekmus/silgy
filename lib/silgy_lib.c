@@ -896,6 +896,7 @@ bool lib_rest_res_parse(char *res_header, int bytes)
     {
         res_header[bytes] = EOS;
 #ifdef DUMP
+        DBG("");
         DBG("Got %d bytes of response [%s]", bytes, res_header);
 #else
         DBG("Got %d bytes of response", bytes);
