@@ -51,7 +51,7 @@ typedef char                        bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "3.6.7"
+#define WEB_SERVER_VERSION          "3.6.8"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
@@ -663,6 +663,8 @@ typedef struct {
     long    visits_dsk; /* like visits -- desktop only */
     long    visits_mob; /* like visits -- mobile only */
     long    blocked;    /* attempts from blocked IP */
+    double  elapsed;    /* sum of elapsed time of all requests for calculating average */
+    double  average;    /* average request elapsed */
 } counters_t;
 
 
