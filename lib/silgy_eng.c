@@ -1152,7 +1152,12 @@ static void respond_to_expect(int ci)
 -------------------------------------------------------------------------- */
 static void log_proc_time(int ci)
 {
-    DBG("Processing time: %.3lf ms [%s]\n", lib_elapsed(&conn[ci].proc_start), conn[ci].resource);
+    double elapsed = lib_elapsed(&conn[ci].proc_start);
+
+    DBG("Processing time: %.3lf ms [%s]\n", elapsed, conn[ci].resource);
+
+    G_cnts_today.elapsed += elapsed;
+    G_cnts_today.average = G_cnts_today.elapsed / G_cnts_today.req;
 
     /* Use (almost) Combined Log Format */
 
@@ -3562,6 +3567,8 @@ static void dump_counters()
     ALWAYS("visits_dsk: %ld", G_cnts_today.visits_dsk);
     ALWAYS("visits_mob: %ld", G_cnts_today.visits_mob);
     ALWAYS("   blocked: %ld", G_cnts_today.blocked);
+       DBG("   elapsed: %.3lf ms", G_cnts_today.elapsed);
+    ALWAYS("   average: %.3lf ms", G_cnts_today.average);
     ALWAYS("");
 }
 
