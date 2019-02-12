@@ -781,11 +781,12 @@ struct timeval  timeout;                    /* Timeout for select */
             DBG("res.hdr.ci = %d", res.hdr.ci);
             DBG("res.hdr.service [%s]", res.hdr.service);
 
-            /* Update stats */
-
-            G_rest_req += res.hdr.rest_req;
-            G_rest_elapsed += res.hdr.rest_elapsed;
-            G_rest_average = G_rest_elapsed / G_rest_req;
+            if ( res.hdr.rest_req > 0 )    /* update stats */
+            {
+                G_rest_req += res.hdr.rest_req;
+                G_rest_elapsed += res.hdr.rest_elapsed;
+                G_rest_average = G_rest_elapsed / G_rest_req;
+            }
 
             for ( j=0; j<MAX_ASYNC; ++j )
             {
