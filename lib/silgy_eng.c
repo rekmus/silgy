@@ -778,6 +778,12 @@ struct timeval  timeout;                    /* Timeout for select */
             DBG("res.hdr.ci = %d", res.hdr.ci);
             DBG("res.hdr.service [%s]", res.hdr.service);
 
+            /* Update stats */
+
+            G_rest_req += res.hdr.rest_req;
+            G_rest_elapsed += res.hdr.rest_elapsed;
+            G_rest_average = G_rest_elapsed / G_rest_req;
+
             for ( j=0; j<MAX_ASYNC; ++j )
             {
                 if ( ares[j].hdr.call_id == res.hdr.call_id )
@@ -5211,6 +5217,10 @@ int main(int argc, char *argv[])
 
     while (1)
     {
+        G_rest_req = 0;
+        G_rest_elapsed = 0;
+        G_rest_average = 0;
+
         if ( mq_receive(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, NULL) != -1 )
         {
             lib_update_time_globals();
@@ -5255,9 +5265,12 @@ int main(int argc, char *argv[])
 
             /* ----------------------------------------------------------- */
 
+            res.hdr.rest_req = G_rest_req;    /* only for this async call */
+            res.hdr.rest_elapsed = G_rest_elapsed;  /* only for this async call */
+
             if ( req.hdr.response )
             {
-                DBG("Sending response...");
+                DBG_T("Sending response...");
                 memcpy(&res.hdr.uses, &uses, sizeof(usession_t));
 #ifdef ASYNC_AUSES
                 memcpy(&res.hdr.auses, &auses, sizeof(ausession_t));
@@ -5272,7 +5285,7 @@ int main(int argc, char *argv[])
 
             /* ----------------------------------------------------------- */
 
-			log_flush();
+            log_flush();
         }
     }
 
