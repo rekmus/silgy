@@ -783,7 +783,11 @@ extern counters_t G_cnts_yesterday;         /* yesterday's counters */
 extern counters_t G_cnts_day_before;        /* day before's counters */
 /* SHM */
 extern char     *G_shm_segptr;              /* SHM pointer */
-extern int      G_rest_status;
+/* REST */
+extern long     G_rest_req;                 /* REST calls counter */
+extern double   G_rest_elapsed;             /* REST calls elapsed for calculating average */
+extern double   G_rest_average;             /* REST calls average elapsed */
+extern int      G_rest_status;              /* last REST call response status */
 extern char     G_rest_content_type[MAX_VALUE_LEN+1];
 
 
