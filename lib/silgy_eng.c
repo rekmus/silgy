@@ -478,6 +478,9 @@ struct timeval  timeout;                    /* Timeout for select */
                     memcpy(&G_cnts_day_before, &G_cnts_yesterday, sizeof(counters_t));
                     memcpy(&G_cnts_yesterday, &G_cnts_today, sizeof(counters_t));
                     memset(&G_cnts_today, 0, sizeof(counters_t));
+                    G_rest_req = 0;
+                    G_rest_elapsed = 0;
+                    G_rest_average = 0;
 
                     /* log currently used memory */
                     lib_log_memory();
