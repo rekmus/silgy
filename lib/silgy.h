@@ -698,6 +698,8 @@ typedef struct {
     time_t  sent;
     int     timeout;
     int     err_code;
+    long    rest_req;
+    double  rest_elapsed;
     usession_t uses;
 #ifdef ASYNC_AUSES
     ausession_t auses;
