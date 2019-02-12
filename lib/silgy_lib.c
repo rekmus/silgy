@@ -32,7 +32,10 @@ bool        G_ssl_lib_initialized=0;
 #endif
 char        *G_shm_segptr=NULL;         /* SHM pointer */
 
-int         G_rest_status;
+long        G_rest_req=0;               /* REST calls counter */
+double      G_rest_elapsed=0;           /* REST calls elapsed for calculating average */
+double      G_rest_average=0;           /* REST calls average elapsed */
+int         G_rest_status;              /* last REST call response status */
 char        G_rest_content_type[MAX_VALUE_LEN+1];
 
 
@@ -1363,6 +1366,19 @@ static char res_content[JSON_BUFSIZE];
         else
             strcpy((char*)res, res_content);
     }
+
+    /* -------------------------------------------------------------------------- */
+    /* stats                                                                      */
+
+    ++G_rest_req;
+
+    double elapsed = lib_elapsed(&start);
+
+    DBG("REST call finished in %.3lf ms", elapsed);
+
+    G_rest_elapsed += elapsed;
+
+    G_rest_average = G_rest_elapsed / G_rest_req;
 
     return TRUE;
 }
