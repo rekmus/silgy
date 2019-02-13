@@ -72,7 +72,7 @@ typedef char                        bool;
 #undef DBMYSQL
 #endif
 #ifdef USERS
-#undef USERS
+//#undef USERS
 #endif
 #endif /* ASYNC_SERVICE */
 
@@ -236,10 +236,9 @@ typedef char                        bool;
 #define MAX_LOG_STR_LEN                 4095            /* max log string length */
 #define MAX_METHOD_LEN                  7               /* method length */
 #define MAX_URI_LEN                     2047            /* max request URI length */
-#define MAX_LABEL_LEN                   63              /* max request label length */
+#define MAX_LABEL_LEN                   255             /* max request label length */
 #define MAX_VALUE_LEN                   255             /* max request value length */
-#define MAX_RESOURCE_LEN                63              /* max resource's name length -- as a first part of URI */
-#define MAX_ID_LEN                      31              /* max id length -- as a second part of URI */
+#define MAX_RESOURCE_LEN                127             /* max resource's name length -- as a first part of URI */
 #define MAX_RESOURCES                   10000           /* for M_auth_levels */
 
 /* mainly memory usage */
@@ -457,6 +456,10 @@ typedef char                        bool;
 #define RES_ZIP                         'Z'
 
 
+#define REQ0                            conn[ci].resource
+#define REQ1                            conn[ci].req1
+#define REQ2                            conn[ci].req2
+#define REQ3                            conn[ci].req3
 #define URI(uri_)                       (0==strcmp(conn[ci].uri, uri_))
 #define REQ(res)                        (0==strcmp(conn[ci].resource, res))
 #define ID(id)                          (0==strcmp(conn[ci].id, id))
@@ -557,8 +560,10 @@ typedef struct {
     bool    head_only;                      /* request method = HEAD */
     bool    post;                           /* request method = POST */
     char    uri[MAX_URI_LEN+1];             /* requested URI string */
-    char    resource[MAX_RESOURCE_LEN+1];   /* from URI */
-    char    id[MAX_ID_LEN+1];               /* from URI */
+    char    resource[MAX_RESOURCE_LEN+1];   /* from URI (REQ0) */
+    char    req1[MAX_RESOURCE_LEN+1];       /* from URI -- level 1 */
+    char    req2[MAX_RESOURCE_LEN+1];       /* from URI -- level 2 */
+    char    req3[MAX_RESOURCE_LEN+1];       /* from URI -- level 3 */
     char    proto[16];                      /* HTTP request protocol */
     char    uagent[MAX_VALUE_LEN+1];        /* user agent string */
     bool    mobile;
