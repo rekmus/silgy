@@ -173,7 +173,7 @@ unsigned long   hit=0;
     char        remote_addr[INET_ADDRSTRLEN]=""; /* remote address */
     int         reuse_addr=1;               /* Used so we can re-bind to our port while a previous connection is still in TIME_WAIT state */
 struct timeval  timeout;                    /* Timeout for select */
-    int         readsocks=0;                /* Number of sockets ready for I/O */
+    int         sockets_ready;              /* Number of sockets ready for I/O */
     int         i=0;                        /* Current item in conn_sockets for for loops */
     int         time_elapsed=0;             /* time unit, currently 1 second */
     time_t      sometimeahead;
@@ -382,9 +382,9 @@ struct timeval  timeout;                    /* Timeout for select */
             }
         }
 #endif
-        readsocks = select(M_highsock+1, &M_readfds, &M_writefds, NULL, &timeout);
+        sockets_ready = select(M_highsock+1, &M_readfds, &M_writefds, NULL, &timeout);
 
-        if (readsocks < 0)
+        if (sockets_ready < 0)
         {
 #ifdef _WIN32
             if ( M_shutdown ) break;
@@ -413,7 +413,7 @@ struct timeval  timeout;                    /* Timeout for select */
                 continue;
             }
         }
-        else if (readsocks == 0)
+        else if (sockets_ready == 0)
         {
             /* we have some time now, let's do some housekeeping */
 
@@ -488,7 +488,7 @@ struct timeval  timeout;                    /* Timeout for select */
                 }
             }
         }
-        else    /* readsocks > 0 */
+        else    /* sockets_ready > 0 */
         {
             if ( FD_ISSET(M_listening_fd, &M_readfds) )
             {
@@ -502,7 +502,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #endif
             else    /* existing connections have something going on on them ---------------------------------- */
             {
-                for ( i=0; i<MAX_CONNECTIONS; ++i )
+                for ( i=0; sockets_ready>0 && i<MAX_CONNECTIONS; ++i )
                 {
                     /* --------------------------------------------------------------------------------------- */
                     if ( FD_ISSET(conn[i].fd, &M_readfds) )     /* incoming data ready */
@@ -579,10 +579,11 @@ struct timeval  timeout;                    /* Timeout for select */
                                                         /*              CONN_STATE_READY_FOR_PROCESS */
                             }
                         }
-                    }
 
+                        sockets_ready--;
+                    }
                     /* --------------------------------------------------------------------------------------- */
-                    if ( FD_ISSET(conn[i].fd, &M_writefds) )        /* ready for outgoing data */
+                    else if ( FD_ISSET(conn[i].fd, &M_writefds) )        /* ready for outgoing data */
                     {
 #ifdef DUMP
                         if ( G_now != dbg_last_time1 )   /* only once in a second */
@@ -707,6 +708,8 @@ struct timeval  timeout;                    /* Timeout for select */
                                                         /*              CONN_STATE_CONNECTED */
                             }
                         }
+
+                        sockets_ready--;
                     }
 
                     /* --------------------------------------------------------------------------------------- */
@@ -781,7 +784,7 @@ struct timeval  timeout;                    /* Timeout for select */
             DBG("res.hdr.ci = %d", res.hdr.ci);
             DBG("res.hdr.service [%s]", res.hdr.service);
 
-            if ( res.hdr.rest_req > 0 )    /* update stats */
+            if ( res.hdr.rest_req > 0 )    /* update REST stats */
             {
                 G_rest_req += res.hdr.rest_req;
                 G_rest_elapsed += res.hdr.rest_elapsed;
@@ -3208,12 +3211,16 @@ static int parse_req(int ci, long len)
 
         /* resource (REQ0) */
 
-        strncpy(conn[ci].resource, token, MAX_RESOURCE_LEN);
+        if ( token )
+            strncpy(conn[ci].resource, token, MAX_RESOURCE_LEN);
+        else
+            strncpy(conn[ci].resource, uri, MAX_RESOURCE_LEN);
+
         conn[ci].resource[MAX_RESOURCE_LEN] = EOS;
 
         /* REQ1 */
 
-        if ( token=strtok(NULL, slash) )
+        if ( token && (token=strtok(NULL, slash)) )
         {
             strncpy(conn[ci].req1, token, MAX_RESOURCE_LEN);
             conn[ci].req1[MAX_RESOURCE_LEN] = EOS;
