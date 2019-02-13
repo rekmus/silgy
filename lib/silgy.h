@@ -244,16 +244,16 @@ typedef char                        bool;
 /* mainly memory usage */
 
 #ifdef MEM_MEDIUM
-#define MAX_CONNECTIONS                 500             /* max TCP connections (5 per user session) */
+#define MAX_CONNECTIONS                 200             /* max TCP connections (5 per user session) */
 #define MAX_SESSIONS                    100             /* max user sessions */
 #elif MEM_BIG
-#define MAX_CONNECTIONS                 2500            /* max TCP connections */
+#define MAX_CONNECTIONS                 1000            /* max TCP connections */
 #define MAX_SESSIONS                    500             /* max user sessions */
 #elif MEM_HUGE
-#define MAX_CONNECTIONS                 10000           /* max TCP connections */
-#define MAX_SESSIONS                    2000            /* max user sessions */
+#define MAX_CONNECTIONS                 5000            /* max TCP connections */
+#define MAX_SESSIONS                    2500            /* max user sessions */
 #else   /* MEM_SMALL -- default */
-#define MAX_CONNECTIONS                 50              /* max TCP connections */
+#define MAX_CONNECTIONS                 20              /* max TCP connections */
 #define MAX_SESSIONS                    10              /* max user sessions */
 #endif
 
