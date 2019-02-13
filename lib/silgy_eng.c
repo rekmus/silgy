@@ -2877,7 +2877,9 @@ static void reset_conn(int ci, char conn_state)
     conn[ci].upgrade2https = FALSE;
     conn[ci].data_sent = 0;
     conn[ci].resource[0] = EOS;
-    conn[ci].id[0] = EOS;
+    conn[ci].req1[0] = EOS;
+    conn[ci].req2[0] = EOS;
+    conn[ci].req3[0] = EOS;
     conn[ci].uagent[0] = EOS;
     conn[ci].mobile = FALSE;
     conn[ci].referer[0] = EOS;
@@ -2913,8 +2915,8 @@ static void reset_conn(int ci, char conn_state)
 
 
 /* --------------------------------------------------------------------------
-  parse HTTP request
-  return HTTP status code
+   Parse HTTP request
+   Return HTTP status code
 -------------------------------------------------------------------------- */
 static int parse_req(int ci, long len)
 {
@@ -2929,7 +2931,6 @@ static int parse_req(int ci, long len)
     char    was_cr=FALSE;
     char    label[MAX_LABEL_LEN+1];
     char    value[MAX_VALUE_LEN+1];
-    char    *p_question=NULL;
 
     /* --------------------------------------------
 
@@ -3184,26 +3185,60 @@ static int parse_req(int ci, long len)
                 || (0==strcmp(conn[ci].uri, "apple-touch-icon.png") && !M_appleicon_exists) )
             return 404;     /* Not Found */
 
-        strncpy(conn[ci].resource, conn[ci].uri, MAX_RESOURCE_LEN);
+        /* cut query string off */
+
+        char uri[MAX_URI_LEN+1];
+        int  uri_i=0;
+        while ( conn[ci].uri[uri_i] != EOS && conn[ci].uri[uri_i] != '?' )
+        {
+            uri[uri_i] = conn[ci].uri[uri_i];
+            ++uri_i;
+        }
+
+        uri[uri_i] = EOS;
+
+        DBG("uri w/o qs [%s]", uri);
+
+        /* tokenize */
+
+        const char slash[]="/";
+        char *token;
+
+        token = strtok(uri, slash);
+
+        /* resource (REQ0) */
+
+        strncpy(conn[ci].resource, token, MAX_RESOURCE_LEN);
         conn[ci].resource[MAX_RESOURCE_LEN] = EOS;
 
-        if ( p_question=strchr(conn[ci].resource, '/') )    /* there's an id part of URI */
+        /* REQ1 */
+
+        if ( token=strtok(NULL, slash) )
         {
-            conn[ci].resource[p_question-conn[ci].resource] = EOS;
+            strncpy(conn[ci].req1, token, MAX_RESOURCE_LEN);
+            conn[ci].req1[MAX_RESOURCE_LEN] = EOS;
 
-            strncpy(conn[ci].id, ++p_question, MAX_ID_LEN);
-            conn[ci].id[MAX_ID_LEN] = EOS;
+            /* REQ2 */
 
-            if ( p_question=strchr(conn[ci].id, '?') )
-                conn[ci].id[p_question-conn[ci].id] = EOS;
+            if ( token=strtok(NULL, slash) )
+            {
+                strncpy(conn[ci].req2, token, MAX_RESOURCE_LEN);
+                conn[ci].req2[MAX_RESOURCE_LEN] = EOS;
+
+                /* REQ3 */
+
+                if ( token=strtok(NULL, slash) )
+                {
+                    strncpy(conn[ci].req3, token, MAX_RESOURCE_LEN);
+                    conn[ci].req3[MAX_RESOURCE_LEN] = EOS;
+                }
+            }
         }
-        else if ( p_question=strchr(conn[ci].resource, '?') )   /* no id but query string may be present */
-        {
-            conn[ci].resource[p_question-conn[ci].resource] = EOS;
-        }
 
-        DBG("resource: [%s]", conn[ci].resource);
-        DBG("id: [%s]", conn[ci].id);
+        DBG("REQ0 [%s]", conn[ci].resource);
+        DBG("REQ1 [%s]", conn[ci].req1);
+        DBG("REQ2 [%s]", conn[ci].req2);
+        DBG("REQ3 [%s]", conn[ci].req3);
 
         conn[ci].static_res = is_static_res(ci, conn[ci].uri);     /* statics --> set the flag!!! */
         /* now, it may have set conn[ci].status to 304 */
