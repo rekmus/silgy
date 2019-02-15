@@ -583,7 +583,9 @@ struct timeval  timeout;                    /* Timeout for select */
                         sockets_ready--;
                     }
                     /* --------------------------------------------------------------------------------------- */
-                    else if ( FD_ISSET(conn[i].fd, &M_writefds) )        /* ready for outgoing data */
+                    /* The same fd can be ready for reading & writing */
+                    /* --------------------------------------------------------------------------------------- */
+                    if ( FD_ISSET(conn[i].fd, &M_writefds) )        /* ready for outgoing data */
                     {
 #ifdef DUMP
                         if ( G_now != dbg_last_time1 )   /* only once in a second */
