@@ -301,7 +301,7 @@ typedef char                        bool;
 #endif
 
 
-#define SQLBUF                          2048        /* SQL query buffer size */
+#define SQLBUF                          4096            /* SQL query buffer size */
 
 
 /* UTF-8 */
@@ -356,7 +356,7 @@ typedef char                        bool;
 #define AUTH_LEVEL_ADMIN                '3'
 
 #ifndef APP_DEF_AUTH_LEVEL
-#define APP_DEF_AUTH_LEVEL              AUTH_LEVEL_ANONYMOUS        /* default authorization level */
+#define APP_DEF_AUTH_LEVEL              AUTH_LEVEL_NONE /* default authorization level */
 #endif
 
 
