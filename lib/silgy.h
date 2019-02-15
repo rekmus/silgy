@@ -751,6 +751,7 @@ extern long     G_days_up;                  /* web server's days up */
 extern conn_t   conn[MAX_CONNECTIONS];      /* HTTP connections & requests -- by far the most important structure around */
 #endif
 extern int      G_open_conn;                /* number of open connections */
+extern int      G_open_conn_hwm;            /* highest number of open connections (high water mark) */
 extern char     G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
 #ifndef ASYNC_SERVICE
 extern usession_t uses[MAX_SESSIONS+1];     /* engine user sessions -- they start from 1 */
@@ -760,6 +761,7 @@ extern usession_t uses;
 extern ausession_t auses;
 #endif /* ASYNC_SERVICE */
 extern int      G_sessions;                 /* number of active user sessions */
+extern int      G_sessions_hwm;             /* highest number of active user sessions (high water mark) */
 extern time_t   G_now;                      /* current time */
 extern struct tm *G_ptm;                    /* human readable current time */
 extern char     G_last_modified[32];        /* response header field with server's start time */

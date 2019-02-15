@@ -31,11 +31,13 @@ int         G_usersRequireAccountActivation;
 char        G_blockedIPList[256];
 int         G_ASYNCDefTimeout;
 /* end of config params */
-long        G_days_up;                  /* web server's days up */
+long        G_days_up=0;                /* web server's days up */
 conn_t      conn[MAX_CONNECTIONS];      /* HTTP connections & requests -- by far the most important structure around */
-int         G_open_conn;                /* number of open connections */
+int         G_open_conn=0;              /* number of open connections */
+int         G_open_conn_hwm=0;          /* highest number of open connections (high water mark) */
 usession_t  uses[MAX_SESSIONS+1];       /* user sessions -- they start from 1 */
-int         G_sessions;                 /* number of active user sessions */
+int         G_sessions=0;               /* number of active user sessions */
+int         G_sessions_hwm=0;           /* highest number of active user sessions (high water mark) */
 char        G_last_modified[32];        /* response header field with server's start time */
 #ifdef DBMYSQL
 MYSQL       *G_dbconn;                  /* database connection */
@@ -384,11 +386,11 @@ struct timeval  timeout;                    /* Timeout for select */
 
         sockets_ready = select(M_highsock+1, &M_readfds, &M_writefds, NULL, &timeout);
 
+#ifdef _WIN32
+        if ( M_shutdown ) break;
+#endif
         if ( sockets_ready < 0 )
         {
-#ifdef _WIN32
-            if ( M_shutdown ) break;
-#endif
             ERR("select failed, errno = %d (%s)", errno, strerror(errno));
             /* protect from infinite loop */
             if ( failed_select_cnt >= 10 )
@@ -773,7 +775,7 @@ struct timeval  timeout;                    /* Timeout for select */
 //        DBG("M_last_housekeeping = %ld", M_last_housekeeping);
 //        DBG("              G_now = %ld", G_now);
 #endif
-        if ( M_last_housekeeping < G_now-10 && !M_shutdown )
+        if ( M_last_housekeeping < G_now-10 )
         {
             INF("M_last_housekeeping < G_now-10 ==> run housekeeping");
             if ( !housekeeping() )
@@ -1273,7 +1275,9 @@ static bool init(int argc, char **argv)
 
     G_days_up = 0;
     G_open_conn = 0;
+    G_open_conn_hwm = 0;
     G_sessions = 0;
+    G_sessions_hwm = 0;
     G_index_present = FALSE;
 #ifdef DBMYSQL
     G_dbconn = NULL;
@@ -1704,6 +1708,9 @@ static void build_select_list()
 
         ++G_open_conn;
     }
+
+    if ( G_open_conn > G_open_conn_hwm )
+        G_open_conn_hwm = G_open_conn;
 }
 
 
@@ -1733,8 +1740,8 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     if ( connection < 0 )
     {
 #ifdef _WIN32
-        if ( M_shutdown )
-            return;
+//        if ( M_shutdown )
+//            return;
 #endif
         ERR("accept failed, errno = %d (%s)", errno, strerror(errno));
         return;
@@ -3661,16 +3668,18 @@ static void dump_counters()
 {
     ALWAYS("");
     ALWAYS("Counters:\n");
-    ALWAYS("       req: %ld", G_cnts_today.req);
-    ALWAYS("   req_dsk: %ld", G_cnts_today.req_dsk);
-    ALWAYS("   req_mob: %ld", G_cnts_today.req_mob);
-    ALWAYS("   req_bot: %ld", G_cnts_today.req_bot);
-    ALWAYS("    visits: %ld", G_cnts_today.visits);
-    ALWAYS("visits_dsk: %ld", G_cnts_today.visits_dsk);
-    ALWAYS("visits_mob: %ld", G_cnts_today.visits_mob);
-    ALWAYS("   blocked: %ld", G_cnts_today.blocked);
-       DBG("   elapsed: %.3lf ms", G_cnts_today.elapsed);
-    ALWAYS("   average: %.3lf ms", G_cnts_today.average);
+    ALWAYS("            req: %ld", G_cnts_today.req);
+    ALWAYS("        req_dsk: %ld", G_cnts_today.req_dsk);
+    ALWAYS("        req_mob: %ld", G_cnts_today.req_mob);
+    ALWAYS("        req_bot: %ld", G_cnts_today.req_bot);
+    ALWAYS("         visits: %ld", G_cnts_today.visits);
+    ALWAYS("     visits_dsk: %ld", G_cnts_today.visits_dsk);
+    ALWAYS("     visits_mob: %ld", G_cnts_today.visits_mob);
+    ALWAYS("        blocked: %ld", G_cnts_today.blocked);
+//       DBG("        elapsed: %.3lf ms", G_cnts_today.elapsed);
+    ALWAYS("        average: %.3lf ms", G_cnts_today.average);
+    ALWAYS("connections HWM: %d", G_open_conn_hwm);
+    ALWAYS("   sessions HWM: %d", G_sessions_hwm);
     ALWAYS("");
 }
 
@@ -3680,7 +3689,7 @@ static void dump_counters()
 -------------------------------------------------------------------------- */
 static void clean_up()
 {
-    char    command[256];
+    char command[1024];
 
     M_shutdown = TRUE;
 
@@ -3947,6 +3956,9 @@ bool eng_uses_start(int ci)
     strcpy(conn[ci].cookie_out_a, sesid);
 
     DBG("%d user session(s)", G_sessions);
+
+    if ( G_sessions > G_sessions_hwm )
+        G_sessions_hwm = G_sessions;
 
     return TRUE;
 }
@@ -5409,7 +5421,7 @@ static void sigdisp(int sig)
 -------------------------------------------------------------------------- */
 static void clean_up()
 {
-    char    command[256];
+    char command[1024];
 
     ALWAYS("");
     ALWAYS("Cleaning up...\n");
