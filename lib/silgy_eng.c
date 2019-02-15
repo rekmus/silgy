@@ -120,10 +120,14 @@ static bool         M_appleicon_exists=FALSE;   /* -''- */
 WSADATA             wsa;
 #endif
 static bool         M_shutdown=FALSE;
+static int          M_prev_minute;
+static int          M_prev_day;
+static time_t       M_last_housekeeping=0;
 
 
 /* prototypes */
 
+static bool housekeeping(void);
 static void set_state(int ci, long bytes);
 static void set_state_sec(int ci, long bytes);
 static void read_conf(void);
@@ -168,15 +172,13 @@ int main(int argc, char **argv)
 static struct   sockaddr_in serv_addr;      /* static = initialised to zeros */
 static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
 unsigned int    addr_len=0;
-    int         prev_day=0;
 unsigned long   hit=0;
     char        remote_addr[INET_ADDRSTRLEN]=""; /* remote address */
     int         reuse_addr=1;               /* Used so we can re-bind to our port while a previous connection is still in TIME_WAIT state */
 struct timeval  timeout;                    /* Timeout for select */
     int         sockets_ready;              /* Number of sockets ready for I/O */
     int         i=0;                        /* Current item in conn_sockets for for loops */
-    int         time_elapsed=0;             /* time unit, currently 1 second */
-    time_t      sometimeahead;
+//    int         time_elapsed=0;             /* time unit, currently 1 second */
     long        bytes=0;
     int         failed_select_cnt=0;
     int         j=0;
@@ -191,10 +193,6 @@ struct timeval  timeout;                    /* Timeout for select */
         clean_up();
         return EXIT_FAILURE;
     }
-
-    /* create new log file every day */
-
-    prev_day = G_ptm->tm_mday;
 
     /* setup the network socket */
 
@@ -351,17 +349,14 @@ struct timeval  timeout;                    /* Timeout for select */
 
     log_flush();
 
+    M_prev_minute = G_ptm->tm_min;
+    M_prev_day = G_ptm->tm_mday;
 
     /* main server loop ------------------------------------------------------------------------- */
 
 //  for ( ; hit<1000; ++hit )   /* test only */
     for ( ;; )
     {
-        build_select_list();
-
-        timeout.tv_sec = 1;
-        timeout.tv_usec = 0;
-
         lib_update_time_globals();
 
 #ifdef _WIN32   /* Windows */
@@ -382,9 +377,14 @@ struct timeval  timeout;                    /* Timeout for select */
             }
         }
 #endif
+        build_select_list();
+
+        timeout.tv_sec = 1;
+        timeout.tv_usec = 0;
+
         sockets_ready = select(M_highsock+1, &M_readfds, &M_writefds, NULL, &timeout);
 
-        if (sockets_ready < 0)
+        if ( sockets_ready < 0 )
         {
 #ifdef _WIN32
             if ( M_shutdown ) break;
@@ -413,80 +413,14 @@ struct timeval  timeout;                    /* Timeout for select */
                 continue;
             }
         }
-        else if (sockets_ready == 0)
+        else if ( sockets_ready == 0 )
         {
             /* we have some time now, let's do some housekeeping */
-
-            if ( G_open_conn ) close_old_conn();
-            if ( G_sessions ) close_uses_timeout();
-
 #ifdef DUMP
-#ifndef DONT_RESCAN_RES
-            if ( G_test )   /* kind of developer mode */
-            {
-                read_files(FALSE, FALSE, NULL);
-                read_files(TRUE, FALSE, NULL);
-            }
+            DBG("sockets_ready == 0");
 #endif
-#endif
-
-            if ( time_elapsed >= 60 )   /* say something sometimes ... */
-            {
-                ALWAYS("[%s] %d open connection(s) | %d user session(s)", G_dt+11, G_open_conn, G_sessions);
-                time_elapsed = 0;
-#ifdef USERS
-                if ( G_sessions ) libusr_close_luses_timeout();     /* tidy up cache */
-#endif
-                log_flush();
-
-#ifndef DONT_RESCAN_RES    /* refresh static resources */
-                read_files(FALSE, FALSE, NULL);
-                read_files(TRUE, FALSE, NULL);
-#endif /* DONT_RESCAN_RES */
-
-                /* start new log file every day */
-
-                if ( G_ptm->tm_mday != prev_day )
-                {
-                    dump_counters();
-                    log_finish();
-                    if ( !log_start("", G_test) )
-                    {
-                        clean_up();
-                        return EXIT_FAILURE;
-                    }
-                    prev_day = G_ptm->tm_mday;
-
-                    /* set new Expires date */
-                    sometimeahead = G_now + 3600*24*EXPIRES_IN_DAYS;
-                    G_ptm = gmtime(&sometimeahead);
-#ifdef _WIN32   /* Windows */
-                    strftime(M_expires, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
-#else
-                    strftime(M_expires, 32, "%a, %d %b %Y %T GMT", G_ptm);
-#endif  /* _WIN32 */
-                    ALWAYS("New M_expires: %s", M_expires);
-                    G_ptm = gmtime(&G_now); /* make sure G_ptm is up to date */
-
-                    if ( G_blockedIPList[0] )
-                    {
-                        /* update blacklist */
-                        read_blocked_ips();
-                    }
-
-                    /* copy & reset counters */
-                    memcpy(&G_cnts_day_before, &G_cnts_yesterday, sizeof(counters_t));
-                    memcpy(&G_cnts_yesterday, &G_cnts_today, sizeof(counters_t));
-                    memset(&G_cnts_today, 0, sizeof(counters_t));
-                    G_rest_req = 0;
-                    G_rest_elapsed = 0;
-                    G_rest_average = 0;
-
-                    /* log currently used memory */
-                    lib_log_memory();
-                    ++G_days_up;
-                }
-            }
+            if ( !housekeeping() )
+                return EXIT_FAILURE;
         }
         else    /* sockets_ready > 0 */
         {
@@ -583,9 +517,9 @@ struct timeval  timeout;                    /* Timeout for select */
                         sockets_ready--;
                     }
                     /* --------------------------------------------------------------------------------------- */
-                    /* The same fd can be ready for reading & writing */
+                    /* same fd can be ready for reading & writing?? */
                     /* --------------------------------------------------------------------------------------- */
-                    if ( FD_ISSET(conn[i].fd, &M_writefds) )        /* ready for outgoing data */
+                    else if ( FD_ISSET(conn[i].fd, &M_writefds) )        /* ready for outgoing data */
                     {
 #ifdef DUMP
                         if ( G_now != dbg_last_time1 )   /* only once in a second */
@@ -831,10 +765,124 @@ struct timeval  timeout;                    /* Timeout for select */
 
 #endif /* ASYNC */
 
-        ++time_elapsed;
+//        ++time_elapsed;
+
+        /* under heavy load there might never be that sockets_ready==0 */
+        /* make sure it runs at least every 10 seconds */
+#ifdef DUMP
+//        DBG("M_last_housekeeping = %ld", M_last_housekeeping);
+//        DBG("              G_now = %ld", G_now);
+#endif
+        if ( M_last_housekeeping < G_now-10 && !M_shutdown )
+        {
+            INF("M_last_housekeeping < G_now-10 ==> run housekeeping");
+            if ( !housekeeping() )
+                return EXIT_FAILURE;
+        }
     }
 
     return EXIT_SUCCESS;
+}
+
+
+/* --------------------------------------------------------------------------
+   Close expired sessions etc...
+-------------------------------------------------------------------------- */
+static bool housekeeping()
+{
+#ifdef DUMP
+    DBG("housekeeping");
+#endif
+
+    /* close expired connections */
+    if ( G_open_conn ) close_old_conn();
+
+    /* close expired user sessions */
+    if ( G_sessions ) close_uses_timeout();
+
+#ifdef DUMP
+#ifndef DONT_RESCAN_RES
+    if ( G_test )   /* kind of developer mode */
+    {
+        read_files(FALSE, FALSE, NULL);
+        read_files(TRUE, FALSE, NULL);
+    }
+#endif /* DONT_RESCAN_RES */
+#endif /* DUMP */
+
+    if ( G_ptm->tm_min != M_prev_minute )
+    {
+#ifdef DUMP
+        DBG("Once a minute");
+#endif
+        /* say something sometimes ... */
+        ALWAYS("[%s] %d open connection(s) | %d user session(s)", G_dt+11, G_open_conn, G_sessions);
+
+        /* close expired logged in user sessions */
+#ifdef USERS
+        if ( G_sessions ) libusr_close_luses_timeout();     /* tidy up cache */
+#endif
+        log_flush();
+
+#ifndef DONT_RESCAN_RES    /* refresh static resources */
+        read_files(FALSE, FALSE, NULL);
+        read_files(TRUE, FALSE, NULL);
+#endif /* DONT_RESCAN_RES */
+
+        /* start new log file every day */
+
+        if ( G_ptm->tm_mday != M_prev_day )
+        {
+#ifdef DUMP
+            DBG("Once a day");
+#endif
+            dump_counters();
+            log_finish();
+            if ( !log_start("", G_test) )
+            {
+                clean_up();
+                return FALSE;
+            }
+
+            /* set new Expires date */
+            time_t sometimeahead;
+            sometimeahead = G_now + 3600*24*EXPIRES_IN_DAYS;
+            G_ptm = gmtime(&sometimeahead);
+#ifdef _WIN32   /* Windows */
+            strftime(M_expires, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
+#else
+            strftime(M_expires, 32, "%a, %d %b %Y %T GMT", G_ptm);
+#endif  /* _WIN32 */
+            ALWAYS("New M_expires: %s", M_expires);
+            G_ptm = gmtime(&G_now); /* make sure G_ptm is up to date */
+
+            if ( G_blockedIPList[0] )
+            {
+                /* update blacklist */
+                read_blocked_ips();
+            }
+
+            /* copy & reset counters */
+            memcpy(&G_cnts_day_before, &G_cnts_yesterday, sizeof(counters_t));
+            memcpy(&G_cnts_yesterday, &G_cnts_today, sizeof(counters_t));
+            memset(&G_cnts_today, 0, sizeof(counters_t));
+            G_rest_req = 0;
+            G_rest_elapsed = 0;
+            G_rest_average = 0;
+
+            /* log currently used memory */
+            lib_log_memory();
+            ++G_days_up;
+
+            M_prev_day = G_ptm->tm_mday;
+        }
+
+        M_prev_minute = G_ptm->tm_min;
+    }
+
+    M_last_housekeeping = G_now;
+
+    return TRUE;
 }
 
 
