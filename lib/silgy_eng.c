@@ -419,7 +419,7 @@ struct timeval  timeout;                    /* Timeout for select */
         {
             /* we have some time now, let's do some housekeeping */
 #ifdef DUMP
-            DBG("sockets_ready == 0");
+//            DBG("sockets_ready == 0");
 #endif
             if ( !housekeeping() )
                 return EXIT_FAILURE;
@@ -793,7 +793,7 @@ struct timeval  timeout;                    /* Timeout for select */
 static bool housekeeping()
 {
 #ifdef DUMP
-    DBG("housekeeping");
+//    DBG("housekeeping");
 #endif
 
     /* close expired connections */
@@ -1720,7 +1720,7 @@ static void build_select_list()
 -------------------------------------------------------------------------- */
 static void accept_http()
 {
-    int     i;          /* current item in conn_sockets for for loops */
+    int     i;          /* current item in conn for for loops */
     int     connection; /* socket file descriptor for incoming connections */
 static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     socklen_t   addr_len;
@@ -1739,10 +1739,6 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
     if ( connection < 0 )
     {
-#ifdef _WIN32
-//        if ( M_shutdown )
-//            return;
-#endif
         ERR("accept failed, errno = %d (%s)", errno, strerror(errno));
         return;
     }
@@ -1815,7 +1811,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 static void accept_https()
 {
 #ifdef HTTPS
-    int     i;          /* current item in conn_sockets for for loops */
+    int     i;          /* current item in conn for for loops */
     int     connection; /* socket file descriptor for incoming connections */
 static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     socklen_t   addr_len;

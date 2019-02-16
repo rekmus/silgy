@@ -75,10 +75,10 @@ static bool start_new_luses(int ci, long uid, const char *login, const char *ema
 {
     DBG("start_new_luses");
 
-    if ( !conn[ci].usi && !eng_uses_start(ci) )    /* no anonymous session -- try to start one */
-    {
-        return FALSE;
-    }
+//    if ( !conn[ci].usi && !eng_uses_start(ci) )    /* no anonymous session -- try to start one */
+//    {
+//        return FALSE;
+//    }
 
     DBG("Upgrading anonymous session to logged in, usi=%d, sesid [%s]", conn[ci].usi, sesid);
     strcpy(conn[ci].cookie_out_a, "x");     /* no longer needed */
@@ -767,6 +767,8 @@ unsigned long   sql_records;
         return ERR_INVALID_LOGIN;   /* invalid user and/or password */
     }
 
+    DBG("Password OK");
+
     /* activated? */
 
     if ( user_status != USER_STATUS_ACTIVE )
@@ -774,6 +776,8 @@ unsigned long   sql_records;
         WAR("User not activated");
         return ERR_NOT_ACTIVATED;
     }
+
+    DBG("User activation status OK");
 
     /* successful login ------------------------------------------------------------ */
 
@@ -789,12 +793,22 @@ unsigned long   sql_records;
         }
     }
 
-    /* use anonymous sesid */
+    /* try to use anonymous sesid if present */
+
+    if ( conn[ci].usi )
+    {
+        DBG("Using current session usi=%d, sesid [%s]", conn[ci].usi, sesid);
+    }
+    else if ( !eng_uses_start(ci) )
+    {
+        return ERR_SERVER_TOOBUSY;
+    }
 
     strcpy(sesid, US.sesid);
-    DBG("Using current sesid [%s]", sesid);
 
     /* save new session to users_logins and set the cookie */
+
+    DBG("Saving user session [%s] into users_logins...", sesid);
 
     strncpy(sanuagent, silgy_sql_esc(conn[ci].uagent), DB_UAGENT_LEN);
     sanuagent[DB_UAGENT_LEN] = EOS;
@@ -808,6 +822,8 @@ unsigned long   sql_records;
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
+
+    DBG("User session saved OK");
 
     /* set cookie */
 
