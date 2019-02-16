@@ -192,7 +192,7 @@ unsigned long   sql_records;
 
     if ( created < G_now - 3600*24*30 )
     {
-        DBG("Closing old logged in session, usi=%d, sesid [%s], created %s", conn[ci].usi, conn[ci].cookie_in_l, sql_row[2]);
+        DBG("Removing old logged in session, usi=%d, sesid [%s], created %s from database", conn[ci].usi, conn[ci].cookie_in_l, sql_row[2]);
 
         mysql_free_result(result);
 
@@ -219,7 +219,18 @@ unsigned long   sql_records;
 
     DBG("Logged in session found in database");
 
-    sprintf(sql_query, "UPDATE users_logins SET last_used='%s' WHERE sesid='%s'", G_dt, conn[ci].cookie_in_l);
+    /* start a fresh session */
+
+    if ( !eng_uses_start(ci) )
+    {
+        return ERR_SERVER_TOOBUSY;
+    }
+    else    /* keep the old sesid */
+    {
+        strcpy(US.sesid, conn[ci].cookie_in_l);
+    }
+
+    sprintf(sql_query, "UPDATE users_logins SET last_used='%s' WHERE sesid='%s'", G_dt, US.sesid);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -227,12 +238,12 @@ unsigned long   sql_records;
         return ERR_INT_SERVER_ERROR;
     }
 
-    return do_login(ci, uid, NULL, NULL, NULL, NULL, NULL, 0, conn[ci].cookie_in_l);
+    return do_login(ci, uid, NULL, NULL, NULL, NULL, NULL, 0, US.sesid);
 }
 
 
 /* --------------------------------------------------------------------------
-  close timeouted logged in user sessions
+   Close timeouted logged in user sessions
 -------------------------------------------------------------------------- */
 void libusr_close_luses_timeout()
 {
@@ -797,7 +808,7 @@ unsigned long   sql_records;
 
     if ( conn[ci].usi )
     {
-        DBG("Using current session usi=%d, sesid [%s]", conn[ci].usi, sesid);
+        DBG("Using current session usi=%d, sesid [%s]", conn[ci].usi, US.sesid);
     }
     else if ( !eng_uses_start(ci) )
     {
