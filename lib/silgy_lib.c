@@ -4587,7 +4587,7 @@ static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 
     /* output timestamp */
 
-    fprintf(M_log_fd, "[%s] ", G_dt);
+    fprintf(M_log_fd, "[%s] ", G_dt+11);
 
     if ( LOG_ERR == level )
         fprintf(M_log_fd, "ERROR: ");

@@ -14,10 +14,10 @@
 
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
-static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, const char *sesid);
+static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about);
 static int user_exists(const char *login);
 static int email_exists(const char *email);
-static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits, const char *sesid);
+static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits);
 static void doit(char *result1, char *result2, const char *usr, const char *email, const char *src);
 static long get_max(int ci, const char *table);
 
@@ -71,7 +71,7 @@ static bool valid_email(const char *email)
 /* --------------------------------------------------------------------------
    Start new logged in user session
 -------------------------------------------------------------------------- */
-static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, const char *sesid)
+static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about)
 {
     DBG("start_new_luses");
 
@@ -80,12 +80,12 @@ static bool start_new_luses(int ci, long uid, const char *login, const char *ema
 //        return FALSE;
 //    }
 
-    DBG("Upgrading anonymous session to logged in, usi=%d, sesid [%s]", conn[ci].usi, sesid);
+    DBG("Upgrading anonymous session to logged in, usi=%d, sesid [%s]", conn[ci].usi, US.sesid);
     strcpy(conn[ci].cookie_out_a, "x");     /* no longer needed */
     strcpy(conn[ci].cookie_out_a_exp, G_last_modified);     /* to be removed by browser */
 
     US.logged = TRUE;
-    strcpy(US.sesid, sesid);
+//    strcpy(US.sesid, sesid);
     strcpy(US.login, login);
     strcpy(US.email, email);
     strcpy(US.name, name);
@@ -219,15 +219,11 @@ unsigned long   sql_records;
 
     DBG("Logged in session found in database");
 
-    /* start a fresh session */
+    /* start a fresh session, keep the old sesid */
 
-    if ( !eng_uses_start(ci) )
+    if ( !eng_uses_start(ci, conn[ci].cookie_in_l) )
     {
         return ERR_SERVER_TOOBUSY;
-    }
-    else    /* keep the old sesid */
-    {
-        strcpy(US.sesid, conn[ci].cookie_in_l);
     }
 
     sprintf(sql_query, "UPDATE users_logins SET last_used='%s' WHERE sesid='%s'", G_dt, US.sesid);
@@ -238,7 +234,7 @@ unsigned long   sql_records;
         return ERR_INT_SERVER_ERROR;
     }
 
-    return do_login(ci, uid, NULL, NULL, NULL, NULL, NULL, 0, US.sesid);
+    return do_login(ci, uid, NULL, NULL, NULL, NULL, NULL, 0);
 }
 
 
@@ -252,9 +248,9 @@ void libusr_close_luses_timeout()
 
     last_allowed = G_now - LUSES_TIMEOUT;
 
-    for (i=1; i<=G_sessions; ++i)
+    for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
     {
-        if ( uses[i].logged && uses[i].last_activity < last_allowed )
+        if ( uses[i].sesid[0] && uses[i].logged && uses[i].last_activity < last_allowed )
             libusr_close_l_uses(-1, i);
     }
 }
@@ -389,7 +385,7 @@ static int email_exists(const char *email)
    Log user in -- called either by l_usession_ok or silgy_usr_login
    Authentication has already been done prior to calling this
 -------------------------------------------------------------------------- */
-static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits, const char *sesid)
+static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits)
 {
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
@@ -457,9 +453,9 @@ unsigned long   sql_records;
         strcpy(login, "admin");
 #endif
 #endif
-    /* add record to uses */
+    /* upgrade anonymous session to logged in */
 
-    if ( !start_new_luses(ci, uid, login, email, name, phone, about, sesid) )
+    if ( !start_new_luses(ci, uid, login, email, name, phone, about) )
         return ERR_SERVER_TOOBUSY;
 
     /* update user record */
@@ -661,7 +657,7 @@ int silgy_usr_login(int ci)
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
     long        uid;
-    char        sesid[SESID_LEN+1]="";
+//    char        sesid[SESID_LEN+1]="";
     long        new_ula_cnt;
     char        sanuagent[DB_UAGENT_LEN+1];
     time_t      sometimeahead;
@@ -810,23 +806,21 @@ unsigned long   sql_records;
     {
         DBG("Using current session usi=%d, sesid [%s]", conn[ci].usi, US.sesid);
     }
-    else if ( !eng_uses_start(ci) )
+    else if ( !eng_uses_start(ci, NULL) )   /* no session --> start a new one */
     {
         return ERR_SERVER_TOOBUSY;
     }
 
-    strcpy(sesid, US.sesid);
-
     /* save new session to users_logins and set the cookie */
 
-    DBG("Saving user session [%s] into users_logins...", sesid);
+    DBG("Saving user session [%s] into users_logins...", US.sesid);
 
     strncpy(sanuagent, silgy_sql_esc(conn[ci].uagent), DB_UAGENT_LEN);
     sanuagent[DB_UAGENT_LEN] = EOS;
     if ( sanuagent[DB_UAGENT_LEN-1]=='\'' && sanuagent[DB_UAGENT_LEN-2]!='\'' )
         sanuagent[DB_UAGENT_LEN-1] = EOS;
 
-    sprintf(sql_query, "INSERT INTO users_logins (sesid,uagent,ip,user_id,created,last_used) VALUES ('%s','%s','%s',%ld,'%s','%s')", sesid, sanuagent, conn[ci].ip, uid, G_dt, G_dt);
+    sprintf(sql_query, "INSERT INTO users_logins (sesid,uagent,ip,user_id,created,last_used) VALUES ('%s','%s','%s',%ld,'%s','%s')", US.sesid, sanuagent, conn[ci].ip, uid, G_dt, G_dt);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -838,7 +832,7 @@ unsigned long   sql_records;
 
     /* set cookie */
 
-    strcpy(conn[ci].cookie_out_l, sesid);
+    strcpy(conn[ci].cookie_out_l, US.sesid);
 
     /* Keep me logged in -- set cookie expiry date */
 
@@ -854,7 +848,7 @@ unsigned long   sql_records;
 
     /* finish logging user in */
 
-    return do_login(ci, uid, login, email, name, phone, about, visits, sesid);
+    return do_login(ci, uid, login, email, name, phone, about, visits);
 }
 
 

@@ -391,7 +391,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #endif
         if ( sockets_ready < 0 )
         {
-            ERR("select failed, errno = %d (%s)", errno, strerror(errno));
+            ERR_T("select failed, errno = %d (%s)", errno, strerror(errno));
             /* protect from infinite loop */
             if ( failed_select_cnt >= 10 )
             {
@@ -429,11 +429,13 @@ struct timeval  timeout;                    /* Timeout for select */
             if ( FD_ISSET(M_listening_fd, &M_readfds) )
             {
                 accept_http();
+                sockets_ready--;
             }
 #ifdef HTTPS
             else if ( FD_ISSET(M_listening_sec_fd, &M_readfds) )
             {
                 accept_https();
+                sockets_ready--;
             }
 #endif
             else    /* existing connections have something going on on them ---------------------------------- */
@@ -707,6 +709,17 @@ struct timeval  timeout;                    /* Timeout for select */
             }
         }
 
+        if ( sockets_ready != 0 )
+        {
+            static time_t last_time=0;  /* prevent log overflow */
+
+            if ( last_time != G_now )
+            {
+                WAR_T("sockets_ready should be 0 but currently %d", sockets_ready);
+                last_time = G_now;
+            }
+        }
+
         /* async processing -- check on response queue */
 #ifdef ASYNC
         async_res_t res;
@@ -743,7 +756,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
         else
         {
-            static time_t last_time=0;  /* not too often */
+            static time_t last_time=0;  /* prevent log overflow */
 
             if ( last_time != G_now )
             {
@@ -777,7 +790,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #endif
         if ( M_last_housekeeping < G_now-10 )
         {
-            INF("M_last_housekeeping < G_now-10 ==> run housekeeping");
+            INF_T("M_last_housekeeping < G_now-10 ==> run housekeeping");
             if ( !housekeeping() )
                 return EXIT_FAILURE;
         }
@@ -818,7 +831,8 @@ static bool housekeeping()
         DBG("Once a minute");
 #endif
         /* say something sometimes ... */
-        ALWAYS("[%s] %d open connection(s) | %d user session(s)", G_dt+11, G_open_conn, G_sessions);
+//        ALWAYS("[%s] %d open connection(s) | %d user session(s)", G_dt+11, G_open_conn, G_sessions);
+        ALWAYS_T("%d open connection(s) | %d user session(s)", G_open_conn, G_sessions);
 
         /* close expired logged in user sessions */
 #ifdef USERS
@@ -2539,8 +2553,8 @@ static void process_req(int ci)
         {
             if ( !conn[ci].cookie_in_a[0] || !a_usession_ok(ci) )       /* valid anonymous sesid cookie not present */
             {
-                if ( !eng_uses_start(ci) )  /* start new anonymous user session */
-                    ret = ERR_SERVER_TOOBUSY;   /* user sessions exhausted */
+                if ( !eng_uses_start(ci, NULL) )  /* start new anonymous user session */
+                    ret = ERR_SERVER_TOOBUSY;       /* user sessions exhausted */
             }
         }
 
@@ -2870,7 +2884,7 @@ static void close_old_conn()
 
     last_allowed = G_now - CONN_TIMEOUT;
 
-    for ( i=0; i<MAX_CONNECTIONS; ++i )
+    for ( i=0; G_open_conn>0 && i<MAX_CONNECTIONS; ++i )
     {
         if ( conn[i].conn_state != CONN_STATE_DISCONNECTED && conn[i].last_activity < last_allowed )
         {
@@ -2882,7 +2896,7 @@ static void close_old_conn()
 
 
 /* --------------------------------------------------------------------------
-  close timeouted anonymous user sessions
+   Close timeouted anonymous user sessions
 -------------------------------------------------------------------------- */
 static void close_uses_timeout()
 {
@@ -2891,7 +2905,7 @@ static void close_uses_timeout()
 
     last_allowed = G_now - USES_TIMEOUT;
 
-    for ( i=1; i<=MAX_SESSIONS; ++i )
+    for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
     {
         if ( uses[i].sesid[0] && !uses[i].logged && uses[i].last_activity < last_allowed )
             close_a_uses(i);
@@ -2900,7 +2914,7 @@ static void close_uses_timeout()
 
 
 /* --------------------------------------------------------------------------
-  close anonymous user session
+   Close anonymous user session
 -------------------------------------------------------------------------- */
 static void close_a_uses(int usi)
 {
@@ -2910,7 +2924,7 @@ static void close_a_uses(int usi)
 
 
 /* --------------------------------------------------------------------------
-  reset connection after processing request
+   Reset connection after processing request
 -------------------------------------------------------------------------- */
 static void reset_conn(int ci, char conn_state)
 {
@@ -3901,10 +3915,10 @@ static int current=0;
 /* --------------------------------------------------------------------------
    Start new anonymous user session
 -------------------------------------------------------------------------- */
-bool eng_uses_start(int ci)
+bool eng_uses_start(int ci, const char *sesid)
 {
     int     i;
-    char    sesid[SESID_LEN+1];
+    char    new_sesid[SESID_LEN+1];
 
     DBG("eng_uses_start");
 
@@ -3927,15 +3941,20 @@ bool eng_uses_start(int ci)
         }
     }
 
-    /* generate sesid */
+    if ( sesid )
+    {
+        strcpy(new_sesid, sesid);
+    }
+    else    /* generate sesid */
+    {
+        silgy_random(new_sesid, SESID_LEN);
+    }
 
-    silgy_random(sesid, SESID_LEN);
-
-    INF("Starting new session, usi=%d, sesid [%s]", conn[ci].usi, sesid);
+    INF("Starting new session, usi=%d, sesid [%s]", conn[ci].usi, new_sesid);
 
     /* add record to uses */
 
-    strcpy(US.sesid, sesid);
+    strcpy(US.sesid, new_sesid);
     strcpy(US.ip, conn[ci].ip);
     strcpy(US.uagent, conn[ci].uagent);
     strcpy(US.referer, conn[ci].referer);
@@ -3949,7 +3968,7 @@ bool eng_uses_start(int ci)
 
     /* set 'as' cookie */
 
-    strcpy(conn[ci].cookie_out_a, sesid);
+    strcpy(conn[ci].cookie_out_a, new_sesid);
 
     DBG("%d user session(s)", G_sessions);
 

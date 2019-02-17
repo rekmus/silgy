@@ -823,7 +823,7 @@ extern "C" {
     /* public engine functions */
 
     void silgy_set_auth_level(const char *resource, char level);
-    bool eng_uses_start(int ci);
+    bool eng_uses_start(int ci, const char *sesid);
     void eng_uses_close(int usi);
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size);
