@@ -269,7 +269,6 @@ typedef char                        bool;
 #define CONN_STATE_DISCONNECTED         '0'
 #define CONN_STATE_ACCEPTING            'a'
 #define CONN_STATE_CONNECTED            '1'
-#define CONN_STATE_READING_HEADER       'h'
 #define CONN_STATE_READY_FOR_PARSE      'p'
 #define CONN_STATE_READY_FOR_PROCESS    'P'
 #define CONN_STATE_READING_DATA         'd'
