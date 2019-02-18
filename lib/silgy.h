@@ -257,9 +257,9 @@ typedef char                        bool;
 #define MAX_SESSIONS                    10              /* max user sessions */
 #endif
 
-#if MAX_CONNECTIONS > FD_SETSIZE
+#if MAX_CONNECTIONS > FD_SETSIZE-2
 #undef MAX_CONNECTIONS
-#define MAX_CONNECTIONS FD_SETSIZE
+#define MAX_CONNECTIONS FD_SETSIZE-2
 #endif
 
 #define CONN_TIMEOUT                    180             /* idle connection timeout in seconds */
