@@ -831,7 +831,6 @@ static bool housekeeping()
         DBG("Once a minute");
 #endif
         /* say something sometimes ... */
-//        ALWAYS("[%s] %d open connection(s) | %d user session(s)", G_dt+11, G_open_conn, G_sessions);
         ALWAYS_T("%d open connection(s) | %d user session(s)", G_open_conn, G_sessions);
 
         /* close expired logged in user sessions */
@@ -1020,7 +1019,7 @@ static void set_state(int ci, long bytes)
 static void set_state_sec(int ci, long bytes)
 {
     int     e;
-    char    ec[128]="";
+    char    ec[256]="";
 #ifdef HTTPS
     e = errno;
 
@@ -1271,6 +1270,8 @@ static void close_conn(int ci)
     close(conn[ci].fd);
 #endif  /* _WIN32 */
     reset_conn(ci, CONN_STATE_DISCONNECTED);
+
+    G_open_conn--;
 }
 
 
@@ -1671,11 +1672,11 @@ static bool init(int argc, char **argv)
 
 /* --------------------------------------------------------------------------
    Build select list
+   This is on the latency critical path
+   Try to minimize number of steps
 -------------------------------------------------------------------------- */
 static void build_select_list()
 {
-    int i;
-
     FD_ZERO(&M_readfds);
     FD_ZERO(&M_writefds);
 
@@ -1684,25 +1685,30 @@ static void build_select_list()
     FD_SET(M_listening_sec_fd, &M_readfds);
 #endif
 
-    G_open_conn = 0;
+    int i;
+    int remain = G_open_conn;
 
-    for ( i=0; i<MAX_CONNECTIONS; ++i )
+    for ( i=0; remain>0 && i<MAX_CONNECTIONS; ++i )
     {
         if ( conn[i].conn_state == CONN_STATE_DISCONNECTED ) continue;
-
-        /* reading */
-
-        FD_SET(conn[i].fd, &M_readfds);
-
-        /* writing -- only for certain states */
 
 #ifdef HTTPS
         if ( conn[i].secure )
         {
+            /* reading */
+
+            if ( conn[i].conn_state == CONN_STATE_CONNECTED
+                    || conn[i].conn_state == CONN_STATE_READING_DATA
+                    || conn[i].ssl_err == SSL_ERROR_WANT_READ )
+            {
+                FD_SET(conn[i].fd, &M_readfds);
+            }
+
+            /* writing */
+
             if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER
                     || conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY
                     || conn[i].conn_state == CONN_STATE_SENDING_BODY
-                    || conn[i].conn_state == CONN_STATE_WAITING_FOR_ASYNC
                     || conn[i].ssl_err == SSL_ERROR_WANT_WRITE )
             {
                 FD_SET(conn[i].fd, &M_writefds);
@@ -1711,20 +1717,34 @@ static void build_select_list()
         else
         {
 #endif /* HTTPS */
-            if ( conn[i].conn_state != CONN_STATE_CONNECTED
-                    && conn[i].conn_state != CONN_STATE_READING_DATA )
+            /* reading */
+
+            if ( conn[i].conn_state == CONN_STATE_CONNECTED
+                    || conn[i].conn_state == CONN_STATE_READING_DATA )
+            {
+                FD_SET(conn[i].fd, &M_readfds);
+            }
+
+            /* writing */
+
+            if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER
+                    || conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY
+                    || conn[i].conn_state == CONN_STATE_SENDING_BODY )
+            {
                 FD_SET(conn[i].fd, &M_writefds);
+            }
 #ifdef HTTPS
         }
 #endif
-        if (conn[i].fd > M_highsock)
+        if ( conn[i].fd > M_highsock )
             M_highsock = conn[i].fd;
 
-        ++G_open_conn;
+//        ++G_open_conn;
+        remain--;
     }
 
-    if ( G_open_conn > G_open_conn_hwm )
-        G_open_conn_hwm = G_open_conn;
+//    if ( G_open_conn > G_open_conn_hwm )
+//        G_open_conn_hwm = G_open_conn;
 }
 
 
@@ -1786,6 +1806,10 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
             DBG("\nConnection accepted: %s, slot=%d, fd=%d", remote_addr, i, connection);
             conn[i].fd = connection;
             conn[i].secure = FALSE;
+
+            if ( ++G_open_conn > G_open_conn_hwm )
+                G_open_conn_hwm = G_open_conn;
+
             strcpy(conn[i].ip, remote_addr);        /* possibly client IP */
             strcpy(conn[i].pip, remote_addr);       /* possibly proxy IP */
 #ifdef DUMP
@@ -1878,6 +1902,9 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
             DBG("\nSecure connection accepted: %s, slot=%d, fd=%d", remote_addr, i, connection);
             conn[i].fd = connection;
             conn[i].secure = TRUE;
+
+            if ( ++G_open_conn > G_open_conn_hwm )
+                G_open_conn_hwm = G_open_conn;
 
             conn[i].ssl = SSL_new(M_ssl_ctx);
 
