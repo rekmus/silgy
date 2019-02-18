@@ -1244,9 +1244,9 @@ static void log_proc_time(int ci)
     strftime(logtime, 64, "%d/%b/%Y:%H:%M:%S +0000", G_ptm);
 
     if ( G_logCombined )
-        ALWAYS("%s - - [%s] \"%s /%s %s\" %d %d \"%s\" \"%s\"  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].data_sent, conn[ci].referer, conn[ci].uagent, conn[ci].req, lib_elapsed(&conn[ci].proc_start), REQ_BOT?"  [bot]":"");
+        ALWAYS("%s - - [%s] \"%s /%s %s\" %d %d \"%s\" \"%s\"  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].data_sent, conn[ci].referer, conn[ci].uagent, conn[ci].req, elapsed, REQ_BOT?"  [bot]":"");
     else
-        ALWAYS("%s - - [%s] \"%s /%s %s\" %d %d  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].data_sent, conn[ci].req, lib_elapsed(&conn[ci].proc_start), REQ_BOT?"  [bot]":"");
+        ALWAYS("%s - - [%s] \"%s /%s %s\" %d %d  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].data_sent, conn[ci].req, elapsed, REQ_BOT?"  [bot]":"");
 }
 
 
