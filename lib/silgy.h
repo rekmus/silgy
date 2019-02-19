@@ -343,6 +343,8 @@ typedef char                        bool;
 #define SESID_LEN                       15
 #endif
 
+#define LANG_LEN                        7
+
 #define EXPIRES_IN_DAYS                 30              /* from app start for Expires HTTP reponse header for static resources */
 
 
@@ -577,9 +579,9 @@ typedef struct {
     char    *data;                          /* POST data */
     char    cookie_in_a[SESID_LEN+1];       /* anonymous */
     char    cookie_in_l[SESID_LEN+1];       /* logged in */
-    char    host[64];
-    char    website[64];
-    char    lang[8];
+    char    host[128];
+    char    website[128];
+    char    lang[LANG_LEN+1];
     time_t  if_mod_since;
     char    in_ctypestr[256];               /* content type as an original string */
     char    in_ctype;                       /* content type */
@@ -644,7 +646,7 @@ typedef struct {
     char    ip[INET_ADDRSTRLEN];
     char    uagent[MAX_VALUE_LEN+1];
     char    referer[MAX_VALUE_LEN+1];
-    char    lang[8];
+    char    lang[LANG_LEN+1];
     time_t  last_activity;
 } usession_t;
 

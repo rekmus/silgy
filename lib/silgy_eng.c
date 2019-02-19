@@ -180,7 +180,6 @@ unsigned long   hit=0;
 struct timeval  timeout;                    /* Timeout for select */
     int         sockets_ready;              /* Number of sockets ready for I/O */
     int         i=0;                        /* Current item in conn_sockets for for loops */
-//    int         time_elapsed=0;             /* time unit, currently 1 second */
     long        bytes=0;
     int         failed_select_cnt=0;
     int         j=0;
@@ -867,7 +866,7 @@ static bool housekeeping()
             strftime(M_expires, 32, "%a, %d %b %Y %T GMT", G_ptm);
 #endif  /* _WIN32 */
             ALWAYS("New M_expires: %s", M_expires);
-            G_ptm = gmtime(&G_now); /* make sure G_ptm is up to date */
+            G_ptm = gmtime(&G_now);  /* make sure G_ptm is up to date */
 
             if ( G_blockedIPList[0] )
             {
@@ -1561,7 +1560,7 @@ static bool init(int argc, char **argv)
 #endif  /* _WIN32 */
     DBG("M_expires: %s\n", M_expires);
 
-    G_ptm = gmtime(&G_now); /* reset to today */
+    G_ptm = gmtime(&G_now);  /* reset to today */
 
 	/* handle signals ---------------------------------------------------- */
 
@@ -1608,7 +1607,7 @@ static bool init(int argc, char **argv)
 
     /* init user sessions ------------------------------------------------ */
 
-    for ( i=0; i<MAX_SESSIONS+1; ++i )
+    for ( i=0; i<=MAX_SESSIONS; ++i )
     {
         eng_uses_reset(i);
         app_uses_reset(i);
@@ -2888,7 +2887,7 @@ static bool a_usession_ok(int ci)
 {
     int i;
 
-    for (i=1; i<=MAX_SESSIONS; ++i)
+    for ( i=1; i<=MAX_SESSIONS; ++i )
     {
         if ( uses[i].sesid[0] && !uses[i].logged && 0==strcmp(conn[ci].cookie_in_a, uses[i].sesid)
 /*              && 0==strcmp(conn[ci].ip, uses[i].ip) */
@@ -3044,8 +3043,7 @@ static int parse_req(int ci, long len)
 
     DBG("parse_req, ci=%d", ci);
 
-    ++G_cnts_today.req;
-    conn[ci].req = G_cnts_today.req;    /* superfluous? */
+    conn[ci].req = ++G_cnts_today.req;    /* for reporting processing time at the end */
 
     DBG("\n------------------------------------------------\n %s  Request %ld\n------------------------------------------------\n", G_dt, conn[ci].req);
 
@@ -3602,7 +3600,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     else if ( 0==strcmp(ulabel, "ACCEPT-LANGUAGE") )    /* en-US en-GB pl-PL */
     {
         i = 0;
-        while ( value[i] != EOS && value[i] != ',' && value[i] != ';' && i < 7 )
+        while ( value[i] != EOS && value[i] != ',' && value[i] != ';' && i < LANG_LEN )
         {
             conn[ci].lang[i] = value[i];
             ++i;
