@@ -521,8 +521,6 @@ struct timeval  timeout;                    /* Timeout for select */
                         sockets_ready--;
                     }
                     /* --------------------------------------------------------------------------------------- */
-                    /* same fd can be ready for reading & writing?? */
-                    /* --------------------------------------------------------------------------------------- */
                     else if ( FD_ISSET(conn[i].fd, &M_writefds) )        /* ready for outgoing data */
                     {
 #ifdef DUMP
@@ -1709,6 +1707,9 @@ static void build_select_list()
             if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER
                     || conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY
                     || conn[i].conn_state == CONN_STATE_SENDING_BODY
+#ifdef ASYNC
+                    || conn[i].conn_state == CONN_STATE_WAITING_FOR_ASYNC
+#endif
                     || conn[i].ssl_err == SSL_ERROR_WANT_WRITE )
             {
                 FD_SET(conn[i].fd, &M_writefds);
@@ -1729,6 +1730,9 @@ static void build_select_list()
 
             if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER
                     || conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY
+#ifdef ASYNC
+                    || conn[i].conn_state == CONN_STATE_WAITING_FOR_ASYNC
+#endif
                     || conn[i].conn_state == CONN_STATE_SENDING_BODY )
             {
                 FD_SET(conn[i].fd, &M_writefds);
