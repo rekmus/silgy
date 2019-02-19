@@ -1704,7 +1704,7 @@ static void build_select_list()
 
             /* writing */
 
-            if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER
+            else if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER
                     || conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY
                     || conn[i].conn_state == CONN_STATE_SENDING_BODY
 #ifdef ASYNC
@@ -1728,7 +1728,7 @@ static void build_select_list()
 
             /* writing */
 
-            if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER
+            else if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER
                     || conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY
 #ifdef ASYNC
                     || conn[i].conn_state == CONN_STATE_WAITING_FOR_ASYNC
