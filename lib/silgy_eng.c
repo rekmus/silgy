@@ -2635,6 +2635,8 @@ static void process_req(int ci)
                 conn[ci].p_curr_c = conn[ci].out_data;      /* reset out buffer pointer as it could have contained something already */
                 gen_page_msg(ci, ret);
             }
+
+            RES_DONT_CACHE;
         }
     }
 }
