@@ -903,6 +903,9 @@ static bool housekeeping()
 -------------------------------------------------------------------------- */
 static void set_state(int ci, long bytes)
 {
+#ifdef DUMP
+        DBG("set_state ci=%d, bytes=%ld", ci, bytes);
+#endif
     if ( bytes <= 0 )
     {
         DBG("bytes = %ld, errno = %d (%s), disconnecting slot %d\n", bytes, errno, strerror(errno), ci);
