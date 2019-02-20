@@ -51,7 +51,7 @@ typedef char                        bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "3.6.8"
+#define WEB_SERVER_VERSION          "3.7.0"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
@@ -417,7 +417,7 @@ typedef char                        bool;
 #ifdef APP_ASYNC_REQ_MSG_SIZE                                   /* request message size */
 #define ASYNC_REQ_MSG_SIZE              APP_ASYNC_REQ_MSG_SIZE
 #else
-#define ASYNC_REQ_MSG_SIZE              4096
+#define ASYNC_REQ_MSG_SIZE              8192
 #endif
 #ifdef APP_ASYNC_RES_MSG_SIZE                                   /* response message size */
 #define ASYNC_RES_MSG_SIZE              APP_ASYNC_RES_MSG_SIZE
