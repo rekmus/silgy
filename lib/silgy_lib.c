@@ -2101,15 +2101,18 @@ struct tm   tm;
 char *time_epoch2http(time_t epoch)
 {
 static char str[32];
-struct tm   *ptm;
 
-    ptm = gmtime(&epoch);
+    G_ptm = gmtime(&epoch);
 #ifdef _WIN32   /* Windows */
-    strftime(str, 32, "%a, %d %b %Y %H:%M:%S GMT", ptm);
+    strftime(str, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
 #else
-    strftime(str, 32, "%a, %d %b %Y %T GMT", ptm);
+    strftime(str, 32, "%a, %d %b %Y %T GMT", G_ptm);
 #endif  /* _WIN32 */
+
+    G_ptm = gmtime(&G_now);  /* make sure G_ptm is up to date */
+
 //  DBG("time_epoch2http: [%s]", str);
+
     return str;
 }
 
@@ -4110,7 +4113,7 @@ void date_inc(char *str, int days, int *dow)
     sprintf(str, "%d-%02d-%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday);
     *dow = G_ptm->tm_wday;
 
-    G_ptm = gmtime(&G_now); /* set it back */
+    G_ptm = gmtime(&G_now);  /* set it back */
 
 }
 
