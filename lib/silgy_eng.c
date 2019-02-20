@@ -126,14 +126,6 @@ static int          M_prev_minute;
 static int          M_prev_day;
 static time_t       M_last_housekeeping=0;
 
-static int          M_prev_minute1=0;
-static int          M_prev_minute2=0;
-static int          M_prev_minute3=0;
-static int          M_prev_minute4=0;
-static int          M_prev_minute5=0;
-static int          M_prev_minute6=0;
-static int          M_prev_minute7=0;
-static int          M_prev_minute8=0;
 
 /* prototypes */
 
