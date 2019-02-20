@@ -579,13 +579,13 @@ typedef struct {
     char    *data;                          /* POST data */
     char    cookie_in_a[SESID_LEN+1];       /* anonymous */
     char    cookie_in_l[SESID_LEN+1];       /* logged in */
-    char    host[128];
-    char    website[128];
+    char    host[MAX_VALUE_LEN+1];
+    char    website[256];
     char    lang[LANG_LEN+1];
     time_t  if_mod_since;
-    char    in_ctypestr[256];               /* content type as an original string */
+    char    in_ctypestr[MAX_VALUE_LEN+1];   /* content type as an original string */
     char    in_ctype;                       /* content type */
-    char    boundary[256];                  /* for POST multipart/form-data type */
+    char    boundary[MAX_VALUE_LEN+1];      /* for POST multipart/form-data type */
     char    authorization[MAX_VALUE_LEN+1]; /* Authorization */
     /* what goes out */
     char    header[OUT_HEADER_BUFSIZE];     /* outgoing HTTP header */

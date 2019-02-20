@@ -126,6 +126,14 @@ static int          M_prev_minute;
 static int          M_prev_day;
 static time_t       M_last_housekeeping=0;
 
+static int          M_prev_minute1=0;
+static int          M_prev_minute2=0;
+static int          M_prev_minute3=0;
+static int          M_prev_minute4=0;
+static int          M_prev_minute5=0;
+static int          M_prev_minute6=0;
+static int          M_prev_minute7=0;
+static int          M_prev_minute8=0;
 
 /* prototypes */
 
@@ -137,7 +145,7 @@ static void respond_to_expect(int ci);
 static void log_proc_time(int ci);
 static void close_conn(int ci);
 static bool init(int argc, char **argv);
-static void build_select_list(void);
+static void build_fd_sets(void);
 static void accept_http();
 static void accept_https();
 static void read_blocked_ips(void);
@@ -310,13 +318,7 @@ struct timeval  timeout;                    /* Timeout for select */
         return EXIT_FAILURE;
     }
 
-    M_highsock = M_listening_sec_fd;
-
-#else
-
-    M_highsock = M_listening_fd;
-
-#endif
+#endif /* HTTPS */
 
     addr_len = sizeof(cli_addr);
 
@@ -340,7 +342,7 @@ struct timeval  timeout;                    /* Timeout for select */
         clean_up();
         return EXIT_FAILURE;
     }
-#endif
+#endif /* DBMYSQL */
 
     /* log currently used memory */
 
@@ -378,7 +380,7 @@ struct timeval  timeout;                    /* Timeout for select */
             }
         }
 #endif
-        build_select_list();
+        build_fd_sets();
 
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
@@ -453,7 +455,7 @@ struct timeval  timeout;                    /* Timeout for select */
                             if ( conn[i].conn_state != CONN_STATE_READING_DATA )
                             {
 #ifdef DUMP
-                                DBG("Trying SSL_read from fd=%d", conn[i].fd);
+                                DBG("Trying SSL_read from fd=%d (ci=%d)", conn[i].fd, i);
 #endif
                                 bytes = SSL_read(conn[i].ssl, conn[i].in, IN_BUFSIZE-1);
                                 if ( bytes > 1 )
@@ -469,8 +471,8 @@ struct timeval  timeout;                    /* Timeout for select */
                             else    /* POST */
                             {
 #ifdef DUMP
-                                DBG("state == CONN_STATE_READING_DATA");
-                                DBG("Trying SSL_read %ld bytes of POST data from fd=%d", conn[i].clen-conn[i].was_read, conn[i].fd);
+                                DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
+                                DBG("Trying SSL_read %ld bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
 #endif /* DUMP */
                                 bytes = SSL_read(conn[i].ssl, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read);
                                 if ( bytes > 0 )
@@ -486,8 +488,8 @@ struct timeval  timeout;                    /* Timeout for select */
                             if ( conn[i].conn_state == CONN_STATE_CONNECTED )
                             {
 #ifdef DUMP
-                                DBG("state == CONN_STATE_CONNECTED");
-                                DBG("Trying read from fd=%d", conn[i].fd);
+                                DBG("ci=%d, state == CONN_STATE_CONNECTED", i);
+                                DBG("Trying read from fd=%d (ci=%d)", conn[i].fd, i);
 #endif /* DUMP */
 #ifdef _WIN32   /* Windows */
                                 bytes = recv(conn[i].fd, conn[i].in, IN_BUFSIZE-1, 0);
@@ -502,8 +504,8 @@ struct timeval  timeout;                    /* Timeout for select */
                             else if ( conn[i].conn_state == CONN_STATE_READING_DATA )   /* POST */
                             {
 #ifdef DUMP
-                                DBG("state == CONN_STATE_READING_DATA");
-                                DBG("Trying to read %ld bytes of POST data from fd=%d", conn[i].clen-conn[i].was_read, conn[i].fd);
+                                DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
+                                DBG("Trying to read %ld bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
 #endif /* DUMP */
 #ifdef _WIN32   /* Windows */
                                 bytes = recv(conn[i].fd, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read, 0);
@@ -578,8 +580,8 @@ struct timeval  timeout;                    /* Timeout for select */
                             if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER )
                             {
 #ifdef DUMP
-                                DBG("state == CONN_STATE_READY_TO_SEND_HEADER");
-                                DBG("Trying SSL_write %ld bytes to fd=%d", strlen(conn[i].header), conn[i].fd);
+                                DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
+                                DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", strlen(conn[i].header), conn[i].fd, i);
 #endif /* DUMP */
                                 bytes = SSL_write(conn[i].ssl, conn[i].header, strlen(conn[i].header));
                                 set_state_sec(i, bytes);
@@ -587,8 +589,8 @@ struct timeval  timeout;                    /* Timeout for select */
                             else if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY || conn[i].conn_state == CONN_STATE_SENDING_BODY)
                             {
 #ifdef DUMP
-                                DBG("state == %s", conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
-                                DBG("Trying SSL_write %ld bytes to fd=%d", conn[i].clen, conn[i].fd);
+                                DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
+                                DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", conn[i].clen, conn[i].fd, i);
 #endif /* DUMP */
                                 if ( conn[i].static_res == NOT_STATIC )
                                     bytes = SSL_write(conn[i].ssl, conn[i].out_data, conn[i].clen);
@@ -605,8 +607,8 @@ struct timeval  timeout;                    /* Timeout for select */
                             if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER )
                             {
 #ifdef DUMP
-                                DBG("state == CONN_STATE_READY_TO_SEND_HEADER");
-                                DBG("Trying to write %ld bytes to fd=%d", strlen(conn[i].header), conn[i].fd);
+                                DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
+                                DBG("Trying to write %ld bytes to fd=%d (ci=%d)", strlen(conn[i].header), conn[i].fd, i);
 #endif /* DUMP */
 #ifdef _WIN32   /* Windows */
                                 bytes = send(conn[i].fd, conn[i].header, strlen(conn[i].header), 0);
@@ -619,8 +621,8 @@ struct timeval  timeout;                    /* Timeout for select */
                             else if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY || conn[i].conn_state == CONN_STATE_SENDING_BODY)
                             {
 #ifdef DUMP
-                                DBG("state == %s", conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
-                                DBG("Trying to write %ld bytes to fd=%d", conn[i].clen-conn[i].data_sent, conn[i].fd);
+                                DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
+                                DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].clen-conn[i].data_sent, conn[i].fd, i);
 //                                log_long(conn[i].out_data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, "Body to send");
 #endif /* DUMP */
                                 if ( conn[i].static_res == NOT_STATIC )
@@ -666,7 +668,7 @@ struct timeval  timeout;                    /* Timeout for select */
                         if ( conn[i].conn_state != CONN_STATE_READING_DATA )
                         {
 #ifdef DUMP
-                            DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
+                            DBG("ci=%d, changing state to CONN_STATE_READY_FOR_PROCESS", i);
 #endif
                             conn[i].conn_state = CONN_STATE_READY_FOR_PROCESS;
                         }
@@ -920,7 +922,7 @@ static void set_state(int ci, long bytes)
     if ( conn[ci].conn_state == CONN_STATE_CONNECTED )  /* assume the whole header has been read */
     {
 #ifdef DUMP
-        DBG("Changing state to CONN_STATE_READY_FOR_PARSE");
+        DBG("ci=%d, changing state to CONN_STATE_READY_FOR_PARSE", ci);
 #endif
         conn[ci].conn_state = CONN_STATE_READY_FOR_PARSE;
     }
@@ -935,7 +937,7 @@ static void set_state(int ci, long bytes)
             conn[ci].data[conn[ci].was_read] = EOS;
             DBG("POST data received");
 #ifdef DUMP
-            DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
+            DBG("ci=%d, changing state to CONN_STATE_READY_FOR_PROCESS", ci);
 #endif
             conn[ci].conn_state = CONN_STATE_READY_FOR_PROCESS;
         }
@@ -945,7 +947,7 @@ static void set_state(int ci, long bytes)
         if ( conn[ci].clen > 0 )
         {
 #ifdef DUMP
-            DBG("Changing state to CONN_STATE_READY_TO_SEND_BODY");
+            DBG("ci=%d, changing state to CONN_STATE_READY_TO_SEND_BODY", ci);
 #endif
             conn[ci].conn_state = CONN_STATE_READY_TO_SEND_BODY;
         }
@@ -970,7 +972,7 @@ static void set_state(int ci, long bytes)
         if ( bytes < conn[ci].clen )
         {
 #ifdef DUMP
-            DBG("Changing state to CONN_STATE_SENDING_BODY");
+            DBG("ci=%d, changing state to CONN_STATE_SENDING_BODY", ci);
 #endif
             conn[ci].conn_state = CONN_STATE_SENDING_BODY;
         }
@@ -1675,7 +1677,7 @@ static bool init(int argc, char **argv)
    This is on the latency critical path
    Try to minimize number of steps
 -------------------------------------------------------------------------- */
-static void build_select_list()
+static void build_fd_sets()
 {
     FD_ZERO(&M_readfds);
     FD_ZERO(&M_writefds);
@@ -1683,7 +1685,10 @@ static void build_select_list()
     FD_SET(M_listening_fd, &M_readfds);
 #ifdef HTTPS
     FD_SET(M_listening_sec_fd, &M_readfds);
-#endif
+    M_highsock = M_listening_sec_fd;
+#else
+    M_highsock = M_listening_fd;
+#endif /* HTTPS */
 
     int i;
     int remain = G_open_conn;
@@ -2829,7 +2834,7 @@ static void gen_response_header(int ci)
     DBG("Response status: %d", conn[ci].status);
 
 #ifdef DUMP     /* low-level tests */
-    DBG("Changing state to CONN_STATE_READY_TO_SEND_HEADER");
+    DBG("ci=%d, Changing state to CONN_STATE_READY_TO_SEND_HEADER", ci);
 #endif
     conn[ci].conn_state = CONN_STATE_READY_TO_SEND_HEADER;
 
