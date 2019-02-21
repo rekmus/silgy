@@ -124,6 +124,6 @@ bool app_gen_page_msg(int ci, int msg)
 /* --------------------------------------------------------------------------
    Get error description for user
 -------------------------------------------------------------------------- */
-void app_get_msg_str(int ci, char *dest, int errcode)
+void app_get_msg_str(char *dest, int errcode)
 {
 }
