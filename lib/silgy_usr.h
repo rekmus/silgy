@@ -184,7 +184,7 @@ extern "C" {
     int libusr_l_usession_ok(int ci);
     void libusr_close_luses_timeout(void);
     void libusr_close_l_uses(int ci, int usi);
-    void libusr_get_msg_str(int ci, char *dest, int errcode);
+    void libusr_get_msg_str(char *dest, int errcode);
 #ifdef __cplusplus
 }   // extern "C"
 #endif

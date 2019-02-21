@@ -711,6 +711,7 @@ typedef struct {
     time_t  sent;
     int     timeout;
     int     err_code;
+    int     rest_status;
     long    rest_req;
     double  rest_elapsed;
     usession_t uses;
@@ -801,10 +802,10 @@ extern counters_t G_cnts_day_before;        /* day before's counters */
 /* SHM */
 extern char     *G_shm_segptr;              /* SHM pointer */
 /* REST */
+extern int      G_rest_status;              /* last REST call response status */
 extern long     G_rest_req;                 /* REST calls counter */
 extern double   G_rest_elapsed;             /* REST calls elapsed for calculating average */
 extern double   G_rest_average;             /* REST calls average elapsed */
-extern int      G_rest_status;              /* last REST call response status */
 extern char     G_rest_content_type[MAX_VALUE_LEN+1];
 
 
@@ -833,7 +834,8 @@ extern "C" {
     void silgy_add_to_static_res(const char *name, const char *src);
     void eng_send_msg_description(int ci, int code);
     void eng_block_ip(const char *value, bool autoblocked);
-    void eng_get_msg_str(int ci, char *dest, int code);
+    char *silgy_message(int code);
+    void eng_get_msg_str(char *dest, int code);
     bool eng_host(int ci, const char *host);
     void eng_set_res_status(int ci, int status);
     void eng_set_res_content_type(int ci, const char *str);
@@ -877,7 +879,7 @@ extern "C" {
     void app_async_done(int ci, const char *service, const char *data, int err_code);
 #endif
     bool app_gen_page_msg(int ci, int msg);
-    void app_get_msg_str(int ci, char *dest, int errcode);
+    void app_get_msg_str(char *dest, int errcode);
 #ifdef EVERY_SECOND
     void app_every_second(void);
 #endif

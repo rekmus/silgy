@@ -101,6 +101,8 @@ typedef struct {
 #define CALL_REST_STATUS                            CALL_HTTP_STATUS
 #define CALL_HTTP_CONTENT_TYPE                      G_rest_content_type
 #define CALL_REST_CONTENT_TYPE                      CALL_HTTP_CONTENT_TYPE
+#define CALL_HTTP_STATUS_OK                         (G_rest_status>=200 && G_rest_status<=204)
+#define CALL_REST_STATUS_OK                         CALL_HTTP_STATUS_OK
 
 
 /* JSON */

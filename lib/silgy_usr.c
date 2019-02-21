@@ -1840,7 +1840,7 @@ int silgy_usr_get_int(int ci, const char *us_key, long *us_val)
 
 
 /* --------------------------------------------------------------------------
-   Get MAX id
+   Get MAX(msg_id) from users_messages for current user
 -------------------------------------------------------------------------- */
 static long get_max(int ci, const char *table)
 {
@@ -1882,19 +1882,19 @@ static long get_max(int ci, const char *table)
 
 
 /* --------------------------------------------------------------------------
-  get error description for user
-  called from eng_get_msg_str()
+   Get error description for user
+   Called from eng_get_msg_str()
 -------------------------------------------------------------------------- */
-void libusr_get_msg_str(int ci, char *dest, int errcode)
+void libusr_get_msg_str(char *dest, int errcode)
 {
     if ( errcode == ERR_INVALID_LOGIN )
         strcpy(dest, "Invalid login and/or password");
     else if ( errcode == MSG_WELCOME )
     {
         if ( G_usersRequireAccountActivation )
-            sprintf(dest, "Welcome to %s! Your account requires activation. Please check your mailbox for a message from %s.", conn[ci].website, conn[ci].website);
+            sprintf(dest, "Welcome to %s! Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE, APP_WEBSITE);
         else
-            sprintf(dest, "Welcome to %s! You can now log in:", conn[ci].website);
+            sprintf(dest, "Welcome to %s! You can now log in:", APP_WEBSITE);
     }
     else if ( errcode == MSG_WELCOME_AFTER_ACTIVATION )
         strcpy(dest, "Very well! You can now log in:");
@@ -1925,9 +1925,9 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
     else if ( errcode == ERR_ROBOT )
         strcpy(dest, "I'm afraid you are a robot?");
     else if ( errcode == ERR_WEBSITE_FIRST_LETTER )
-        sprintf(dest, "The first letter of this website's name should be %c", conn[ci].website[0]);
+        sprintf(dest, "The first letter of this website's name should be %c", APP_WEBSITE[0]);
     else if ( errcode == ERR_NOT_ACTIVATED )
-        sprintf(dest, "Your account requires activation. Please check your mailbox for a message from %s.", conn[ci].website);
+        sprintf(dest, "Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE);
     else if ( errcode == ERR_EMAIL_EMPTY )
         strcpy(dest, "Your email address can't be empty");
     else if ( errcode == ERR_EMAIL_FORMAT )
@@ -1935,7 +1935,7 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
     else if ( errcode == ERR_EMAIL_TAKEN )
         strcpy(dest, "This email address has already been registered");
     else if ( errcode == MSG_REQUEST_SENT )
-        sprintf(dest, "Your request has been sent. Please check your mailbox for a message from %s.", conn[ci].website);
+        sprintf(dest, "Your request has been sent. Please check your mailbox for a message from %s.", APP_WEBSITE);
     else if ( errcode == ERR_LINK_BROKEN )
         strcpy(dest, "It looks like this link is broken. If you clicked on the link you've received from us in email, you can try to copy and paste it in your browser's address bar instead.");
     else if ( errcode == ERR_LINK_MAY_BE_EXPIRED )
@@ -1947,7 +1947,7 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
     else if ( errcode == MSG_MESSAGE_SENT )
         strcpy(dest, "Your message has been sent.");
     else if ( errcode == MSG_PROVIDE_FEEDBACK )
-        sprintf(dest, "%s would suit me better if...", conn[ci].website);
+        sprintf(dest, "%s would suit me better if...", APP_WEBSITE);
     else if ( errcode == MSG_FEEDBACK_SENT )
         strcpy(dest, "Thank you for your feedback!");
     else if ( errcode == MSG_USER_ALREADY_ACTIVATED )
@@ -1955,9 +1955,9 @@ void libusr_get_msg_str(int ci, char *dest, int errcode)
     else if ( errcode == WAR_ULA )
         strcpy(dest, "Someone tried to log in to this account unsuccessfully more than 3 times. To protect your account from brute-force attack, this system requires some wait: 1 minute, then 10 minutes, then 1 hour before trying again.");
     else if ( errcode == WAR_BEFORE_DELETE )
-        sprintf(dest, "You are about to delete your %s's account. All your details and plans will be removed from our database. If you are sure you want this, enter your password and click 'Delete my account'.", conn[ci].website);
+        sprintf(dest, "You are about to delete your %s's account. All your details and data will be removed from our database. If you are sure you want this, enter your password and click 'Delete my account'.", APP_WEBSITE);
     else if ( errcode == MSG_ACCOUNT_DELETED )
-        sprintf(dest, "Your user account has been deleted. Thank you for trying %s!", conn[ci].website);
+        sprintf(dest, "Your user account has been deleted. Thank you for trying %s!", APP_WEBSITE);
     else
         sprintf(dest, "Unknown error (%d)", errcode);
 }

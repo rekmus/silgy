@@ -728,6 +728,7 @@ struct timeval  timeout;                    /* Timeout for select */
 
             if ( res.hdr.rest_req > 0 )    /* update REST stats */
             {
+                G_rest_status = res.hdr.rest_status;
                 G_rest_req += res.hdr.rest_req;
                 G_rest_elapsed += res.hdr.rest_elapsed;
                 G_rest_average = G_rest_elapsed / G_rest_req;
@@ -3805,7 +3806,7 @@ static void gen_page_msg(int ci, int msg)
 
     if ( app_gen_page_msg(ci, msg) ) return;    /* if custom message page has been generated */
 
-    eng_get_msg_str(ci, str, msg);
+    eng_get_msg_str(str, msg);
 
     OUT("<!DOCTYPE html>");
     OUT("<html>");
@@ -4198,8 +4199,20 @@ void eng_block_ip(const char *value, bool autoblocked)
 
 /* --------------------------------------------------------------------------
    Get error description for user
+   Programmer-friendly wrapper
 -------------------------------------------------------------------------- */
-void eng_get_msg_str(int ci, char *dest, int code)
+char *silgy_message(int code)
+{
+static char str[1024];
+    eng_get_msg_str(str, code);
+    return str;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get error description for user
+-------------------------------------------------------------------------- */
+void eng_get_msg_str(char *dest, int code)
 {
     if ( code == OK )
         strcpy(dest, "OK");
@@ -4222,13 +4235,17 @@ void eng_get_msg_str(int ci, char *dest, int code)
     else if ( code == ERR_ASYNC_TIMEOUT )
         strcpy(dest, "Asynchronous service timeout");
     else if ( code == ERR_REMOTE_CALL )
-        strcpy(dest, "Remote service call error");
+        strcpy(dest, "Couldn't call the remote service");
+    else if ( code == ERR_REMOTE_CALL_STATUS )
+        sprintf(dest, "Remote service call returned status %d", CALL_HTTP_STATUS);
+    else if ( code == ERR_REMOTE_CALL_DATA )
+        strcpy(dest, "Data returned from the remote service is invalid");
 #ifdef USERS
     else if ( code <= MSG_MAX_USR_MESSAGE )
-        libusr_get_msg_str(ci, dest, code);
+        libusr_get_msg_str(dest, code);
 #endif
     else
-        app_get_msg_str(ci, dest, code);
+        app_get_msg_str(dest, code);
 }
 
 
@@ -4482,7 +4499,7 @@ void eng_send_msg_description(int ci, int code)
         /* keep default category */
     }
 
-    eng_get_msg_str(ci, msg, code);
+    eng_get_msg_str(msg, code);
 
 #ifdef MSG_FORMAT_JSON
     OUT("{\"code\":%d,\"category\":\"%s\",\"message\":\"%s\"}", code, cat, msg);
@@ -5419,6 +5436,7 @@ int main(int argc, char *argv[])
 
             /* ----------------------------------------------------------- */
 
+            res.hdr.rest_status = G_rest_status;
             res.hdr.rest_req = G_rest_req;    /* only for this async call */
             res.hdr.rest_elapsed = G_rest_elapsed;  /* only for this async call */
 
