@@ -375,6 +375,8 @@ typedef char                        bool;
 #define ERR_ASYNC_NO_SUCH_SERVICE       9
 #define ERR_ASYNC_TIMEOUT               10
 #define ERR_REMOTE_CALL                 11
+#define ERR_REMOTE_CALL_STATUS          12
+#define ERR_REMOTE_CALL_DATA            13
 /* ------------------------------------- */
 #define ERR_MAX_ENGINE_ERROR            99
 /* ------------------------------------- */
