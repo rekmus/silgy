@@ -5,11 +5,9 @@ echo "Stopping Silgy..."
 # ---------------------------------------------------------------------
 # Services
 
-if [ -f $SILGYDIR/bin/s_*.pid ]
+if [ -n "$(find $SILGYDIR/bin -name 's_*.pid' | head -1)" ]
 then
-    PIDFILES=$SILGYDIR/bin/s_*.pid
-
-    for f in $PIDFILES
+    for f in $SILGYDIR/bin/s_*.pid
     do
         kill `cat ${f}`
     done
@@ -23,17 +21,6 @@ fi
 if [ -f $SILGYDIR/bin/silgy_app.pid ]
 then
     kill `cat $SILGYDIR/bin/silgy_app.pid`
-fi
-
-# ---------------------------------------------------------------------
-# In case some processes have died ungracefully
-
-sleep 1
-
-if [ -f $SILGYDIR/bin/s*.pid ]
-then
-    echo "Removing all pid files..."
-    rm $SILGYDIR/bin/s*.pid
 fi
 
 # ---------------------------------------------------------------------
