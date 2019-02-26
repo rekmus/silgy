@@ -4293,6 +4293,7 @@ bool lib_read_conf(const char *file)
 bool silgy_read_param_str(const char *param, char *dest)
 {
     char *p;
+    int  plen = strlen(param);
 #ifdef DUMP
     DBG("silgy_read_param_str [%s]", param);
 #endif
@@ -4345,7 +4346,7 @@ bool silgy_read_param_str(const char *param, char *dest)
 
     /* copy value to dest ------------------------------ */
 
-    p += strlen(param);
+    p += plen;
 
     while ( *p=='=' || *p==' ' || *p=='\t' )
         ++p;
