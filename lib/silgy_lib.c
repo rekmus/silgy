@@ -4317,11 +4317,16 @@ bool silgy_read_param_str(const char *param, char *dest)
         if ( p > M_conf && *(p-1) != '\n' )  /* commented out or within quotes -- try the next occurence */
         {
 #ifdef DUMP
-            DBG("param commented out or within quotes");
+            DBG("param commented out or within quotes, continue search...");
 #endif
-            ++p;
-//            if ( *p == EOS ) return FALSE;
-            p = strstr(p, param);
+            p = strstr(++p, param);
+        }
+        else if ( *(p+plen) != '=' && *(p+plen) != ' ' && *(p+plen) != '\t' )
+        {
+#ifdef DUMP
+            DBG("param does not end with '=', space or tab, continue search...");
+#endif
+            p = strstr(++p, param);
         }
         else
         {
