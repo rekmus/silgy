@@ -29,6 +29,7 @@ char        G_dbUser[128];
 char        G_dbPassword[128];
 int         G_usersRequireAccountActivation;
 char        G_blockedIPList[256];
+int         G_ASYNCId;
 int         G_ASYNCDefTimeout;
 /* end of config params */
 long        G_days_up=0;                /* web server's days up */
@@ -700,16 +701,18 @@ struct timeval  timeout;                    /* Timeout for select */
             }
         }
 
+#ifdef DUMP
         if ( sockets_ready != 0 )
         {
             static time_t last_time=0;  /* prevent log overflow */
 
             if ( last_time != G_now )
             {
-                WAR_T("sockets_ready should be 0 but currently %d", sockets_ready);
+                DBG_T("sockets_ready should be 0 but currently %d", sockets_ready);
                 last_time = G_now;
             }
         }
+#endif /* DUMP */
 
         /* async processing -- check on response queue */
 #ifdef ASYNC
@@ -1131,6 +1134,7 @@ static void read_conf()
     G_dbPassword[0] = EOS;
     G_usersRequireAccountActivation = 0;
     G_blockedIPList[0] = EOS;
+    G_ASYNCId = -1;
     G_ASYNCDefTimeout = ASYNC_DEF_TIMEOUT;
     G_RESTTimeout = CALL_REST_DEFAULT_TIMEOUT;
     G_test = 0;
@@ -1166,6 +1170,7 @@ static void read_conf()
         silgy_read_param_str("dbPassword", G_dbPassword);
         silgy_read_param_int("usersRequireAccountActivation", &G_usersRequireAccountActivation);
         silgy_read_param_str("blockedIPList", G_blockedIPList);
+        silgy_read_param_int("ASYNCId", &G_ASYNCId);
         silgy_read_param_int("ASYNCDefTimeout", &G_ASYNCDefTimeout);
         silgy_read_param_int("RESTTimeout", &G_RESTTimeout);
         silgy_read_param_int("test", &G_test);
@@ -1619,11 +1624,27 @@ static bool init(int argc, char **argv)
     ALWAYS("\nOpening message queues...\n");
 
 #ifdef APP_ASYNC_ID
-    sprintf(G_req_queue_name, "%s_%d", ASYNC_REQ_QUEUE, APP_ASYNC_ID);
-    sprintf(G_res_queue_name, "%s_%d", ASYNC_RES_QUEUE, APP_ASYNC_ID);
+    if ( G_ASYNCId > -1 )
+    {
+        sprintf(G_req_queue_name, "%s_%d__%d", ASYNC_REQ_QUEUE, APP_ASYNC_ID, G_ASYNCId);
+        sprintf(G_res_queue_name, "%s_%d__%d", ASYNC_RES_QUEUE, APP_ASYNC_ID, G_ASYNCId);
+    }
+    else
+    {
+        sprintf(G_req_queue_name, "%s_%d", ASYNC_REQ_QUEUE, APP_ASYNC_ID);
+        sprintf(G_res_queue_name, "%s_%d", ASYNC_RES_QUEUE, APP_ASYNC_ID);
+    }
 #else
-    strcpy(G_req_queue_name, ASYNC_REQ_QUEUE);
-    strcpy(G_res_queue_name, ASYNC_RES_QUEUE);
+    if ( G_ASYNCId > -1 )
+    {
+        sprintf(G_req_queue_name, "%s__%d", ASYNC_REQ_QUEUE, G_ASYNCId);
+        sprintf(G_res_queue_name, "%s__%d", ASYNC_RES_QUEUE, G_ASYNCId);
+    }
+    else
+    {
+        strcpy(G_req_queue_name, ASYNC_REQ_QUEUE);
+        strcpy(G_res_queue_name, ASYNC_RES_QUEUE);
+    }
 #endif
 
     struct mq_attr attr={0};
@@ -1743,12 +1764,12 @@ static void build_fd_sets()
         if ( conn[i].fd > M_highsock )
             M_highsock = conn[i].fd;
 
-//        ++G_open_conn;
         remain--;
     }
-
-//    if ( G_open_conn > G_open_conn_hwm )
-//        G_open_conn_hwm = G_open_conn;
+#ifdef DUMP
+    if ( remain )
+        DBG_T("remain should be 0 but currently %d", remain);
+#endif
 }
 
 
@@ -5238,6 +5259,7 @@ void eng_rest_header_pass(int ci, const char *key)
 #else   /* ASYNC_SERVICE ====================================================================================== */
 
 
+int         G_ASYNCId;
 char        G_req_queue_name[256];
 char        G_res_queue_name[256];
 mqd_t       G_queue_req;                /* request queue */
@@ -5308,6 +5330,9 @@ int main(int argc, char *argv[])
     if ( !silgy_read_param_int("logToStdout", &G_logToStdout) )
         G_logToStdout = 0;
 
+    if ( !silgy_read_param_int("ASYNCId", &G_ASYNCId) )
+        G_ASYNCId = -1;
+
     if ( !silgy_read_param_int("RESTTimeout", &G_RESTTimeout) )
         G_RESTTimeout = CALL_REST_DEFAULT_TIMEOUT;
 
@@ -5339,11 +5364,27 @@ int main(int argc, char *argv[])
     /* open queues ------------------------------------------------------- */
 
 #ifdef APP_ASYNC_ID
-    sprintf(G_req_queue_name, "%s_%d", ASYNC_REQ_QUEUE, APP_ASYNC_ID);
-    sprintf(G_res_queue_name, "%s_%d", ASYNC_RES_QUEUE, APP_ASYNC_ID);
+    if ( G_ASYNCId > -1 )
+    {
+        sprintf(G_req_queue_name, "%s_%d__%d", ASYNC_REQ_QUEUE, APP_ASYNC_ID, G_ASYNCId);
+        sprintf(G_res_queue_name, "%s_%d__%d", ASYNC_RES_QUEUE, APP_ASYNC_ID, G_ASYNCId);
+    }
+    else
+    {
+        sprintf(G_req_queue_name, "%s_%d", ASYNC_REQ_QUEUE, APP_ASYNC_ID);
+        sprintf(G_res_queue_name, "%s_%d", ASYNC_RES_QUEUE, APP_ASYNC_ID);
+    }
 #else
-    strcpy(G_req_queue_name, ASYNC_REQ_QUEUE);
-    strcpy(G_res_queue_name, ASYNC_RES_QUEUE);
+    if ( G_ASYNCId > -1 )
+    {
+        sprintf(G_req_queue_name, "%s__%d", ASYNC_REQ_QUEUE, G_ASYNCId);
+        sprintf(G_res_queue_name, "%s__%d", ASYNC_RES_QUEUE, G_ASYNCId);
+    }
+    else
+    {
+        strcpy(G_req_queue_name, ASYNC_REQ_QUEUE);
+        strcpy(G_res_queue_name, ASYNC_RES_QUEUE);
+    }
 #endif
 
 	G_queue_req = mq_open(G_req_queue_name, O_RDONLY, NULL, NULL);

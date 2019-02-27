@@ -744,6 +744,7 @@ extern char     G_dbUser[128];
 extern char     G_dbPassword[128];
 extern int      G_usersRequireAccountActivation;
 extern char     G_blockedIPList[256];
+extern int      G_ASYNCId;
 extern int      G_ASYNCDefTimeout;
 extern int      G_RESTTimeout;
 extern int      G_test;
@@ -807,6 +808,8 @@ extern long     G_rest_req;                 /* REST calls counter */
 extern double   G_rest_elapsed;             /* REST calls elapsed for calculating average */
 extern double   G_rest_average;             /* REST calls average elapsed */
 extern char     G_rest_content_type[MAX_VALUE_LEN+1];
+extern bool     G_dont_use_current_session;
+extern long     G_new_user_id;
 
 
 

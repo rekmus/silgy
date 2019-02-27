@@ -12,6 +12,11 @@
 
 #ifdef USERS
 
+
+bool     G_dont_use_current_session=FALSE;
+long     G_new_user_id=0;
+
+
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
 static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about);
@@ -886,9 +891,9 @@ int silgy_usr_create_account(int ci)
 
     if ( QS_HTML_ESCAPE("login", login) )
     {
+        login[LOGIN_LEN] = EOS;
         stp_right(login);
-        strncpy(US.login, login, LOGIN_LEN);
-        US.login[LOGIN_LEN] = EOS;
+        if ( !G_dont_use_current_session ) strcpy(US.login, login);
     }
 
 #ifndef USERSBYEMAIL
@@ -901,9 +906,9 @@ int silgy_usr_create_account(int ci)
 
     if ( QS_HTML_ESCAPE("email", email) )
     {
+        email[EMAIL_LEN] = EOS;
         stp_right(email);
-        strncpy(US.email, email, EMAIL_LEN);
-        US.email[EMAIL_LEN] = EOS;
+        if ( !G_dont_use_current_session ) strcpy(US.email, email);
     }
 
     if ( G_usersRequireAccountActivation && !email[0] )
@@ -925,7 +930,7 @@ int silgy_usr_create_account(int ci)
     if ( !QS_HTML_ESCAPE("passwd", passwd)
             || !QS_HTML_ESCAPE("rpasswd", rpasswd) )
     {
-        WAR("Invalid request (URI val missing?)");
+        WAR("Invalid request (passwd or rpasswd missing)");
         return ERR_INVALID_REQUEST;
     }
 
@@ -933,23 +938,23 @@ int silgy_usr_create_account(int ci)
 
     if ( QS_HTML_ESCAPE("name", name) )
     {
+        name[UNAME_LEN] = EOS;
         stp_right(name);
-        strncpy(US.name, name, UNAME_LEN);
-        US.name[UNAME_LEN] = EOS;
+        if ( !G_dont_use_current_session ) strcpy(US.name, name);
     }
 
     if ( QS_HTML_ESCAPE("phone", phone) )
     {
+        phone[PHONE_LEN] = EOS;
         stp_right(phone);
-        strncpy(US.phone, phone, PHONE_LEN);
-        US.phone[PHONE_LEN] = EOS;
+        if ( !G_dont_use_current_session ) strcpy(US.phone, phone);
     }
 
     if ( QS_HTML_ESCAPE("about", about) )
     {
+        about[ABOUT_LEN] = EOS;
         stp_right(about);
-        strncpy(US.about, about, ABOUT_LEN);
-        US.about[ABOUT_LEN] = EOS;
+        if ( !G_dont_use_current_session ) strcpy(US.about, about);
     }
 
     /* ----------------------------------------------------------------- */
@@ -1010,7 +1015,10 @@ int silgy_usr_create_account(int ci)
         return ERR_INT_SERVER_ERROR;
     }
 
-    US.uid = mysql_insert_id(G_dbconn);
+    if ( !G_dont_use_current_session )
+        US.uid = mysql_insert_id(G_dbconn);
+    else
+        G_new_user_id = mysql_insert_id(G_dbconn);
 
     if ( G_usersRequireAccountActivation )
     {
