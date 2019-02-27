@@ -2889,6 +2889,8 @@ static void print_content_type(int ci, char type)
         strcpy(http_type, "image/bmp");
     else if ( type == RES_SVG )
         strcpy(http_type, "image/svg+xml");
+    else if ( type == RES_JSON )
+        strcpy(http_type, "application/json");
     else if ( type == RES_PDF )
         strcpy(http_type, "application/pdf");
     else if ( type == RES_AMPEG )
