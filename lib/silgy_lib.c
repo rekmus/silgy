@@ -4063,8 +4063,7 @@ static int minify_2(char *dest, const char *src)
                     || (0==strcmp(word, "function") && src[i]!='(')
                     || (0==strcmp(word, "else") && src[i]!='{')
                     || 0==strcmp(word, "new")
-//                    || 0==strcmp(word, "||")
-//                    || 0==strcmp(word, "&&")
+                    || 0==strcmp(word, "enum")
                     || (0==strcmp(word, "return") && src[i]!=';') )
                 dest[j++] = ' ';
             openwo = FALSE;
