@@ -873,21 +873,23 @@ unsigned long   sql_records;
 int silgy_usr_create_account(int ci)
 {
     int     ret=OK;
-    QSVAL   login;
+    QSVAL   login="";
     QSVAL   login_u;
-    QSVAL   email;
+    QSVAL   email="";
     QSVAL   email_u;
-    QSVAL   name;
-    QSVAL   phone;
-    QSVAL   about;
+    QSVAL   name="";
+    QSVAL   phone="";
+    QSVAL   about="";
     QSVAL   passwd;
     QSVAL   rpasswd;
-    QSVAL   message;
+    QSVAL   message="";
     int     plen;
     char    sql_query[SQLBUF];
     char    str1[32], str2[32];
 
     DBG("silgy_usr_create_account");
+
+    /* get the basics */
 
     if ( QS_HTML_ESCAPE("login", login) )
     {
@@ -896,14 +898,6 @@ int silgy_usr_create_account(int ci)
         if ( !G_dont_use_current_session ) strcpy(US.login, login);
     }
 
-#ifndef USERSBYEMAIL
-    if ( !login[0] )
-    {
-        WAR("Invalid request (login missing)");
-        return ERR_INVALID_REQUEST;
-    }
-#endif
-
     if ( QS_HTML_ESCAPE("email", email) )
     {
         email[EMAIL_LEN] = EOS;
@@ -911,26 +905,38 @@ int silgy_usr_create_account(int ci)
         if ( !G_dont_use_current_session ) strcpy(US.email, email);
     }
 
-    if ( G_usersRequireAccountActivation && !email[0] )
-    {
-        WAR("Invalid request (email missing)");
-        return ERR_EMAIL_EMPTY;
-    }
+    /* basic verification */
 
 #ifdef USERSBYEMAIL
-    if ( !email[0] )
+    if ( !email[0] )    /* email empty */
     {
-        WAR("Invalid request (email missing)");
+        ERR("Invalid request (email missing)");
         return ERR_EMAIL_EMPTY;
     }
 #endif
 
-    /* regardless of auth method */
+    if ( !login[0] )    /* login empty */
+    {
+#ifdef USERSBYEMAIL
+        strcpy(login, email);
+#else
+        ERR("Invalid request (login missing)");
+        return ERR_INVALID_REQUEST;
+#endif
+    }
+
+    /* regardless of authentication method */
+
+    if ( G_usersRequireAccountActivation && !email[0] )
+    {
+        ERR("Invalid request (email missing)");
+        return ERR_EMAIL_EMPTY;
+    }
 
     if ( !QS_HTML_ESCAPE("passwd", passwd)
             || !QS_HTML_ESCAPE("rpasswd", rpasswd) )
     {
-        WAR("Invalid request (passwd or rpasswd missing)");
+        ERR("Invalid request (passwd or rpasswd missing)");
         return ERR_INVALID_REQUEST;
     }
 
