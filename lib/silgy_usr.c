@@ -1021,10 +1021,10 @@ int silgy_usr_create_account(int ci)
         return ERR_INT_SERVER_ERROR;
     }
 
+    G_new_user_id = mysql_insert_id(G_dbconn);
+
     if ( !G_dont_use_current_session )
-        US.uid = mysql_insert_id(G_dbconn);
-    else
-        G_new_user_id = mysql_insert_id(G_dbconn);
+        US.uid = G_new_user_id;
 
     if ( G_usersRequireAccountActivation )
     {
