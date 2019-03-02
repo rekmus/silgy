@@ -4526,13 +4526,14 @@ void eng_send_msg_description(int ci, int code)
 
 #ifdef MSG_FORMAT_JSON
     OUT("{\"code\":%d,\"category\":\"%s\",\"message\":\"%s\"}", code, cat, msg);
+    conn[ci].ctype = RES_JSON;
 #else
     OUT("%d|%s|%s", code, cat, msg);
+    conn[ci].ctype = RES_TEXT;
 #endif
 
     DBG("eng_send_msg_description: [%s]", G_tmp);
 
-    conn[ci].ctype = RES_TEXT;
     RES_DONT_CACHE;
 }
 
