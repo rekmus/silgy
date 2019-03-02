@@ -298,6 +298,9 @@ void libusr_close_l_uses(int ci, int usi)
         uses[usi].name_tmp[0] = EOS;
         uses[usi].phone_tmp[0] = EOS;
         uses[usi].about_tmp[0] = EOS;
+#ifndef DONT_RESET_AUS_ON_LOGOUT
+        app_uses_reset(usi);
+#endif
     }
     else    /* timeout'ed */
     {
