@@ -90,7 +90,6 @@ static bool start_new_luses(int ci, long uid, const char *login, const char *ema
     strcpy(conn[ci].cookie_out_a_exp, G_last_modified);     /* to be removed by browser */
 
     US.logged = TRUE;
-//    strcpy(US.sesid, sesid);
     strcpy(US.login, login);
     strcpy(US.email, email);
     strcpy(US.name, name);
@@ -898,14 +897,14 @@ int silgy_usr_create_account(int ci)
     {
         login[LOGIN_LEN] = EOS;
         stp_right(login);
-        if ( !G_dont_use_current_session ) strcpy(US.login, login);
+        if ( !G_dont_use_current_session && conn[ci].usi ) strcpy(US.login, login);
     }
 
     if ( QS_HTML_ESCAPE("email", email) )
     {
         email[EMAIL_LEN] = EOS;
         stp_right(email);
-        if ( !G_dont_use_current_session ) strcpy(US.email, email);
+        if ( !G_dont_use_current_session && conn[ci].usi ) strcpy(US.email, email);
     }
 
     /* basic verification */
@@ -949,21 +948,21 @@ int silgy_usr_create_account(int ci)
     {
         name[UNAME_LEN] = EOS;
         stp_right(name);
-        if ( !G_dont_use_current_session ) strcpy(US.name, name);
+        if ( !G_dont_use_current_session && conn[ci].usi ) strcpy(US.name, name);
     }
 
     if ( QS_HTML_ESCAPE("phone", phone) )
     {
         phone[PHONE_LEN] = EOS;
         stp_right(phone);
-        if ( !G_dont_use_current_session ) strcpy(US.phone, phone);
+        if ( !G_dont_use_current_session && conn[ci].usi ) strcpy(US.phone, phone);
     }
 
     if ( QS_HTML_ESCAPE("about", about) )
     {
         about[ABOUT_LEN] = EOS;
         stp_right(about);
-        if ( !G_dont_use_current_session ) strcpy(US.about, about);
+        if ( !G_dont_use_current_session && conn[ci].usi ) strcpy(US.about, about);
     }
 
     /* ----------------------------------------------------------------- */
@@ -1071,7 +1070,8 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
 
     /* remember user details in case of error or warning to correct */
 
-    strcpy(US.email_tmp, email);
+    if ( conn[ci].usi )
+        strcpy(US.email_tmp, email);
 
     sprintf(sql_query, "INSERT INTO users_messages (user_id,msg_id,email,message,created) VALUES (%ld,%ld,'%s','%s','%s')", US.uid, get_max(ci, "messages")+1, email, sanmessage, G_dt);
     DBG("sql_query: INSERT INTO users_messages (user_id,msg_id,email,...) VALUES (%ld,get_max(),'%s',...)", US.uid, email);
@@ -1597,8 +1597,6 @@ unsigned long   sql_records;
 
     DBG("silgy_usr_reset_password");
 
-//    strcpy(linkkey, US.additional);   /* from here instead of URI */
-
     if ( !QS_HTML_ESCAPE("email", email)
             || !QS_HTML_ESCAPE("k", linkkey)
             || !QS_HTML_ESCAPE("passwd", passwd)
@@ -1614,7 +1612,8 @@ unsigned long   sql_records;
 
     /* remember form fields */
 
-    strcpy(US.email_tmp, email);
+    if ( conn[ci].usi )
+        strcpy(US.email_tmp, email);
 
     /* general validation */
 
