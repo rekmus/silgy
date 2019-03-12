@@ -1879,6 +1879,7 @@ char get_res_type(const char *fname)
     else if ( 0==strcmp(uext, "ZIP") )
         return RES_ZIP;
 
+    return RES_TEXT;
 }
 
 
@@ -3479,7 +3480,7 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
 
     /* store sub-record address as a text in value */
 
-    sprintf(json->rec[i].value, "%ld", json_sub);
+    sprintf(json->rec[i].value, "%ld", (long)json_sub);
 
     json->rec[i].type = is_array?JSON_ARRAY:JSON_RECORD;
 
