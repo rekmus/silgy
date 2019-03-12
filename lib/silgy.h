@@ -9,6 +9,13 @@
 #define SILGY_H
 
 #ifdef _WIN32   /* Windows */
+#ifdef _MSC_VER /* Microsoft compiler */
+/* access function */
+#define	F_OK    0       /* test for existence of file */
+#define	X_OK    0x01    /* test for execute or search permission */
+#define	W_OK    0x02    /* test for write permission */
+#define	R_OK    0x04    /* test for read permission */
+#endif /* _MSC_VER */
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
 #include <winsock2.h>
@@ -51,7 +58,7 @@ typedef char                        bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "3.7"
+#define WEB_SERVER_VERSION          "3.7.1"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
