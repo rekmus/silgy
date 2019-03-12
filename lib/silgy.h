@@ -10,6 +10,11 @@
 
 #ifdef _WIN32   /* Windows */
 #ifdef _MSC_VER /* Microsoft compiler */
+/* libraries */
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "psapi.lib")   /* GetProcessMemoryInfo */
+/* __VA_ARGS__ issue */
+#define EXPAND_VA(x) x
 /* access function */
 #define	F_OK    0       /* test for existence of file */
 #define	X_OK    0x01    /* test for execute or search permission */
@@ -188,11 +193,13 @@ typedef char                        bool;
 
 #endif  /* ASYNC_SERVICE */
 
-
-#define OUTM(str, ...)                  (sprintf(G_tmp, str, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
-
-#define CHOOSE_OUT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME          /* single or multiple? */
-#define OUT(...)                        CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
+#ifdef _MSC_VER /* Microsoft compiler */
+    #define OUT(...)                        (sprintf(G_tmp, EXPAND_VA(__VA_ARGS__)), OUTSS(G_tmp))
+#else
+    #define OUTM(str, ...)                  (sprintf(G_tmp, str, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
+    #define CHOOSE_OUT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME          /* single or multiple? */
+    #define OUT(...)                        CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
+#endif /* _MSC_VER */
 
 /* HTTP header -- resets respbuf! */
 #define PRINT_HTTP_STATUS(val)          (sprintf(G_tmp, "HTTP/1.1 %d %s\r\n", val, get_http_descr(val)), HOUT(G_tmp))
@@ -734,6 +741,10 @@ typedef struct {
 } async_res_t;
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* read from the config file */
 
 extern int      G_logLevel;
@@ -819,6 +830,9 @@ extern char     G_rest_content_type[MAX_VALUE_LEN+1];
 extern bool     G_dont_use_current_session;
 extern long     G_new_user_id;
 
+#ifdef __cplusplus
+}   /* extern "C" */
+#endif
 
 
 #include <silgy_lib.h>
