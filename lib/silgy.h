@@ -709,6 +709,9 @@ typedef struct {
 #ifdef ASYNC_AUSES
     ausession_t auses;
 #endif
+    counters_t cnts_today;
+    counters_t cnts_yesterday;
+    counters_t cnts_day_before;
 } async_req_hdr_t;
 
 typedef struct {

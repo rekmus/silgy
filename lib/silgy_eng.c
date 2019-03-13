@@ -4104,6 +4104,14 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 #endif
     }
 
+    /* counters */
+
+    memcpy(&req.hdr.cnts_today, &G_cnts_today, sizeof(counters_t));
+    memcpy(&req.hdr.cnts_yesterday, &G_cnts_yesterday, sizeof(counters_t));
+    memcpy(&req.hdr.cnts_day_before, &G_cnts_day_before, sizeof(counters_t));
+
+    /* data */
+
     if ( data )
     {
         if ( size )     /* binary */
@@ -5270,6 +5278,10 @@ mqd_t       G_queue_res;                /* response queue */
 char        *G_req;
 char        *G_res;
 usession_t  uses;                       /* user session */
+/* counters */
+counters_t  G_cnts_today;               /* today's counters */
+counters_t  G_cnts_yesterday;           /* yesterday's counters */
+counters_t  G_cnts_day_before;          /* day before's counters */
 
 
 static char *M_pidfile;                 /* pid file name */
@@ -5471,10 +5483,15 @@ int main(int argc, char *argv[])
             DBG("Processing...");
             G_req = req.data;
             G_res = res.data;
+            /* user session */
             memcpy(&uses, &req.hdr.uses, sizeof(usession_t));
 #ifdef ASYNC_AUSES
             memcpy(&auses, &req.hdr.auses, sizeof(ausession_t));
 #endif
+            /* counters */
+            memcpy(&G_cnts_today, &req.hdr.cnts_today, sizeof(counters_t));
+            memcpy(&G_cnts_yesterday, &req.hdr.cnts_yesterday, sizeof(counters_t));
+            memcpy(&G_cnts_day_before, &req.hdr.cnts_day_before, sizeof(counters_t));
             
             res.hdr.err_code = service_app_process_req(req.hdr.service, req.data);
 
