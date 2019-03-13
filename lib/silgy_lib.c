@@ -506,7 +506,11 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
     else
         p = stpcpy(p, "Connection: close\r\n");
 #ifndef NO_IDENTITY
+#ifdef SILGY_AS_BOT
+    p = stpcpy(p, "User-Agent: Silgy Bot\r\n");
+#else
     p = stpcpy(p, "User-Agent: Silgy\r\n");
+#endif
 #endif
     p = stpcpy(p, "\r\n");
 
