@@ -484,7 +484,7 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
                 p = stpcpy(p, "Content-Type: application/x-www-form-urlencoded\r\n");
         }
         char tmp[64];
-        sprintf(tmp, "Content-Length: %d\r\n", strlen(json?G_tmp:(char*)req));
+        sprintf(tmp, "Content-Length: %ld\r\n", (long)strlen(json?G_tmp:(char*)req));
         p = stpcpy(p, tmp);
     }
 
@@ -2167,14 +2167,22 @@ void lib_set_datetime_formats(const char *lang)
 /* --------------------------------------------------------------------------
    Format amount
 ---------------------------------------------------------------------------*/
+#ifdef _WIN32
+void amt(char *stramt, long long in_amt)
+#else
 void amt(char *stramt, long in_amt)
+#endif
 {
-    char    in_stramt[64];
+    char    in_stramt[256];
     int     len;
     int     i, j=0;
     bool    minus=FALSE;
 
+#ifdef _WIN32
+    sprintf(in_stramt, "%lld", in_amt);
+#else
     sprintf(in_stramt, "%ld", in_amt);
+#endif
 
     if ( in_stramt[0] == '-' )  /* change to proper UTF-8 minus sign */
     {
@@ -2685,15 +2693,22 @@ static int  since_seed=-1;
     int     i;
 
 #define SILGY_SEEDS_MEM 1000
-#define SILGY_MAX_SEED  2147483646  /* 2^31 - 2 */
+#define SILGY_MAX_SEED  4294967294  /* 2^32 - 2 */
 
     if ( since_seed == -1 || since_seed > (G_cnts_today.req % 100 + 10) )  /* seed every now and then */
+//    if ( 1 )  /* test */
     {
         /* make sure at least the last 1000 seeds are unique */
-        static int seeds[SILGY_SEEDS_MEM];
+        static unsigned int seeds[SILGY_SEEDS_MEM];
 
         int time_remainder = (int)G_now % 1000;
-        int seed;
+        int mem_remainder = lib_get_memory() % 1000;
+#ifdef _WIN32
+        long long a_number;
+#else
+        long a_number;
+#endif
+        unsigned int seed;
 
         while ( 1 )
         {
@@ -2702,7 +2717,11 @@ static int  since_seed=-1;
             else
                 ++seeded;  /* 1 ... 1000 */
 
-            seed = (G_pid * time_remainder * seeded * (G_cnts_yesterday.req+1)) % SILGY_MAX_SEED;
+            /* generate possibly random, or at least based on some non-deterministic factors, 64-bit number */
+
+            a_number = G_pid * (time_remainder+1) * (mem_remainder+1) * seeded * (G_cnts_yesterday.req+1);
+
+            seed = a_number % SILGY_MAX_SEED;
 
             /* check uniqueness in the history */
 
@@ -2723,16 +2742,27 @@ static int  since_seed=-1;
                 break;
             }
 
-            WAR("seed %d repeated; seeded = %d, i = %d", seed, seeded, i);
+            WAR("seed %u repeated; seeded = %d, i = %d", seed, seeded, i);
         }
 
 #ifdef DUMP
-            DBG("G_pid = %d", G_pid);
-            DBG("G_now = %d", (int)G_now);
-            DBG("time_remainder = %d", time_remainder);
-            DBG("seeded = %d", seeded);
-            DBG("G_cnts_today.req = %d", G_cnts_today.req);
-            DBG("seed = %d", seed);
+        DBG("G_pid = %d", G_pid);
+        DBG("G_now = %d", (int)G_now);
+        DBG("time_remainder = %d", time_remainder);
+        DBG("mem_remainder = %d", mem_remainder);
+        DBG("seeded = %d", seeded);
+        DBG("G_cnts_yesterday.req = %ld", G_cnts_yesterday.req);
+        DBG("G_cnts_today.req = %ld", G_cnts_today.req);
+#ifdef _WIN32
+        DBG("a_number = %lld", a_number);
+#else
+        DBG("a_number = %ld", a_number);
+#endif
+        char f[256];
+        amt(f, a_number);
+        DBG("a_number = %s", f);
+        amt(f, seed);
+        DBG("    seed = %s", f);
 #endif
 
         srand(seed);
@@ -2877,13 +2907,13 @@ static void json_to_string(char *dst, JSON *json, bool array)
         }
         else if ( json->rec[i].type == JSON_RECORD )
         {
-            char tmp[32784];
+            char tmp[JSON_BUFSIZE];
             json_to_string(tmp, (JSON*)atol(json->rec[i].value), FALSE);
             p = stpcpy(p, tmp);
         }
         else if ( json->rec[i].type == JSON_ARRAY )
         {
-            char tmp[32784];
+            char tmp[JSON_BUFSIZE];
             json_to_string(tmp, (JSON*)atol(json->rec[i].value), TRUE);
             p = stpcpy(p, tmp);
         }
@@ -2960,7 +2990,7 @@ static void json_to_string_pretty(char *dst, JSON *json, bool array, int level)
                 p = stpcpy(p, "\n");
                 p = stpcpy(p, json_indent(level));
             }
-            char tmp[32784];
+            char tmp[JSON_BUFSIZE];
             json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), FALSE, level+1);
             p = stpcpy(p, tmp);
         }
@@ -2971,7 +3001,7 @@ static void json_to_string_pretty(char *dst, JSON *json, bool array, int level)
                 p = stpcpy(p, "\n");
                 p = stpcpy(p, json_indent(level));
             }
-            char tmp[32784];
+            char tmp[JSON_BUFSIZE];
             json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), TRUE, level+1);
             p = stpcpy(p, tmp);
         }
