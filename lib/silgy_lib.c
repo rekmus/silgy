@@ -2680,56 +2680,72 @@ char *nospaces(char *dst, const char *src)
 void silgy_random(char *dest, int len)
 {
 const char  *chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-static int  req=0;
+static int  seeded=0;
+static int  since_seed=-1;
     int     i;
 
-/* make sure at least the last 1000 seeds are unique */
-static int seeds[1000];
-
+#define SILGY_SEEDS_MEM 1000
 #define SILGY_MAX_SEED  2147483646  /* 2^31 - 2 */
 
-    int time_remainder = (int)G_now % 1000;
-    int seed;
-
-    while ( 1 )
+    if ( since_seed == -1 || since_seed > (G_cnts_today.req % 100 + 10) )  /* seed every now and then */
     {
-        if ( req > 999 )
-            req = 1;
-        else
-            ++req;  /* 1 ... 1000 */
+        /* make sure at least the last 1000 seeds are unique */
+        static int seeds[SILGY_SEEDS_MEM];
 
-        seed = (G_pid * time_remainder * req * G_cnts_today.req) % SILGY_MAX_SEED;
+        int time_remainder = (int)G_now % 1000;
+        int seed;
 
-        char found=0;
-        i = 0;
-        while ( i < 1000 )
+        while ( 1 )
         {
-            if ( seeds[i++] == seed )
+            if ( seeded >= SILGY_SEEDS_MEM )
+                seeded = 1;
+            else
+                ++seeded;  /* 1 ... 1000 */
+
+            seed = (G_pid * time_remainder * seeded * (G_cnts_yesterday.req+1)) % SILGY_MAX_SEED;
+
+            /* check uniqueness in the history */
+
+            char found=0;
+            i = 0;
+            while ( i < SILGY_SEEDS_MEM )
             {
-                found = 1;
+                if ( seeds[i++] == seed )
+                {
+                    found = 1;
+                    break;
+                }
+            }
+
+            if ( !found )   /* seed not found = OK */
+            {
+                seeds[seeded-1] = seed;
                 break;
             }
-        }
 
-        if ( !found )   /* seed not found = OK */
-        {
-            seeds[req-1] = seed;
-            break;
+            WAR("seed %d repeated; seeded = %d, i = %d", seed, seeded, i);
         }
-
-        WAR("seed %d repeated; req = %d, i = %d", seed, req, i);
-    }
 
 #ifdef DUMP
-        DBG("G_pid = %d", G_pid);
-        DBG("G_now = %d", (int)G_now);
-        DBG("time_remainder = %d", time_remainder);
-        DBG("req = %d", req);
-        DBG("G_cnts_today.req = %d", G_cnts_today.req);
-        DBG("seed = %d", seed);
+            DBG("G_pid = %d", G_pid);
+            DBG("G_now = %d", (int)G_now);
+            DBG("time_remainder = %d", time_remainder);
+            DBG("seeded = %d", seeded);
+            DBG("G_cnts_today.req = %d", G_cnts_today.req);
+            DBG("seed = %d", seed);
 #endif
 
-    srand(seed);
+        srand(seed);
+
+        since_seed = 0;
+    }
+    else
+    {
+        ++since_seed;
+#ifdef DUMP
+        DBG("since_seed = %d", since_seed);
+#endif
+    }
 
     for ( i=0; i<len; ++i )
         dest[i] = chars[rand() % 62];
