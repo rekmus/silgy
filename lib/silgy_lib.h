@@ -282,7 +282,7 @@ extern "C" {
     time_t time_db2epoch(const char *str);
     char *time_epoch2http(time_t epoch);
     void lib_set_datetime_formats(const char *lang);
-    void amt(char *stramt, long in_amt);
+    void amt(char *stramt, long long in_amt);
     void amtd(char *stramt, double in_amt);
     void lib_amt(char *stramt, long in_amt);
     void lib_amtd(char *stramt, double in_amt);
@@ -326,8 +326,8 @@ extern "C" {
     bool silgy_read_param_str(const char *param, char *dest);
     bool silgy_read_param_int(const char *param, int *dest);
     char *lib_create_pid_file(const char *name);
-	bool lib_shm_create(long bytes);
-	void lib_shm_delete(long bytes);
+    bool lib_shm_create(long bytes);
+    void lib_shm_delete(long bytes);
     bool log_start(const char *prefix, bool test);
     void log_write_time(int level, const char *message, ...);
     void log_write(int level, const char *message, ...);
