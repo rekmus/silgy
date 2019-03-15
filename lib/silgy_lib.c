@@ -2167,22 +2167,14 @@ void lib_set_datetime_formats(const char *lang)
 /* --------------------------------------------------------------------------
    Format amount
 ---------------------------------------------------------------------------*/
-#ifdef _WIN32
 void amt(char *stramt, long long in_amt)
-#else
-void amt(char *stramt, long in_amt)
-#endif
 {
     char    in_stramt[256];
     int     len;
     int     i, j=0;
     bool    minus=FALSE;
 
-#ifdef _WIN32
     sprintf(in_stramt, "%lld", in_amt);
-#else
-    sprintf(in_stramt, "%ld", in_amt);
-#endif
 
     if ( in_stramt[0] == '-' )  /* change to proper UTF-8 minus sign */
     {
@@ -2701,13 +2693,11 @@ static int  since_seed=-1;
         /* make sure at least the last 1000 seeds are unique */
         static unsigned int seeds[SILGY_SEEDS_MEM];
 
-        int time_remainder = (int)G_now % 1000;
-        int mem_remainder = lib_get_memory() % 1000;
-#ifdef _WIN32
+        int pid_remainder = G_pid % 1000 + 1;
+        int time_remainder = (int)G_now % 1000 + 1;
+        int mem_remainder = lib_get_memory() % 1000 + 1;
+        int yesterday_rem = G_cnts_yesterday.req % 1000 + 1;
         long long a_number;
-#else
-        long a_number;
-#endif
         unsigned int seed;
 
         while ( 1 )
@@ -2719,7 +2709,7 @@ static int  since_seed=-1;
 
             /* generate possibly random, or at least based on some non-deterministic factors, 64-bit number */
 
-            a_number = G_pid * (time_remainder+1) * (mem_remainder+1) * seeded * (G_cnts_yesterday.req+1);
+            a_number = (long long)pid_remainder * time_remainder * mem_remainder * yesterday_rem * seeded;
 
             seed = a_number % SILGY_MAX_SEED;
 
@@ -2746,23 +2736,27 @@ static int  since_seed=-1;
         }
 
 #ifdef DUMP
+        DBG_LINE;
+
         DBG("G_pid = %d", G_pid);
+        DBG("pid_remainder = %d", pid_remainder);
         DBG("G_now = %d", (int)G_now);
         DBG("time_remainder = %d", time_remainder);
+        DBG("Memory = %ld", lib_get_memory());
         DBG("mem_remainder = %d", mem_remainder);
         DBG("seeded = %d", seeded);
         DBG("G_cnts_yesterday.req = %ld", G_cnts_yesterday.req);
         DBG("G_cnts_today.req = %ld", G_cnts_today.req);
-#ifdef _WIN32
         DBG("a_number = %lld", a_number);
-#else
-        DBG("a_number = %ld", a_number);
-#endif
+        DBG("seed = %u", seed);
+
         char f[256];
         amt(f, a_number);
         DBG("a_number = %s", f);
         amt(f, seed);
         DBG("    seed = %s", f);
+
+        DBG_LINE;
 #endif
 
         srand(seed);
