@@ -2855,7 +2855,8 @@ static void gen_response_header(int ci)
     DBG("\nResponse header:\n\n[%s]\n", conn[ci].header);
 
 #ifdef DUMP     /* low-level tests */
-    if ( G_logLevel>=LOG_DBG && conn[ci].clen > 0 && !conn[ci].head_only && conn[ci].static_res == NOT_STATIC && (conn[ci].ctype == CONTENT_TYPE_UNSET || conn[ci].ctype == RES_TEXT || conn[ci].ctype == RES_HTML) )
+    if ( G_logLevel>=LOG_DBG && conn[ci].clen > 0 && !conn[ci].head_only && conn[ci].static_res == NOT_STATIC
+            && (conn[ci].ctype==CONTENT_TYPE_UNSET || conn[ci].ctype==RES_TEXT || conn[ci].ctype==RES_HTML || conn[ci].ctype==RES_JSON) )
         log_long(conn[ci].out_data, conn[ci].clen, "Content to send");
 #endif
 
