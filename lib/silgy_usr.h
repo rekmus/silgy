@@ -163,6 +163,15 @@
 #define GET_USER_INT(key, val)          silgy_usr_get_int(ci, key, val)
 
 
+#define FAILED_LOGIN_CNT_SIZE           100
+
+typedef struct {
+    char   ip[INET_ADDRSTRLEN];
+    int    cnt;
+    time_t when;
+} failed_login_cnt_t;
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

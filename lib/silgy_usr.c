@@ -168,6 +168,57 @@ unsigned long   sql_records;
         DBG("No logged in session in database [%s]", conn[ci].cookie_in_l);
         strcpy(conn[ci].cookie_out_l, "x");
         strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* expire ls cookie */
+
+        /* ---------------------------------------------------------------------------------- */
+        /* brute force ls cookie attack prevention */
+
+        /* maintain the list of last n IPs with failed ls cookie authentication with counters */
+
+        static failed_login_cnt_t failed_cnt[FAILED_LOGIN_CNT_SIZE];
+        static int failed_cnt_used=0;
+        static int failed_cnt_next=0;
+        char found=0;
+
+        for ( i=0; i<failed_cnt_used && i<FAILED_LOGIN_CNT_SIZE; ++i )
+        {
+            if ( 0==strcmp(conn[ci].ip, failed_cnt[i].ip) )
+            {
+                if ( (failed_cnt[i].cnt > 10 && failed_cnt[i].when > G_now-60)      /* 10 failed attempts within a minute */
+                    || (failed_cnt[i].cnt > 100 && failed_cnt[i].when > G_now-3600) /* 100 failed attempts within an hour */
+                    || failed_cnt[i].cnt > 1000 )                                   /* 1000 failed attempts */
+                {
+                    WAR("Looks like brute-force cookie attack, blocking IP");
+                    eng_block_ip(conn[ci].ip, TRUE);
+                }
+                else
+                {
+                    ++failed_cnt[i].cnt;
+                }
+
+                found = 1;
+                break;
+            }
+        }
+
+        if ( !found )   /* add record to failed_cnt array */
+        {
+            strcpy(failed_cnt[failed_cnt_next].ip, conn[ci].ip);
+            failed_cnt[failed_cnt_next].cnt = 1;
+            failed_cnt[failed_cnt_next].when = G_now;
+            
+            if ( failed_cnt_next >= FAILED_LOGIN_CNT_SIZE-1 )    /* last slot was just used -- roll over */
+                failed_cnt_next = 0;
+            else
+            {
+                ++failed_cnt_next;
+
+                if ( failed_cnt_used < FAILED_LOGIN_CNT_SIZE )   /* before first roll-over */
+                    ++failed_cnt_used;
+            }
+        }
+
+        /* ---------------------------------------------------------------------------------- */
+
         return ERR_SESSION_EXPIRED;
     }
 
