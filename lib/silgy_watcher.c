@@ -17,13 +17,17 @@
 #define START_COMMAND   "sudo $SILGYDIR/bin/silgystart"
 
 
-int      G_httpPort;
+int         G_httpPort;
+/* counters */
+counters_t  G_cnts_today;               /* today's counters */
+counters_t  G_cnts_yesterday;           /* yesterday's counters */
+counters_t  G_cnts_day_before;          /* day before's counters */
 
 
-char     M_watcherStopCmd[256];
-char     M_watcherStartCmd[256];
-int      M_watcherWait;
-int      M_watcherLogRestart;
+static char M_watcherStopCmd[256];
+static char M_watcherStartCmd[256];
+static int  M_watcherWait;
+static int  M_watcherLogRestart;
 
 
 void restart(char reason);
@@ -200,12 +204,18 @@ void restart(char reason)
         log_start("watcher", FALSE);
     }
 
+    char reason_desc[256];
+
     if ( reason == REASON_CONNECT )
-        ALWAYS("Couldn't connect");
+        strcpy(reason_desc, "Couldn't connect");
     else if ( reason == REASON_WRITE )
-        ALWAYS("Couldn't send the request");
+        strcpy(reason_desc, "Couldn't send the request");
     else if ( reason == REASON_READ )
-        ALWAYS("Couldn't read the response");
+        strcpy(reason_desc, "Couldn't read the response");
+    else
+        strcpy(reason_desc, "Unknown reason!");
+
+    ALWAYS(reason_desc);
 
     ALWAYS("Restarting...");
 
@@ -222,6 +232,10 @@ void restart(char reason)
 
 #ifdef APP_ADMIN_EMAIL
     if ( strlen(APP_ADMIN_EMAIL) )
-        silgy_email(APP_ADMIN_EMAIL, "Silgy restart", "Silgy Watcher had to restart web server.");
+    {
+        char message[1024];
+        sprintf(message, "Silgy Watcher had to restart web server due to: %s", reason_desc);
+        silgy_email(APP_ADMIN_EMAIL, "Silgy restart", message);
+    }
 #endif
 }
