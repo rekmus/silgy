@@ -113,7 +113,6 @@ static bool start_new_luses(int ci, long uid, const char *login, const char *ema
 int libusr_l_usession_ok(int ci)
 {
     int         i;
-    char        sanuagent[DB_UAGENT_LEN+1];
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
@@ -139,13 +138,19 @@ unsigned long   sql_records;
 
     /* not found in memory -- try database */
 
+    char sanuagent[DB_UAGENT_LEN+1];
+
     strncpy(sanuagent, silgy_sql_esc(conn[ci].uagent), DB_UAGENT_LEN);
     sanuagent[DB_UAGENT_LEN] = EOS;
     if ( sanuagent[DB_UAGENT_LEN-1]=='\'' && sanuagent[DB_UAGENT_LEN-2]!='\'' )
         sanuagent[DB_UAGENT_LEN-1] = EOS;
 
-//    sprintf(sql_query, "SELECT user_id, created FROM users_logins WHERE sesid='%s' AND uagent='%s'", silgy_sql_esc(conn[ci].cookie_in_l), sanuagent);
-    sprintf(sql_query, "SELECT uagent, user_id, created FROM users_logins WHERE sesid='%s'", silgy_sql_esc(conn[ci].cookie_in_l));
+    char sanlscookie[SESID_LEN+1];
+
+    strncpy(sanlscookie, silgy_sql_esc(conn[ci].cookie_in_l), SESID_LEN);
+    sanlscookie[SESID_LEN] = EOS;
+
+    sprintf(sql_query, "SELECT uagent, user_id, created FROM users_logins WHERE sesid = BINARY '%s'", sanlscookie);
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -165,7 +170,7 @@ unsigned long   sql_records;
     if ( 0 == sql_records )     /* no such session in database */
     {
         mysql_free_result(result);
-        DBG("No logged in session in database [%s]", conn[ci].cookie_in_l);
+        DBG("No logged in session in database [%s]", sanlscookie);
         strcpy(conn[ci].cookie_out_l, "x");
         strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* expire ls cookie */
 
@@ -231,7 +236,7 @@ unsigned long   sql_records;
     if ( 0 != strcmp(sanuagent, sql_row[0]) )
     {
         mysql_free_result(result);
-        DBG("Different uagent in database for sesid [%s]", conn[ci].cookie_in_l);
+        DBG("Different uagent in database for sesid [%s]", sanlscookie);
         strcpy(conn[ci].cookie_out_l, "x");
         strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* expire ls cookie */
         return ERR_SESSION_EXPIRED;
@@ -247,11 +252,11 @@ unsigned long   sql_records;
 
     if ( created < G_now - 3600*24*30 )
     {
-        DBG("Removing old logged in session, usi=%d, sesid [%s], created %s from database", conn[ci].usi, conn[ci].cookie_in_l, sql_row[2]);
+        DBG("Removing old logged in session, usi=%d, sesid [%s], created %s from database", conn[ci].usi, sanlscookie, sql_row[2]);
 
         mysql_free_result(result);
 
-        sprintf(sql_query, "DELETE FROM users_logins WHERE sesid='%s'", conn[ci].cookie_in_l);
+        sprintf(sql_query, "DELETE FROM users_logins WHERE sesid = BINARY '%s'", sanlscookie);
         DBG("sql_query: %s", sql_query);
 
         if ( mysql_query(G_dbconn, sql_query) )
@@ -276,12 +281,12 @@ unsigned long   sql_records;
 
     /* start a fresh session, keep the old sesid */
 
-    if ( !eng_uses_start(ci, conn[ci].cookie_in_l) )
+    if ( !eng_uses_start(ci, sanlscookie) )
     {
         return ERR_SERVER_TOOBUSY;
     }
 
-    sprintf(sql_query, "UPDATE users_logins SET last_used='%s' WHERE sesid='%s'", G_dt, US.sesid);
+    sprintf(sql_query, "UPDATE users_logins SET last_used='%s' WHERE sesid = BINARY '%s'", G_dt, US.sesid);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -324,8 +329,7 @@ void libusr_close_l_uses(int ci, int usi)
     {
         DBG("Downgrading logged in session to anonymous, usi=%d, sesid [%s]", usi, uses[usi].sesid);
 
-//        sprintf(sql_query, "DELETE FROM users_logins WHERE user_id=%ld", uses[usi].uid);  /* use indexes */
-        sprintf(sql_query, "DELETE FROM users_logins WHERE sesid='%s'", uses[usi].sesid);
+        sprintf(sql_query, "DELETE FROM users_logins WHERE sesid = BINARY '%s'", uses[usi].sesid);
         DBG("sql_query: %s", sql_query);
 
         if ( mysql_query(G_dbconn, sql_query) )

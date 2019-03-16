@@ -239,7 +239,7 @@ struct timeval  timeout;                    /* Timeout for select */
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port = htons(G_httpPort);
 
-    DBG("Trying bind...");
+    DBG("Trying bind to port %d...", G_httpPort);
 
     if ( bind(M_listening_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0 )
     {
@@ -291,7 +291,7 @@ struct timeval  timeout;                    /* Timeout for select */
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port = htons(G_httpsPort);
 
-    DBG("Trying bind...");
+    DBG("Trying bind to port %d...", G_httpsPort);
 
     if ( bind(M_listening_sec_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0 )
     {
