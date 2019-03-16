@@ -139,16 +139,10 @@ unsigned long   sql_records;
     /* not found in memory -- try database */
 
     char sanuagent[DB_UAGENT_LEN+1];
-
-    strncpy(sanuagent, silgy_sql_esc(conn[ci].uagent), DB_UAGENT_LEN);
-    sanuagent[DB_UAGENT_LEN] = EOS;
-    if ( sanuagent[DB_UAGENT_LEN-1]=='\'' && sanuagent[DB_UAGENT_LEN-2]!='\'' )
-        sanuagent[DB_UAGENT_LEN-1] = EOS;
+    sanitize_sql(sanuagent, conn[ci].uagent, DB_UAGENT_LEN);
 
     char sanlscookie[SESID_LEN+1];
-
-    strncpy(sanlscookie, silgy_sql_esc(conn[ci].cookie_in_l), SESID_LEN);
-    sanlscookie[SESID_LEN] = EOS;
+    sanitize_sql(sanlscookie, conn[ci].cookie_in_l, SESID_LEN);
 
     sprintf(sql_query, "SELECT uagent, user_id, created FROM users_logins WHERE sesid = BINARY '%s'", sanlscookie);
     DBG("sql_query: %s", sql_query);
@@ -719,9 +713,7 @@ int silgy_usr_login(int ci)
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
     long        uid;
-//    char        sesid[SESID_LEN+1]="";
     long        new_ula_cnt;
-    char        sanuagent[DB_UAGENT_LEN+1];
     time_t      sometimeahead;
     long        visits;
     char        deleted[4];
@@ -875,12 +867,10 @@ unsigned long   sql_records;
 
     /* save new session to users_logins and set the cookie */
 
-    DBG("Saving user session [%s] into users_logins...", US.sesid);
+    DBG("Saving user session [%s] in users_logins...", US.sesid);
 
-    strncpy(sanuagent, silgy_sql_esc(conn[ci].uagent), DB_UAGENT_LEN);
-    sanuagent[DB_UAGENT_LEN] = EOS;
-    if ( sanuagent[DB_UAGENT_LEN-1]=='\'' && sanuagent[DB_UAGENT_LEN-2]!='\'' )
-        sanuagent[DB_UAGENT_LEN-1] = EOS;
+    char sanuagent[DB_UAGENT_LEN+1];
+    sanitize_sql(sanuagent, conn[ci].uagent, DB_UAGENT_LEN);
 
     sprintf(sql_query, "INSERT INTO users_logins (sesid,uagent,ip,user_id,created,last_used) VALUES ('%s','%s','%s',%ld,'%s','%s')", US.sesid, sanuagent, conn[ci].ip, uid, G_dt, G_dt);
     DBG("sql_query: %s", sql_query);

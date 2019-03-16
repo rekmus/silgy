@@ -294,6 +294,7 @@ extern "C" {
     char *san_long(const char *str);
     char *silgy_sql_esc(const char *str);
     char *silgy_html_esc(const char *str);
+    void sanitize_sql(char *dest, const char *str, int len);
     char *silgy_html_unesc(const char *str);
     char *uri_encode(const char *str);
     char *upper(const char *str);

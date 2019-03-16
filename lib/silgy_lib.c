@@ -2486,6 +2486,29 @@ static char dst[MAX_LONG_URI_VAL_LEN+1];
 
 
 /* --------------------------------------------------------------------------
+   SQL-escape string respecting destination length (excluding '\0')
+-------------------------------------------------------------------------- */
+void sanitize_sql(char *dest, const char *str, int len)
+{
+    strncpy(dest, silgy_sql_esc(str), len);
+    dest[len] = EOS;
+
+    /* cut off orphaned single backslash */
+
+    int i=len-1;
+    int bs=0;
+    while ( dest[i]=='\\' && i>-1 )
+    {
+        ++bs;
+        i--;
+    }
+
+    if ( bs % 2 )   /* odd number of trailing backslashes -- cut one */
+        dest[len-1] = EOS;
+}
+
+
+/* --------------------------------------------------------------------------
    ex unsan_noparse
    HTML un-escape string
 -------------------------------------------------------------------------- */
