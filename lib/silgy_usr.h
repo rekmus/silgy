@@ -163,7 +163,20 @@
 #define GET_USER_INT(key, val)          silgy_usr_get_int(ci, key, val)
 
 
-#define FAILED_LOGIN_CNT_SIZE           100
+/*
+   Brute-force ls cookie attack protection.
+   It defines how many different IPs can take part in a botnet attack.
+*/
+
+#ifdef MEM_MEDIUM
+#define FAILED_LOGIN_CNT_SIZE           1000
+#elif defined(MEM_BIG)
+#define FAILED_LOGIN_CNT_SIZE           10000
+#elif defined(MEM_HUGE)
+#define FAILED_LOGIN_CNT_SIZE           10000
+#else   /* MEM_SMALL -- default */
+#define FAILED_LOGIN_CNT_SIZE           1000
+#endif
 
 typedef struct {
     char   ip[INET_ADDRSTRLEN];
