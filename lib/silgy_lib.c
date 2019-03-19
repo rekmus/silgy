@@ -5410,7 +5410,7 @@ char *stpcpy(char *dest, const char *src)
 /* --------------------------------------------------------------------------
    Windows port of stpncpy
 -------------------------------------------------------------------------- */
-char *stpncpy(char *dest, const char *src, unsigned long len)
+char *stpncpy(char *dest, const char *src, unsigned int len)
 {
     register char *d=dest;
     register const char *s=src;
