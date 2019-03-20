@@ -994,7 +994,11 @@ static char buffer[JSON_BUFSIZE];
 #endif /* DUMP */
 
     struct timespec start;
+#ifdef _WIN32
+    clock_gettime_win(MONOTONIC_CLOCK_NAME, &start);
+#else
     clock_gettime(MONOTONIC_CLOCK_NAME, &start);
+#endif
 
     /* -------------------------------------------------------------------------- */
 
@@ -1461,7 +1465,11 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
     /* update remaining timeout ------------------------------------------ */
 
     struct timespec start;
+#ifdef _WIN32
+    clock_gettime_win(MONOTONIC_CLOCK_NAME, &start);
+#else
     clock_gettime(MONOTONIC_CLOCK_NAME, &start);
+#endif
 
     /* set up fd-s and wait ---------------------------------------------- */
 
@@ -1643,7 +1651,11 @@ double lib_elapsed(struct timespec *start)
 {
 struct timespec end;
     double      elapsed;
+#ifdef _WIN32
+    clock_gettime_win(MONOTONIC_CLOCK_NAME, &end);
+#else
     clock_gettime(MONOTONIC_CLOCK_NAME, &end);
+#endif
     elapsed = (end.tv_sec - start->tv_sec) * 1000.0;
     elapsed += (end.tv_nsec - start->tv_nsec) / 1000000.0;
     return elapsed;
@@ -5360,7 +5372,7 @@ static void unix_time(struct timespec *spec)
     spec->tv_nsec = wintime % exp7 * 100;
 }
 
-int clock_gettime(int dummy, struct timespec *spec)
+int clock_gettime_win(clockid_t clockid, struct timespec *spec)
 {
    static  struct timespec startspec;
    static double ticks2nano;
