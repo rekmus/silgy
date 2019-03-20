@@ -650,7 +650,7 @@ struct timeval  timeout;                    /* Timeout for select */
                     if ( conn[i].conn_state == CONN_STATE_READY_FOR_PARSE )
                     {
 #ifdef _WIN32
-                        clock_gettime_win(MONOTONIC_CLOCK_NAME, &conn[i].proc_start);
+                        clock_gettime_win(&conn[i].proc_start);
 #else
                         clock_gettime(MONOTONIC_CLOCK_NAME, &conn[i].proc_start);
 #endif
