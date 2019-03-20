@@ -346,7 +346,10 @@ extern "C" {
 
 #ifdef _WIN32   /* Windows */
     int getpid(void);
-    int clock_gettime(int dummy, struct timespec *spec);
+#ifdef _MSC_VER /* Microsoft compiler */
+typedef int clockid_t;
+#endif /* _MSC_VER */
+    int clock_gettime_win(clockid_t clockid, struct timespec *spec);
     char *stpcpy(char *dest, const char *src);
     char *stpncpy(char *dest, const char *src, unsigned int len);
 #endif  /* _WIN32 */
