@@ -78,7 +78,7 @@ typedef char                        bool;
 
 /* pure C string type */
 
-typedef char str[1024];
+typedef char str1k[1024];
 typedef char str2k[1024*2];
 typedef char str4k[1024*4];
 typedef char str8k[1024*8];
@@ -206,7 +206,7 @@ typedef char str64k[1024*64];
 
 #ifdef _MSC_VER /* Microsoft compiler */
     #define OUT(...)                        (sprintf(G_tmp, EXPAND_VA(__VA_ARGS__)), OUTSS(G_tmp))
-#else
+#else   /* GCC */
     #define OUTM(str, ...)                  (sprintf(G_tmp, str, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
     #define CHOOSE_OUT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME          /* single or multiple? */
     #define OUT(...)                        CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
