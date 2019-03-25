@@ -556,6 +556,12 @@ typedef char str64k[1024*64];
 #endif
 
 
+/* Date-Time */
+
+#define DT_NULL                         "2000-01-01 00:00:00"
+#define DT_NOW                          G_dt
+
+
 
 /* HTTP status */
 

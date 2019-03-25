@@ -888,6 +888,8 @@ static bool housekeeping()
             lib_log_memory();
             ++G_days_up;
 
+            init_random_numbers();
+
             M_prev_day = G_ptm->tm_mday;
         }
 
@@ -1288,8 +1290,6 @@ static bool init(int argc, char **argv)
     time_t      sometimeahead;
     int         i=0;
 
-    silgy_lib_init();
-
     /* init globals */
 
     G_days_up = 0;
@@ -1307,6 +1307,10 @@ static bool init(int argc, char **argv)
     memset(&G_cnts_today, 0, sizeof(counters_t));
     memset(&G_cnts_yesterday, 0, sizeof(counters_t));
     memset(&G_cnts_day_before, 0, sizeof(counters_t));
+
+    /* init Silgy library */
+
+    silgy_lib_init();
 
     /* read the config file or set defaults */
 
@@ -1548,6 +1552,10 @@ static bool init(int argc, char **argv)
 
     digest_to_hex(sha1_res1, sha1_res2);
     DBG("     Got: [%s]\n", sha1_res2);
+
+    /* fill the M_random_numbers up */
+
+    init_random_numbers();
 
     /* calculate Expires and Last-Modified header fields for static resources */
 
@@ -5275,9 +5283,9 @@ void eng_rest_header_pass(int ci, const char *key)
 #else   /* ASYNC_SERVICE ====================================================================================== */
 
 
-int         G_ASYNCId;
-char        G_req_queue_name[256];
-char        G_res_queue_name[256];
+int         G_ASYNCId=-1;
+char        G_req_queue_name[256]="";
+char        G_res_queue_name[256]="";
 mqd_t       G_queue_req;                /* request queue */
 mqd_t       G_queue_res;                /* response queue */
 char        *G_req;
@@ -5369,6 +5377,10 @@ int main(int argc, char *argv[])
 
     if ( !(M_pidfile=lib_create_pid_file(logprefix)) )
 		return EXIT_FAILURE;
+
+    /* fill the M_random_numbers up */
+
+    init_random_numbers();
 
 	/* handle signals ---------------------------------------------------- */
 
@@ -5470,6 +5482,8 @@ int main(int argc, char *argv[])
                 }
 
                 prev_day = G_ptm->tm_mday;
+
+                init_random_numbers();
             }
 
             DBG_T("Message received");

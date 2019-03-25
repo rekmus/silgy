@@ -14,6 +14,10 @@
 #endif
 
 
+#define RANDOM_NUMBERS 1000
+
+
+
 /* globals */
 
 int         G_logLevel=3;               /* log level -- 'info' by default */
@@ -64,11 +68,14 @@ static SSL *M_rest_ssl=NULL;
 static void *M_rest_ssl=NULL;    /* dummy */
 #endif /* HTTPS */
 
+static unsigned char M_random_numbers[RANDOM_NUMBERS];
+
 #ifdef AUTO_INIT_EXPERIMENT
 static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers for auto-init */
 static int M_jsons_cnt=0;
 #endif /* AUTO_INIT_EXPERIMENT */
 
+static void seed_rand(void);
 static void minify_1(char *dest, const char *src);
 static int minify_2(char *dest, const char *src);
 static void get_byteorder32(void);
@@ -80,6 +87,7 @@ static void get_byteorder64(void);
 -------------------------------------------------------------------------- */
 void silgy_lib_init()
 {
+    DBG("silgy_lib_init");
     /* G_pid */
     G_pid = getpid();
     /* G_appdir */
@@ -154,17 +162,17 @@ void lib_update_time_globals()
 /* --------------------------------------------------------------------------
    Log SSL error
 -------------------------------------------------------------------------- */
-static void log_ssl() 
-{ 
-    char buf[256]; 
-    u_long err; 
+static void log_ssl()
+{
+    char buf[256];
+    u_long err;
 
     while ( (err=ERR_get_error()) != 0 )
-    { 
-        ERR_error_string_n(err, buf, sizeof(buf)); 
-        ERR(buf); 
-    } 
-} 
+    {
+        ERR_error_string_n(err, buf, sizeof(buf));
+        ERR(buf);
+    }
+}
 #endif /* HTTPS */
 
 
@@ -354,7 +362,7 @@ static bool rest_parse_url(const char *url, char *host, char *port, char *uri, b
     {
 #ifdef HTTPS
         *secure = TRUE;
-        
+
         url += 8;
         len -= 8;
         if ( len < 1 )
@@ -782,7 +790,7 @@ static int rest_res_content_length(const char *buffer, int len)
     if ( (p=strstr(buffer, "\nContent-Length: ")) == NULL ) return -1;
 
     if ( len < (p-buffer) + 18 ) return -1;
-    
+
     char result_str[8];
     char i=0;
 
@@ -933,7 +941,7 @@ bool lib_rest_res_parse(char *res_header, int bytes)
             G_rest_content_type[0] = EOS;
             return TRUE;
         }
-        
+
         char i=0;
 
         p += 15;
@@ -1256,7 +1264,7 @@ static char res_content[JSON_BUFSIZE];
             rest_disconnect();
             connected = FALSE;
             return FALSE;
-        }        
+        }
     }
     else if ( mode == TRANSFER_MODE_CHUNKED )
     {
@@ -2710,92 +2718,178 @@ char *nospaces(char *dst, const char *src)
 
 
 /* --------------------------------------------------------------------------
+   Seed rand()
+-------------------------------------------------------------------------- */
+static void seed_rand()
+{
+#define SILGY_SEEDS_MEM 1000
+#define SILGY_MAX_SEED  4294967294  /* 2^32 - 2 */
+static int seeded=0;
+/* make sure at least the last 1000 seeds are unique */
+static unsigned int seeds[SILGY_SEEDS_MEM];
+
+    DBG("seed_rand");
+
+    int pid_remainder = G_pid % 1000 + 1;
+    int time_remainder = (int)G_now % 1000 + 1;
+    int mem_remainder = lib_get_memory() % 1000 + 1;
+    int yesterday_rem = G_cnts_yesterday.req % 1000 + 1;
+    long long a_number;
+    unsigned int seed;
+
+    while ( 1 )
+    {
+        if ( seeded >= SILGY_SEEDS_MEM )
+            seeded = 1;
+        else
+            ++seeded;  /* 1 ... 1000 */
+
+        /* generate possibly random, or at least based on some non-deterministic factors, 64-bit number */
+
+        a_number = (long long)pid_remainder * time_remainder * mem_remainder * yesterday_rem * seeded;
+
+        seed = a_number % SILGY_MAX_SEED;
+
+        /* check uniqueness in the history */
+
+        char found=0;
+        int i = 0;
+        while ( i < SILGY_SEEDS_MEM )
+        {
+            if ( seeds[i++] == seed )
+            {
+                found = 1;
+                break;
+            }
+        }
+
+        if ( !found )   /* seed not found = OK */
+        {
+            seeds[seeded-1] = seed;
+            break;
+        }
+
+        WAR("seed %u repeated; seeded = %d, i = %d", seed, seeded, i);
+    }
+
+#ifdef DUMP
+    DBG_LINE;
+
+    DBG("G_pid = %d", G_pid);
+    DBG("pid_remainder = %d", pid_remainder);
+    DBG("G_now = %d", (int)G_now);
+    DBG("time_remainder = %d", time_remainder);
+    DBG("Memory = %ld", lib_get_memory());
+    DBG("mem_remainder = %d", mem_remainder);
+    DBG("seeded = %d", seeded);
+    DBG("G_cnts_yesterday.req = %ld", G_cnts_yesterday.req);
+    DBG("G_cnts_today.req = %ld", G_cnts_today.req);
+    DBG("a_number = %lld", a_number);
+    DBG("seed = %u", seed);
+
+    DBG_LINE;
+#endif
+
+    char f[256];
+    amt(f, a_number);
+    DBG("a_number = %s", f);
+    amt(f, seed);
+    DBG("    seed = %s", f);
+    DBG("");
+
+    srand(seed);
+}
+
+
+/* --------------------------------------------------------------------------
+   Initialize M_random_numbers array
+-------------------------------------------------------------------------- */
+void init_random_numbers()
+{
+    int i;
+
+    DBG("init_random_numbers");
+
+    seed_rand();
+
+#ifdef __linux__
+    /* On Linux we have access to a hardware-influenced RNG */
+
+    DBG("Trying /dev/urandom...");
+
+//    char command[1024];
+//    sprintf(command, "head -c %d /dev/urandom", RANDOM_NUMBERS);
+//    int urandom_fd = open(command, O_RDONLY);
+
+    int urandom_fd = open("/dev/urandom", O_RDONLY);
+
+    if ( urandom_fd )
+    {
+        for ( i=0; i<RANDOM_NUMBERS; ++i )
+            read(urandom_fd, &M_random_numbers[i], 1);
+
+        close(urandom_fd);
+
+        INF("M_random_numbers obtained from /dev/urandom");
+    }
+    else
+    {
+        WAR("Couldn't open /dev/urandom");
+
+        /* fallback to old plain rand(), seeded the best we could */
+
+        for ( i=0; i<RANDOM_NUMBERS; ++i )
+            M_random_numbers[i] = rand() % 256;
+
+        INF("M_random_numbers obtained from rand()");
+    }
+
+#else   /* Windows */
+
+    for ( i=0; i<RANDOM_NUMBERS; ++i )
+        M_random_numbers[i] = rand() % 256;
+
+    INF("M_random_numbers obtained from rand()");
+
+#endif
+
+    INF("");
+
+#ifdef DUMP
+//    DBG_LINE;
+//    for ( i=0; i<RANDOM_NUMBERS-1; i+=10 )
+//        DBG("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d", M_random_numbers[i], M_random_numbers[i+1], M_random_numbers[i+2], M_random_numbers[i+3], M_random_numbers[i+4], M_random_numbers[i+5], M_random_numbers[i+6], M_random_numbers[i+7], M_random_numbers[i+8], M_random_numbers[i+9]);
+//    DBG_LINE;
+#endif
+}
+
+
+/* --------------------------------------------------------------------------
+   Return a random 8-bit number from M_random_numbers
+-------------------------------------------------------------------------- */
+static unsigned char get_random_number()
+{
+    static int i=0;
+
+    if ( i >= RANDOM_NUMBERS ) i = 0;
+
+    return M_random_numbers[i++];
+}
+
+
+/* --------------------------------------------------------------------------
    Generate random string
 -------------------------------------------------------------------------- */
 void silgy_random(char *dest, int len)
 {
 const char  *chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-static int  seeded=0;
 static int  since_seed=-1;
     int     i;
-
-#define SILGY_SEEDS_MEM 1000
-#define SILGY_MAX_SEED  4294967294  /* 2^32 - 2 */
 
     if ( since_seed == -1 || since_seed > (G_cnts_today.req % 100 + 10) )  /* seed every now and then */
 //    if ( 1 )  /* test */
     {
-        /* make sure at least the last 1000 seeds are unique */
-        static unsigned int seeds[SILGY_SEEDS_MEM];
-
-        int pid_remainder = G_pid % 1000 + 1;
-        int time_remainder = (int)G_now % 1000 + 1;
-        int mem_remainder = lib_get_memory() % 1000 + 1;
-        int yesterday_rem = G_cnts_yesterday.req % 1000 + 1;
-        long long a_number;
-        unsigned int seed;
-
-        while ( 1 )
-        {
-            if ( seeded >= SILGY_SEEDS_MEM )
-                seeded = 1;
-            else
-                ++seeded;  /* 1 ... 1000 */
-
-            /* generate possibly random, or at least based on some non-deterministic factors, 64-bit number */
-
-            a_number = (long long)pid_remainder * time_remainder * mem_remainder * yesterday_rem * seeded;
-
-            seed = a_number % SILGY_MAX_SEED;
-
-            /* check uniqueness in the history */
-
-            char found=0;
-            i = 0;
-            while ( i < SILGY_SEEDS_MEM )
-            {
-                if ( seeds[i++] == seed )
-                {
-                    found = 1;
-                    break;
-                }
-            }
-
-            if ( !found )   /* seed not found = OK */
-            {
-                seeds[seeded-1] = seed;
-                break;
-            }
-
-            WAR("seed %u repeated; seeded = %d, i = %d", seed, seeded, i);
-        }
-
-#ifdef DUMP
-        DBG_LINE;
-
-        DBG("G_pid = %d", G_pid);
-        DBG("pid_remainder = %d", pid_remainder);
-        DBG("G_now = %d", (int)G_now);
-        DBG("time_remainder = %d", time_remainder);
-        DBG("Memory = %ld", lib_get_memory());
-        DBG("mem_remainder = %d", mem_remainder);
-        DBG("seeded = %d", seeded);
-        DBG("G_cnts_yesterday.req = %ld", G_cnts_yesterday.req);
-        DBG("G_cnts_today.req = %ld", G_cnts_today.req);
-        DBG("a_number = %lld", a_number);
-        DBG("seed = %u", seed);
-
-        char f[256];
-        amt(f, a_number);
-        DBG("a_number = %s", f);
-        amt(f, seed);
-        DBG("    seed = %s", f);
-
-        DBG_LINE;
-#endif
-
-        srand(seed);
-
+        seed_rand();
         since_seed = 0;
     }
     else
@@ -2806,8 +2900,17 @@ static int  since_seed=-1;
 #endif
     }
 
+    int sun_is_shining = get_random_number() % 10;
+
+    for ( i=0; i<sun_is_shining; ++i ) rand();
+
     for ( i=0; i<len; ++i )
+    {
         dest[i] = chars[rand() % 62];
+        /* take every odd char from somewhere else */
+        if ( i < len-1 )
+            dest[++i] = chars[get_random_number() % 62];
+    }
 
     dest[i] = EOS;
 }
@@ -3636,7 +3739,7 @@ static char dst[256];
             return dst;   /* types don't match or couldn't convert */
         }
     }
-    
+
     for ( i=0; i<json->cnt; ++i )
     {
         if ( 0==strcmp(json->rec[i].name, name) )
@@ -4653,7 +4756,7 @@ bool log_start(const char *prefix, bool test)
     char    fprefix[64]="";     /* formatted prefix */
     char    fname[512];         /* file name */
     char    ffname[512];        /* full file name */
-    
+
     if ( G_logLevel < 1 ) return TRUE;  /* no log */
 
     if ( G_logToStdout != 1 )   /* log to a file */
@@ -5366,9 +5469,9 @@ int getpid()
 static void unix_time(struct timespec *spec)
 {
     __int64 wintime;
-    GetSystemTimeAsFileTime((FILETIME*)&wintime); 
+    GetSystemTimeAsFileTime((FILETIME*)&wintime);
     wintime -= w2ux;
-    spec->tv_sec = wintime / exp7;                 
+    spec->tv_sec = wintime / exp7;
     spec->tv_nsec = wintime % exp7 * 100;
 }
 

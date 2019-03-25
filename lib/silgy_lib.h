@@ -301,6 +301,7 @@ extern "C" {
     char *stp_right(char *str);
     bool strdigits(const char *src);
     char *nospaces(char *dst, const char *src);
+    void init_random_numbers(void);
     void silgy_random(char *dest, int len);
     void msleep(int msec);
     void lib_json_reset(JSON *json);
