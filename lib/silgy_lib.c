@@ -14,7 +14,7 @@
 #endif
 
 
-#define RANDOM_NUMBERS 1000
+#define RANDOM_NUMBERS 10000
 
 
 
@@ -2856,10 +2856,49 @@ void init_random_numbers()
     INF("");
 
 #ifdef DUMP
-//    DBG_LINE;
+    DBG("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+    DBG("M_random_numbers distribution visualization");
+    DBG("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+
 //    for ( i=0; i<RANDOM_NUMBERS-1; i+=10 )
 //        DBG("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d", M_random_numbers[i], M_random_numbers[i+1], M_random_numbers[i+2], M_random_numbers[i+3], M_random_numbers[i+4], M_random_numbers[i+5], M_random_numbers[i+6], M_random_numbers[i+7], M_random_numbers[i+8], M_random_numbers[i+9]);
-//    DBG_LINE;
+
+    /* visualize distribution: 100 rows per 200 columns */
+    /* One square takes two columns, so we can have between 0 and 4 dots per square */
+
+#define SQUARE_IS_EMPTY(x, y)   (dots[y][x*2]==' ' && dots[y][x*2+1]==' ')
+#define SQUARE_HAS_ONE(x, y)    (dots[y][x*2]==' ' && dots[y][x*2+1]=='.')
+#define SQUARE_HAS_TWO(x, y)    (dots[y][x*2]=='.' && dots[y][x*2+1]=='.')
+#define SQUARE_HAS_THREE(x, y)  (dots[y][x*2]=='.' && dots[y][x*2+1]==':')
+#define SQUARE_HAS_FOUR(x, y)   (dots[y][x*2]==':' && dots[y][x*2+1]==':')
+
+    char dots[100][201]={0};
+    int j;
+
+    for ( i=0; i<100; ++i )
+        for ( j=0; j<200; ++j )
+            dots[i][j] = ' ';
+
+    for ( i=0; i<RANDOM_NUMBERS-1; i+=2 )
+    {
+        int x = M_random_numbers[i]%100;
+        int y = M_random_numbers[i+1]%100;
+
+        if ( SQUARE_IS_EMPTY(x, y) )    /* make it one */
+            dots[y][x*2+1] = '.';
+        else if ( SQUARE_HAS_ONE(x, y) )    /* make it two */
+            dots[y][x*2] = '.';
+        else if ( SQUARE_HAS_TWO(x, y) )    /* make it three */
+            dots[y][x*2+1] = ':';
+        else if ( SQUARE_HAS_THREE(x, y) )  /* make it four */
+            dots[y][x*2] = ':';
+    }
+
+    for ( i=0; i<100; ++i )
+        DBG(dots[i]);
+
+    DBG("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+    DBG("");
 #endif
 }
 
