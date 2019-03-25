@@ -1149,7 +1149,7 @@ static void read_conf()
 
     if ( G_appdir[0] )
     {
-        char conf_path[512];
+        char conf_path[1024];
         sprintf(conf_path, "%s/bin/silgy.conf", G_appdir);
         if ( !(conf_read=lib_read_conf(conf_path)) )   /* no config file there */
             conf_read = lib_read_conf("silgy.conf");
@@ -2015,7 +2015,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 -------------------------------------------------------------------------- */
 static void read_blocked_ips()
 {
-    char    fname[512];
+    char    fname[1024];
     FILE    *h_file=NULL;
     int     c=0;
     int     i=0;
@@ -4208,8 +4208,8 @@ void silgy_add_to_static_res(const char *name, const char *src)
 -------------------------------------------------------------------------- */
 void eng_block_ip(const char *value, bool autoblocked)
 {
-    char    fname[512];
-    char    comm[512];
+    char    fname[1024];
+    char    comm[1024];
 
     if ( G_blockedIPList[0] == EOS ) return;
 
@@ -4493,7 +4493,7 @@ void eng_append_script(int ci, const char *fname, bool first)
 -------------------------------------------------------------------------- */
 void eng_send_msg_description(int ci, int code)
 {
-    char    cat[256]=MSG_CAT_ERROR;
+    char    cat[1024]=MSG_CAT_ERROR;
     char    msg[1024]="";
 
     if ( code == OK )
@@ -4548,9 +4548,11 @@ void eng_send_msg_description(int ci, int code)
 #ifdef MSG_FORMAT_JSON
     OUT("{\"code\":%d,\"category\":\"%s\",\"message\":\"%s\"}", code, cat, msg);
     conn[ci].ctype = RES_JSON;
+    RES_KEEP_CONTENT;
 #else
     OUT("%d|%s|%s", code, cat, msg);
     conn[ci].ctype = RES_TEXT;
+    RES_KEEP_CONTENT;
 #endif
 
     DBG("eng_send_msg_description: [%s]", G_tmp);
@@ -4909,7 +4911,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
     int     vallen;
 
 #ifdef DUMP
-    DBG("get_qs_param_raw, fieldname [%s], maxlen = %d", fieldname, maxlen);
+//    DBG("get_qs_param_raw, fieldname [%s], maxlen = %d", fieldname, maxlen);
 #endif
 
     fnamelen = strlen(fieldname);
@@ -4929,7 +4931,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
         ++querystring;      /* skip the question mark */
 
 #ifdef DUMP
-    DBG("get_qs_param_raw before loop");
+//    DBG("get_qs_param_raw before loop");
 #endif
 
     for ( p=querystring; *p!=EOS; )
@@ -4962,7 +4964,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
         {
             /* found it */
 #ifdef DUMP
-            DBG("get_qs_param_raw equals+1: [%s]", equals+1);
+//            DBG("get_qs_param_raw equals+1: [%s]", equals+1);
 #endif
             if ( retbuf )
             {
