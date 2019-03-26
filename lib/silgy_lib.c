@@ -15,6 +15,7 @@
 
 
 #define RANDOM_NUMBERS 10000
+#define RANDOM_LUCKIES 100
 
 
 
@@ -2896,10 +2897,10 @@ static unsigned char get_random_number()
 void silgy_random(char *dest, int len)
 {
 const char  *chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-static int  since_seed=-1;
+static int  since_seed=0;
     int     i;
 
-    if ( since_seed == -1 || since_seed > (G_cnts_today.req % 100 + 10) )  /* seed every now and then */
+    if ( since_seed > (G_cnts_today.req % 118 + 10) )  /* seed every now and then */
 //    if ( 1 )  /* test */
     {
         seed_rand();
@@ -2913,16 +2914,53 @@ static int  since_seed=-1;
 #endif
     }
 
-    int sun_is_shining = get_random_number() % 10;
+    /* source random numbers from two different sets: 'normal' and 'lucky' */
 
-    for ( i=0; i<sun_is_shining; ++i ) rand();
+    int luckies = len / 3;
+
+    if ( luckies > RANDOM_LUCKIES ) luckies = RANDOM_LUCKIES;     /* mind this if you want to generate long random strings (>300 chars) */
+
+    unsigned char lucky[RANDOM_LUCKIES];
+    int l;
+
+    for ( l=0; l<luckies; ++l )
+    {
+        lucky[l] = get_random_number() % len;
+        /* make sure it's different from the previous one */
+        while ( l && lucky[l] == lucky[l-1] ) lucky[l] = get_random_number() % len;
+    }
+
+    int r;
+    char was_lucky;
 
     for ( i=0; i<len; ++i )
     {
-        dest[i] = chars[rand() % 62];
-        /* take every odd char from somewhere else */
-        if ( i < len-1 )
-            dest[++i] = chars[get_random_number() % 62];
+        was_lucky = 0;
+
+        for ( l=0; l<luckies; ++l )
+        {
+            if ( i == lucky[l] )
+            {
+#ifdef DUMP
+                DBG("i=%d lucky", i);
+#endif
+                r = get_random_number();
+                while ( r > 247 ) r = get_random_number();   /* avoid modulo bias -- 62*4 - 1 */
+                was_lucky = 1;
+                break;
+            }
+        }
+
+        if ( !was_lucky )
+        {
+#ifdef DUMP
+            DBG("i=%d normal", i);
+#endif
+            r = rand();
+            while ( r > 247 ) r = rand();
+        }
+
+        dest[i] = chars[r % 62];
     }
 
     dest[i] = EOS;
