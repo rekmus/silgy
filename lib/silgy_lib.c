@@ -14,7 +14,7 @@
 #endif
 
 
-#define RANDOM_NUMBERS 10000
+#define RANDOM_NUMBERS 100000
 #define RANDOM_LUCKIES 100
 
 
@@ -2719,11 +2719,25 @@ char *nospaces(char *dst, const char *src)
 
 
 /* --------------------------------------------------------------------------
+   Return a random 8-bit number from M_random_numbers
+-------------------------------------------------------------------------- */
+static unsigned char get_random_number()
+{
+    static int i=0;
+
+    if ( i >= RANDOM_NUMBERS ) i = 0;
+
+    return M_random_numbers[i++];
+}
+
+
+/* --------------------------------------------------------------------------
    Seed rand()
 -------------------------------------------------------------------------- */
 static void seed_rand()
 {
-#define SILGY_SEEDS_MEM 256         /* remaining 8 bits & last seeds to remember */
+#define SILGY_SEEDS_MEM 256  /* remaining 8 bits & last seeds to remember */
+static char first=1;
 /* make sure at least the last SILGY_SEEDS_MEM seeds are unique */
 static unsigned int seeds[SILGY_SEEDS_MEM];
 
@@ -2731,14 +2745,28 @@ static unsigned int seeds[SILGY_SEEDS_MEM];
 
     /* generate possibly random, or at least based on some non-deterministic factors, 32-bit integer */
 
-    int pid_remainder = G_pid % 63 + 1;       /* 6 bits */
     int time_remainder = (int)G_now % 63 + 1;     /* 6 bits */
     int mem_remainder = lib_get_memory() % 63 + 1;    /* 6 bits */
-    int yesterday_rem = G_cnts_yesterday.req % 63 + 1;    /* 6 bits */
+    int pid_remainder;       /* 6 bits */
+    int yesterday_rem;    /* 6 bits */
+
+    if ( first )    /* initial seed */
+    {
+        pid_remainder = G_pid % 63 + 1;
+        yesterday_rem = G_cnts_yesterday.req % 63 + 1;
+
+        first = 0;
+    }
+    else    /* subsequent calls */
+    {
+        pid_remainder = get_random_number() % 63 + 1;
+        yesterday_rem = get_random_number() % 63 + 1;
+    }
 
     static int seeded=0;    /* 8 bits */
 
     unsigned int seed;
+    static unsigned int prev_seed=0;
 
     while ( 1 )
     {
@@ -2762,19 +2790,37 @@ static unsigned int seeds[SILGY_SEEDS_MEM];
             }
         }
 
-        if ( !found )   /* seed not found ==> OK */
+        if ( found )    /* same seed again */
         {
-            seeds[seeded-1] = seed;
-            break;
+            WAR("seed %u repeated; seeded = %d, i = %d", seed, seeded, i);
+        }
+        else   /* seed not found ==> OK */
+        {
+            /* new seed needs to be at least 10000 apart from the previous one */
+
+            if ( abs((long long)(seed-prev_seed)) < 10000 )
+            {
+                WAR("seed %u too close to the previous one (%u); seeded = %d", seed, prev_seed, seeded);
+            }
+            else    /* everything OK */
+            {
+                seeds[seeded-1] = seed;
+                break;
+            }
         }
 
-        WAR("seed %u repeated; seeded = %d, i = %d", seed, seeded, i);
+        /* stir it up to avoid endless loop */
+
+        pid_remainder = get_random_number() % 63 + 1;
+        time_remainder = get_random_number() % 63 + 1;
     }
 
     char f[256];
     amt(f, seed);
     DBG("seed = %s", f);
     DBG("");
+
+    prev_seed = seed;
 
     srand(seed);
 }
@@ -2854,8 +2900,16 @@ void init_random_numbers()
         for ( j=0; j<256; ++j )
             dots[i][j] = ' ';
 
+    /* we only have 128^2 = 16384 squares with 5 possible values in each of them */
+    /* let only once in divider in */
+
+    int divider = RANDOM_NUMBERS / 16384 + 1;
+//    DBG("divider = %d", divider);
+
     for ( i=0; i<RANDOM_NUMBERS-1; i+=2 )
     {
+        if ( i % divider ) continue;
+
         int x = M_random_numbers[i]%128;
         int y = M_random_numbers[i+1]%128;
 
@@ -2879,19 +2933,6 @@ void init_random_numbers()
 
 
 /* --------------------------------------------------------------------------
-   Return a random 8-bit number from M_random_numbers
--------------------------------------------------------------------------- */
-static unsigned char get_random_number()
-{
-    static int i=0;
-
-    if ( i >= RANDOM_NUMBERS ) i = 0;
-
-    return M_random_numbers[i++];
-}
-
-
-/* --------------------------------------------------------------------------
    Generate random string
 -------------------------------------------------------------------------- */
 void silgy_random(char *dest, int len)
@@ -2900,7 +2941,7 @@ const char  *chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 static int  since_seed=0;
     int     i;
 
-    if ( since_seed > (G_cnts_today.req % 118 + 10) )  /* seed every now and then */
+    if ( since_seed > (G_cnts_today.req % 246 + 10) )  /* seed every now and then */
 //    if ( 1 )  /* test */
     {
         seed_rand();
