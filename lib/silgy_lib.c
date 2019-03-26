@@ -2722,19 +2722,21 @@ char *nospaces(char *dst, const char *src)
 -------------------------------------------------------------------------- */
 static void seed_rand()
 {
-#define SILGY_SEEDS_MEM 1000
-#define SILGY_MAX_SEED  4294967294  /* 2^32 - 2 */
-static int seeded=0;
-/* make sure at least the last 1000 seeds are unique */
+#define SILGY_SEEDS_MEM 256         /* remaining 8 bits & last seeds to remember */
+/* make sure at least the last SILGY_SEEDS_MEM seeds are unique */
 static unsigned int seeds[SILGY_SEEDS_MEM];
 
     DBG("seed_rand");
 
-    int pid_remainder = G_pid % 1000 + 1;
-    int time_remainder = (int)G_now % 1000 + 1;
-    int mem_remainder = lib_get_memory() % 1000 + 1;
-    int yesterday_rem = G_cnts_yesterday.req % 1000 + 1;
-    long long a_number;
+    /* generate possibly random, or at least based on some non-deterministic factors, 32-bit integer */
+
+    int pid_remainder = G_pid % 63 + 1;       /* 6 bits */
+    int time_remainder = (int)G_now % 63 + 1;     /* 6 bits */
+    int mem_remainder = lib_get_memory() % 63 + 1;    /* 6 bits */
+    int yesterday_rem = G_cnts_yesterday.req % 63 + 1;    /* 6 bits */
+
+    static int seeded=0;    /* 8 bits */
+
     unsigned int seed;
 
     while ( 1 )
@@ -2742,13 +2744,9 @@ static unsigned int seeds[SILGY_SEEDS_MEM];
         if ( seeded >= SILGY_SEEDS_MEM )
             seeded = 1;
         else
-            ++seeded;  /* 1 ... 1000 */
+            ++seeded;
 
-        /* generate possibly random, or at least based on some non-deterministic factors, 64-bit number */
-
-        a_number = (long long)pid_remainder * time_remainder * mem_remainder * yesterday_rem * seeded;
-
-        seed = a_number % SILGY_MAX_SEED;
+        seed = pid_remainder * time_remainder * mem_remainder * yesterday_rem * seeded;
 
         /* check uniqueness in the history */
 
@@ -2763,7 +2761,7 @@ static unsigned int seeds[SILGY_SEEDS_MEM];
             }
         }
 
-        if ( !found )   /* seed not found = OK */
+        if ( !found )   /* seed not found ==> OK */
         {
             seeds[seeded-1] = seed;
             break;
@@ -2772,29 +2770,9 @@ static unsigned int seeds[SILGY_SEEDS_MEM];
         WAR("seed %u repeated; seeded = %d, i = %d", seed, seeded, i);
     }
 
-#ifdef DUMP
-    DBG_LINE;
-
-    DBG("G_pid = %d", G_pid);
-    DBG("pid_remainder = %d", pid_remainder);
-    DBG("G_now = %d", (int)G_now);
-    DBG("time_remainder = %d", time_remainder);
-    DBG("Memory = %ld", lib_get_memory());
-    DBG("mem_remainder = %d", mem_remainder);
-    DBG("seeded = %d", seeded);
-    DBG("G_cnts_yesterday.req = %ld", G_cnts_yesterday.req);
-    DBG("G_cnts_today.req = %ld", G_cnts_today.req);
-    DBG("a_number = %lld", a_number);
-    DBG("seed = %u", seed);
-
-    DBG_LINE;
-#endif
-
     char f[256];
-    amt(f, a_number);
-    DBG("a_number = %s", f);
     amt(f, seed);
-    DBG("    seed = %s", f);
+    DBG("seed = %s", f);
     DBG("");
 
     srand(seed);
@@ -2816,10 +2794,6 @@ void init_random_numbers()
     /* On Linux we have access to a hardware-influenced RNG */
 
     DBG("Trying /dev/urandom...");
-
-//    char command[1024];
-//    sprintf(command, "head -c %d /dev/urandom", RANDOM_NUMBERS);
-//    int urandom_fd = open(command, O_RDONLY);
 
     int urandom_fd = open("/dev/urandom", O_RDONLY);
 
@@ -2856,14 +2830,14 @@ void init_random_numbers()
     INF("");
 
 #ifdef DUMP
-    DBG("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+    DBG("----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
     DBG("M_random_numbers distribution visualization");
-    DBG("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+    DBG("----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
 
 //    for ( i=0; i<RANDOM_NUMBERS-1; i+=10 )
 //        DBG("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d", M_random_numbers[i], M_random_numbers[i+1], M_random_numbers[i+2], M_random_numbers[i+3], M_random_numbers[i+4], M_random_numbers[i+5], M_random_numbers[i+6], M_random_numbers[i+7], M_random_numbers[i+8], M_random_numbers[i+9]);
 
-    /* visualize distribution: 100 rows per 200 columns */
+    /* visualize distribution: 128 rows per 256 columns */
     /* One square takes two columns, so we can have between 0 and 4 dots per square */
 
 #define SQUARE_IS_EMPTY(x, y)   (dots[y][x*2]==' ' && dots[y][x*2+1]==' ')
@@ -2872,17 +2846,17 @@ void init_random_numbers()
 #define SQUARE_HAS_THREE(x, y)  (dots[y][x*2]=='.' && dots[y][x*2+1]==':')
 #define SQUARE_HAS_FOUR(x, y)   (dots[y][x*2]==':' && dots[y][x*2+1]==':')
 
-    char dots[100][201]={0};
+    char dots[128][257]={0};
     int j;
 
-    for ( i=0; i<100; ++i )
-        for ( j=0; j<200; ++j )
+    for ( i=0; i<128; ++i )
+        for ( j=0; j<256; ++j )
             dots[i][j] = ' ';
 
     for ( i=0; i<RANDOM_NUMBERS-1; i+=2 )
     {
-        int x = M_random_numbers[i]%100;
-        int y = M_random_numbers[i+1]%100;
+        int x = M_random_numbers[i]%128;
+        int y = M_random_numbers[i+1]%128;
 
         if ( SQUARE_IS_EMPTY(x, y) )    /* make it one */
             dots[y][x*2+1] = '.';
@@ -2894,10 +2868,10 @@ void init_random_numbers()
             dots[y][x*2] = ':';
     }
 
-    for ( i=0; i<100; ++i )
+    for ( i=0; i<128; ++i )
         DBG(dots[i]);
 
-    DBG("--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+    DBG("----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
     DBG("");
 #endif
 }
