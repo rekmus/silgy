@@ -14,7 +14,7 @@
 #endif
 
 
-#define RANDOM_NUMBERS 100000
+#define RANDOM_NUMBERS 1024*128
 #define RANDOM_LUCKIES 100
 
 
@@ -70,6 +70,7 @@ static void *M_rest_ssl=NULL;    /* dummy */
 #endif /* HTTPS */
 
 static unsigned char M_random_numbers[RANDOM_NUMBERS];
+static char M_random_initialized=0;
 
 #ifdef AUTO_INIT_EXPERIMENT
 static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers for auto-init */
@@ -2725,9 +2726,16 @@ static unsigned char get_random_number()
 {
     static int i=0;
 
-    if ( i >= RANDOM_NUMBERS ) i = 0;
-
-    return M_random_numbers[i++];
+    if ( M_random_initialized )
+    {
+        if ( i >= RANDOM_NUMBERS ) i = 0;
+        return M_random_numbers[i++];
+    }
+    else
+    {
+        WAR("Using get_random_number() before M_random_initialized");
+        return rand() % 256;
+    }
 }
 
 
@@ -2754,8 +2762,6 @@ static unsigned int seeds[SILGY_SEEDS_MEM];
     {
         pid_remainder = G_pid % 63 + 1;
         yesterday_rem = G_cnts_yesterday.req % 63 + 1;
-
-        first = 0;
     }
     else    /* subsequent calls */
     {
@@ -2798,7 +2804,7 @@ static unsigned int seeds[SILGY_SEEDS_MEM];
         {
             /* new seed needs to be at least 10000 apart from the previous one */
 
-            if ( abs((long long)(seed-prev_seed)) < 10000 )
+            if ( !first && abs((long long)(seed-prev_seed)) < 10000 )
             {
                 WAR("seed %u too close to the previous one (%u); seeded = %d", seed, prev_seed, seeded);
             }
@@ -2821,6 +2827,8 @@ static unsigned int seeds[SILGY_SEEDS_MEM];
     DBG("");
 
     prev_seed = seed;
+
+    first = 0;
 
     srand(seed);
 }
@@ -2875,6 +2883,8 @@ void init_random_numbers()
 #endif
 
     INF("");
+
+    M_random_initialized = 1;
 
 #ifdef DUMP
     DBG("----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
