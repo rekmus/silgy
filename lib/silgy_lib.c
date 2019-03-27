@@ -15,7 +15,6 @@
 
 
 #define RANDOM_NUMBERS 1024*128
-#define RANDOM_LUCKIES 100
 
 
 
@@ -2944,12 +2943,20 @@ void init_random_numbers()
 
 /* --------------------------------------------------------------------------
    Generate random string
+   Generates FIPS-compliant random sequences (tested with Burp)
 -------------------------------------------------------------------------- */
 void silgy_random(char *dest, int len)
 {
 const char  *chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 static int  since_seed=0;
     int     i;
+
+    struct timespec start;
+#ifdef _WIN32
+    clock_gettime_win(&start);
+#else
+    clock_gettime(MONOTONIC_CLOCK_NAME, &start);
+#endif
 
     if ( since_seed > (G_cnts_today.req % 246 + 10) )  /* seed every now and then */
 //    if ( 1 )  /* test */
@@ -2965,56 +2972,45 @@ static int  since_seed=0;
 #endif
     }
 
-    /* source random numbers from two different sets: 'normal' and 'lucky' */
-
-    int luckies = len / 3;
-
-    if ( luckies > RANDOM_LUCKIES ) luckies = RANDOM_LUCKIES;     /* mind this if you want to generate long random strings (>300 chars) */
-
-    unsigned char lucky[RANDOM_LUCKIES];
-    int l;
-
-    for ( l=0; l<luckies; ++l )
-    {
-        lucky[l] = get_random_number() % len;
-        /* make sure it's different from the previous one */
-        while ( l && lucky[l] == lucky[l-1] ) lucky[l] = get_random_number() % len;
-    }
+#ifdef DUMP
+    DBG_LINE;
+#endif
 
     int r;
-    char was_lucky;
 
     for ( i=0; i<len; ++i )
     {
-        was_lucky = 0;
+        /* source random numbers from two different sets: 'normal' and 'lucky' */
 
-        for ( l=0; l<luckies; ++l )
+        if ( get_random_number() % 3 == 0 )
         {
-            if ( i == lucky[l] )
-            {
 #ifdef DUMP
-                DBG("i=%d lucky", i);
+            DBG("i=%d lucky", i);
 #endif
-                r = get_random_number();
-                while ( r > 247 ) r = get_random_number();   /* avoid modulo bias -- 62*4 - 1 */
-                was_lucky = 1;
-                break;
-            }
+            r = get_random_number();
+            while ( r > 247 ) r = get_random_number();   /* avoid modulo bias -- 62*4 - 1 */
         }
-
-        if ( !was_lucky )
+        else
         {
 #ifdef DUMP
             DBG("i=%d normal", i);
 #endif
-            r = rand();
-            while ( r > 247 ) r = rand();
+            r = rand() % 256;
+            while ( r > 247 ) r = rand() % 256;
         }
 
         dest[i] = chars[r % 62];
     }
 
     dest[i] = EOS;
+
+#ifdef DUMP
+    DBG_LINE;
+#endif
+
+//#ifdef DUMP
+    INF("silgy_random took %.3lf ms", lib_elapsed(&start));
+//#endif
 }
 
 
