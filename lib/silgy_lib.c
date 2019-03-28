@@ -14,7 +14,7 @@
 #endif
 
 
-#define RANDOM_NUMBERS 1024*128
+#define RANDOM_NUMBERS 1024*64
 
 
 
@@ -2727,7 +2727,11 @@ static unsigned char get_random_number()
 
     if ( M_random_initialized )
     {
-        if ( i >= RANDOM_NUMBERS ) i = 0;
+        if ( i >= RANDOM_NUMBERS )  /* refill the pool with fresh numbers */
+        {
+            init_random_numbers();
+            i = 0;
+        }
         return M_random_numbers[i++];
     }
     else
@@ -2840,6 +2844,15 @@ void init_random_numbers()
 {
     int i;
 
+#ifdef DUMP
+    struct timespec start;
+#ifdef _WIN32
+    clock_gettime_win(&start);
+#else
+    clock_gettime(MONOTONIC_CLOCK_NAME, &start);
+#endif
+#endif  /* DUMP */
+
     DBG("init_random_numbers");
 
     seed_rand();
@@ -2853,8 +2866,7 @@ void init_random_numbers()
 
     if ( urandom_fd )
     {
-        for ( i=0; i<RANDOM_NUMBERS; ++i )
-            read(urandom_fd, &M_random_numbers[i], 1);
+        read(urandom_fd, &M_random_numbers, RANDOM_NUMBERS);
 
         close(urandom_fd);
 
@@ -2886,41 +2898,40 @@ void init_random_numbers()
     M_random_initialized = 1;
 
 #ifdef DUMP
-    DBG("----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+    DBG("--------------------------------------------------------------------------------------------------------------------------------");
     DBG("M_random_numbers distribution visualization");
-    DBG("----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
-
-//    for ( i=0; i<RANDOM_NUMBERS-1; i+=10 )
-//        DBG("%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d", M_random_numbers[i], M_random_numbers[i+1], M_random_numbers[i+2], M_random_numbers[i+3], M_random_numbers[i+4], M_random_numbers[i+5], M_random_numbers[i+6], M_random_numbers[i+7], M_random_numbers[i+8], M_random_numbers[i+9]);
+    DBG("The square below should be filled fairly uniformly. If it's not, your system is broken or too old to be considered secure.");
+    DBG("--------------------------------------------------------------------------------------------------------------------------------");
 
     /* visualize distribution: 128 rows per 256 columns */
     /* One square takes two columns, so we can have between 0 and 4 dots per square */
 
+#define SQUARE_ROWS             64
+#define SQUARE_COLS             SQUARE_ROWS*2
 #define SQUARE_IS_EMPTY(x, y)   (dots[y][x*2]==' ' && dots[y][x*2+1]==' ')
 #define SQUARE_HAS_ONE(x, y)    (dots[y][x*2]==' ' && dots[y][x*2+1]=='.')
 #define SQUARE_HAS_TWO(x, y)    (dots[y][x*2]=='.' && dots[y][x*2+1]=='.')
 #define SQUARE_HAS_THREE(x, y)  (dots[y][x*2]=='.' && dots[y][x*2+1]==':')
 #define SQUARE_HAS_FOUR(x, y)   (dots[y][x*2]==':' && dots[y][x*2+1]==':')
 
-    char dots[128][257]={0};
+    char dots[SQUARE_ROWS][SQUARE_COLS+1]={0};
     int j;
 
-    for ( i=0; i<128; ++i )
-        for ( j=0; j<256; ++j )
+    for ( i=0; i<SQUARE_ROWS; ++i )
+        for ( j=0; j<SQUARE_COLS; ++j )
             dots[i][j] = ' ';
 
-    /* we only have 128^2 = 16384 squares with 5 possible values in each of them */
+    /* we only have SQUARE_ROWS^2 squares with 5 possible values in each of them */
     /* let only once in divider in */
 
-    int divider = RANDOM_NUMBERS / 16384 + 1;
-//    DBG("divider = %d", divider);
+    int divider = RANDOM_NUMBERS / (SQUARE_ROWS*SQUARE_ROWS) + 1;
 
     for ( i=0; i<RANDOM_NUMBERS-1; i+=2 )
     {
         if ( i % divider ) continue;
 
-        int x = M_random_numbers[i]%128;
-        int y = M_random_numbers[i+1]%128;
+        int x = M_random_numbers[i] % SQUARE_ROWS;
+        int y = M_random_numbers[i+1] % SQUARE_ROWS;
 
         if ( SQUARE_IS_EMPTY(x, y) )    /* make it one */
             dots[y][x*2+1] = '.';
@@ -2932,10 +2943,12 @@ void init_random_numbers()
             dots[y][x*2] = ':';
     }
 
-    for ( i=0; i<128; ++i )
+    for ( i=0; i<SQUARE_ROWS; ++i )
         DBG(dots[i]);
 
-    DBG("----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+    DBG("--------------------------------------------------------------------------------------------------------------------------------");
+    DBG("");
+    DBG("init_random_numbers took %.3lf ms", lib_elapsed(&start));
     DBG("");
 #endif
 }
