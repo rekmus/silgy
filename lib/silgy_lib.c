@@ -2951,12 +2951,14 @@ const char  *chars="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 static int  since_seed=0;
     int     i;
 
+#ifdef DUMP
     struct timespec start;
 #ifdef _WIN32
     clock_gettime_win(&start);
 #else
     clock_gettime(MONOTONIC_CLOCK_NAME, &start);
 #endif
+#endif  /* DUMP */
 
     if ( since_seed > (G_cnts_today.req % 246 + 10) )  /* seed every now and then */
 //    if ( 1 )  /* test */
@@ -3008,9 +3010,9 @@ static int  since_seed=0;
     DBG_LINE;
 #endif
 
-//#ifdef DUMP
-    INF("silgy_random took %.3lf ms", lib_elapsed(&start));
-//#endif
+#ifdef DUMP
+    DBG("silgy_random took %.3lf ms", lib_elapsed(&start));
+#endif
 }
 
 
