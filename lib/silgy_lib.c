@@ -2900,10 +2900,10 @@ void init_random_numbers()
 #ifdef DUMP
     DBG("--------------------------------------------------------------------------------------------------------------------------------");
     DBG("M_random_numbers distribution visualization");
-    DBG("The square below should be filled fairly uniformly. If it's not, your system is broken or too old to be considered secure.");
+    DBG("The square below should be filled fairly randomly and uniformly.");
+    DBG("If it's not, or you can see any regular patterns across the square, your system may be broken or too old to be deemed secure.");
     DBG("--------------------------------------------------------------------------------------------------------------------------------");
 
-    /* visualize distribution: 128 rows per 256 columns */
     /* One square takes two columns, so we can have between 0 and 4 dots per square */
 
 #define SQUARE_ROWS             64
