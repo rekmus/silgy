@@ -24,7 +24,7 @@ TCO for a mid-sized web application with a small database can be as low as $3 pe
 
 ## [Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Linux)
 
-## [Reference](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros)
+## [Full Reference](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros)
 
 ## Hello World
 Simplest Hello World:
