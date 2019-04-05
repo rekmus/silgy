@@ -16,6 +16,10 @@ Besides, any modern C / C++ compiler will do.
 
 ASYNC module requires POSIX message queues, so it's not available on Windows for now.
 
+Silgy has build-in (and enabled by default) protection against most popular attacks, including SQL-injection, XSS, password brute-force and cookie brute-force. It does not directly expose the filesystem, besides dedicated, res directory. It's random string generator is FIPS-compliant.
+
+TCO for a mid-sized web application with a small database can be as low as $3 per month (Amazon EC2 t2.micro).
+
 ## [Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Windows)
 
 ## [Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Linux)
