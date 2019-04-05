@@ -4,7 +4,7 @@ Web application framework for C and C++ programmers.
 
 The latency between receiving HTTP request and application logic has been minimized by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
 
-Silgy contains everything that is necessary to build a complete, production-grade solution, including session management and remote REST calls facility.
+Silgy contains everything that is necessary to build a complete, production-grade solution, including session management and REST calls.
 
 The only third-party dependencies are:
 
@@ -16,7 +16,7 @@ Besides, any modern C / C++ compiler will do.
 
 ASYNC module requires POSIX message queues, so it's not available on Windows for now.
 
-Silgy has build-in (and enabled by default) protection against most popular attacks, including SQL-injection, XSS, password brute-force and cookie brute-force. It does not directly expose the filesystem, besides dedicated, res directory. It's random string generator is FIPS-compliant.
+Silgy has build-in (and enabled by default) protection against most popular attacks, including SQL-injection, XSS, and password and cookie brute-force. It does not directly expose the filesystem nor allows any scripting. Its random string generator is FIPS-compliant.
 
 TCO for a mid-sized web application with a small database and moderate load (<100,000 requests/day) can be as low as $3 per month (Amazon EC2 t2.micro).
 
