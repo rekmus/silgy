@@ -16,11 +16,11 @@ Besides, any modern C / C++ compiler will do.
 
 ASYNC module requires POSIX message queues, so it's not available on Windows for now.
 
-### [Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Windows)
+## [Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Windows)
 
-### [Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Linux)
+## [Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Linux)
 
-### [Reference](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros)
+## [Reference](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros)
 
 ## Hello World
 Simplest Hello World:
