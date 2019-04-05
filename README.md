@@ -20,6 +20,8 @@ ASYNC module requires POSIX message queues, so it's not available on Windows for
 
 ### [Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Linux)
 
+### [Reference](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros)
+
 ## Hello World
 Simplest Hello World:
 ```source.c++
@@ -84,7 +86,7 @@ void silgy_app_main(int ci)
 
         if ( QS("firstname", qs_firstname) )  // firstname present in query string, copy it to qs_firstname
         {
-            DBG("query string arrived with firstname %s", qs_firstname);  // this will write to the log file
+            INF("query string arrived with firstname %s", qs_firstname);  // this will write to the log file
             OUT("<p>Welcome %s, my dear friend!</p>", qs_firstname);
         }
 
@@ -100,9 +102,6 @@ void silgy_app_main(int ci)
     }
 }
 ```
-
-## Functions and macros
-### [Full reference](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros).
 
 ## Feedback & Support
 If you're not sure how to start, or you're not sure whether Silgy will be able to meet your needs, there's something wrong, you think there should be some feature or you just got stuck with your project, please [email me](mailto:silgy.help@gmail.com). I am currently developing about a dozen apps in Silgy, from simple Angular app hosting, through traditional web app, to RESTful API and every project adds some ideas how to make Silgy better, so I will gladly help.
