@@ -40,6 +40,8 @@ usession_t  uses[MAX_SESSIONS+1];       /* user sessions -- they start from 1 */
 int         G_sessions=0;               /* number of active user sessions */
 int         G_sessions_hwm=0;           /* highest number of active user sessions (high water mark) */
 char        G_last_modified[32];        /* response header field with server's start time */
+messages_t  G_messages[MAX_MESSAGES];
+int         G_current_message=0;
 #ifdef DBMYSQL
 MYSQL       *G_dbconn;                  /* database connection */
 #endif
@@ -162,7 +164,7 @@ static char *get_http_descr(int status_code);
 static void dump_counters(void);
 static void clean_up(void);
 static void sigdisp(int sig);
-static void gen_page_msg(int ci, int msg);
+static void gen_page_msg(int ci, int code);
 static bool init_ssl(void);
 
 
@@ -551,7 +553,8 @@ struct timeval  timeout;                    /* Timeout for select */
 #endif
                                         }
 
-                                        app_async_done(i, ares[j].hdr.service, ares[j].data, ares[j].hdr.err_code);
+//                                        app_async_done(i, ares[j].hdr.service, ares[j].data, ares[j].hdr.err_code);
+                                        silgy_app_continue(i);
                                     }
                                     else if ( ares[j].hdr.state == ASYNC_STATE_TIMEOUTED )
                                     {
@@ -1481,7 +1484,7 @@ static bool init(int argc, char **argv)
     /* custom init
        Among others, that may contain generating statics, like css and js */
 
-    if ( !app_init(argc, argv) )
+    if ( !silgy_app_init(argc, argv) )
     {
         ERR("app_init() failed");
         return FALSE;
@@ -1625,8 +1628,25 @@ static bool init(int argc, char **argv)
     for ( i=0; i<=MAX_SESSIONS; ++i )
     {
         eng_uses_reset(i);
-        app_uses_reset(i);
+//        app_uses_reset(i);
     }
+
+    /* Add error messages ------------------------------------------------ */
+
+    silgy_add_message(OK,                        "OK");
+    silgy_add_message(ERR_INT_SERVER_ERROR,      "Apologies, this is our fault. Please try again later.");
+    silgy_add_message(ERR_SERVER_TOOBUSY,        "Apologies, we are experiencing very high demand right now, please try again in a few minutes.");
+    silgy_add_message(ERR_INVALID_REQUEST,       "Invalid HTTP request");
+    silgy_add_message(ERR_NOT_FOUND,             "Page not found");
+    silgy_add_message(ERR_UNAUTHORIZED,          "Unauthorized");
+    silgy_add_message(ERR_FORBIDDEN,             "Forbidden");
+    silgy_add_message(ERR_FILE_TOO_BIG,          "File too big");
+    silgy_add_message(ERR_REDIRECTION,           "Redirection error");
+    silgy_add_message(ERR_ASYNC_NO_SUCH_SERVICE, "No such service");
+    silgy_add_message(ERR_ASYNC_TIMEOUT,         "Asynchronous service timeout");
+    silgy_add_message(ERR_REMOTE_CALL,           "Couldn't call the remote service");
+    silgy_add_message(ERR_REMOTE_CALL_STATUS,    "Remote service call returned unsuccessful status");
+    silgy_add_message(ERR_REMOTE_CALL_DATA,      "Data returned from the remote service is invalid");
 
     /* read blocked IPs list --------------------------------------------- */
 
@@ -2628,7 +2648,7 @@ static void process_req(int ci)
         if ( ret == OK )
         {
             if ( !conn[ci].location[0] )
-                ret = app_process_req(ci);  /* main application called here */
+                silgy_app_main(ci);  /* main application called here */
         }
 
         conn[ci].last_activity = G_now;
@@ -2657,7 +2677,7 @@ static void process_req(int ci)
         else if ( ret == ERR_SERVER_TOOBUSY )
             conn[ci].status = 503;
 
-        if ( ret==ERR_REDIRECTION || ret==ERR_INVALID_REQUEST || ret==ERR_UNAUTHORIZED || ret==ERR_FORBIDDEN || ret==ERR_NOT_FOUND || ret==ERR_INT_SERVER_ERROR || ret==ERR_SERVER_TOOBUSY )
+        if ( ret==ERR_REDIRECTION || conn[ci].status==400 || conn[ci].status==401 || conn[ci].status==403 || conn[ci].status==404 || conn[ci].status==500 || conn[ci].status==503 )
         {
 #ifdef USERS
             if ( conn[ci].usi && !LOGGED ) close_a_uses(conn[ci].usi);
@@ -3776,7 +3796,7 @@ static void clean_up()
     lib_log_memory();
     dump_counters();
 
-    app_done();
+    silgy_app_done();
 
     if ( access(M_pidfile, F_OK) != -1 )
     {
@@ -3834,15 +3854,15 @@ static void sigdisp(int sig)
 /* --------------------------------------------------------------------------
    Generic message page
 -------------------------------------------------------------------------- */
-static void gen_page_msg(int ci, int msg)
+static void gen_page_msg(int ci, int code)
 {
-    char    str[1024];
-
     DBG("gen_page_msg");
 
-    if ( app_gen_page_msg(ci, msg) ) return;    /* if custom message page has been generated */
+#ifdef APP_ERROR_PAGE
 
-    eng_get_msg_str(str, msg);
+    silgy_app_error_page(ci, code);
+
+#else
 
     OUT("<!DOCTYPE html>");
     OUT("<html>");
@@ -3851,8 +3871,10 @@ static void gen_page_msg(int ci, int msg)
     if ( REQ_MOB )  // if mobile request
         OUT("<meta name=\"viewport\" content=\"width=device-width\">");
     OUT("</head>");
-    OUT("<body><p>%s</p></body>", str);
+    OUT("<body><p>%s</p></body>", silgy_message(code));
     OUT("</html>");
+
+#endif  /* APP_ERROR_PAGE */
 }
 
 
@@ -4032,7 +4054,10 @@ bool eng_uses_start(int ci, const char *sesid)
 
     /* custom session init */
 
-    app_uses_init(ci);
+    if ( !silgy_app_session_init(ci) )
+    {
+        close_a_uses(conn[ci].usi);
+    }
 
     /* set 'as' cookie */
 
@@ -4053,7 +4078,7 @@ bool eng_uses_start(int ci, const char *sesid)
 void eng_uses_close(int usi)
 {
     eng_uses_reset(usi);
-    app_uses_reset(usi);
+    silgy_app_session_done();
 
     G_sessions--;
 
@@ -4242,54 +4267,37 @@ void eng_block_ip(const char *value, bool autoblocked)
 
 
 /* --------------------------------------------------------------------------
-   Get error description for user
-   Programmer-friendly wrapper
+   Add error message
 -------------------------------------------------------------------------- */
-char *silgy_message(int code)
+void silgy_add_message(int code, const char *message)
 {
-static char str[1024];
-    eng_get_msg_str(str, code);
-    return str;
+    if ( G_current_message >= MAX_MESSAGES )
+    {
+        ERR("MAX_MESSAGES (%d) has been reached", MAX_MESSAGES);
+        return;
+    }
+
+    G_messages[G_current_message].code = code;
+    strncpy(G_messages[G_current_message].message, message, 255);
+    G_messages[G_current_message].message[255] = EOS;
+    ++G_current_message;
 }
 
 
 /* --------------------------------------------------------------------------
    Get error description for user
+   Programmer-friendly wrapper
 -------------------------------------------------------------------------- */
-void eng_get_msg_str(char *dest, int code)
+char *silgy_message(int code)
 {
-    if ( code == OK )
-        strcpy(dest, "OK");
-    else if ( code == ERR_INT_SERVER_ERROR )
-        strcpy(dest, "Apologies, this is our fault. Please try again later.");
-    else if ( code == ERR_SERVER_TOOBUSY )
-        strcpy(dest, "Apologies, we are experiencing very high demand right now, please try again in a few minutes.");
-    else if ( code == ERR_INVALID_REQUEST )
-        strcpy(dest, "Invalid HTTP request");
-    else if ( code == ERR_NOT_FOUND )
-        strcpy(dest, "The page you're trying to access does not exist here.");
-    else if ( code == ERR_UNAUTHORIZED || code == ERR_FORBIDDEN )
-        strcpy(dest, "I'm sorry but you don't have permission to see this.");
-    else if ( code == ERR_FILE_TOO_BIG )
-        strcpy(dest, "I'm sorry but your file is too big.");
-    else if ( code == ERR_REDIRECTION )
-        strcpy(dest, "Redirection error");
-    else if ( code == ERR_ASYNC_NO_SUCH_SERVICE )
-        strcpy(dest, "No such service");
-    else if ( code == ERR_ASYNC_TIMEOUT )
-        strcpy(dest, "Asynchronous service timeout");
-    else if ( code == ERR_REMOTE_CALL )
-        strcpy(dest, "Couldn't call the remote service");
-    else if ( code == ERR_REMOTE_CALL_STATUS )
-        sprintf(dest, "Remote service call returned status %d", CALL_HTTP_STATUS);
-    else if ( code == ERR_REMOTE_CALL_DATA )
-        strcpy(dest, "Data returned from the remote service is invalid");
-#ifdef USERS
-    else if ( code <= MSG_MAX_USR_MESSAGE )
-        libusr_get_msg_str(dest, code);
-#endif
-    else
-        app_get_msg_str(dest, code);
+    int i;
+    for ( i=0; i<G_current_message; ++i )
+        if ( G_messages.code == code )
+            return G_messages.message;
+
+    static char unknown[256];
+    sprintf(unknown, "Unknown code: %d", code);
+    return unknown;
 }
 
 
@@ -4543,7 +4551,7 @@ void eng_send_msg_description(int ci, int code)
         /* keep default category */
     }
 
-    eng_get_msg_str(msg, code);
+    strcpy(msg, silgy_message(code));
 
 #ifdef MSG_FORMAT_JSON
     OUT("{\"code\":%d,\"category\":\"%s\",\"message\":\"%s\"}", code, cat, msg);

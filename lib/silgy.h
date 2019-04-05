@@ -63,7 +63,7 @@ typedef char                        bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "3.7.1"
+#define WEB_SERVER_VERSION          "4.0"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
@@ -713,6 +713,14 @@ typedef struct {
 } counters_t;
 
 
+#define MAX_MESSAGES 1000
+
+typedef struct {
+    int  code;
+    char message[256];
+} messages_t;
+
+
 /* asynchorous processing */
 
 /* request */
@@ -809,6 +817,8 @@ extern int      G_sessions_hwm;             /* highest number of active user ses
 extern time_t   G_now;                      /* current time */
 extern struct tm *G_ptm;                    /* human readable current time */
 extern char     G_last_modified[32];        /* response header field with server's start time */
+extern messages_t G_messages[MAX_MESSAGES];
+extern int      G_current_message;
 #ifdef HTTPS
 extern bool     G_ssl_lib_initialized;
 #endif
@@ -879,8 +889,8 @@ extern "C" {
     void silgy_add_to_static_res(const char *name, const char *src);
     void eng_send_msg_description(int ci, int code);
     void eng_block_ip(const char *value, bool autoblocked);
+    void silgy_add_message(int code, const char *message);
     char *silgy_message(int code);
-    void eng_get_msg_str(char *dest, int code);
     bool eng_host(int ci, const char *host);
     void eng_set_res_status(int ci, int status);
     void eng_set_res_content_type(int ci, const char *str);
