@@ -12,8 +12,8 @@ sleep 1
 # Services
 # Start as many as you need
 
-#nohup $SILGYDIR/bin/silgy_services &
-#nohup $SILGYDIR/bin/silgy_services &
-#nohup $SILGYDIR/bin/silgy_services &
+#nohup $SILGYDIR/bin/silgy_svc &
+#nohup $SILGYDIR/bin/silgy_svc &
+#nohup $SILGYDIR/bin/silgy_svc &
 
 #sleep 1  # return to prompt
