@@ -545,6 +545,8 @@ struct timeval  timeout;                    /* Timeout for select */
                                     {
                                         DBG("Async response in an array for ci=%d, processing", i);
 
+                                        strcpy(conn[i].service, ares[j].hdr.service);
+                                        conn[i].async_err_code = ares[j].hdr.err_code;
                                         conn[i].status = ares[j].hdr.status;
 
                                         if ( conn[i].usi )  /* update user session */
@@ -555,13 +557,13 @@ struct timeval  timeout;                    /* Timeout for select */
 #endif
                                         }
 
-//                                        app_async_done(i, ares[j].hdr.service, ares[j].data, ares[j].hdr.err_code);
-                                        silgy_app_continue(i);
+                                        silgy_app_continue(i, ares[j].data);
                                     }
                                     else if ( ares[j].hdr.state == ASYNC_STATE_TIMEOUTED )
                                     {
-                                        DBG("Async response done as timeout-ed for ci=%d", i);
-                                        app_async_done(i, ares[j].hdr.service, "", ERR_ASYNC_TIMEOUT);
+                                        DBG("Async response continue as timeout-ed for ci=%d", i);
+                                        conn[i].async_err_code = ERR_ASYNC_TIMEOUT;
+                                        silgy_app_continue(i, NULL);
                                     }
                                     gen_response_header(i);
                                     ares[j].hdr.state = ASYNC_STATE_FREE;
@@ -5255,6 +5257,8 @@ void eng_rest_header_pass(int ci, const char *key)
 #else   /* ASYNC_SERVICE ====================================================================================== */
 
 
+char        G_service[SVC_NAME_LEN+1];
+int         G_error_code=OK;
 int         G_status=200;
 int         G_ASYNCId=-1;
 char        G_req_queue_name[256]="";
@@ -5468,6 +5472,7 @@ int main(int argc, char *argv[])
 
             res.hdr.call_id = req.hdr.call_id;
             res.hdr.ci = req.hdr.ci;
+            strcpy(G_service, req.hdr.service);
             strcpy(res.hdr.service, req.hdr.service);
 
             /* ----------------------------------------------------------- */
@@ -5485,10 +5490,11 @@ int main(int argc, char *argv[])
             memcpy(&G_cnts_yesterday, &req.hdr.cnts_yesterday, sizeof(counters_t));
             memcpy(&G_cnts_day_before, &req.hdr.cnts_day_before, sizeof(counters_t));
             
-            silgy_svc_main(req.hdr.service);
+            silgy_svc_main();
 
             /* ----------------------------------------------------------- */
 
+            res.hdr.err_code = G_error_code;
             res.hdr.status = G_status;
             res.hdr.rest_status = G_rest_status;
             res.hdr.rest_req = G_rest_req;    /* only for this async call */

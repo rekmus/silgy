@@ -445,7 +445,13 @@ typedef char str64k[1024*64];
 #define ASYNC_RES_QUEUE                 "/silgy_res"            /* response queue name */
 #define ASYNC_DEF_TIMEOUT               30                      /* in seconds */
 #define ASYNC_MAX_TIMEOUT               1800                    /* in seconds ==> 30 minutes */
-#define S(svc)                          (0==strcmp(service, svc))
+#ifdef ASYNC_SERVICE
+#define SVC(svc)                        (0==strcmp(G_service, svc))
+#define ASYNC_ERR_CODE                  G_error_code
+#else
+#define SVC(svc)                        (0==strcmp(conn[ci].service, svc))
+#define ASYNC_ERR_CODE                  conn[ci].async_err_code
+#endif
 #define CALL_ASYNC(svc, data)           eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout, 0)
 #define CALL_ASYNC_TM(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, tmout, 0)
 #define CALL_ASYNC_NR(svc, data)        eng_async_req(ci, svc, data, FALSE, 0, 0)
@@ -548,6 +554,9 @@ typedef char str64k[1024*64];
 #ifdef QS_DEF_DONT_ESCAPE
 #define QS(param, val)                  QS_DONT_ESCAPE(param, val)
 #endif
+
+#define SVC_NAME_LEN                    63      /* async service name length */
+
 
 
 /* Date-Time */
@@ -652,6 +661,10 @@ typedef struct {
     bool    expect100;
     bool    dont_cache;
     bool    keep_content;
+#ifdef ASYNC
+    char    service[SVC_NAME_LEN+1];
+    int     async_err_code;
+#endif
 } conn_t;
 
 
@@ -722,7 +735,7 @@ typedef struct {
 typedef struct {
     long    call_id;
     int     ci;
-    char    service[32];
+    char    service[SVC_NAME_LEN+1];
     char    response;
     usession_t uses;
 #ifdef ASYNC_AUSES
@@ -743,7 +756,7 @@ typedef struct {
 typedef struct {
     long    call_id;
     int     ci;
-    char    service[32];
+    char    service[SVC_NAME_LEN+1];
     char    state;
     time_t  sent;
     int     timeout;
@@ -828,7 +841,6 @@ extern mqd_t    G_queue_req;                /* request queue */
 extern mqd_t    G_queue_res;                /* response queue */
 #ifdef ASYNC
 extern async_res_t ares[MAX_ASYNC];         /* async response array */
-extern int      G_status;
 extern long     G_last_call_id;             /* counter */
 #endif /* ASYNC */
 #endif /* _WIN32 */
@@ -837,6 +849,9 @@ extern bool     G_index_present;            /* index.html present in res? */
 #ifdef ASYNC_SERVICE
 extern char     *G_req;
 extern char     *G_res;
+extern char     G_service[SVC_NAME_LEN+1];
+extern int      G_error_code;
+extern int      G_status;
 #endif
 
 extern char     G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
@@ -914,7 +929,7 @@ extern "C" {
 
 #ifdef ASYNC_SERVICE
     bool silgy_svc_init(void);
-    void silgy_svc_main(const char *service);
+    void silgy_svc_main(void);
     void silgy_svc_done(void);
 #else /* not ASYNC_SERVICE */
     bool silgy_app_init(int argc, char *argv[]);
@@ -927,7 +942,7 @@ extern "C" {
 #endif
     void silgy_app_session_done(int ci);
 #ifdef ASYNC
-    void silgy_app_continue(int ci);
+    void silgy_app_continue(int ci, const char *data);
 #endif
 #ifdef APP_ERROR_PAGE
     void silgy_app_error_page(int ci, int code);
