@@ -1,11 +1,11 @@
 #!/bin/sh
 
-echo Making silgy_services...
+echo Making silgy_svc...
 
-g++ silgy_services.cpp \
-../lib/silgy_eng.c ../lib/silgy_lib.c \
+g++ silgy_svc.cpp \
+../lib/silgy_eng.c ../lib/silgy_lib.c ../lib/silgy_usr.c \
 -s -O3 \
 -D ASYNC_SERVICE \
 -I. -I../lib \
 -lrt \
--o ../bin/silgy_services
+-o ../bin/silgy_svc
