@@ -508,7 +508,11 @@ typedef char str64k[1024*64];
 
 /* response macros */
 
+#ifdef ASYNC_SERVICE
+#define RES_STATUS(val)                 (G_status=val)
+#else
 #define RES_STATUS(val)                 eng_set_res_status(ci, val)
+#endif
 #define RES_CONTENT_TYPE(str)           eng_set_res_content_type(ci, str)
 #define RES_LOCATION(str, ...)          eng_set_res_location(ci, str, ##__VA_ARGS__)
 #define RES_REDIRECT(str, ...)          RES_LOCATION(str, ##__VA_ARGS__)
@@ -744,6 +748,7 @@ typedef struct {
     time_t  sent;
     int     timeout;
     int     err_code;
+    int     status;
     int     rest_status;
     long    rest_req;
     double  rest_elapsed;
@@ -823,6 +828,7 @@ extern mqd_t    G_queue_req;                /* request queue */
 extern mqd_t    G_queue_res;                /* response queue */
 #ifdef ASYNC
 extern async_res_t ares[MAX_ASYNC];         /* async response array */
+extern int      G_status;
 extern long     G_last_call_id;             /* counter */
 #endif /* ASYNC */
 #endif /* _WIN32 */

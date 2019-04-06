@@ -545,6 +545,8 @@ struct timeval  timeout;                    /* Timeout for select */
                                     {
                                         DBG("Async response in an array for ci=%d, processing", i);
 
+                                        conn[i].status = ares[j].hdr.status;
+
                                         if ( conn[i].usi )  /* update user session */
                                         {
                                             memcpy(&uses[conn[i].usi], &ares[j].hdr.uses, sizeof(usession_t));
@@ -5256,18 +5258,19 @@ void eng_rest_header_pass(int ci, const char *key)
 #else   /* ASYNC_SERVICE ====================================================================================== */
 
 
+int         G_status=200;
 int         G_ASYNCId=-1;
 char        G_req_queue_name[256]="";
 char        G_res_queue_name[256]="";
-mqd_t       G_queue_req;                /* request queue */
-mqd_t       G_queue_res;                /* response queue */
-char        *G_req;
-char        *G_res;
-usession_t  uses;                       /* user session */
+mqd_t       G_queue_req={0};            /* request queue */
+mqd_t       G_queue_res={0};            /* response queue */
+char        *G_req=NULL;
+char        *G_res=NULL;
+usession_t  uses={0};                   /* user session */
 /* counters */
-counters_t  G_cnts_today;               /* today's counters */
-counters_t  G_cnts_yesterday;           /* yesterday's counters */
-counters_t  G_cnts_day_before;          /* day before's counters */
+counters_t  G_cnts_today={0};           /* today's counters */
+counters_t  G_cnts_yesterday={0};       /* yesterday's counters */
+counters_t  G_cnts_day_before={0};      /* day before's counters */
 
 
 static char *M_pidfile;                 /* pid file name */
