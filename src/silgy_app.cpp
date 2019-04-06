@@ -67,7 +67,7 @@ void silgy_app_main(int ci)
    Called after CALL_ASYNC()
    when response has been received from silgy_services process
 -------------------------------------------------------------------------------- */
-void silgy_app_continue(int ci)
+void silgy_app_continue(int ci, const char *data)
 {
 }
 

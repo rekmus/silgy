@@ -42,11 +42,11 @@ void getAccounts()
 /* --------------------------------------------------------------------------
    Entry point
 -------------------------------------------------------------------------- */
-void silgy_svc_main(const char *service)
+void silgy_svc_main()
 {
-    if ( S("getCustomer") )
+    if ( SVC("getCustomer") )
         getCustomer();
-    else if ( S("getAccounts") )
+    else if ( SVC("getAccounts") )
         getAccounts();
 }
 
