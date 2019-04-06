@@ -16,54 +16,54 @@
 /* globals */
 
 /* read from the config file */
-int         G_httpPort;
-int         G_httpsPort;
-char        G_cipherList[256];
-char        G_certFile[256];
-char        G_certChainFile[256];
-char        G_keyFile[256];
-char        G_dbHost[128];
-int         G_dbPort;
-char        G_dbName[128];
-char        G_dbUser[128];
-char        G_dbPassword[128];
-int         G_usersRequireAccountActivation;
-char        G_blockedIPList[256];
-int         G_ASYNCId;
-int         G_ASYNCDefTimeout;
+int         G_httpPort=80;
+int         G_httpsPort=443;
+char        G_cipherList[256]="";
+char        G_certFile[256]="";
+char        G_certChainFile[256]="";
+char        G_keyFile[256]="";
+char        G_dbHost[128]="";
+int         G_dbPort=0;
+char        G_dbName[128]="";
+char        G_dbUser[128]="";
+char        G_dbPassword[128]="";
+int         G_usersRequireAccountActivation=0;
+char        G_blockedIPList[256]="";
+int         G_ASYNCId=0;
+int         G_ASYNCDefTimeout=ASYNC_DEF_TIMEOUT;
 /* end of config params */
 long        G_days_up=0;                /* web server's days up */
-conn_t      conn[MAX_CONNECTIONS];      /* HTTP connections & requests -- by far the most important structure around */
+conn_t      conn[MAX_CONNECTIONS]={0};  /* HTTP connections & requests -- by far the most important structure around */
 int         G_open_conn=0;              /* number of open connections */
 int         G_open_conn_hwm=0;          /* highest number of open connections (high water mark) */
-usession_t  uses[MAX_SESSIONS+1];       /* user sessions -- they start from 1 */
+usession_t  uses[MAX_SESSIONS+1]={0};   /* user sessions -- they start from 1 */
 int         G_sessions=0;               /* number of active user sessions */
 int         G_sessions_hwm=0;           /* highest number of active user sessions (high water mark) */
-char        G_last_modified[32];        /* response header field with server's start time */
-messages_t  G_messages[MAX_MESSAGES];
+char        G_last_modified[32]="";     /* response header field with server's start time */
+messages_t  G_messages[MAX_MESSAGES]={0};
 int         G_current_message=0;
 #ifdef DBMYSQL
-MYSQL       *G_dbconn;                  /* database connection */
+MYSQL       *G_dbconn=NULL;             /* database connection */
 #endif
 #ifndef _WIN32
 /* asynchorous processing */
-char        G_req_queue_name[256];
-char        G_res_queue_name[256];
-mqd_t       G_queue_req;                /* request queue */
-mqd_t       G_queue_res;                /* response queue */
+char        G_req_queue_name[256]="";
+char        G_res_queue_name[256]="";
+mqd_t       G_queue_req={0};            /* request queue */
+mqd_t       G_queue_res={0};            /* response queue */
 #ifdef ASYNC
-async_res_t ares[MAX_ASYNC];            /* async response array */
-long        G_last_call_id;             /* counter */
+async_res_t ares[MAX_ASYNC]={0};        /* async response array */
+long        G_last_call_id=0;           /* counter */
 #endif /* ASYNC */
 #endif /* _WIN32 */
-bool        G_index_present;            /* index.html present in res? */
+bool        G_index_present=FALSE;      /* index.html present in res? */
 
 char        G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
-int         G_blacklist_cnt;            /* M_blacklist length */
+int         G_blacklist_cnt=0;          /* M_blacklist length */
 /* counters */
-counters_t  G_cnts_today;               /* today's counters */
-counters_t  G_cnts_yesterday;           /* yesterday's counters */
-counters_t  G_cnts_day_before;          /* day before's counters */
+counters_t  G_cnts_today={0};           /* today's counters */
+counters_t  G_cnts_yesterday={0};       /* yesterday's counters */
+counters_t  G_cnts_day_before={0};      /* day before's counters */
 
 
 /* locals */
@@ -155,7 +155,7 @@ static void print_content_type(int ci, char type);
 static bool a_usession_ok(int ci);
 static void close_old_conn(void);
 static void close_uses_timeout(void);
-static void close_a_uses(int usi);
+static void close_a_uses(int ci);
 static void reset_conn(int ci, char conn_state);
 static int parse_req(int ci, long len);
 static int set_http_req_val(int ci, const char *label, const char *value);
@@ -1623,14 +1623,6 @@ static bool init(int argc, char **argv)
         conn[i].req = 0;
     }
 
-    /* init user sessions ------------------------------------------------ */
-
-    for ( i=0; i<=MAX_SESSIONS; ++i )
-    {
-        eng_uses_reset(i);
-//        app_uses_reset(i);
-    }
-
     /* Add error messages ------------------------------------------------ */
 
     silgy_add_message(OK,                        "OK");
@@ -2637,8 +2629,9 @@ static void process_req(int ci)
         {
             if ( !conn[ci].cookie_in_a[0] || !a_usession_ok(ci) )       /* valid anonymous sesid cookie not present */
             {
-                if ( !eng_uses_start(ci, NULL) )  /* start new anonymous user session */
-                    ret = ERR_SERVER_TOOBUSY;       /* user sessions exhausted */
+//                if ( !eng_uses_start(ci, NULL) )  /* start new anonymous user session */
+//                    ret = ERR_SERVER_TOOBUSY;       /* user sessions exhausted */
+                ret = eng_uses_start(ci, NULL);
             }
         }
 
@@ -2680,9 +2673,9 @@ static void process_req(int ci)
         if ( ret==ERR_REDIRECTION || conn[ci].status==400 || conn[ci].status==401 || conn[ci].status==403 || conn[ci].status==404 || conn[ci].status==500 || conn[ci].status==503 )
         {
 #ifdef USERS
-            if ( conn[ci].usi && !LOGGED ) close_a_uses(conn[ci].usi);
+            if ( conn[ci].usi && !LOGGED ) close_a_uses(ci);
 #else
-            if ( conn[ci].usi ) close_a_uses(conn[ci].usi);
+            if ( conn[ci].usi ) close_a_uses(ci);
 #endif
             if ( !conn[ci].keep_content )
             {
@@ -2994,9 +2987,10 @@ static void close_uses_timeout()
 
     last_allowed = G_now - USES_TIMEOUT;
 
-    for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
+//    for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
+    for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
-        if ( uses[i].sesid[0] && !uses[i].logged && uses[i].last_activity < last_allowed )
+        if ( uses[conn[i].usi].sesid[0] && !uses[conn[i].usi].logged && uses[conn[i].usi].last_activity < last_allowed )
             close_a_uses(i);
     }
 }
@@ -3005,10 +2999,17 @@ static void close_uses_timeout()
 /* --------------------------------------------------------------------------
    Close anonymous user session
 -------------------------------------------------------------------------- */
-static void close_a_uses(int usi)
+static void close_a_uses(int ci)
 {
-    DBG("Closing anonymous session, usi=%d, sesid [%s]", usi, uses[usi].sesid);
-    eng_uses_close(usi);
+    DBG("Closing anonymous session, usi=%d, sesid [%s]", conn[ci].usi, uses[conn[ci].usi].sesid);
+
+    silgy_app_session_done(ci);
+
+    memset(&US, 0, sizeof(usession_t));
+
+    G_sessions--;
+
+    DBG("%d session(s) remaining", G_sessions);
 }
 
 
@@ -4005,7 +4006,7 @@ static int current=0;
 /* --------------------------------------------------------------------------
    Start new anonymous user session
 -------------------------------------------------------------------------- */
-bool eng_uses_start(int ci, const char *sesid)
+int eng_uses_start(int ci, const char *sesid)
 {
     int     i;
     char    new_sesid[SESID_LEN+1];
@@ -4015,7 +4016,7 @@ bool eng_uses_start(int ci, const char *sesid)
     if ( G_sessions == MAX_SESSIONS )
     {
         WAR("User sessions exhausted");
-        return FALSE;
+        return ERR_SERVER_TOOBUSY;
     }
 
     ++G_sessions;   /* start from 1 */
@@ -4056,7 +4057,8 @@ bool eng_uses_start(int ci, const char *sesid)
 
     if ( !silgy_app_session_init(ci) )
     {
-        close_a_uses(conn[ci].usi);
+        close_a_uses(ci);
+        return ERR_INT_SERVER_ERROR;
     }
 
     /* set 'as' cookie */
@@ -4068,46 +4070,7 @@ bool eng_uses_start(int ci, const char *sesid)
     if ( G_sessions > G_sessions_hwm )
         G_sessions_hwm = G_sessions;
 
-    return TRUE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Close user session
--------------------------------------------------------------------------- */
-void eng_uses_close(int usi)
-{
-    eng_uses_reset(usi);
-    silgy_app_session_done();
-
-    G_sessions--;
-
-    DBG("%d session(s) remaining", G_sessions);
-}
-
-
-/* --------------------------------------------------------------------------
-   Reset user session
--------------------------------------------------------------------------- */
-void eng_uses_reset(int usi)
-{
-    uses[usi].logged = FALSE;
-    uses[usi].uid = 0;
-    uses[usi].login[0] = EOS;
-    uses[usi].email[0] = EOS;
-    uses[usi].name[0] = EOS;
-    uses[usi].phone[0] = EOS;
-    uses[usi].about[0] = EOS;
-    uses[usi].login_tmp[0] = EOS;
-    uses[usi].email_tmp[0] = EOS;
-    uses[usi].name_tmp[0] = EOS;
-    uses[usi].phone_tmp[0] = EOS;
-    uses[usi].about_tmp[0] = EOS;
-    uses[usi].sesid[0] = EOS;
-    uses[usi].ip[0] = EOS;
-    uses[usi].uagent[0] = EOS;
-    uses[usi].referer[0] = EOS;
-    uses[usi].lang[0] = EOS;
+    return OK;
 }
 
 
@@ -4292,8 +4255,8 @@ char *silgy_message(int code)
 {
     int i;
     for ( i=0; i<G_current_message; ++i )
-        if ( G_messages.code == code )
-            return G_messages.message;
+        if ( G_messages[i].code == code )
+            return G_messages[i].message;
 
     static char unknown[256];
     sprintf(unknown, "Unknown code: %d", code);
@@ -5453,9 +5416,9 @@ int main(int argc, char *argv[])
 
     /* ------------------------------------------------------------------- */
 
-	if ( !services_init() )
+	if ( !silgy_svc_init() )
 	{
-		ERR("services_init failed");
+		ERR("silgy_svc_init failed");
 		clean_up();
 		return EXIT_FAILURE;
     }
@@ -5522,10 +5485,11 @@ int main(int argc, char *argv[])
             memcpy(&G_cnts_yesterday, &req.hdr.cnts_yesterday, sizeof(counters_t));
             memcpy(&G_cnts_day_before, &req.hdr.cnts_day_before, sizeof(counters_t));
             
-            res.hdr.err_code = service_app_process_req(req.hdr.service, req.data);
+            silgy_svc_main(req.hdr.service);
 
             /* ----------------------------------------------------------- */
 
+            res.hdr.status = G_status;
             res.hdr.rest_status = G_rest_status;
             res.hdr.rest_req = G_rest_req;    /* only for this async call */
             res.hdr.rest_elapsed = G_rest_elapsed;  /* only for this async call */
@@ -5581,7 +5545,7 @@ static void clean_up()
     ALWAYS("Cleaning up...\n");
     lib_log_memory();
 
-    services_done();
+    silgy_svc_done();
 
     if ( access(M_pidfile, F_OK) != -1 )
     {

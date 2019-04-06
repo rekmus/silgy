@@ -90,16 +90,6 @@ typedef char str64k[1024*64];
 #include "silgy_app.h"
 
 
-#ifdef ASYNC_SERVICE
-#ifdef DBMYSQL
-#undef DBMYSQL
-#endif
-#ifdef USERS
-//#undef USERS
-#endif
-#endif /* ASYNC_SERVICE */
-
-
 #ifdef SILGY_WATCHER
 #ifdef DBMYSQL
 #undef DBMYSQL
@@ -882,7 +872,7 @@ extern "C" {
     /* public engine functions */
 
     void silgy_set_auth_level(const char *resource, char level);
-    bool eng_uses_start(int ci, const char *sesid);
+    int  eng_uses_start(int ci, const char *sesid);
     void eng_uses_close(int usi);
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size);
@@ -917,24 +907,25 @@ extern "C" {
     /* public app functions */
 
 #ifdef ASYNC_SERVICE
-    bool services_init(void);
-    int service_app_process_req(const char *service, const char *req);
-    void services_done(void);
+    bool silgy_svc_init(void);
+    void silgy_svc_main(const char *service);
+    void silgy_svc_done(void);
 #else /* not ASYNC_SERVICE */
-    bool app_init(int argc, char *argv[]);
-    void app_done(void);
-    void app_set_param(const char *label, const char *value);
-    int app_process_req(int ci);
-    void app_uses_init(int ci);
+    bool silgy_app_init(int argc, char *argv[]);
+    void silgy_app_done(void);
+    void silgy_app_main(int ci);
+    bool silgy_app_session_init(int ci);
 #ifdef USERS
-    void app_luses_init(int ci);
+    bool silgy_app_user_login(int ci);
+    void silgy_app_user_logout(int ci);
 #endif
-    void app_uses_reset(int usi);
+    void silgy_app_session_done(int ci);
 #ifdef ASYNC
-    void app_async_done(int ci, const char *service, const char *data, int err_code);
+    void silgy_app_continue(int ci);
 #endif
-    bool app_gen_page_msg(int ci, int msg);
-    void app_get_msg_str(char *dest, int errcode);
+#ifdef APP_ERROR_PAGE
+    void silgy_app_error_page(int ci, int code);
+#endif
 #ifdef EVERY_SECOND
     void app_every_second(void);
 #endif
