@@ -2631,8 +2631,6 @@ static void process_req(int ci)
         {
             if ( !conn[ci].cookie_in_a[0] || !a_usession_ok(ci) )       /* valid anonymous sesid cookie not present */
             {
-//                if ( !eng_uses_start(ci, NULL) )  /* start new anonymous user session */
-//                    ret = ERR_SERVER_TOOBUSY;       /* user sessions exhausted */
                 ret = eng_uses_start(ci, NULL);
             }
         }
@@ -2646,14 +2644,13 @@ static void process_req(int ci)
                 silgy_app_main(ci);  /* main application called here */
         }
 
+        /* ------------------------------------------------------------------------ */
+
         conn[ci].last_activity = G_now;
         if ( conn[ci].usi ) US.last_activity = G_now;
 
 #ifdef ASYNC
-        if ( conn[ci].conn_state == CONN_STATE_WAITING_FOR_ASYNC )
-        {
-            return;
-        }
+        if ( conn[ci].conn_state == CONN_STATE_WAITING_FOR_ASYNC ) return;
 #endif
         /* ------------------------------------------------------------------------ */
 

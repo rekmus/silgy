@@ -19,7 +19,7 @@ long     G_new_user_id=0;
 
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
-static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about);
+static int start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about);
 static int user_exists(const char *login);
 static int email_exists(const char *email);
 static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits);
@@ -74,16 +74,11 @@ static bool valid_email(const char *email)
 
 
 /* --------------------------------------------------------------------------
-   Start new logged in user session
+   Upgrade anonymous user session to logged in
 -------------------------------------------------------------------------- */
-static bool start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about)
+static int start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about)
 {
     DBG("start_new_luses");
-
-//    if ( !conn[ci].usi && !eng_uses_start(ci) )    /* no anonymous session -- try to start one */
-//    {
-//        return FALSE;
-//    }
 
     DBG("Upgrading anonymous session to logged in, usi=%d, sesid [%s]", conn[ci].usi, US.sesid);
     strcpy(conn[ci].cookie_out_a, "x");     /* no longer needed */
@@ -102,7 +97,13 @@ static bool start_new_luses(int ci, long uid, const char *login, const char *ema
     strcpy(US.about_tmp, about);
     US.uid = uid;
 
-    return TRUE;
+    if ( !silgy_app_user_login(ci) )
+    {
+        libusr_close_l_uses(ci);
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    return OK;
 }
 
 
@@ -302,59 +303,49 @@ void libusr_close_luses_timeout()
 
     last_allowed = G_now - LUSES_TIMEOUT;
 
-    for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
+//    for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
+    for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
-        if ( uses[i].sesid[0] && uses[i].logged && uses[i].last_activity < last_allowed )
-            libusr_close_l_uses(-1, i);
+        if ( uses[conn[i].usi].sesid[0] && uses[conn[i].usi].logged && uses[conn[i].usi].last_activity < last_allowed )
+            libusr_close_l_uses(i);
     }
 }
 
 
 /* --------------------------------------------------------------------------
-   Close  / downgrade logged in user session
-   If ci != -1 it was on user demand
-   otherwise it's just memory housekeeping
+   Downgrade logged in user session to anonymous
 -------------------------------------------------------------------------- */
-void libusr_close_l_uses(int ci, int usi)
+void libusr_close_l_uses(int ci)
 {
-    char    sql_query[SQLBUF];
+    char sql_query[SQLBUF];
 
-    if ( ci != -1 )     /* explicit user logout -- downgrade to anonymous */
-    {
-        DBG("Downgrading logged in session to anonymous, usi=%d, sesid [%s]", usi, uses[usi].sesid);
+    DBG("Downgrading logged in session to anonymous, usi=%d, sesid [%s]", conn[ci].usi, uses[conn[ci].usi].sesid);
 
-        sprintf(sql_query, "DELETE FROM users_logins WHERE sesid = BINARY '%s'", uses[usi].sesid);
-        DBG("sql_query: %s", sql_query);
+    sprintf(sql_query, "DELETE FROM users_logins WHERE sesid = BINARY '%s'", uses[conn[ci].usi].sesid);
+    DBG("sql_query: %s", sql_query);
 
-        if ( mysql_query(G_dbconn, sql_query) )
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+    if ( mysql_query(G_dbconn, sql_query) )
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
 
-        strcpy(conn[ci].cookie_out_l, "x");
-        strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* in the past => to be removed by browser straight away */
+    strcpy(conn[ci].cookie_out_l, "x");
+    strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* in the past => to be removed by browser straight away */
 
-        strcpy(conn[ci].cookie_out_a, uses[usi].sesid);
+    strcpy(conn[ci].cookie_out_a, uses[conn[ci].usi].sesid);
 
-        uses[usi].logged = FALSE;
-        uses[usi].uid = 0;
-        uses[usi].login[0] = EOS;
-        uses[usi].email[0] = EOS;
-        uses[usi].name[0] = EOS;
-        uses[usi].phone[0] = EOS;
-        uses[usi].about[0] = EOS;
-        uses[usi].login_tmp[0] = EOS;
-        uses[usi].email_tmp[0] = EOS;
-        uses[usi].name_tmp[0] = EOS;
-        uses[usi].phone_tmp[0] = EOS;
-        uses[usi].about_tmp[0] = EOS;
-#ifndef DONT_RESET_AUS_ON_LOGOUT
-        app_uses_reset(usi);
-#endif
-    }
-    else    /* timeout'ed */
-    {
-        DBG("Closing logged in session, usi=%d, sesid [%s]", usi, uses[usi].sesid);
-        eng_uses_close(usi);
-    }
+    uses[usi].logged = FALSE;
+    uses[usi].uid = 0;
+    uses[usi].login[0] = EOS;
+    uses[usi].email[0] = EOS;
+    uses[usi].name[0] = EOS;
+    uses[usi].phone[0] = EOS;
+    uses[usi].about[0] = EOS;
+    uses[usi].login_tmp[0] = EOS;
+    uses[usi].email_tmp[0] = EOS;
+    uses[usi].name_tmp[0] = EOS;
+    uses[usi].phone_tmp[0] = EOS;
+    uses[usi].about_tmp[0] = EOS;
+
+    silgy_app_user_logout(ci);
 }
 
 
@@ -443,6 +434,7 @@ static int email_exists(const char *email)
 -------------------------------------------------------------------------- */
 static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits)
 {
+    int         ret=OK;
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
@@ -511,8 +503,9 @@ unsigned long   sql_records;
 #endif
     /* upgrade anonymous session to logged in */
 
-    if ( !start_new_luses(ci, uid, login, email, name, phone, about) )
-        return ERR_SERVER_TOOBUSY;
+    ret = start_new_luses(ci, uid, login, email, name, phone, about);
+    if ( ret != OK )
+        return ret;
 
     /* update user record */
 
@@ -524,17 +517,13 @@ unsigned long   sql_records;
         return ERR_INT_SERVER_ERROR;
     }
 
-    /* init app user session */
-
-    app_luses_init(ci);
-
 #ifdef USERSBYEMAIL
     INF("User [%s] logged in", US.email);
 #else
     INF("User [%s] logged in", US.login);
 #endif
 
-    return OK;
+    return ret;
 }
 
 
