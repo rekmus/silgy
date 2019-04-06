@@ -10,13 +10,16 @@
 #include <silgy.h>
 
 
-/* --------------------------------------------------------------------------
-   Main entry point for HTTP request
--------------------------------------------------------------------------- */
-int app_process_req(int ci)
+/* --------------------------------------------------------------------------------
+   Called after parsing HTTP request header
+   ------------------------------
+   This is the main entry point for a request
+   ------------------------------
+   Response status will be 200 by default
+   Use RES_STATUS() if you want to change it
+-------------------------------------------------------------------------------- */
+void silgy_app_main(int ci)
 {
-    int ret=OK;
-
     if ( REQ("") )  // landing page
     {
         OUT_HTML_HEADER;
@@ -53,77 +56,91 @@ int app_process_req(int ci)
     }
     else  // page not found
     {
-        ret = ERR_NOT_FOUND;  // this will return status 404 to the browser
+        RES_STATUS(404);
     }
-
-    return ret;
 }
 
 
-/* --------------------------------------------------------------------------
-   Finish page rendering after CALL_ASYNC has returned service response
--------------------------------------------------------------------------- */
-void app_async_done(int ci, const char *service, const char *data, int err_code)
+/* --------------------------------------------------------------------------------
+   ******* Only for ASYNC *******
+   ------------------------------
+   Called after CALL_ASYNC()
+   when response has been received from silgy_services process
+-------------------------------------------------------------------------------- */
+void silgy_app_continue(int ci)
 {
 }
 
 
-/* --------------------------------------------------------------------------
-   App custom init
-   Return true if successful
--------------------------------------------------------------------------- */
-bool app_init(int argc, char *argv[])
+/* --------------------------------------------------------------------------------
+   Called when application starts
+   ------------------------------
+   Return true if everything OK
+   ------------------------------
+   Returning false will stop booting process,
+   silgy_app_done() will be called and application will be terminated
+-------------------------------------------------------------------------------- */
+bool silgy_app_init(int argc, char *argv[])
 {
     return true;
 }
 
 
-/* --------------------------------------------------------------------------
-   App clean-up
--------------------------------------------------------------------------- */
-void app_done()
+/* --------------------------------------------------------------------------------
+   Called when new anonymous user session starts
+   ------------------------------
+   Return true if everything OK
+   ------------------------------
+   Returning false will cause the session to be closed
+   and silgy_app_session_done() will be called
+   Response status will be set to 500
+-------------------------------------------------------------------------------- */
+bool silgy_app_session_init(int ci)
+{
+    return true;
+}
+
+
+/* --------------------------------------------------------------------------------
+   ******* Only for USERS *******
+   ------------------------------
+   Called after successful authentication (using password or cookie)
+   when user session is upgraded from anonymous to logged in
+   ------------------------------
+   Return true if everything OK
+   ------------------------------
+   Returning false will cause the session to be downgraded back to anonymous
+   and silgy_app_user_logout() will be called
+-------------------------------------------------------------------------------- */
+bool silgy_app_user_login(int ci)
+{
+    return true;
+}
+
+
+/* --------------------------------------------------------------------------------
+   ******* Only for USERS *******
+   ------------------------------
+   Called when downgrading logged in user session to anonymous
+-------------------------------------------------------------------------------- */
+void silgy_app_user_logout(int ci)
 {
 }
 
 
-/* --------------------------------------------------------------------------
-   Called when starting new anonymous user session
--------------------------------------------------------------------------- */
-void app_uses_init(int ci)
-{
-}
-
-
-/* --------------------------------------------------------------------------
-   Called when starting new logged in user session
--------------------------------------------------------------------------- */
-void app_luses_init(int ci)
-{
-}
-
-
-/* --------------------------------------------------------------------------
+/* --------------------------------------------------------------------------------
    Called when closing user session
--------------------------------------------------------------------------- */
-void app_uses_reset(int usi)
+   After calling this the session memory will be zero-ed
+-------------------------------------------------------------------------------- */
+void silgy_app_session_done(int ci)
 {
 }
 
 
-/* --------------------------------------------------------------------------
-   Custom message page can be generated here.
-   If returns true it means custom page has been generated,
-   otherwise generic page will be displayed by the engine.
--------------------------------------------------------------------------- */
-bool app_gen_page_msg(int ci, int msg)
-{
-    return false;   /* use engine generic page */
-}
-
-
-/* --------------------------------------------------------------------------
-   Get error description for user
--------------------------------------------------------------------------- */
-void app_get_msg_str(char *dest, int errcode)
+/* --------------------------------------------------------------------------------
+   Called when application shuts down
+-------------------------------------------------------------------------------- */
+void silgy_app_done()
 {
 }
+
