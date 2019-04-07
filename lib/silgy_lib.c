@@ -31,6 +31,8 @@ time_t      G_now=0;                    /* current time (GMT) */
 struct tm   *G_ptm={0};                 /* human readable current time */
 char        G_dt[20]="";                /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 char        G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
+messages_t  G_messages[MAX_MESSAGES]={0};
+int         G_current_message=0;
 #ifdef HTTPS
 bool        G_ssl_lib_initialized=0;
 #endif
@@ -97,6 +99,49 @@ void silgy_lib_init()
     lib_update_time_globals();
     /* log file fd */
     M_log_fd = stdout;
+}
+
+
+/* --------------------------------------------------------------------------
+   Add error message
+-------------------------------------------------------------------------- */
+void silgy_add_message(int code, const char *message, ...)
+{
+    if ( G_current_message >= MAX_MESSAGES )
+    {
+        ERR("MAX_MESSAGES (%d) has been reached", MAX_MESSAGES);
+        return;
+    }
+
+    va_list plist;
+    char    buffer[MAX_MSG_LEN+1];
+
+    /* compile message with arguments into buffer */
+
+    va_start(plist, message);
+    vsprintf(buffer, message, plist);
+    va_end(plist);
+
+    G_messages[G_current_message].code = code;
+    strcpy(G_messages[G_current_message].message, buffer);
+    ++G_current_message;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get error description for user
+   Programmer-friendly wrapper
+-------------------------------------------------------------------------- */
+char *silgy_message(int code)
+{
+    int i;
+    for ( i=0; i<G_current_message; ++i )
+        if ( G_messages[i].code == code )
+            return G_messages[i].message;
+
+    static char unknown[256];
+    sprintf(unknown, "Unknown code: %d", code);
+    return unknown;
 }
 
 
@@ -4926,8 +4971,8 @@ bool log_start(const char *prefix, bool test)
 -------------------------------------------------------------------------- */
 void log_write_time(int level, const char *message, ...)
 {
-    va_list     plist;
-static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
+    va_list plist;
+    char    buffer[MAX_LOG_STR_LEN+1+64];
 
     if ( level > G_logLevel ) return;
 
@@ -4963,8 +5008,8 @@ static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
 -------------------------------------------------------------------------- */
 void log_write(int level, const char *message, ...)
 {
-    va_list     plist;
-static char     buffer[MAX_LOG_STR_LEN+1+64];   /* don't use stack */
+    va_list plist;
+    char    buffer[MAX_LOG_STR_LEN+1+64];
 
     if ( level > G_logLevel ) return;
 

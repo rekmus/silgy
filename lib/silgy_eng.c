@@ -40,8 +40,6 @@ usession_t  uses[MAX_SESSIONS+1]={0};   /* user sessions -- they start from 1 */
 int         G_sessions=0;               /* number of active user sessions */
 int         G_sessions_hwm=0;           /* highest number of active user sessions (high water mark) */
 char        G_last_modified[32]="";     /* response header field with server's start time */
-messages_t  G_messages[MAX_MESSAGES]={0};
-int         G_current_message=0;
 #ifdef DBMYSQL
 MYSQL       *G_dbconn=NULL;             /* database connection */
 #endif
@@ -1318,6 +1316,10 @@ static bool init(int argc, char **argv)
     /* init Silgy library */
 
     silgy_lib_init();
+
+#ifdef USERS
+    libusr_init();
+#endif
 
     /* read the config file or set defaults */
 
@@ -4231,41 +4233,6 @@ void eng_block_ip(const char *value, bool autoblocked)
 
 
 /* --------------------------------------------------------------------------
-   Add error message
--------------------------------------------------------------------------- */
-void silgy_add_message(int code, const char *message)
-{
-    if ( G_current_message >= MAX_MESSAGES )
-    {
-        ERR("MAX_MESSAGES (%d) has been reached", MAX_MESSAGES);
-        return;
-    }
-
-    G_messages[G_current_message].code = code;
-    strncpy(G_messages[G_current_message].message, message, 255);
-    G_messages[G_current_message].message[255] = EOS;
-    ++G_current_message;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get error description for user
-   Programmer-friendly wrapper
--------------------------------------------------------------------------- */
-char *silgy_message(int code)
-{
-    int i;
-    for ( i=0; i<G_current_message; ++i )
-        if ( G_messages[i].code == code )
-            return G_messages[i].message;
-
-    static char unknown[256];
-    sprintf(unknown, "Unknown code: %d", code);
-    return unknown;
-}
-
-
-/* --------------------------------------------------------------------------
    Return true if host matches
 -------------------------------------------------------------------------- */
 bool eng_host(int ci, const char *host)
@@ -5291,6 +5258,10 @@ int main(int argc, char *argv[])
     /* library init ------------------------------------------------------ */
 
     silgy_lib_init();
+
+#ifdef USERS
+    libusr_init();
+#endif
 
     /* read the config file or set defaults ------------------------------ */
 

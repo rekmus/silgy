@@ -28,6 +28,53 @@ static long get_max(int ci, const char *table);
 
 
 /* --------------------------------------------------------------------------
+   Library init
+-------------------------------------------------------------------------- */
+void libusr_init()
+{
+    DBG("libusr_init");
+
+    silgy_add_message(ERR_INVALID_LOGIN,            "Invalid login and/or password");
+    silgy_add_message(ERR_USERNAME_TOO_SHORT,       "User name must be at least %d characters long", MIN_USERNAME_LEN);
+    silgy_add_message(ERR_USERNAME_CHARS,           "User name may only contain letters, digits, dots, hyphens, underscores or apostrophes");
+    silgy_add_message(ERR_USERNAME_TAKEN,           "Unfortunately this login has already been taken");
+    silgy_add_message(ERR_EMAIL_EMPTY,              "Your email address can't be empty");
+    silgy_add_message(ERR_EMAIL_FORMAT,             "Please enter valid email address");
+    silgy_add_message(ERR_EMAIL_FORMAT_OR_EMPTY,    "Please enter valid email address or leave this field empty");
+    silgy_add_message(ERR_EMAIL_TAKEN,              "This email address has already been registered");
+    silgy_add_message(ERR_INVALID_PASSWORD,         "Please enter your existing password");
+    silgy_add_message(ERR_PASSWORD_TOO_SHORT,       "Password must be at least %d characters long", MIN_PASSWORD_LEN);
+    silgy_add_message(ERR_PASSWORD_DIFFERENT,       "Please retype password exactly like in the previous field");
+    silgy_add_message(ERR_OLD_PASSWORD,             "Please enter your existing password");
+    silgy_add_message(ERR_SESSION_EXPIRED,          "Your session has expired. Please log in to continue:");
+    silgy_add_message(ERR_LINK_BROKEN,              "It looks like this link is broken. If you clicked on the link you've received from us in email, you can try to copy and paste it in your browser's address bar instead.");
+    silgy_add_message(ERR_LINK_MAY_BE_EXPIRED,      "Your link is invalid or may be expired");
+    silgy_add_message(ERR_LINK_EXPIRED,             "It looks like you entered email that doesn't exist in our database or your link has expired.");
+    silgy_add_message(ERR_LINK_TOO_MANY_TRIES,      "It looks like you entered email that doesn't exist in our database or your link has expired.");
+    silgy_add_message(ERR_ROBOT,                    "I'm afraid you are a robot?");
+    silgy_add_message(ERR_WEBSITE_FIRST_LETTER,     "The first letter of this website's name should be %c", APP_WEBSITE[0]);
+    silgy_add_message(ERR_NOT_ACTIVATED,            "Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE);
+
+    silgy_add_message(WAR_NO_EMAIL,                 "You didn't provide your email address. This is fine, however please remember that in case you forget your password, there's no way for us to send you reset link.");
+    silgy_add_message(WAR_BEFORE_DELETE,            "You are about to delete your %s's account. All your details and data will be removed from our database. If you are sure you want this, enter your password and click 'Delete my account'.", APP_WEBSITE);
+    silgy_add_message(WAR_ULA,                      "Someone tried to log in to this account unsuccessfully more than 3 times. To protect your account from brute-force attack, this system requires some wait: 1 minute, then 10 minutes, then 1 hour before trying again.");
+
+    silgy_add_message(MSG_WELCOME_NO_ACTIVATION,    "Welcome to %s! You can now log in:", APP_WEBSITE);
+    silgy_add_message(MSG_WELCOME_NEED_ACTIVATION,  "Welcome to %s! Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE, APP_WEBSITE);
+    silgy_add_message(MSG_WELCOME_AFTER_ACTIVATION, "Very well! You can now log in:");
+    silgy_add_message(MSG_USER_LOGGED_OUT,          "You've been successfully logged out");
+    silgy_add_message(MSG_CHANGES_SAVED,            "Your changes have been saved");
+    silgy_add_message(MSG_REQUEST_SENT,             "Your request has been sent. Please check your mailbox for a message from %s.", APP_WEBSITE);
+    silgy_add_message(MSG_PASSWORD_CHANGED,         "Your password has been changed. You can now log in:");
+    silgy_add_message(MSG_MESSAGE_SENT,             "Your message has been sent");
+    silgy_add_message(MSG_PROVIDE_FEEDBACK,         "%s would suit me better if...", APP_WEBSITE);
+    silgy_add_message(MSG_FEEDBACK_SENT,            "Thank you for your feedback!");
+    silgy_add_message(MSG_USER_ALREADY_ACTIVATED,   "Your account has already been activated");
+    silgy_add_message(MSG_ACCOUNT_DELETED,          "Your user account has been deleted. Thank you for trying %s!", APP_WEBSITE);
+}
+
+
+/* --------------------------------------------------------------------------
    Return TRUE if user name contains only valid characters
 -------------------------------------------------------------------------- */
 static bool valid_username(const char *login)
@@ -113,6 +160,7 @@ static int start_new_luses(int ci, long uid, const char *login, const char *emai
 -------------------------------------------------------------------------- */
 int libusr_l_usession_ok(int ci)
 {
+    int         ret=OK;
     int         i;
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
@@ -276,10 +324,10 @@ unsigned long   sql_records;
 
     /* start a fresh session, keep the old sesid */
 
-    if ( !eng_uses_start(ci, sanlscookie) )
-    {
-        return ERR_SERVER_TOOBUSY;
-    }
+    ret = eng_uses_start(ci, sanlscookie);
+
+    if ( ret != OK )
+        return ret;
 
     sprintf(sql_query, "UPDATE users_logins SET last_used='%s' WHERE sesid = BINARY '%s'", G_dt, US.sesid);
     DBG("sql_query: %s", sql_query);
@@ -332,18 +380,18 @@ void libusr_close_l_uses(int ci)
 
     strcpy(conn[ci].cookie_out_a, uses[conn[ci].usi].sesid);
 
-    uses[usi].logged = FALSE;
-    uses[usi].uid = 0;
-    uses[usi].login[0] = EOS;
-    uses[usi].email[0] = EOS;
-    uses[usi].name[0] = EOS;
-    uses[usi].phone[0] = EOS;
-    uses[usi].about[0] = EOS;
-    uses[usi].login_tmp[0] = EOS;
-    uses[usi].email_tmp[0] = EOS;
-    uses[usi].name_tmp[0] = EOS;
-    uses[usi].phone_tmp[0] = EOS;
-    uses[usi].about_tmp[0] = EOS;
+    uses[conn[ci].usi].logged = FALSE;
+    uses[conn[ci].usi].uid = 0;
+    uses[conn[ci].usi].login[0] = EOS;
+    uses[conn[ci].usi].email[0] = EOS;
+    uses[conn[ci].usi].name[0] = EOS;
+    uses[conn[ci].usi].phone[0] = EOS;
+    uses[conn[ci].usi].about[0] = EOS;
+    uses[conn[ci].usi].login_tmp[0] = EOS;
+    uses[conn[ci].usi].email_tmp[0] = EOS;
+    uses[conn[ci].usi].name_tmp[0] = EOS;
+    uses[conn[ci].usi].phone_tmp[0] = EOS;
+    uses[conn[ci].usi].about_tmp[0] = EOS;
 
     silgy_app_user_logout(ci);
 }
@@ -683,6 +731,7 @@ unsigned long   sql_records;
 -------------------------------------------------------------------------- */
 int silgy_usr_login(int ci)
 {
+    int         ret=OK;
     QSVAL       login;
     QSVAL       email;
     char        name[UNAME_LEN+1];
@@ -849,9 +898,11 @@ unsigned long   sql_records;
     {
         DBG("Using current session usi=%d, sesid [%s]", conn[ci].usi, US.sesid);
     }
-    else if ( !eng_uses_start(ci, NULL) )   /* no session --> start a new one */
+    else    /* no session --> start a new one */
     {
-        return ERR_SERVER_TOOBUSY;
+        ret = eng_uses_start(ci, NULL);
+        if ( ret != OK )
+            return ret;
     }
 
     /* save new session to users_logins and set the cookie */
@@ -1287,7 +1338,7 @@ unsigned long   sql_records;
                 return ERR_INT_SERVER_ERROR;
             }
 
-            libusr_close_l_uses(ci, conn[ci].usi);  /* log user out */
+            libusr_close_l_uses(ci);   /* log user out */
 
             return MSG_ACCOUNT_DELETED;
         }
@@ -1736,7 +1787,7 @@ unsigned long   sql_records;
 void silgy_usr_logout(int ci)
 {
     DBG("silgy_usr_logout");
-    libusr_close_l_uses(ci, conn[ci].usi);
+    libusr_close_l_uses(ci);
 }
 
 
@@ -1928,88 +1979,6 @@ static long get_max(int ci, const char *table)
     DBG("get_max for uid=%ld  max = %ld", US.uid, max);
 
     return max;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get error description for user
-   Called from eng_get_msg_str()
--------------------------------------------------------------------------- */
-void libusr_get_msg_str(char *dest, int errcode)
-{
-    if ( errcode == ERR_INVALID_LOGIN )
-        strcpy(dest, "Invalid login and/or password");
-    else if ( errcode == MSG_WELCOME )
-    {
-        if ( G_usersRequireAccountActivation )
-            sprintf(dest, "Welcome to %s! Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE, APP_WEBSITE);
-        else
-            sprintf(dest, "Welcome to %s! You can now log in:", APP_WEBSITE);
-    }
-    else if ( errcode == MSG_WELCOME_AFTER_ACTIVATION )
-        strcpy(dest, "Very well! You can now log in:");
-    else if ( errcode == MSG_USER_LOGGED_OUT )
-        strcpy(dest, "You've been successfully logged out.");
-    else if ( errcode == ERR_INVALID_PASSWORD )
-        sprintf(dest, "Please enter your existing password");
-    else if ( errcode == WAR_NO_EMAIL )
-        strcpy(dest, "You didn't provide your email address. This is fine, however please remember that in case you forget your password, there's no way for us to send you reset link.");
-    else if ( errcode == ERR_SESSION_EXPIRED )
-        strcpy(dest, "Your session has expired. Please log in to continue:");
-    else if ( errcode == MSG_CHANGES_SAVED )
-        strcpy(dest, "Your changes have been saved.");
-    else if ( errcode == ERR_USERNAME_TOO_SHORT )
-        sprintf(dest, "User name must be at least %d characters long", MIN_USERNAME_LEN);
-    else if ( errcode == ERR_USERNAME_CHARS )
-        sprintf(dest, "User name may only contain letters, digits, dots, hyphens, underscores or apostrophes");
-    else if ( errcode == ERR_USERNAME_TAKEN )
-        strcpy(dest, "Unfortunately this login has already been taken!");
-    else if ( errcode == ERR_EMAIL_FORMAT_OR_EMPTY )
-        strcpy(dest, "Please enter valid email address or leave this field empty");
-    else if ( errcode == ERR_PASSWORD_TOO_SHORT )
-        sprintf(dest, "Password must be at least %d characters long", MIN_PASSWORD_LEN);
-    else if ( errcode == ERR_PASSWORD_DIFFERENT )
-        strcpy(dest, "Please retype password exactly like in the previous field");
-    else if ( errcode == ERR_OLD_PASSWORD )
-        strcpy(dest, "Please enter your existing password");
-    else if ( errcode == ERR_ROBOT )
-        strcpy(dest, "I'm afraid you are a robot?");
-    else if ( errcode == ERR_WEBSITE_FIRST_LETTER )
-        sprintf(dest, "The first letter of this website's name should be %c", APP_WEBSITE[0]);
-    else if ( errcode == ERR_NOT_ACTIVATED )
-        sprintf(dest, "Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE);
-    else if ( errcode == ERR_EMAIL_EMPTY )
-        strcpy(dest, "Your email address can't be empty");
-    else if ( errcode == ERR_EMAIL_FORMAT )
-        strcpy(dest, "Please enter valid email address");
-    else if ( errcode == ERR_EMAIL_TAKEN )
-        strcpy(dest, "This email address has already been registered");
-    else if ( errcode == MSG_REQUEST_SENT )
-        sprintf(dest, "Your request has been sent. Please check your mailbox for a message from %s.", APP_WEBSITE);
-    else if ( errcode == ERR_LINK_BROKEN )
-        strcpy(dest, "It looks like this link is broken. If you clicked on the link you've received from us in email, you can try to copy and paste it in your browser's address bar instead.");
-    else if ( errcode == ERR_LINK_MAY_BE_EXPIRED )
-        strcpy(dest, "Your link is invalid or may be expired.");
-    else if ( errcode == ERR_LINK_EXPIRED || errcode == ERR_LINK_TOO_MANY_TRIES )
-        strcpy(dest, "It looks like you entered email that doesn't exist in our database or your link has expired.");
-    else if ( errcode == MSG_PASSWORD_CHANGED )
-        strcpy(dest, "Your password has been changed. You can now log in:");
-    else if ( errcode == MSG_MESSAGE_SENT )
-        strcpy(dest, "Your message has been sent.");
-    else if ( errcode == MSG_PROVIDE_FEEDBACK )
-        sprintf(dest, "%s would suit me better if...", APP_WEBSITE);
-    else if ( errcode == MSG_FEEDBACK_SENT )
-        strcpy(dest, "Thank you for your feedback!");
-    else if ( errcode == MSG_USER_ALREADY_ACTIVATED )
-        strcpy(dest, "Your account has already been activated.");
-    else if ( errcode == WAR_ULA )
-        strcpy(dest, "Someone tried to log in to this account unsuccessfully more than 3 times. To protect your account from brute-force attack, this system requires some wait: 1 minute, then 10 minutes, then 1 hour before trying again.");
-    else if ( errcode == WAR_BEFORE_DELETE )
-        sprintf(dest, "You are about to delete your %s's account. All your details and data will be removed from our database. If you are sure you want this, enter your password and click 'Delete my account'.", APP_WEBSITE);
-    else if ( errcode == MSG_ACCOUNT_DELETED )
-        sprintf(dest, "Your user account has been deleted. Thank you for trying %s!", APP_WEBSITE);
-    else
-        sprintf(dest, "Unknown error (%d)", errcode);
 }
 
 #endif /* USERS */

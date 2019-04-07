@@ -99,17 +99,18 @@
 /* ------------------------------------- */
 /* messages -- green */
 
-#define MSG_WELCOME                     301
-#define MSG_WELCOME_AFTER_ACTIVATION    302
-#define MSG_USER_LOGGED_OUT             303
-#define MSG_CHANGES_SAVED               304
-#define MSG_REQUEST_SENT                305
-#define MSG_PASSWORD_CHANGED            306
-#define MSG_MESSAGE_SENT                307
-#define MSG_PROVIDE_FEEDBACK            308
-#define MSG_FEEDBACK_SENT               309
-#define MSG_USER_ALREADY_ACTIVATED      310
-#define MSG_ACCOUNT_DELETED             311
+#define MSG_WELCOME_NO_ACTIVATION       301
+#define MSG_WELCOME_NEED_ACTIVATION     302
+#define MSG_WELCOME_AFTER_ACTIVATION    303
+#define MSG_USER_LOGGED_OUT             304
+#define MSG_CHANGES_SAVED               305
+#define MSG_REQUEST_SENT                306
+#define MSG_PASSWORD_CHANGED            307
+#define MSG_MESSAGE_SENT                308
+#define MSG_PROVIDE_FEEDBACK            309
+#define MSG_FEEDBACK_SENT               310
+#define MSG_USER_ALREADY_ACTIVATED      311
+#define MSG_ACCOUNT_DELETED             312
 /* ------------------------------------- */
 #define MSG_MAX_USR_MESSAGE             399
 /* ------------------------------------- */
@@ -188,25 +189,24 @@ typedef struct {
 #ifdef __cplusplus
 extern "C" {
 #endif
-    int silgy_usr_login(int ci);
-    int silgy_usr_create_account(int ci);
-    int silgy_usr_send_message(int ci);
-    int silgy_usr_save_account(int ci);
-    int silgy_usr_email_registered(int ci);
-    int silgy_usr_send_passwd_reset_email(int ci);
-    int silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid);
-    int silgy_usr_activate(int ci);
-    int silgy_usr_reset_password(int ci);
+    int  silgy_usr_login(int ci);
+    int  silgy_usr_create_account(int ci);
+    int  silgy_usr_send_message(int ci);
+    int  silgy_usr_save_account(int ci);
+    int  silgy_usr_email_registered(int ci);
+    int  silgy_usr_send_passwd_reset_email(int ci);
+    int  silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid);
+    int  silgy_usr_activate(int ci);
+    int  silgy_usr_reset_password(int ci);
     void silgy_usr_logout(int ci);
-    int silgy_usr_set_str(int ci, const char *us_key, const char *us_val);
-    int silgy_usr_get_str(int ci, const char *us_key, char *us_val);
-    int silgy_usr_set_int(int ci, const char *us_key, long us_val);
-    int silgy_usr_get_int(int ci, const char *us_key, long *us_val);
+    int  silgy_usr_set_str(int ci, const char *us_key, const char *us_val);
+    int  silgy_usr_get_str(int ci, const char *us_key, char *us_val);
+    int  silgy_usr_set_int(int ci, const char *us_key, long us_val);
+    int  silgy_usr_get_int(int ci, const char *us_key, long *us_val);
     /* for the engine */
-    int libusr_l_usession_ok(int ci);
+    int  libusr_l_usession_ok(int ci);
     void libusr_close_luses_timeout(void);
-    void libusr_close_l_uses(int ci, int usi);
-    void libusr_get_msg_str(char *dest, int errcode);
+    void libusr_close_l_uses(int ci);
 #ifdef __cplusplus
 }   // extern "C"
 #endif

@@ -720,11 +720,12 @@ typedef struct {
 } counters_t;
 
 
-#define MAX_MESSAGES 1000
+#define MAX_MSG_LEN     255
+#define MAX_MESSAGES    1000
 
 typedef struct {
     int  code;
-    char message[256];
+    char message[MAX_MSG_LEN+1];
 } messages_t;
 
 
@@ -900,8 +901,6 @@ extern "C" {
     void silgy_add_to_static_res(const char *name, const char *src);
     void eng_send_msg_description(int ci, int code);
     void eng_block_ip(const char *value, bool autoblocked);
-    void silgy_add_message(int code, const char *message);
-    char *silgy_message(int code);
     bool eng_host(int ci, const char *host);
     void eng_set_res_status(int ci, int status);
     void eng_set_res_content_type(int ci, const char *str);
