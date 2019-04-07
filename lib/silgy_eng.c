@@ -5272,21 +5272,6 @@ int main(int argc, char *argv[])
     char exec_name[256];
     lib_get_exec_name(exec_name, argv[0]);
 
-//    if ( G_appdir[0] )
-//    {
-//        sprintf(config, "%s/bin/%s.conf", G_appdir, exec_name);
-//        if ( !lib_read_conf(config) )   /* no config file there */
-//        {
-//            sprintf(config, "%s.conf", exec_name);
-//            lib_read_conf(config);
-//        }
-//    }
-//    else    /* no SILGYDIR -- try current dir */
-//    {
-//        sprintf(config, "%s.conf", exec_name);
-//        lib_read_conf(config);
-//    }
-
     if ( G_appdir[0] )
     {
         sprintf(config, "%s/bin/silgy.conf", G_appdir);
@@ -5316,12 +5301,16 @@ int main(int argc, char *argv[])
     if ( !silgy_read_param_int("RESTTimeout", &G_RESTTimeout) )
         G_RESTTimeout = CALL_REST_DEFAULT_TIMEOUT;
 
+#ifdef DBMYSQL
     silgy_read_param_str("dbHost", G_dbHost);
     silgy_read_param_int("dbPort", &G_dbPort);
     silgy_read_param_str("dbName", G_dbName);
     silgy_read_param_str("dbUser", G_dbUser);
     silgy_read_param_str("dbPassword", G_dbPassword);
+#endif  /* DBMYSQL */
+#ifdef USERS
     silgy_read_param_int("usersRequireAccountActivation", &G_usersRequireAccountActivation);
+#endif  /* USERS */
 
     /* start log --------------------------------------------------------- */
 
