@@ -146,7 +146,6 @@ static bool ip_blocked(const char *addr);
 static int first_free_stat(void);
 static bool read_files(bool minify, bool first_scan, const char *path);
 static int is_static_res(int ci, const char *name);
-static bool open_db(void);
 static void process_req(int ci);
 static void gen_response_header(int ci);
 static void print_content_type(int ci, char type);
@@ -315,27 +314,31 @@ struct timeval  timeout;                    /* Timeout for select */
 
     addr_len = sizeof(cli_addr);
 
+
+#ifdef DBMYSQL
+
     if ( G_dbName[0] )
     {
-        DBG("Trying open_db...");
+        DBG("Trying lib_open_db...");
 
-        if ( !open_db() )
+        if ( !lib_open_db() )
         {
-            ERR("open_db failed");
+            ERR("lib_open_db failed");
             clean_up();
             return EXIT_FAILURE;
         }
 
         ALWAYS("Database connected");
     }
-#ifdef DBMYSQL
     else
     {
         ERR("dbName parameter is required in silgy.conf");
         clean_up();
         return EXIT_FAILURE;
     }
+
 #endif  /* DBMYSQL */
+
 
     /* log currently used memory */
 
@@ -2537,36 +2540,6 @@ static int is_static_res(int ci, const char *name)
     }
 
     return -1;
-}
-
-
-/* --------------------------------------------------------------------------
-   Open database connection
--------------------------------------------------------------------------- */
-static bool open_db()
-{
-#ifdef DBMYSQL
-    if ( NULL == (G_dbconn=mysql_init(NULL)) )
-    {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-        return FALSE;
-    }
-
-#ifdef DBMYSQLRECONNECT
-    my_bool reconnect=1;
-    mysql_options(G_dbconn, MYSQL_OPT_RECONNECT, &reconnect);
-#endif
-
-//    unsigned long max_packet=33554432;  /* 32 MB */
-//    mysql_options(G_dbconn, MYSQL_OPT_MAX_ALLOWED_PACKET, &max_packet);
-
-    if ( NULL == mysql_real_connect(G_dbconn, G_dbHost[0]?G_dbHost:NULL, G_dbUser, G_dbPassword, G_dbName, G_dbPort, NULL, 0) )
-    {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-        return FALSE;
-    }
-#endif
-    return TRUE;
 }
 
 
@@ -5238,12 +5211,21 @@ char        *G_res=NULL;
 conn_t      conn[MAX_CONNECTIONS]={0};  /* dummy */
 int         ci=0;
 usession_t  uses={0};                   /* user session */
+
 /* counters */
+
 counters_t  G_cnts_today={0};           /* today's counters */
 counters_t  G_cnts_yesterday={0};       /* yesterday's counters */
 counters_t  G_cnts_day_before={0};      /* day before's counters */
+
+
 #ifdef DBMYSQL
 MYSQL       *G_dbconn=NULL;             /* database connection */
+char        G_dbHost[128]="";
+int         G_dbPort=0;
+char        G_dbName[128]="";
+char        G_dbUser[128]="";
+char        G_dbPassword[128]="";
 #endif
 
 
@@ -5334,6 +5316,13 @@ int main(int argc, char *argv[])
     if ( !silgy_read_param_int("RESTTimeout", &G_RESTTimeout) )
         G_RESTTimeout = CALL_REST_DEFAULT_TIMEOUT;
 
+    silgy_read_param_str("dbHost", G_dbHost);
+    silgy_read_param_int("dbPort", &G_dbPort);
+    silgy_read_param_str("dbName", G_dbName);
+    silgy_read_param_str("dbUser", G_dbUser);
+    silgy_read_param_str("dbPassword", G_dbPassword);
+    silgy_read_param_int("usersRequireAccountActivation", &G_usersRequireAccountActivation);
+
     /* start log --------------------------------------------------------- */
 
     char logprefix[64];
@@ -5367,6 +5356,33 @@ int main(int argc, char *argv[])
 
     strcpy(conn[0].host, APP_DOMAIN);
     strcpy(conn[0].website, APP_WEBSITE);
+
+    /* open database ----------------------------------------------------- */
+
+#ifdef DBMYSQL
+
+    if ( G_dbName[0] )
+    {
+        DBG("Trying lib_open_db...");
+
+        if ( !lib_open_db() )
+        {
+            ERR("lib_open_db failed");
+            clean_up();
+            return EXIT_FAILURE;
+        }
+
+        ALWAYS("Database connected");
+    }
+    else
+    {
+        ERR("dbName parameter is required in silgy.conf");
+        clean_up();
+        return EXIT_FAILURE;
+    }
+
+#endif  /* DBMYSQL */
+
 
     /* open queues ------------------------------------------------------- */
 
@@ -5561,6 +5577,11 @@ static void clean_up()
 #endif
         system(command);
     }
+
+#ifdef DBMYSQL
+    if ( G_dbconn )
+        mysql_close(G_dbconn);
+#endif
 
     if (G_queue_req)
     {
