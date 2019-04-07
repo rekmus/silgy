@@ -10,7 +10,7 @@
 #define SILGY_USR_H
 
 
-#define DB_UAGENT_LEN                   120                     /* User-Agent length stored in ulogins table */
+#define DB_UAGENT_LEN                   250                     /* User-Agent length stored in ulogins table */
 #ifdef APP_MIN_USERNAME_LEN                                     /* minimum user name length */
 #define MIN_USERNAME_LEN                APP_MIN_USERNAME_LEN               
 #else
@@ -205,9 +205,9 @@ extern "C" {
     int  silgy_usr_get_int(int ci, const char *us_key, long *us_val);
     /* for the engine */
     void libusr_init(void);
-    int  libusr_l_usession_ok(int ci);
+    int  libusr_luses_ok(int ci);
     void libusr_close_luses_timeout(void);
-    void libusr_close_l_uses(int ci);
+    void libusr_close_luses(int ci);
 #ifdef __cplusplus
 }   // extern "C"
 #endif

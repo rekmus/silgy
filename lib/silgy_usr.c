@@ -120,6 +120,7 @@ static bool valid_email(const char *email)
 }
 
 
+#ifndef SILGY_SVC
 /* --------------------------------------------------------------------------
    Upgrade anonymous user session to logged in
 -------------------------------------------------------------------------- */
@@ -146,7 +147,7 @@ static int start_new_luses(int ci, long uid, const char *login, const char *emai
 
     if ( !silgy_app_user_login(ci) )
     {
-        libusr_close_l_uses(ci);
+        libusr_close_luses(ci);
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -158,7 +159,7 @@ static int start_new_luses(int ci, long uid, const char *login, const char *emai
    Verify IP & User-Agent against uid and sesid in uses (logged in users)
    set user session array index (usi) if all ok
 -------------------------------------------------------------------------- */
-int libusr_l_usession_ok(int ci)
+int libusr_luses_ok(int ci)
 {
     int         ret=OK;
     int         i;
@@ -169,7 +170,7 @@ unsigned long   sql_records;
     long        uid;
     time_t      created;
 
-    DBG("libusr_l_usession_ok");
+    DBG("libusr_luses_ok");
 
     /* try in hot sessions first */
 
@@ -355,7 +356,7 @@ void libusr_close_luses_timeout()
     for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
         if ( uses[conn[i].usi].sesid[0] && uses[conn[i].usi].logged && uses[conn[i].usi].last_activity < last_allowed )
-            libusr_close_l_uses(i);
+            libusr_close_luses(i);
     }
 }
 
@@ -363,9 +364,11 @@ void libusr_close_luses_timeout()
 /* --------------------------------------------------------------------------
    Downgrade logged in user session to anonymous
 -------------------------------------------------------------------------- */
-void libusr_close_l_uses(int ci)
+void libusr_close_luses(int ci)
 {
     char sql_query[SQLBUF];
+
+    DBG("libusr_close_luses");
 
     DBG("Downgrading logged in session to anonymous, usi=%d, sesid [%s]", conn[ci].usi, uses[conn[ci].usi].sesid);
 
@@ -395,6 +398,7 @@ void libusr_close_l_uses(int ci)
 
     silgy_app_user_logout(ci);
 }
+#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
@@ -548,7 +552,8 @@ unsigned long   sql_records;
     if ( 0==strcmp(email, APP_ADMIN_EMAIL) )
         strcpy(login, "admin");
 #endif
-#endif
+#endif  /* USERSBYEMAIL */
+
     /* upgrade anonymous session to logged in */
 
     ret = start_new_luses(ci, uid, login, email, name, phone, about);
@@ -615,7 +620,7 @@ static int send_activation_link(int ci, const char *login, const char *email)
         sprintf(tmp, "https://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
 #else
     sprintf(tmp, "http://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
-#endif
+#endif  /* HTTPS */
     p = stpcpy(p, tmp);
 
     sprintf(tmp, "Please keep in mind that this link will only be valid for the next %d hours.\n\n", USER_ACTIVATION_HOURS);
@@ -720,6 +725,7 @@ unsigned long   sql_records;
     Public user functions
 ------------------------------------------------------------------------------------------------------------ */
 
+#ifndef SILGY_SVC
 /* --------------------------------------------------------------------------
    Log user in / explicit from Log In page
    Return OK or:
@@ -779,7 +785,7 @@ unsigned long   sql_records;
     strcpy(ulogin, upper(login));
     sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,status,ula_time,ula_cnt,visits,deleted FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
 
-#endif
+#endif  /* USERSBYEMAIL */
 
     DBG("sql_query: %s", sql_query);
 
@@ -1000,7 +1006,7 @@ int silgy_usr_create_account(int ci)
         ERR("Invalid request (email missing)");
         return ERR_EMAIL_EMPTY;
     }
-#endif
+#endif  /* USERSBYEMAIL */
 
     if ( !login[0] )    /* login empty */
     {
@@ -1071,7 +1077,7 @@ int silgy_usr_create_account(int ci)
             return ret;
         else if ( email[0] && !valid_email(email) )     /* invalid email format */
             return ERR_EMAIL_FORMAT_OR_EMPTY;
-#endif
+#endif  /* USERSBYEMAIL */
 
     if ( email[0] && OK != (ret=email_exists(email)) )  /* email in use */
         return ret;
@@ -1128,6 +1134,7 @@ int silgy_usr_create_account(int ci)
     return OK;
 
 }
+#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
@@ -1177,6 +1184,7 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
 }
 
 
+#ifndef SILGY_SVC
 /* --------------------------------------------------------------------------
    Save changes to user account
 -------------------------------------------------------------------------- */
@@ -1265,7 +1273,7 @@ unsigned long   sql_records;
 #else
     if ( email[0] && !valid_email(email) )
         return ERR_EMAIL_FORMAT_OR_EMPTY;
-#endif
+#endif  /* USERSBYEMAIL */
     else if ( plen && plen < MIN_PASSWORD_LEN )
         return ERR_PASSWORD_TOO_SHORT;
     else if ( plen && 0 != strcmp(passwd, rpasswd) )
@@ -1287,7 +1295,7 @@ unsigned long   sql_records;
 #else
     doit(str1, str2, login, login, opasswd);
     sprintf(sql_query, "SELECT passwd1 FROM users WHERE login_u='%s'", upper(login));
-#endif
+#endif  /* USERSBYEMAIL */
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -1338,7 +1346,7 @@ unsigned long   sql_records;
                 return ERR_INT_SERVER_ERROR;
             }
 
-            libusr_close_l_uses(ci);   /* log user out */
+            libusr_close_luses(ci);   /* log user out */
 
             return MSG_ACCOUNT_DELETED;
         }
@@ -1371,6 +1379,7 @@ unsigned long   sql_records;
 
     return OK;
 }
+#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
@@ -1492,7 +1501,8 @@ unsigned long   sql_records;
             sprintf(tmp, "https://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
 #else
         sprintf(tmp, "http://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
-#endif
+#endif  /* HTTPS */
+
         p = stpcpy(p, tmp);
 
         p = stpcpy(p, "Please keep in mind that this link will only be valid for the next 24 hours.\n\n");
@@ -1781,14 +1791,16 @@ unsigned long   sql_records;
 }
 
 
+#ifndef SILGY_SVC
 /* --------------------------------------------------------------------------
    Log user out
 -------------------------------------------------------------------------- */
 void silgy_usr_logout(int ci)
 {
     DBG("silgy_usr_logout");
-    libusr_close_l_uses(ci);
+    libusr_close_luses(ci);
 }
+#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
@@ -1981,4 +1993,4 @@ static long get_max(int ci, const char *table)
     return max;
 }
 
-#endif /* USERS */
+#endif  /* USERS */

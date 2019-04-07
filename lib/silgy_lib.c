@@ -68,7 +68,7 @@ static SSL_CTX *M_ssl_ctx=NULL;
 static SSL *M_rest_ssl=NULL;
 #else
 static void *M_rest_ssl=NULL;    /* dummy */
-#endif /* HTTPS */
+#endif  /* HTTPS */
 
 static unsigned char M_random_numbers[RANDOM_NUMBERS];
 static char M_random_initialized=0;
@@ -76,7 +76,7 @@ static char M_random_initialized=0;
 #ifdef AUTO_INIT_EXPERIMENT
 static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers for auto-init */
 static int M_jsons_cnt=0;
-#endif /* AUTO_INIT_EXPERIMENT */
+#endif  /* AUTO_INIT_EXPERIMENT */
 
 static void seed_rand(void);
 static void minify_1(char *dest, const char *src);
@@ -219,7 +219,7 @@ static void log_ssl()
         ERR(buf);
     }
 }
-#endif /* HTTPS */
+#endif  /* HTTPS */
 
 
 /* --------------------------------------------------------------------------
@@ -265,7 +265,7 @@ static bool init_ssl_client()
     WAR("Ignoring remote server cert errors for REST calls");
     SSL_CTX_set_verify(M_ssl_ctx, SSL_VERIFY_NONE, NULL);
 
-#endif /* HTTPS */
+#endif  /* HTTPS */
     return TRUE;
 }
 
@@ -425,7 +425,7 @@ static bool rest_parse_url(const char *url, char *host, char *port, char *uri, b
 #else
         ERR("HTTPS is not enabled");
         return FALSE;
-#endif /* HTTPS */
+#endif  /* HTTPS */
     }
 
 #ifdef DUMP
@@ -471,7 +471,7 @@ static bool rest_parse_url(const char *url, char *host, char *port, char *uri, b
         if ( *secure )
             strcpy(port, "443");
         else
-#endif /* HTTPS */
+#endif  /* HTTPS */
         strcpy(port, "80");
     }
 #ifdef DUMP
@@ -617,7 +617,7 @@ static int addresses_cnt=0, addresses_last=0;
         }
     }
 
-#endif /* REST_CALL_DONT_CACHE_ADDRINFO */
+#endif  /* REST_CALL_DONT_CACHE_ADDRINFO */
 
     if ( !addr_cached )
     {
@@ -731,7 +731,7 @@ static int addresses_cnt=0, addresses_last=0;
                 addresses_last = 0;
         }
 
-#endif /* REST_CALL_DONT_CACHE_ADDRINFO */
+#endif  /* REST_CALL_DONT_CACHE_ADDRINFO */
 
         freeaddrinfo(result);
     }
@@ -800,7 +800,7 @@ static int addresses_cnt=0, addresses_last=0;
 
 //        cert = SSL_get_peer_certificate(M_rest_ssl);
     }
-#endif /* HTTPS */
+#endif  /* HTTPS */
 
     return TRUE;
 }
@@ -820,7 +820,7 @@ static void rest_disconnect()
 //        DBG("Should be NULL: M_rest_ssl = %d", M_rest_ssl);
         M_rest_ssl = NULL;
     }
-#endif /* HTTPS */
+#endif  /* HTTPS */
 
     close_conn(M_rest_sock);
 }
@@ -961,7 +961,7 @@ bool lib_rest_res_parse(char *res_header, int bytes)
         DBG("Got %d bytes of response [%s]", bytes, res_header);
 #else
         DBG("Got %d bytes of response", bytes);
-#endif /* DUMP */
+#endif  /* DUMP */
 
         /* Status */
 
@@ -1031,7 +1031,7 @@ static char buffer[JSON_BUFSIZE];
     int     timeout_remain = G_RESTTimeout;
 #ifdef HTTPS
     int     ssl_err;
-#endif /* HTTPS */
+#endif  /* HTTPS */
 
     DBG("lib_rest_req [%s] [%s]", method, url);
 
@@ -1045,7 +1045,7 @@ static char buffer[JSON_BUFSIZE];
     DBG("------------------------------------------------------------");
     DBG("lib_rest_req buffer [%s]", buffer);
     DBG("------------------------------------------------------------");
-#endif /* DUMP */
+#endif  /* DUMP */
 
     struct timespec start;
 #ifdef _WIN32
@@ -1083,7 +1083,7 @@ static char buffer[JSON_BUFSIZE];
         if ( secure )
             bytes = SSL_write(M_rest_ssl, buffer, len);
         else
-#endif /* HTTPS */
+#endif  /* HTTPS */
             bytes = send(M_rest_sock, buffer, len, 0);    /* try in one go */
 
         if ( !secure && bytes <= 0 )
@@ -1151,7 +1151,7 @@ static char buffer[JSON_BUFSIZE];
     if ( secure )
         bytes = SSL_read(M_rest_ssl, res_header, REST_RES_HEADER_LEN);
     else
-#endif /* HTTPS */
+#endif  /* HTTPS */
         bytes = recv(M_rest_sock, res_header, REST_RES_HEADER_LEN, 0);
 
     if ( bytes == -1 )
@@ -1294,7 +1294,7 @@ static char res_content[JSON_BUFSIZE];
             if ( secure )
                 bytes = SSL_read(M_rest_ssl, res_content+content_read, JSON_BUFSIZE-content_read-1);
             else
-#endif /* HTTPS */
+#endif  /* HTTPS */
                 bytes = recv(M_rest_sock, res_content+content_read, JSON_BUFSIZE-content_read-1, 0);
 
             if ( bytes == -1 )
@@ -1362,7 +1362,7 @@ static char res_content[JSON_BUFSIZE];
             if ( secure )
                 bytes = SSL_read(M_rest_ssl, buffer+buffer_read, JSON_BUFSIZE-buffer_read-1);
             else
-#endif /* HTTPS */
+#endif  /* HTTPS */
                 bytes = recv(M_rest_sock, buffer+buffer_read, JSON_BUFSIZE-buffer_read-1, 0);
 
             if ( bytes == -1 )
@@ -1594,7 +1594,7 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
                         sprintf(ec, ", errno = %d (%s)", sockerr, strerror(sockerr));
 
                     DBG("bytes = %d, ssl_err = %d%s", bytes, ssl_err, ec);
-#endif /* DUMP */
+#endif  /* DUMP */
                     if ( ssl_err==SSL_ERROR_WANT_READ )
                         return lib_finish_with_timeout(sock, READ, buffer, len, msec, ssl, level+1);
                     else if ( ssl_err==SSL_ERROR_WANT_WRITE )
@@ -1607,7 +1607,7 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
                 }
             }
             else
-#endif /* HTTPS */
+#endif  /* HTTPS */
                 return recv(sock, buffer, len, 0);
         }
         else if ( readwrite == WRITE )
@@ -1632,7 +1632,7 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
                         sprintf(ec, ", errno = %d (%s)", sockerr, strerror(sockerr));
 
                     DBG("bytes = %d, ssl_err = %d%s", bytes, ssl_err, ec);
-#endif /* DUMP */
+#endif  /* DUMP */
                     if ( ssl_err==SSL_ERROR_WANT_WRITE )
                         return lib_finish_with_timeout(sock, WRITE, buffer, len, msec, ssl, level+1);
                     else if ( ssl_err==SSL_ERROR_WANT_READ )
@@ -1645,7 +1645,7 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
                 }
             }
             else
-#endif /* HTTPS */
+#endif  /* HTTPS */
                 return send(sock, buffer, len, 0);
         }
         else   /* CONNECT */
@@ -1659,7 +1659,7 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
                     sprintf(ec, ", errno = %d (%s)", sockerr, strerror(sockerr));
 
                 DBG("error = %d, ssl_err = %d%s", len, ssl_err, ec);
-#endif /* DUMP */
+#endif  /* DUMP */
                 if ( ssl_err==SSL_ERROR_WANT_WRITE )
                     return lib_finish_with_timeout(sock, WRITE, NULL, 0, msec, ssl, level+1);
                 else if ( ssl_err==SSL_ERROR_WANT_READ )
@@ -1671,7 +1671,7 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
                 }
             }
             else
-#endif /* HTTPS */
+#endif  /* HTTPS */
             return 0;
         }
     }
@@ -3130,7 +3130,7 @@ static void json_auto_init(JSON *json)
         lib_json_reset(json);
     }
 }
-#endif /* AUTO_INIT_EXPERIMENT */
+#endif  /* AUTO_INIT_EXPERIMENT */
 
 
 /* --------------------------------------------------------------------------
@@ -3345,7 +3345,7 @@ static char *get_json_closing_bracket(const char *src)
 
 #ifdef DUMP
 //    DBG("get_json_closing_bracket [%s]", src);
-#endif /* DUMP */
+#endif  /* DUMP */
 
     while ( src[i] )
     {
@@ -3385,7 +3385,7 @@ static char *get_json_closing_square_bracket(const char *src)
 
 #ifdef DUMP
 //    DBG("get_json_closing_square_bracket [%s]", src);
-#endif /* DUMP */
+#endif  /* DUMP */
 
     while ( src[i] )
     {
@@ -3464,7 +3464,7 @@ static char tmp[JSON_BUFSIZE];
     sprintf(debug, "lib_json_from_string level %d", level);
     log_long(tmp, len, debug);
     if ( inside_array ) DBG("inside_array");
-#endif /* DUMP */
+#endif  /* DUMP */
 
     for ( i; i<len; ++i )
     {
@@ -3487,7 +3487,7 @@ static char tmp[JSON_BUFSIZE];
                 DBG("second if because of now_key");
             else
                 DBG("second if because of inside_array");
-#endif /* DUMP */
+#endif  /* DUMP */
             if ( inside_array )
             {
                 if ( src[i]==',' ) ++i;    /* skip ',' */
@@ -4251,7 +4251,7 @@ bool silgy_email(const char *to, const char *subject, const char *message)
     char    sender[512];
     char    comm[512];
 
-//#ifndef ASYNC_SERVICE   /* web server mode */
+//#ifndef SILGY_SVC   /* web server mode */
 
 //    sprintf(sender, "%s <noreply@%s>", conn[ci].website, conn[ci].host);
 
@@ -4604,7 +4604,7 @@ bool lib_read_conf(const char *file)
             if ( now_value )    /* end of value */
             {
                 value[i] = EOS;
-#ifndef ASYNC_SERVICE
+#ifndef SILGY_SVC
                 eng_set_param(label, value);
 //                app_set_param(label, value);
 #endif
@@ -4630,7 +4630,7 @@ bool lib_read_conf(const char *file)
             if ( now_value )    /* end of value */
             {
                 value[i] = EOS;
-#ifndef ASYNC_SERVICE
+#ifndef SILGY_SVC
                 eng_set_param(label, value);
 //                app_set_param(label, value);
 #endif
@@ -4655,7 +4655,7 @@ bool lib_read_conf(const char *file)
     if ( now_value )    /* end of value */
     {
         value[i] = EOS;
-#ifndef ASYNC_SERVICE
+#ifndef SILGY_SVC
         eng_set_param(label, value);
 //        app_set_param(label, value);
 #endif
@@ -4666,7 +4666,7 @@ bool lib_read_conf(const char *file)
 
     return TRUE;
 }
-#endif /* OLD_CODE */
+#endif  /* OLD_CODE */
 
 
 /* --------------------------------------------------------------------------
@@ -5118,7 +5118,7 @@ static char dst[1024];
 
     return dst;
 }
-#endif /* ICONV */
+#endif  /* ICONV */
 
 
 

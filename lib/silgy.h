@@ -20,7 +20,7 @@
 #define	X_OK    0x01    /* test for execute or search permission */
 #define	W_OK    0x02    /* test for write permission */
 #define	R_OK    0x04    /* test for read permission */
-#endif /* _MSC_VER */
+#endif  /* _MSC_VER */
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
 #include <winsock2.h>
@@ -100,7 +100,7 @@ typedef char str64k[1024*64];
 #ifdef HTTPS
 #undef HTTPS
 #endif
-#endif /* SILGY_WATCHER */
+#endif  /* SILGY_WATCHER */
 
 
 #ifdef DBMYSQL
@@ -170,7 +170,7 @@ typedef char str64k[1024*64];
 
 /* generate output as fast as possible */
 
-#ifdef ASYNC_SERVICE
+#ifdef SILGY_SVC
 
     #define OUTSS(str)                  (G_res = stpcpy(G_res, str))
     #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(res, data, len), res += len)
@@ -192,7 +192,7 @@ typedef char str64k[1024*64];
         #endif
     #endif  /* OUTFAST */
 
-#endif  /* ASYNC_SERVICE */
+#endif  /* SILGY_SVC */
 
 #ifdef _MSC_VER /* Microsoft compiler */
     #define OUT(...)                        (sprintf(G_tmp, EXPAND_VA(__VA_ARGS__)), OUTSS(G_tmp))
@@ -200,7 +200,7 @@ typedef char str64k[1024*64];
     #define OUTM(str, ...)                  (sprintf(G_tmp, str, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
     #define CHOOSE_OUT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME          /* single or multiple? */
     #define OUT(...)                        CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
-#endif /* _MSC_VER */
+#endif  /* _MSC_VER */
 
 /* HTTP header -- resets respbuf! */
 #define PRINT_HTTP_STATUS(val)          (sprintf(G_tmp, "HTTP/1.1 %d %s\r\n", val, get_http_descr(val)), HOUT(G_tmp))
@@ -258,6 +258,9 @@ typedef char str64k[1024*64];
 
 /* mainly memory usage */
 
+#ifdef SILGY_SVC
+#define MAX_CONNECTIONS                 1               /* dummy */
+#else
 #ifdef MEM_MEDIUM
 #define MAX_CONNECTIONS                 200             /* max TCP connections (2 per user session) */
 #define MAX_SESSIONS                    100             /* max user sessions */
@@ -271,6 +274,7 @@ typedef char str64k[1024*64];
 #define MAX_CONNECTIONS                 20              /* max TCP connections */
 #define MAX_SESSIONS                    10              /* max user sessions */
 #endif
+#endif  /* SILGY_SVC */
 
 #if MAX_CONNECTIONS > FD_SETSIZE-2
 #undef MAX_CONNECTIONS
@@ -445,7 +449,7 @@ typedef char str64k[1024*64];
 #define ASYNC_RES_QUEUE                 "/silgy_res"            /* response queue name */
 #define ASYNC_DEF_TIMEOUT               30                      /* in seconds */
 #define ASYNC_MAX_TIMEOUT               1800                    /* in seconds ==> 30 minutes */
-#ifdef ASYNC_SERVICE
+#ifdef SILGY_SVC
 #define SVC(svc)                        (0==strcmp(G_service, svc))
 #define ASYNC_ERR_CODE                  G_error_code
 #else
@@ -493,17 +497,17 @@ typedef char str64k[1024*64];
 #define URI(uri_)                       (0==strcmp(conn[ci].uri, uri_))
 #define REQ(res)                        (0==strcmp(conn[ci].resource, res))
 #define ID(id)                          (0==strcmp(conn[ci].id, id))
-#ifndef ASYNC_SERVICE
+#ifndef SILGY_SVC
 #define US                              uses[conn[ci].usi]
 #define AUS                             auses[conn[ci].usi]
 #else
 #define US                              uses
 #define AUS                             auses
-#endif /* ASYNC_SERVICE */
+#endif  /* SILGY_SVC */
 #define HOST(str)                       eng_host(ci, str)
 #define REQ_GET_HEADER(header)          eng_get_header(ci, header)
 
-#ifdef ASYNC_SERVICE
+#ifdef SILGY_SVC
 #define REQ_DATA                        G_req
 #else
 #define REQ_DATA                        conn[ci].data
@@ -514,7 +518,7 @@ typedef char str64k[1024*64];
 
 /* response macros */
 
-#ifdef ASYNC_SERVICE
+#ifdef SILGY_SVC
 #define RES_STATUS(val)                 (G_status=val)
 #else
 #define RES_STATUS(val)                 eng_set_res_status(ci, val)
@@ -585,6 +589,17 @@ typedef struct {
 
 /* connection */
 
+#ifdef SILGY_SVC
+typedef struct {                            /* dummy */
+    char    ip[INET_ADDRSTRLEN];
+    char    uagent[MAX_VALUE_LEN+1];
+    char    host[MAX_VALUE_LEN+1];
+    char    website[256];
+    char    cookie_out_l[SESID_LEN+1];
+    char    cookie_out_l_exp[32];
+    int     usi;
+} conn_t;
+#else
 typedef struct {
     /* what comes in */
 #ifdef _WIN32   /* Windows */
@@ -666,11 +681,17 @@ typedef struct {
     int     async_err_code;
 #endif
 } conn_t;
+#endif  /* SILGY_SVC */
 
 
 /* user session */
 
 typedef struct {
+    char    sesid[SESID_LEN+1];
+    char    ip[INET_ADDRSTRLEN];
+    char    uagent[MAX_VALUE_LEN+1];
+    char    referer[MAX_VALUE_LEN+1];
+    char    lang[LANG_LEN+1];
     bool    logged;
     long    uid;
     char    login[LOGIN_LEN+1];
@@ -683,11 +704,6 @@ typedef struct {
     char    name_tmp[UNAME_LEN+1];
     char    phone_tmp[PHONE_LEN+1];
     char    about_tmp[ABOUT_LEN+1];
-    char    sesid[SESID_LEN+1];
-    char    ip[INET_ADDRSTRLEN];
-    char    uagent[MAX_VALUE_LEN+1];
-    char    referer[MAX_VALUE_LEN+1];
-    char    lang[LANG_LEN+1];
     time_t  last_activity;
 } usession_t;
 
@@ -808,19 +824,17 @@ extern int      G_test;
 extern int      G_pid;                      /* pid */
 extern char     G_appdir[256];              /* application root dir */
 extern long     G_days_up;                  /* web server's days up */
-#ifndef ASYNC_SERVICE
 extern conn_t   conn[MAX_CONNECTIONS];      /* HTTP connections & requests -- by far the most important structure around */
-#endif
 extern int      G_open_conn;                /* number of open connections */
 extern int      G_open_conn_hwm;            /* highest number of open connections (high water mark) */
 extern char     G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
-#ifndef ASYNC_SERVICE
+#ifndef SILGY_SVC
 extern usession_t uses[MAX_SESSIONS+1];     /* engine user sessions -- they start from 1 */
 extern ausession_t auses[MAX_SESSIONS+1];   /* app user sessions, using the same index (usi) */
 #else
 extern usession_t uses;
 extern ausession_t auses;
-#endif /* ASYNC_SERVICE */
+#endif  /* SILGY_SVC */
 extern int      G_sessions;                 /* number of active user sessions */
 extern int      G_sessions_hwm;             /* highest number of active user sessions (high water mark) */
 extern time_t   G_now;                      /* current time */
@@ -843,16 +857,17 @@ extern mqd_t    G_queue_res;                /* response queue */
 #ifdef ASYNC
 extern async_res_t ares[MAX_ASYNC];         /* async response array */
 extern long     G_last_call_id;             /* counter */
-#endif /* ASYNC */
-#endif /* _WIN32 */
+#endif  /* ASYNC */
+#endif  /* _WIN32 */
 extern char     G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 extern bool     G_index_present;            /* index.html present in res? */
-#ifdef ASYNC_SERVICE
+#ifdef SILGY_SVC
 extern char     *G_req;
 extern char     *G_res;
 extern char     G_service[SVC_NAME_LEN+1];
 extern int      G_error_code;
 extern int      G_status;
+extern int      ci;
 #endif
 
 extern char     G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
@@ -926,11 +941,11 @@ extern "C" {
 
     /* public app functions */
 
-#ifdef ASYNC_SERVICE
+#ifdef SILGY_SVC
     bool silgy_svc_init(void);
     void silgy_svc_main(void);
     void silgy_svc_done(void);
-#else /* not ASYNC_SERVICE */
+#else /* not SILGY_SVC */
     bool silgy_app_init(int argc, char *argv[]);
     void silgy_app_done(void);
     void silgy_app_main(int ci);
@@ -949,7 +964,7 @@ extern "C" {
 #ifdef EVERY_SECOND
     void app_every_second(void);
 #endif
-#endif /* ASYNC_SERVICE */
+#endif  /* SILGY_SVC */
 
 #ifdef __cplusplus
 }   /* extern "C" */

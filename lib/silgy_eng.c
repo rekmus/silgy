@@ -11,7 +11,7 @@
 #include <silgy.h>
 
 
-#ifndef ASYNC_SERVICE
+#ifndef SILGY_SVC
 
 /* globals */
 
@@ -52,8 +52,8 @@ mqd_t       G_queue_res={0};            /* response queue */
 #ifdef ASYNC
 async_res_t ares[MAX_ASYNC]={0};        /* async response array */
 long        G_last_call_id=0;           /* counter */
-#endif /* ASYNC */
-#endif /* _WIN32 */
+#endif  /* ASYNC */
+#endif  /* _WIN32 */
 bool        G_index_present=FALSE;      /* index.html present in res? */
 
 char        G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
@@ -187,7 +187,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
     time_t      dbg_last_time1=0;
     time_t      dbg_last_time2=0;
-#endif /* DUMP */
+#endif  /* DUMP */
 
     if ( !init(argc, argv) )
     {
@@ -311,7 +311,7 @@ struct timeval  timeout;                    /* Timeout for select */
         return EXIT_FAILURE;
     }
 
-#endif /* HTTPS */
+#endif  /* HTTPS */
 
     addr_len = sizeof(cli_addr);
 
@@ -335,7 +335,7 @@ struct timeval  timeout;                    /* Timeout for select */
         clean_up();
         return EXIT_FAILURE;
     }
-#endif /* DBMYSQL */
+#endif  /* DBMYSQL */
 
     /* log currently used memory */
 
@@ -466,7 +466,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
                                 DBG("Trying SSL_read %ld bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
-#endif /* DUMP */
+#endif  /* DUMP */
                                 bytes = SSL_read(conn[i].ssl, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read);
                                 if ( bytes > 0 )
                                     conn[i].was_read += bytes;
@@ -474,7 +474,7 @@ struct timeval  timeout;                    /* Timeout for select */
                             }
                         }
                         else        /* HTTP */
-#endif /* HTTPS */
+#endif  /* HTTPS */
                         {
 //                          DBG("not secure, state=%c", conn[i].conn_state);
 
@@ -483,7 +483,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_CONNECTED", i);
                                 DBG("Trying read from fd=%d (ci=%d)", conn[i].fd, i);
-#endif /* DUMP */
+#endif  /* DUMP */
 #ifdef _WIN32   /* Windows */
                                 bytes = recv(conn[i].fd, conn[i].in, IN_BUFSIZE-1, 0);
 #else
@@ -499,7 +499,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
                                 DBG("Trying to read %ld bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
-#endif /* DUMP */
+#endif  /* DUMP */
 #ifdef _WIN32   /* Windows */
                                 bytes = recv(conn[i].fd, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read, 0);
 #else
@@ -523,7 +523,7 @@ struct timeval  timeout;                    /* Timeout for select */
                             DBG("ci=%d, fd=%d is ready for outgoing data, conn_state = %c", i, conn[i].fd, conn[i].conn_state);
                             dbg_last_time1 = G_now;
                         }
-#endif /* DUMP */
+#endif  /* DUMP */
                         /* async processing */
 #ifdef ASYNC
                         if ( conn[i].conn_state == CONN_STATE_WAITING_FOR_ASYNC )
@@ -534,7 +534,7 @@ struct timeval  timeout;                    /* Timeout for select */
                                 DBG("ci=%d, state == CONN_STATE_WAITING_FOR_ASYNC", i);
                                 dbg_last_time2 = G_now;
                             }
-#endif /* DUMP */
+#endif  /* DUMP */
                             for ( j=0; j<MAX_ASYNC; ++j )
                             {
                                 if ( (ares[j].hdr.state==ASYNC_STATE_RECEIVED || ares[j].hdr.state==ASYNC_STATE_TIMEOUTED) && ares[j].hdr.ci == i )
@@ -569,7 +569,7 @@ struct timeval  timeout;                    /* Timeout for select */
                                 }
                             }
                         }
-#endif /* ASYNC */
+#endif  /* ASYNC */
 #ifdef HTTPS
                         if ( conn[i].secure )   /* HTTPS */
                         {
@@ -580,7 +580,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
                                 DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", strlen(conn[i].header), conn[i].fd, i);
-#endif /* DUMP */
+#endif  /* DUMP */
                                 bytes = SSL_write(conn[i].ssl, conn[i].header, strlen(conn[i].header));
                                 set_state_sec(i, bytes);
                             }
@@ -589,7 +589,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
                                 DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", conn[i].clen, conn[i].fd, i);
-#endif /* DUMP */
+#endif  /* DUMP */
                                 if ( conn[i].static_res == NOT_STATIC )
                                     bytes = SSL_write(conn[i].ssl, conn[i].out_data, conn[i].clen);
                                 else
@@ -598,7 +598,7 @@ struct timeval  timeout;                    /* Timeout for select */
                             }
                         }
                         else    /* HTTP */
-#endif /* HTTPS */
+#endif  /* HTTPS */
                         {
 //                          DBG("not secure, state=%c", conn[i].conn_state);
 
@@ -607,7 +607,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
                                 DBG("Trying to write %ld bytes to fd=%d (ci=%d)", strlen(conn[i].header), conn[i].fd, i);
-#endif /* DUMP */
+#endif  /* DUMP */
 #ifdef _WIN32   /* Windows */
                                 bytes = send(conn[i].fd, conn[i].header, strlen(conn[i].header), 0);
 #else
@@ -622,7 +622,7 @@ struct timeval  timeout;                    /* Timeout for select */
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
                                 DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].clen-conn[i].data_sent, conn[i].fd, i);
 //                                log_long(conn[i].out_data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, "Body to send");
-#endif /* DUMP */
+#endif  /* DUMP */
                                 if ( conn[i].static_res == NOT_STATIC )
                                 {
 #ifdef _WIN32   /* Windows */
@@ -666,7 +666,7 @@ struct timeval  timeout;                    /* Timeout for select */
                         if ( !conn[i].secure && conn[i].upgrade2https && 0!=strcmp(conn[i].host, APP_DOMAIN) )
                             conn[i].upgrade2https = FALSE;
 #endif
-#endif /* HTTPS */
+#endif  /* HTTPS */
                         if ( conn[i].conn_state != CONN_STATE_READING_DATA )
                         {
 #ifdef DUMP
@@ -721,7 +721,7 @@ struct timeval  timeout;                    /* Timeout for select */
                 last_time = G_now;
             }
         }
-#endif /* DUMP */
+#endif  /* DUMP */
 
         /* async processing -- check on response queue */
 #ifdef ASYNC
@@ -731,7 +731,7 @@ struct timeval  timeout;                    /* Timeout for select */
         if ( (mq_ret=mq_receive(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, NULL)) != -1 )    /* there's a response in the queue */
 #else
         if ( mq_receive(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, NULL) != -1 )    /* there's a response in the queue */
-#endif /* DUMP */
+#endif  /* DUMP */
         {
             DBG("Message received!");
             DBG("res.hdr.call_id = %ld", res.hdr.call_id);
@@ -770,7 +770,7 @@ struct timeval  timeout;                    /* Timeout for select */
                 last_time = G_now;
             }
         }
-#endif /* DUMP */
+#endif  /* DUMP */
 
         /* free timeout-ed */
 
@@ -782,7 +782,7 @@ struct timeval  timeout;                    /* Timeout for select */
             }
         }
 
-#endif /* ASYNC */
+#endif  /* ASYNC */
 
 //        ++time_elapsed;
 
@@ -826,8 +826,8 @@ static bool housekeeping()
         read_files(FALSE, FALSE, NULL);
         read_files(TRUE, FALSE, NULL);
     }
-#endif /* DONT_RESCAN_RES */
-#endif /* DUMP */
+#endif  /* DONT_RESCAN_RES */
+#endif  /* DUMP */
 
     if ( G_ptm->tm_min != M_prev_minute )
     {
@@ -846,7 +846,7 @@ static bool housekeeping()
 #ifndef DONT_RESCAN_RES    /* refresh static resources */
         read_files(FALSE, FALSE, NULL);
         read_files(TRUE, FALSE, NULL);
-#endif /* DONT_RESCAN_RES */
+#endif  /* DONT_RESCAN_RES */
 
         /* start new log file every day */
 
@@ -1475,7 +1475,7 @@ static bool init(int argc, char **argv)
 #else
     ALWAYS(" Users' authentication = USERSBYLOGIN");
 #endif
-#endif /* USERS */
+#endif  /* USERS */
 //    ALWAYS("");
 //    ALWAYS("           auses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(auses), sizeof(auses)/1024, (double)sizeof(auses)/1024/1024);
 //    ALWAYS("");
@@ -1485,7 +1485,7 @@ static bool init(int argc, char **argv)
 #ifdef DUMP
     WAR("DUMP is enabled, this file may grow big quickly!");
     ALWAYS("");
-#endif /* DUMP */
+#endif  /* DUMP */
 
     /* custom init
        Among others, that may contain generating statics, like css and js */
@@ -1617,7 +1617,7 @@ static bool init(int argc, char **argv)
             ERR("malloc for conn[%d].out_data failed", i);
             return FALSE;
         }
-#endif /* OUTCHECKREALLOC */
+#endif  /* OUTCHECKREALLOC */
 
         conn[i].out_data_allocated = OUT_BUFSIZE;
         conn[i].data = NULL;
@@ -1710,7 +1710,7 @@ static bool init(int argc, char **argv)
 
     G_last_call_id = 0;
 
-#endif /* ASYNC */
+#endif  /* ASYNC */
 
     return TRUE;
 }
@@ -1732,7 +1732,7 @@ static void build_fd_sets()
     M_highsock = M_listening_sec_fd;
 #else
     M_highsock = M_listening_fd;
-#endif /* HTTPS */
+#endif  /* HTTPS */
 
     int i;
     int remain = G_open_conn;
@@ -1768,7 +1768,7 @@ static void build_fd_sets()
         }
         else
         {
-#endif /* HTTPS */
+#endif  /* HTTPS */
             /* reading */
 
             if ( conn[i].conn_state == CONN_STATE_CONNECTED
@@ -2208,7 +2208,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
     else
         sprintf(resdir, "%s/res", G_appdir);
 
-#endif /* _WIN32 */
+#endif  /* _WIN32 */
 
 #ifdef DUMP
 //    DBG("resdir [%s]", resdir);
@@ -2482,7 +2482,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 #ifdef DUMP
 //      if ( minify )   /* temporarily */
 //          DBG("minified %s: [%s]", M_stat[i].name, M_stat[i].data);
-#endif /* DUMP */
+#endif  /* DUMP */
     }
 
     closedir(dir);
@@ -2600,7 +2600,7 @@ static void process_req(int ci)
 #ifdef USERS
         if ( conn[ci].cookie_in_l[0] )  /* logged in sesid cookie present */
         {
-            ret = libusr_l_usession_ok(ci);     /* is it valid? */
+            ret = libusr_luses_ok(ci);     /* is it valid? */
 
             if ( ret == OK )    /* valid sesid -- user logged in */
                 DBG("User logged in from cookie");
@@ -2721,7 +2721,7 @@ static void gen_response_header(int ci)
         else if ( conn[ci].location[0] == 'h'        /* (2) full address already present */
 #else
              if ( conn[ci].location[0] == 'h'        /* (2) full address already present */
-#endif /* HTTPS */
+#endif  /* HTTPS */
                     && conn[ci].location[1] == 't'
                     && conn[ci].location[2] == 't'
                     && conn[ci].location[3] == 'p' )
@@ -3336,7 +3336,7 @@ static int parse_req(int ci, long len)
         strcpy(conn[ci].uri, "index.html");
     }
 
-#endif /* DONT_LOOK_FOR_INDEX */
+#endif  /* DONT_LOOK_FOR_INDEX */
 
     /* split URI and resource / id --------------------------------------- */
 
@@ -4476,7 +4476,7 @@ void eng_send_msg_description(int ci, int code)
     {
         strcpy(cat, MSG_CAT_MESSAGE);
     }
-#endif /* USERS */
+#endif  /* USERS */
     else    /* app error */
     {
         /* keep default category */
@@ -5221,7 +5221,7 @@ void eng_rest_header_pass(int ci, const char *key)
 
 
 
-#else   /* ASYNC_SERVICE ====================================================================================== */
+#else   /* SILGY_SVC ====================================================================================== */
 
 
 char        G_service[SVC_NAME_LEN+1];
@@ -5232,13 +5232,19 @@ char        G_req_queue_name[256]="";
 char        G_res_queue_name[256]="";
 mqd_t       G_queue_req={0};            /* request queue */
 mqd_t       G_queue_res={0};            /* response queue */
+int         G_usersRequireAccountActivation=0;
 char        *G_req=NULL;
 char        *G_res=NULL;
+conn_t      conn[MAX_CONNECTIONS]={0};  /* dummy */
+int         ci=0;
 usession_t  uses={0};                   /* user session */
 /* counters */
 counters_t  G_cnts_today={0};           /* today's counters */
 counters_t  G_cnts_yesterday={0};       /* yesterday's counters */
 counters_t  G_cnts_day_before={0};      /* day before's counters */
+#ifdef DBMYSQL
+MYSQL       *G_dbconn=NULL;             /* database connection */
+#endif
 
 
 static char *M_pidfile;                 /* pid file name */
@@ -5246,6 +5252,22 @@ static char *M_pidfile;                 /* pid file name */
 
 static void sigdisp(int sig);
 static void clean_up(void);
+
+
+#ifdef USERS
+/* --------------------------------------------------------------------------
+   Dummies for USERS
+-------------------------------------------------------------------------- */
+bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf)
+{
+    return 0;
+}
+
+bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
+{
+    return 0;
+}
+#endif  /* USERS */
 
 
 /* --------------------------------------------------------------------------
@@ -5340,6 +5362,11 @@ int main(int argc, char *argv[])
 
     signal(SIGPIPE, SIG_IGN);   /* ignore SIGPIPE */
 #endif
+
+    /* init dummy conn structure ----------------------------------------- */
+
+    strcpy(conn[0].host, APP_DOMAIN);
+    strcpy(conn[0].website, APP_WEBSITE);
 
     /* open queues ------------------------------------------------------- */
 
@@ -5549,4 +5576,4 @@ static void clean_up()
     log_finish();
 }
 
-#endif  /* ASYNC_SERVICE */
+#endif  /* SILGY_SVC */
