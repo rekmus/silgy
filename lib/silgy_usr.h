@@ -204,6 +204,7 @@ extern "C" {
     int  silgy_usr_set_int(int ci, const char *us_key, long us_val);
     int  silgy_usr_get_int(int ci, const char *us_key, long *us_val);
     /* for the engine */
+    void libusr_init(void);
     int  libusr_l_usession_ok(int ci);
     void libusr_close_luses_timeout(void);
     void libusr_close_l_uses(int ci);
