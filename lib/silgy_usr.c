@@ -668,7 +668,7 @@ unsigned long   sql_records;
 
     strcpy(esc_linkkey, silgy_sql_esc(linkkey));
 
-    sprintf(sql_query, "SELECT user_id, created, activated FROM users_activations WHERE linkkey='%s'", esc_linkkey);
+    sprintf(sql_query, "SELECT user_id, created, activated FROM users_activations WHERE linkkey = BINARY '%s'", esc_linkkey);
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -1557,7 +1557,7 @@ unsigned long   sql_records;
 
     strcpy(esc_linkkey, silgy_sql_esc(linkkey));
 
-    sprintf(sql_query, "SELECT user_id, created, tries FROM users_p_resets WHERE linkkey='%s'", esc_linkkey);
+    sprintf(sql_query, "SELECT user_id, created, tries FROM users_p_resets WHERE linkkey = BINARY '%s'", esc_linkkey);
     DBG("sql_query: %s", sql_query);
 
     mysql_query(G_dbconn, sql_query);
@@ -1614,7 +1614,7 @@ unsigned long   sql_records;
 
     /* update tries counter */
 
-    sprintf(sql_query, "UPDATE users_p_resets SET tries=%d WHERE linkkey='%s'", tries+1, esc_linkkey);
+    sprintf(sql_query, "UPDATE users_p_resets SET tries=%d WHERE linkkey = BINARY '%s'", tries+1, esc_linkkey);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
@@ -1664,8 +1664,8 @@ unsigned long   sql_records;
 
     /* remove activation link */
 
-//    sprintf(sql_query, "DELETE FROM users_activations WHERE linkkey='%s'", linkkey);
-    sprintf(sql_query, "UPDATE users_activations SET activated='Y' WHERE linkkey='%s'", linkkey);
+//    sprintf(sql_query, "DELETE FROM users_activations WHERE linkkey = BINARY '%s'", linkkey);
+    sprintf(sql_query, "UPDATE users_activations SET activated='Y' WHERE linkkey = BINARY '%s'", linkkey);
     DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
     {
