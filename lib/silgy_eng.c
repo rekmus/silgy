@@ -2963,7 +2963,7 @@ static void uses_close_timeouted()
 //    for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
     for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
-        if ( uses[conn[i].usi].sesid[0] && !uses[conn[i].usi].logged && uses[conn[i].usi].last_activity < last_allowed )
+        if ( conn[i].usi && uses[conn[i].usi].sesid[0] && !uses[conn[i].usi].logged && uses[conn[i].usi].last_activity < last_allowed )
             close_uses(i);
     }
 }
