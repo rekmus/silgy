@@ -151,6 +151,12 @@ char *silgy_message(int code)
 bool lib_open_db()
 {
 #ifdef DBMYSQL
+    if ( !G_dbName[0] )
+    {
+        ERR("dbName parameter is required in silgy.conf");
+        return FALSE;
+    }
+
     if ( NULL == (G_dbconn=mysql_init(NULL)) )
     {
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
@@ -172,6 +178,18 @@ bool lib_open_db()
     }
 #endif
     return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Close database connection
+-------------------------------------------------------------------------- */
+void lib_close_db()
+{
+#ifdef DBMYSQL
+    if ( G_dbconn )
+        mysql_close(G_dbconn);
+#endif
 }
 
 

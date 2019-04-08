@@ -317,25 +317,16 @@ struct timeval  timeout;                    /* Timeout for select */
 
 #ifdef DBMYSQL
 
-    if ( G_dbName[0] )
-    {
-        DBG("Trying lib_open_db...");
+    DBG("Trying lib_open_db...");
 
-        if ( !lib_open_db() )
-        {
-            ERR("lib_open_db failed");
-            clean_up();
-            return EXIT_FAILURE;
-        }
-
-        ALWAYS("Database connected");
-    }
-    else
+    if ( !lib_open_db() )
     {
-        ERR("dbName parameter is required in silgy.conf");
+        ERR("lib_open_db failed");
         clean_up();
         return EXIT_FAILURE;
     }
+
+    ALWAYS("Database connected");
 
 #endif  /* DBMYSQL */
 
@@ -3787,8 +3778,7 @@ static void clean_up()
     }
 
 #ifdef DBMYSQL
-    if ( G_dbconn )
-        mysql_close(G_dbconn);
+    lib_close_db();
 #endif
 #ifdef HTTPS
     SSL_CTX_free(M_ssl_ctx);
@@ -4078,6 +4068,13 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         memcpy(&req.hdr.uses, &US, sizeof(usession_t));
 #ifdef ASYNC_AUSES
         memcpy(&req.hdr.auses, &AUS, sizeof(ausession_t));
+#endif
+    }
+    else
+    {
+        memset(&req.hdr.uses, 0, sizeof(usession_t));
+#ifdef ASYNC_AUSES
+        memset(&req.hdr.auses, 0, sizeof(ausession_t));
 #endif
     }
 
@@ -5350,25 +5347,16 @@ int main(int argc, char *argv[])
 
 #ifdef DBMYSQL
 
-    if ( G_dbName[0] )
-    {
-        DBG("Trying lib_open_db...");
+    DBG("Trying lib_open_db...");
 
-        if ( !lib_open_db() )
-        {
-            ERR("lib_open_db failed");
-            clean_up();
-            return EXIT_FAILURE;
-        }
-
-        ALWAYS("Database connected");
-    }
-    else
+    if ( !lib_open_db() )
     {
-        ERR("dbName parameter is required in silgy.conf");
+        ERR("lib_open_db failed");
         clean_up();
         return EXIT_FAILURE;
     }
+
+    ALWAYS("Database connected");
 
 #endif  /* DBMYSQL */
 
@@ -5481,14 +5469,23 @@ int main(int argc, char *argv[])
             /* ----------------------------------------------------------- */
 
             DBG("Processing...");
+
             G_req = req.data;
             G_res = res.data;
+
             /* user session */
+
             memcpy(&uses, &req.hdr.uses, sizeof(usession_t));
 #ifdef ASYNC_AUSES
             memcpy(&auses, &req.hdr.auses, sizeof(ausession_t));
 #endif
+            if ( uses.sesid[0] )
+                conn[0].usi = 1;    /* user session present */
+            else
+                conn[0].usi = 0;    /* no session */
+
             /* counters */
+
             memcpy(&G_cnts_today, &req.hdr.cnts_today, sizeof(counters_t));
             memcpy(&G_cnts_yesterday, &req.hdr.cnts_yesterday, sizeof(counters_t));
             memcpy(&G_cnts_day_before, &req.hdr.cnts_day_before, sizeof(counters_t));
@@ -5568,8 +5565,7 @@ static void clean_up()
     }
 
 #ifdef DBMYSQL
-    if ( G_dbconn )
-        mysql_close(G_dbconn);
+    lib_close_db();
 #endif
 
     if (G_queue_req)

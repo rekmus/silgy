@@ -262,6 +262,7 @@ extern "C" {
     void silgy_add_message(int code, const char *message, ...);
     char *silgy_message(int code);
     bool lib_open_db(void);
+    void lib_close_db(void);
     bool lib_file_exists(const char *fname);
     void lib_get_exec_name(char *dst, const char *path);
     void lib_update_time_globals(void);

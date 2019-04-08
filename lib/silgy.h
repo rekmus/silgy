@@ -599,7 +599,7 @@ typedef struct {                            /* dummy */
     char    cookie_out_l_exp[32];
     int     usi;
 } conn_t;
-#else
+#else   /* not SILGY_SVC */
 typedef struct {
     /* what comes in */
 #ifdef _WIN32   /* Windows */
@@ -868,7 +868,7 @@ extern char     G_service[SVC_NAME_LEN+1];
 extern int      G_error_code;
 extern int      G_status;
 extern int      ci;
-#endif
+#endif  /* SILGY_SVC */
 
 extern char     G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
 extern int      G_blacklist_cnt;            /* M_blacklist length */
