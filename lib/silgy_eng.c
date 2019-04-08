@@ -4061,6 +4061,14 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     req.hdr.response = response;
 
+    /* conn */
+
+    strcpy(req.hdr.ip, conn[ci].ip);
+    strcpy(req.hdr.uagent, conn[ci].uagent);
+    strcpy(req.hdr.host, conn[ci].host);
+    strcpy(req.hdr.website, conn[ci].website);
+    strcpy(req.hdr.lang, conn[ci].lang);
+
     /* pass user session */
 
     if ( conn[ci].usi )
@@ -5464,6 +5472,13 @@ int main(int argc, char *argv[])
             res.hdr.call_id = req.hdr.call_id;
             res.hdr.ci = req.hdr.ci;
             strcpy(G_service, req.hdr.service);
+
+            strcpy(conn[0].ip, req.hdr.ip);
+            strcpy(conn[0].uagent, req.hdr.uagent);
+            strcpy(conn[0].host, req.hdr.host);
+            strcpy(conn[0].website, req.hdr.website);
+            strcpy(conn[0].lang, req.hdr.lang);
+
             strcpy(res.hdr.service, req.hdr.service);
 
             /* ----------------------------------------------------------- */
@@ -5490,6 +5505,8 @@ int main(int argc, char *argv[])
             memcpy(&G_cnts_yesterday, &req.hdr.cnts_yesterday, sizeof(counters_t));
             memcpy(&G_cnts_day_before, &req.hdr.cnts_day_before, sizeof(counters_t));
             
+            /* ----------------------------------------------------------- */
+
             silgy_svc_main();
 
             /* ----------------------------------------------------------- */

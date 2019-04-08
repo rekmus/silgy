@@ -595,6 +595,7 @@ typedef struct {                            /* dummy */
     char    uagent[MAX_VALUE_LEN+1];
     char    host[MAX_VALUE_LEN+1];
     char    website[256];
+    char    lang[LANG_LEN+1];
     char    cookie_out_l[SESID_LEN+1];
     char    cookie_out_l_exp[32];
     int     usi;
@@ -754,6 +755,11 @@ typedef struct {
     long    call_id;
     int     ci;
     char    service[SVC_NAME_LEN+1];
+    char    ip[INET_ADDRSTRLEN];
+    char    uagent[MAX_VALUE_LEN+1];
+    char    host[MAX_VALUE_LEN+1];
+    char    website[256];
+    char    lang[LANG_LEN+1];
     char    response;
     usession_t uses;
 #ifdef ASYNC_AUSES
