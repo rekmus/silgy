@@ -151,8 +151,8 @@ static void gen_response_header(int ci);
 static void print_content_type(int ci, char type);
 static bool a_usession_ok(int ci);
 static void close_old_conn(void);
-static void close_uses_timeout(void);
-static void close_a_uses(int ci);
+static void uses_close_timeouted(void);
+static void close_uses(int ci);
 static void reset_conn(int ci, char conn_state);
 static int parse_req(int ci, long len);
 static int set_http_req_val(int ci, const char *label, const char *value);
@@ -810,8 +810,8 @@ static bool housekeeping()
     /* close expired connections */
     if ( G_open_conn ) close_old_conn();
 
-    /* close expired user sessions */
-    if ( G_sessions ) close_uses_timeout();
+    /* close expired anonymous user sessions */
+    if ( G_sessions ) uses_close_timeouted();
 
 #ifdef DUMP
 #ifndef DONT_RESCAN_RES
@@ -828,13 +828,13 @@ static bool housekeeping()
 #ifdef DUMP
         DBG("Once a minute");
 #endif
+        /* close expired logged in user sessions */
+#ifdef USERS
+        if ( G_sessions ) libusr_luses_close_timeouted();
+#endif
         /* say something sometimes ... */
         ALWAYS_T("%d open connection(s) | %d user session(s)", G_open_conn, G_sessions);
 
-        /* close expired logged in user sessions */
-#ifdef USERS
-        if ( G_sessions ) libusr_close_luses_timeout();     /* tidy up cache */
-#endif
         log_flush();
 
 #ifndef DONT_RESCAN_RES    /* refresh static resources */
@@ -2640,9 +2640,9 @@ static void process_req(int ci)
         if ( ret==ERR_REDIRECTION || conn[ci].status==400 || conn[ci].status==401 || conn[ci].status==403 || conn[ci].status==404 || conn[ci].status==500 || conn[ci].status==503 )
         {
 #ifdef USERS
-            if ( conn[ci].usi && !LOGGED ) close_a_uses(ci);
+            if ( conn[ci].usi && !LOGGED ) close_uses(ci);
 #else
-            if ( conn[ci].usi ) close_a_uses(ci);
+            if ( conn[ci].usi ) close_uses(ci);
 #endif
             if ( !conn[ci].keep_content )
             {
@@ -2947,7 +2947,7 @@ static void close_old_conn()
 /* --------------------------------------------------------------------------
    Close timeouted anonymous user sessions
 -------------------------------------------------------------------------- */
-static void close_uses_timeout()
+static void uses_close_timeouted()
 {
     int     i;
     time_t  last_allowed;
@@ -2958,7 +2958,7 @@ static void close_uses_timeout()
     for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
         if ( uses[conn[i].usi].sesid[0] && !uses[conn[i].usi].logged && uses[conn[i].usi].last_activity < last_allowed )
-            close_a_uses(i);
+            close_uses(i);
     }
 }
 
@@ -2966,7 +2966,7 @@ static void close_uses_timeout()
 /* --------------------------------------------------------------------------
    Close anonymous user session
 -------------------------------------------------------------------------- */
-static void close_a_uses(int ci)
+static void close_uses(int ci)
 {
     DBG("Closing anonymous session, usi=%d, sesid [%s]", conn[ci].usi, uses[conn[ci].usi].sesid);
 
@@ -4023,7 +4023,7 @@ int eng_uses_start(int ci, const char *sesid)
 
     if ( !silgy_app_session_init(ci) )
     {
-        close_a_uses(ci);
+        close_uses(ci);
         return ERR_INT_SERVER_ERROR;
     }
 

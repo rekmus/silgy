@@ -19,10 +19,11 @@ long     G_new_user_id=0;
 
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
-static int start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about);
-static int user_exists(const char *login);
-static int email_exists(const char *email);
-static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits);
+static int  upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about);
+static void downgrade_uses(int ci);
+static int  user_exists(const char *login);
+static int  email_exists(const char *email);
+static int  do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits);
 static void doit(char *result1, char *result2, const char *usr, const char *email, const char *src);
 static long get_max(int ci, const char *table);
 
@@ -124,9 +125,9 @@ static bool valid_email(const char *email)
 /* --------------------------------------------------------------------------
    Upgrade anonymous user session to logged in
 -------------------------------------------------------------------------- */
-static int start_new_luses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about)
+static int upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about)
 {
-    DBG("start_new_luses");
+    DBG("upgrade_uses");
 
     DBG("Upgrading anonymous session to logged in, usi=%d, sesid [%s]", conn[ci].usi, US.sesid);
     strcpy(conn[ci].cookie_out_a, "x");     /* no longer needed */
@@ -147,7 +148,7 @@ static int start_new_luses(int ci, long uid, const char *login, const char *emai
 
     if ( !silgy_app_user_login(ci) )
     {
-        libusr_close_luses(ci);
+        downgrade_uses(ci);
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -345,7 +346,7 @@ unsigned long   sql_records;
 /* --------------------------------------------------------------------------
    Close timeouted logged in user sessions
 -------------------------------------------------------------------------- */
-void libusr_close_luses_timeout()
+void libusr_luses_close_timeouted()
 {
     int     i;
     time_t  last_allowed;
@@ -356,7 +357,7 @@ void libusr_close_luses_timeout()
     for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
         if ( uses[conn[i].usi].sesid[0] && uses[conn[i].usi].logged && uses[conn[i].usi].last_activity < last_allowed )
-            libusr_close_luses(i);
+            downgrade_uses(i);
     }
 }
 
@@ -364,11 +365,11 @@ void libusr_close_luses_timeout()
 /* --------------------------------------------------------------------------
    Downgrade logged in user session to anonymous
 -------------------------------------------------------------------------- */
-void libusr_close_luses(int ci)
+static void downgrade_uses(int ci)
 {
     char sql_query[SQLBUF];
 
-    DBG("libusr_close_luses");
+    DBG("downgrade_uses");
 
     DBG("Downgrading logged in session to anonymous, usi=%d, sesid [%s]", conn[ci].usi, uses[conn[ci].usi].sesid);
 
@@ -556,7 +557,7 @@ unsigned long   sql_records;
 
     /* upgrade anonymous session to logged in */
 
-    ret = start_new_luses(ci, uid, login, email, name, phone, about);
+    ret = upgrade_uses(ci, uid, login, email, name, phone, about);
     if ( ret != OK )
         return ret;
 
@@ -1346,7 +1347,7 @@ unsigned long   sql_records;
                 return ERR_INT_SERVER_ERROR;
             }
 
-            libusr_close_luses(ci);   /* log user out */
+            downgrade_uses(ci);   /* log user out */
 
             return MSG_ACCOUNT_DELETED;
         }
@@ -1798,7 +1799,7 @@ unsigned long   sql_records;
 void silgy_usr_logout(int ci)
 {
     DBG("silgy_usr_logout");
-    libusr_close_luses(ci);
+    downgrade_uses(ci);
 }
 #endif  /* SILGY_SVC */
 

@@ -206,8 +206,7 @@ extern "C" {
     /* for the engine */
     void libusr_init(void);
     int  libusr_luses_ok(int ci);
-    void libusr_close_luses_timeout(void);
-    void libusr_close_luses(int ci);
+    void libusr_luses_close_timeouted(void);
 #ifdef __cplusplus
 }   // extern "C"
 #endif
