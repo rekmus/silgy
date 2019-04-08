@@ -324,7 +324,7 @@ static bool init_ssl_client()
         return FALSE;
     }
 
-    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2;
     SSL_CTX_set_options(M_ssl_ctx, flags);
 
     /* temporarily ignore server cert errors */

@@ -3864,8 +3864,9 @@ static bool init_ssl()
        From Hynek Schlawack's blog:
        https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers
        https://www.ssllabs.com/ssltest
+       Last update: 2019-04-08
     */
-    char ciphers[256]="ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS";
+    char ciphers[256]="ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS";
 
     DBG("init_ssl");
 
@@ -3880,8 +3881,6 @@ static bool init_ssl()
     G_ssl_lib_initialized = TRUE;
 
     method = SSLv23_server_method();    /* negotiate the highest protocol version supported by both the server and the client */
-//  method = TLS_server_method();       /* negotiate the highest protocol version supported by both the server and the client */
-//  method = TLSv1_2_server_method();   /* TLS v.1.2 only */
 
     M_ssl_ctx = SSL_CTX_new(method);    /* create new context from method */
 
@@ -3899,7 +3898,7 @@ static bool init_ssl()
         return FALSE;
     } */
 
-    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1;
     SSL_CTX_set_options(M_ssl_ctx, flags);
 
     if ( G_cipherList[0] )
