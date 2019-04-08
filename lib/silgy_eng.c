@@ -1354,9 +1354,9 @@ static bool init(int argc, char **argv)
     ALWAYS("logCombined = %d", G_logCombined);
     if ( argc > 1 )
     {
-        ALWAYS_LINE;
+        ALWAYS("--------------------------------------------------------------------");
         WAR("httpPort = %d -- overwritten by a command line argument", G_httpPort);
-        ALWAYS_LINE;
+        ALWAYS("--------------------------------------------------------------------");
     }
     else
         ALWAYS("httpPort = %d", G_httpPort);
@@ -1418,10 +1418,16 @@ static bool init(int argc, char **argv)
     ALWAYS("         LUSES_TIMEOUT = %d seconds", LUSES_TIMEOUT);
 #endif
     ALWAYS("");
+    ALWAYS("           OUT_BUFSIZE = %lu B (%lu kB / %0.2lf MB)", OUT_BUFSIZE, OUT_BUFSIZE/1024, (double)OUT_BUFSIZE/1024/1024);
+    ALWAYS("");
     ALWAYS("           conn's size = %lu B (%lu kB / %0.2lf MB)", sizeof(conn), sizeof(conn)/1024, (double)sizeof(conn)/1024/1024);
     ALWAYS("            uses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(uses), sizeof(uses)/1024, (double)sizeof(uses)/1024/1024);
     ALWAYS("");
-    ALWAYS("           OUT_BUFSIZE = %lu B (%lu kB / %0.2lf MB)", OUT_BUFSIZE, OUT_BUFSIZE/1024, (double)OUT_BUFSIZE/1024/1024);
+    ALWAYS("    ASYNC req.hdr size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_req_hdr_t), sizeof(async_req_hdr_t)/1024, (double)sizeof(async_req_hdr_t)/1024/1024);
+    ALWAYS("    ASYNC req     size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_req_t), sizeof(async_req_t)/1024, (double)sizeof(async_req_t)/1024/1024);
+    ALWAYS("    ASYNC res.hdr size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_res_hdr_t), sizeof(async_res_hdr_t)/1024, (double)sizeof(async_res_hdr_t)/1024/1024);
+    ALWAYS("    ASYNC res     size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_res_t), sizeof(async_res_t)/1024, (double)sizeof(async_res_t)/1024/1024);
+    ALWAYS("");
 #ifdef OUTFAST
     ALWAYS("           Output type = OUTFAST");
 #endif
