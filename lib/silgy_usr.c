@@ -20,7 +20,7 @@ long     G_new_user_id=0;
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
 static int  upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about);
-static void downgrade_uses(int ci);
+static void downgrade_uses(int usi, int ci);
 static int  user_exists(const char *login);
 static int  email_exists(const char *email);
 static int  do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits);
@@ -148,7 +148,7 @@ static int upgrade_uses(int ci, long uid, const char *login, const char *email, 
 
     if ( !silgy_app_user_login(ci) )
     {
-        downgrade_uses(ci);
+        downgrade_uses(conn[ci].usi, ci);
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -353,11 +353,10 @@ void libusr_luses_close_timeouted()
 
     last_allowed = G_now - LUSES_TIMEOUT;
 
-//    for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
-    for ( i=0; i<MAX_CONNECTIONS; ++i )
+    for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
     {
-        if ( conn[i].usi && uses[conn[i].usi].sesid[0] && uses[conn[i].usi].logged && uses[conn[i].usi].last_activity < last_allowed )
-            downgrade_uses(i);
+        if ( uses[i].sesid[0] && uses[i].logged && uses[i].last_activity < last_allowed )
+            downgrade_uses(i, -1);
     }
 }
 
@@ -365,39 +364,41 @@ void libusr_luses_close_timeouted()
 /* --------------------------------------------------------------------------
    Downgrade logged in user session to anonymous
 -------------------------------------------------------------------------- */
-static void downgrade_uses(int ci)
+static void downgrade_uses(int usi, int ci)
 {
     char sql_query[SQLBUF];
 
     DBG("downgrade_uses");
 
-    DBG("Downgrading logged in session to anonymous, usi=%d, sesid [%s]", conn[ci].usi, uses[conn[ci].usi].sesid);
+    DBG("Downgrading logged in session to anonymous, usi=%d, sesid [%s]", usi, uses[usi].sesid);
 
-    sprintf(sql_query, "DELETE FROM users_logins WHERE sesid = BINARY '%s'", uses[conn[ci].usi].sesid);
+    uses[usi].logged = FALSE;
+    uses[usi].uid = 0;
+    uses[usi].login[0] = EOS;
+    uses[usi].email[0] = EOS;
+    uses[usi].name[0] = EOS;
+    uses[usi].phone[0] = EOS;
+    uses[usi].about[0] = EOS;
+    uses[usi].login_tmp[0] = EOS;
+    uses[usi].email_tmp[0] = EOS;
+    uses[usi].name_tmp[0] = EOS;
+    uses[usi].phone_tmp[0] = EOS;
+    uses[usi].about_tmp[0] = EOS;
+
+    sprintf(sql_query, "DELETE FROM users_logins WHERE sesid = BINARY '%s'", uses[usi].sesid);
     DBG("sql_query: %s", sql_query);
-
     if ( mysql_query(G_dbconn, sql_query) )
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
 
-    strcpy(conn[ci].cookie_out_l, "x");
-    strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* in the past => to be removed by browser straight away */
+    silgy_app_user_logout(usi);
 
-    strcpy(conn[ci].cookie_out_a, uses[conn[ci].usi].sesid);
+    if ( ci > -1 )  /* other than timeouted */
+    {
+        strcpy(conn[ci].cookie_out_l, "x");
+        strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* in the past => to be removed by browser straight away */
 
-    uses[conn[ci].usi].logged = FALSE;
-    uses[conn[ci].usi].uid = 0;
-    uses[conn[ci].usi].login[0] = EOS;
-    uses[conn[ci].usi].email[0] = EOS;
-    uses[conn[ci].usi].name[0] = EOS;
-    uses[conn[ci].usi].phone[0] = EOS;
-    uses[conn[ci].usi].about[0] = EOS;
-    uses[conn[ci].usi].login_tmp[0] = EOS;
-    uses[conn[ci].usi].email_tmp[0] = EOS;
-    uses[conn[ci].usi].name_tmp[0] = EOS;
-    uses[conn[ci].usi].phone_tmp[0] = EOS;
-    uses[conn[ci].usi].about_tmp[0] = EOS;
-
-    silgy_app_user_logout(ci);
+        strcpy(conn[ci].cookie_out_a, uses[usi].sesid);
+    }
 }
 #endif  /* SILGY_SVC */
 
@@ -1347,7 +1348,7 @@ unsigned long   sql_records;
                 return ERR_INT_SERVER_ERROR;
             }
 
-            downgrade_uses(ci);   /* log user out */
+            downgrade_uses(conn[ci].usi, ci);   /* log user out */
 
             return MSG_ACCOUNT_DELETED;
         }
@@ -1799,7 +1800,7 @@ unsigned long   sql_records;
 void silgy_usr_logout(int ci)
 {
     DBG("silgy_usr_logout");
-    downgrade_uses(ci);
+    downgrade_uses(conn[ci].usi, ci);
 }
 #endif  /* SILGY_SVC */
 

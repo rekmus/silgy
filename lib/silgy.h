@@ -959,9 +959,9 @@ extern "C" {
     bool silgy_app_session_init(int ci);
 #ifdef USERS
     bool silgy_app_user_login(int ci);
-    void silgy_app_user_logout(int ci);
+    void silgy_app_user_logout(int usi);
 #endif
-    void silgy_app_session_done(int ci);
+    void silgy_app_session_done(int usi);
 #ifdef ASYNC
     void silgy_app_continue(int ci, const char *data);
 #endif
