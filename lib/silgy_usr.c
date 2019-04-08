@@ -20,7 +20,7 @@ long     G_new_user_id=0;
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
 static int  upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about);
-static void downgrade_uses(int usi, int ci);
+static void downgrade_uses(int usi, int ci, bool usr_logout);
 static int  user_exists(const char *login);
 static int  email_exists(const char *email);
 static int  do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits);
@@ -130,8 +130,6 @@ static int upgrade_uses(int ci, long uid, const char *login, const char *email, 
     DBG("upgrade_uses");
 
     DBG("Upgrading anonymous session to logged in, usi=%d, sesid [%s]", conn[ci].usi, US.sesid);
-    strcpy(conn[ci].cookie_out_a, "x");     /* no longer needed */
-    strcpy(conn[ci].cookie_out_a_exp, G_last_modified);     /* to be removed by browser */
 
     US.logged = TRUE;
     strcpy(US.login, login);
@@ -148,9 +146,12 @@ static int upgrade_uses(int ci, long uid, const char *login, const char *email, 
 
     if ( !silgy_app_user_login(ci) )
     {
-        downgrade_uses(conn[ci].usi, ci);
+        downgrade_uses(conn[ci].usi, ci, FALSE);
         return ERR_INT_SERVER_ERROR;
     }
+
+    strcpy(conn[ci].cookie_out_a, "x");                     /* no longer needed */
+    strcpy(conn[ci].cookie_out_a_exp, G_last_modified);     /* to be removed by browser */
 
     return OK;
 }
@@ -356,7 +357,7 @@ void libusr_luses_close_timeouted()
     for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
     {
         if ( uses[i].sesid[0] && uses[i].logged && uses[i].last_activity < last_allowed )
-            downgrade_uses(i, -1);
+            downgrade_uses(i, -1, FALSE);
     }
 }
 
@@ -364,7 +365,7 @@ void libusr_luses_close_timeouted()
 /* --------------------------------------------------------------------------
    Downgrade logged in user session to anonymous
 -------------------------------------------------------------------------- */
-static void downgrade_uses(int usi, int ci)
+static void downgrade_uses(int usi, int ci, bool usr_logout)
 {
     char sql_query[SQLBUF];
 
@@ -385,19 +386,22 @@ static void downgrade_uses(int usi, int ci)
     uses[usi].phone_tmp[0] = EOS;
     uses[usi].about_tmp[0] = EOS;
 
-    sprintf(sql_query, "DELETE FROM users_logins WHERE sesid = BINARY '%s'", uses[usi].sesid);
-    DBG("sql_query: %s", sql_query);
-    if ( mysql_query(G_dbconn, sql_query) )
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-
     silgy_app_user_logout(usi);
 
-    if ( ci > -1 )  /* other than timeouted */
+    if ( usr_logout )   /* explicit user logout */
     {
-        strcpy(conn[ci].cookie_out_l, "x");
-        strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* in the past => to be removed by browser straight away */
+        sprintf(sql_query, "DELETE FROM users_logins WHERE sesid = BINARY '%s'", uses[usi].sesid);
+        DBG("sql_query: %s", sql_query);
+        if ( mysql_query(G_dbconn, sql_query) )
+            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
 
-        strcpy(conn[ci].cookie_out_a, uses[usi].sesid);
+        if ( ci > -1 )   /* still connected */
+        {
+            strcpy(conn[ci].cookie_out_l, "x");
+            strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* in the past => to be removed by browser straight away */
+
+            strcpy(conn[ci].cookie_out_a, uses[usi].sesid);
+        }
     }
 }
 #endif  /* SILGY_SVC */
@@ -1348,7 +1352,7 @@ unsigned long   sql_records;
                 return ERR_INT_SERVER_ERROR;
             }
 
-            downgrade_uses(conn[ci].usi, ci);   /* log user out */
+            downgrade_uses(conn[ci].usi, ci, TRUE);   /* log user out */
 
             return MSG_ACCOUNT_DELETED;
         }
@@ -1800,7 +1804,7 @@ unsigned long   sql_records;
 void silgy_usr_logout(int ci)
 {
     DBG("silgy_usr_logout");
-    downgrade_uses(conn[ci].usi, ci);
+    downgrade_uses(conn[ci].usi, ci, TRUE);
 }
 #endif  /* SILGY_SVC */
 

@@ -152,7 +152,7 @@ static void print_content_type(int ci, char type);
 static bool a_usession_ok(int ci);
 static void close_old_conn(void);
 static void uses_close_timeouted(void);
-static void close_uses(int usi);
+static void close_uses(int usi, int ci);
 static void reset_conn(int ci, char conn_state);
 static int parse_req(int ci, long len);
 static int set_http_req_val(int ci, const char *label, const char *value);
@@ -2646,9 +2646,9 @@ static void process_req(int ci)
         if ( ret==ERR_REDIRECTION || conn[ci].status==400 || conn[ci].status==401 || conn[ci].status==403 || conn[ci].status==404 || conn[ci].status==500 || conn[ci].status==503 )
         {
 #ifdef USERS
-            if ( conn[ci].usi && !LOGGED ) close_uses(conn[ci].usi);
+            if ( conn[ci].usi && !LOGGED ) close_uses(conn[ci].usi, ci);
 #else
-            if ( conn[ci].usi ) close_uses(conn[ci].usi);
+            if ( conn[ci].usi ) close_uses(conn[ci].usi, ci);
 #endif
             if ( !conn[ci].keep_content )
             {
@@ -2963,7 +2963,7 @@ static void uses_close_timeouted()
     for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
     {
         if ( uses[i].sesid[0] && !uses[i].logged && uses[i].last_activity < last_allowed )
-            close_uses(i);
+            close_uses(i, -1);
     }
 }
 
@@ -2971,7 +2971,7 @@ static void uses_close_timeouted()
 /* --------------------------------------------------------------------------
    Close anonymous user session
 -------------------------------------------------------------------------- */
-static void close_uses(int usi)
+static void close_uses(int usi, int ci)
 {
     DBG("Closing anonymous session, usi=%d, sesid [%s]", usi, uses[usi].sesid);
 
@@ -2980,6 +2980,9 @@ static void close_uses(int usi)
     memset(&uses[usi], 0, sizeof(usession_t));
 
     G_sessions--;
+
+    if ( ci > -1 )   /* still connected */
+        conn[ci].usi = 0;
 
     DBG("%d session(s) remaining", G_sessions);
 }
@@ -4028,7 +4031,7 @@ int eng_uses_start(int ci, const char *sesid)
 
     if ( !silgy_app_session_init(ci) )
     {
-        close_uses(conn[ci].usi);
+        close_uses(conn[ci].usi, ci);
         return ERR_INT_SERVER_ERROR;
     }
 
