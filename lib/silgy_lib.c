@@ -23,7 +23,7 @@
 int         G_logLevel=3;               /* log level -- 'info' by default */
 int         G_logToStdout=0;            /* log to stdout */
 int         G_logCombined=0;            /* standard log format */
-char        G_appdir[256]=".";          /* application root dir */
+char        G_appdir[256]="..";         /* application root dir */
 int         G_RESTTimeout=CALL_REST_DEFAULT_TIMEOUT;
 int         G_test=0;                   /* test run */
 int         G_pid=0;                    /* pid */
@@ -32,7 +32,7 @@ struct tm   *G_ptm={0};                 /* human readable current time */
 char        G_dt[20]="";                /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 char        G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
 messages_t  G_messages[MAX_MESSAGES]={0};
-int         G_current_message=0;
+int         G_next_message=0;
 #ifdef HTTPS
 bool        G_ssl_lib_initialized=0;
 #endif
@@ -105,9 +105,9 @@ void silgy_lib_init()
 /* --------------------------------------------------------------------------
    Add error message
 -------------------------------------------------------------------------- */
-void silgy_add_message(int code, const char *message, ...)
+void silgy_add_message(int code, const char *lang, const char *message, ...)
 {
-    if ( G_current_message >= MAX_MESSAGES )
+    if ( G_next_message >= MAX_MESSAGES )
     {
         ERR("MAX_MESSAGES (%d) has been reached", MAX_MESSAGES);
         return;
@@ -122,26 +122,45 @@ void silgy_add_message(int code, const char *message, ...)
     vsprintf(buffer, message, plist);
     va_end(plist);
 
-    G_messages[G_current_message].code = code;
-    strcpy(G_messages[G_current_message].message, buffer);
-    ++G_current_message;
+    G_messages[G_next_message].code = code;
+    if ( lang )
+        strcpy(G_messages[G_next_message].lang, upper(lang));
+    strcpy(G_messages[G_next_message].message, buffer);
+
+    ++G_next_message;
 }
 
 
 /* --------------------------------------------------------------------------
    Get error description for user
-   Programmer-friendly wrapper
 -------------------------------------------------------------------------- */
 char *silgy_message(int code)
 {
     int i;
-    for ( i=0; i<G_current_message; ++i )
+    for ( i=0; i<G_next_message; ++i )
         if ( G_messages[i].code == code )
             return G_messages[i].message;
 
     static char unknown[256];
     sprintf(unknown, "Unknown code: %d", code);
     return unknown;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get error description for user
+   Pick the user agent language if possible
+-------------------------------------------------------------------------- */
+char *silgy_message_lang(int ci, int code)
+{
+    int i;
+    for ( i=0; i<G_next_message; ++i )
+        if ( G_messages[i].code == code && 0==strcmp(G_messages[i].lang, conn[ci].lang) )
+            return G_messages[i].message;
+
+    /* fallback */
+
+    return silgy_message(code);
 }
 
 

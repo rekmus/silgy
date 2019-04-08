@@ -34,43 +34,43 @@ void libusr_init()
 {
     DBG("libusr_init");
 
-    silgy_add_message(ERR_INVALID_LOGIN,            "Invalid login and/or password");
-    silgy_add_message(ERR_USERNAME_TOO_SHORT,       "User name must be at least %d characters long", MIN_USERNAME_LEN);
-    silgy_add_message(ERR_USERNAME_CHARS,           "User name may only contain letters, digits, dots, hyphens, underscores or apostrophes");
-    silgy_add_message(ERR_USERNAME_TAKEN,           "Unfortunately this login has already been taken");
-    silgy_add_message(ERR_EMAIL_EMPTY,              "Your email address can't be empty");
-    silgy_add_message(ERR_EMAIL_FORMAT,             "Please enter valid email address");
-    silgy_add_message(ERR_EMAIL_FORMAT_OR_EMPTY,    "Please enter valid email address or leave this field empty");
-    silgy_add_message(ERR_EMAIL_TAKEN,              "This email address has already been registered");
-    silgy_add_message(ERR_INVALID_PASSWORD,         "Please enter your existing password");
-    silgy_add_message(ERR_PASSWORD_TOO_SHORT,       "Password must be at least %d characters long", MIN_PASSWORD_LEN);
-    silgy_add_message(ERR_PASSWORD_DIFFERENT,       "Please retype password exactly like in the previous field");
-    silgy_add_message(ERR_OLD_PASSWORD,             "Please enter your existing password");
-    silgy_add_message(ERR_SESSION_EXPIRED,          "Your session has expired. Please log in to continue:");
-    silgy_add_message(ERR_LINK_BROKEN,              "It looks like this link is broken. If you clicked on the link you've received from us in email, you can try to copy and paste it in your browser's address bar instead.");
-    silgy_add_message(ERR_LINK_MAY_BE_EXPIRED,      "Your link is invalid or may be expired");
-    silgy_add_message(ERR_LINK_EXPIRED,             "It looks like you entered email that doesn't exist in our database or your link has expired.");
-    silgy_add_message(ERR_LINK_TOO_MANY_TRIES,      "It looks like you entered email that doesn't exist in our database or your link has expired.");
-    silgy_add_message(ERR_ROBOT,                    "I'm afraid you are a robot?");
-    silgy_add_message(ERR_WEBSITE_FIRST_LETTER,     "The first letter of this website's name should be %c", APP_WEBSITE[0]);
-    silgy_add_message(ERR_NOT_ACTIVATED,            "Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE);
+    silgy_add_message(ERR_INVALID_LOGIN,            "EN-US", "Invalid login and/or password");
+    silgy_add_message(ERR_USERNAME_TOO_SHORT,       "EN-US", "User name must be at least %d characters long", MIN_USERNAME_LEN);
+    silgy_add_message(ERR_USERNAME_CHARS,           "EN-US", "User name may only contain letters, digits, dots, hyphens, underscores or apostrophes");
+    silgy_add_message(ERR_USERNAME_TAKEN,           "EN-US", "Unfortunately this login has already been taken");
+    silgy_add_message(ERR_EMAIL_EMPTY,              "EN-US", "Your email address can't be empty");
+    silgy_add_message(ERR_EMAIL_FORMAT,             "EN-US", "Please enter valid email address");
+    silgy_add_message(ERR_EMAIL_FORMAT_OR_EMPTY,    "EN-US", "Please enter valid email address or leave this field empty");
+    silgy_add_message(ERR_EMAIL_TAKEN,              "EN-US", "This email address has already been registered");
+    silgy_add_message(ERR_INVALID_PASSWORD,         "EN-US", "Please enter your existing password");
+    silgy_add_message(ERR_PASSWORD_TOO_SHORT,       "EN-US", "Password must be at least %d characters long", MIN_PASSWORD_LEN);
+    silgy_add_message(ERR_PASSWORD_DIFFERENT,       "EN-US", "Please retype password exactly like in the previous field");
+    silgy_add_message(ERR_OLD_PASSWORD,             "EN-US", "Please enter your existing password");
+    silgy_add_message(ERR_SESSION_EXPIRED,          "EN-US", "Your session has expired. Please log in to continue:");
+    silgy_add_message(ERR_LINK_BROKEN,              "EN-US", "It looks like this link is broken. If you clicked on the link you've received from us in email, you can try to copy and paste it in your browser's address bar instead.");
+    silgy_add_message(ERR_LINK_MAY_BE_EXPIRED,      "EN-US", "Your link is invalid or may be expired");
+    silgy_add_message(ERR_LINK_EXPIRED,             "EN-US", "It looks like you entered email that doesn't exist in our database or your link has expired.");
+    silgy_add_message(ERR_LINK_TOO_MANY_TRIES,      "EN-US", "It looks like you entered email that doesn't exist in our database or your link has expired.");
+    silgy_add_message(ERR_ROBOT,                    "EN-US", "I'm afraid you are a robot?");
+    silgy_add_message(ERR_WEBSITE_FIRST_LETTER,     "EN-US", "The first letter of this website's name should be %c", APP_WEBSITE[0]);
+    silgy_add_message(ERR_NOT_ACTIVATED,            "EN-US", "Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE);
 
-    silgy_add_message(WAR_NO_EMAIL,                 "You didn't provide your email address. This is fine, however please remember that in case you forget your password, there's no way for us to send you reset link.");
-    silgy_add_message(WAR_BEFORE_DELETE,            "You are about to delete your %s's account. All your details and data will be removed from our database. If you are sure you want this, enter your password and click 'Delete my account'.", APP_WEBSITE);
-    silgy_add_message(WAR_ULA,                      "Someone tried to log in to this account unsuccessfully more than 3 times. To protect your account from brute-force attack, this system requires some wait: 1 minute, then 10 minutes, then 1 hour before trying again.");
+    silgy_add_message(WAR_NO_EMAIL,                 "EN-US", "You didn't provide your email address. This is fine, however please remember that in case you forget your password, there's no way for us to send you reset link.");
+    silgy_add_message(WAR_BEFORE_DELETE,            "EN-US", "You are about to delete your %s's account. All your details and data will be removed from our database. If you are sure you want this, enter your password and click 'Delete my account'.", APP_WEBSITE);
+    silgy_add_message(WAR_ULA,                      "EN-US", "Someone tried to log in to this account unsuccessfully more than 3 times. To protect your account from brute-force attack, this system requires some wait: 1 minute, then 10 minutes, then 1 hour before trying again.");
 
-    silgy_add_message(MSG_WELCOME_NO_ACTIVATION,    "Welcome to %s! You can now log in:", APP_WEBSITE);
-    silgy_add_message(MSG_WELCOME_NEED_ACTIVATION,  "Welcome to %s! Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE, APP_WEBSITE);
-    silgy_add_message(MSG_WELCOME_AFTER_ACTIVATION, "Very well! You can now log in:");
-    silgy_add_message(MSG_USER_LOGGED_OUT,          "You've been successfully logged out");
-    silgy_add_message(MSG_CHANGES_SAVED,            "Your changes have been saved");
-    silgy_add_message(MSG_REQUEST_SENT,             "Your request has been sent. Please check your mailbox for a message from %s.", APP_WEBSITE);
-    silgy_add_message(MSG_PASSWORD_CHANGED,         "Your password has been changed. You can now log in:");
-    silgy_add_message(MSG_MESSAGE_SENT,             "Your message has been sent");
-    silgy_add_message(MSG_PROVIDE_FEEDBACK,         "%s would suit me better if...", APP_WEBSITE);
-    silgy_add_message(MSG_FEEDBACK_SENT,            "Thank you for your feedback!");
-    silgy_add_message(MSG_USER_ALREADY_ACTIVATED,   "Your account has already been activated");
-    silgy_add_message(MSG_ACCOUNT_DELETED,          "Your user account has been deleted. Thank you for trying %s!", APP_WEBSITE);
+    silgy_add_message(MSG_WELCOME_NO_ACTIVATION,    "EN-US", "Welcome to %s! You can now log in:", APP_WEBSITE);
+    silgy_add_message(MSG_WELCOME_NEED_ACTIVATION,  "EN-US", "Welcome to %s! Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE, APP_WEBSITE);
+    silgy_add_message(MSG_WELCOME_AFTER_ACTIVATION, "EN-US", "Very well! You can now log in:");
+    silgy_add_message(MSG_USER_LOGGED_OUT,          "EN-US", "You've been successfully logged out");
+    silgy_add_message(MSG_CHANGES_SAVED,            "EN-US", "Your changes have been saved");
+    silgy_add_message(MSG_REQUEST_SENT,             "EN-US", "Your request has been sent. Please check your mailbox for a message from %s.", APP_WEBSITE);
+    silgy_add_message(MSG_PASSWORD_CHANGED,         "EN-US", "Your password has been changed. You can now log in:");
+    silgy_add_message(MSG_MESSAGE_SENT,             "EN-US", "Your message has been sent");
+    silgy_add_message(MSG_PROVIDE_FEEDBACK,         "EN-US", "%s would suit me better if...", APP_WEBSITE);
+    silgy_add_message(MSG_FEEDBACK_SENT,            "EN-US", "Thank you for your feedback!");
+    silgy_add_message(MSG_USER_ALREADY_ACTIVATED,   "EN-US", "Your account has already been activated");
+    silgy_add_message(MSG_ACCOUNT_DELETED,          "EN-US", "Your user account has been deleted. Thank you for trying %s!", APP_WEBSITE);
 }
 
 

@@ -741,6 +741,7 @@ typedef struct {
 
 typedef struct {
     int  code;
+    char lang[8];
     char message[MAX_MSG_LEN+1];
 } messages_t;
 
@@ -841,7 +842,7 @@ extern time_t   G_now;                      /* current time */
 extern struct tm *G_ptm;                    /* human readable current time */
 extern char     G_last_modified[32];        /* response header field with server's start time */
 extern messages_t G_messages[MAX_MESSAGES];
-extern int      G_current_message;
+extern int      G_next_message;
 #ifdef HTTPS
 extern bool     G_ssl_lib_initialized;
 #endif
