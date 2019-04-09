@@ -33,7 +33,7 @@ int         G_ASYNCId=0;
 int         G_ASYNCDefTimeout=ASYNC_DEF_TIMEOUT;
 /* end of config params */
 long        G_days_up=0;                /* web server's days up */
-conn_t      conn[MAX_CONNECTIONS]={0};  /* HTTP connections & requests -- by far the most important structure around */
+conn_t      conn[MAX_CONNECTIONS+1]={0}; /* HTTP connections & requests -- by far the most important structure around */
 int         G_open_conn=0;              /* number of open connections */
 int         G_open_conn_hwm=0;          /* highest number of open connections (high water mark) */
 usession_t  uses[MAX_SESSIONS+1]={0};   /* user sessions -- they start from 1 */
@@ -2963,7 +2963,7 @@ static void uses_close_timeouted()
     for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
     {
         if ( uses[i].sesid[0] && !uses[i].logged && uses[i].last_activity < last_allowed )
-            close_uses(i, -1);
+            close_uses(i, NOT_CONNECTED);
     }
 }
 
@@ -2975,13 +2975,21 @@ static void close_uses(int usi, int ci)
 {
     DBG("Closing anonymous session, usi=%d, sesid [%s]", usi, uses[usi].sesid);
 
-    silgy_app_session_done(usi);
+    if ( ci != NOT_CONNECTED )   /* still connected */
+        silgy_app_session_done(ci);
+    else    /* trick to maintain consistency across silgy_app_xxx functions */
+    {       /* that use ci for everything -- even to get user session data */
+        conn[CLOSING_SESSION_CI].usi = usi;
+        silgy_app_session_done(CLOSING_SESSION_CI);
+    }
+
+    /* reset session data */
 
     memset(&uses[usi], 0, sizeof(usession_t));
 
     G_sessions--;
 
-    if ( ci > -1 )   /* still connected */
+    if ( ci != NOT_CONNECTED )   /* still connected */
         conn[ci].usi = 0;
 
     DBG("%d session(s) remaining", G_sessions);

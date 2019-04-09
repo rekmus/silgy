@@ -357,7 +357,7 @@ void libusr_luses_close_timeouted()
     for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
     {
         if ( uses[i].sesid[0] && uses[i].logged && uses[i].last_activity < last_allowed )
-            downgrade_uses(i, -1, FALSE);
+            downgrade_uses(i, NOT_CONNECTED, FALSE);
     }
 }
 
@@ -386,7 +386,13 @@ static void downgrade_uses(int usi, int ci, bool usr_logout)
     uses[usi].phone_tmp[0] = EOS;
     uses[usi].about_tmp[0] = EOS;
 
-    silgy_app_user_logout(usi);
+    if ( ci != NOT_CONNECTED )   /* still connected */
+        silgy_app_user_logout(ci);
+    else    /* trick to maintain consistency across silgy_app_xxx functions */
+    {       /* that use ci for everything -- even to get user session data */
+        conn[CLOSING_SESSION_CI].usi = usi;
+        silgy_app_user_logout(CLOSING_SESSION_CI);
+    }
 
     if ( usr_logout )   /* explicit user logout */
     {
@@ -395,7 +401,7 @@ static void downgrade_uses(int usi, int ci, bool usr_logout)
         if ( mysql_query(G_dbconn, sql_query) )
             ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
 
-        if ( ci > -1 )   /* still connected */
+        if ( ci != NOT_CONNECTED )   /* still connected */
         {
             strcpy(conn[ci].cookie_out_l, "x");
             strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* in the past => to be removed by browser straight away */

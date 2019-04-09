@@ -281,9 +281,13 @@ typedef char str64k[1024*64];
 #define MAX_CONNECTIONS FD_SETSIZE-2
 #endif
 
+#define CLOSING_SESSION_CI              MAX_CONNECTIONS
+
 #define CONN_TIMEOUT                    180             /* idle connection timeout in seconds */
 
 #define USES_TIMEOUT                    300             /* anonymous user session timeout in seconds */
+
+#define NOT_CONNECTED                   -1
 
 #define CONN_STATE_DISCONNECTED         '0'
 #define CONN_STATE_ACCEPTING            'a'
@@ -831,7 +835,7 @@ extern int      G_test;
 extern int      G_pid;                      /* pid */
 extern char     G_appdir[256];              /* application root dir */
 extern long     G_days_up;                  /* web server's days up */
-extern conn_t   conn[MAX_CONNECTIONS];      /* HTTP connections & requests -- by far the most important structure around */
+extern conn_t   conn[MAX_CONNECTIONS+1];    /* HTTP connections & requests -- by far the most important structure around */
 extern int      G_open_conn;                /* number of open connections */
 extern int      G_open_conn_hwm;            /* highest number of open connections (high water mark) */
 extern char     G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
@@ -959,9 +963,9 @@ extern "C" {
     bool silgy_app_session_init(int ci);
 #ifdef USERS
     bool silgy_app_user_login(int ci);
-    void silgy_app_user_logout(int usi);
+    void silgy_app_user_logout(int ci);
 #endif
-    void silgy_app_session_done(int usi);
+    void silgy_app_session_done(int ci);
 #ifdef ASYNC
     void silgy_app_continue(int ci, const char *data);
 #endif

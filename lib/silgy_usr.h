@@ -134,7 +134,7 @@
 #endif
 #endif
 
-/* passwords' hashing */
+/* passwords' hashing padding */
 
 #ifndef STR_001
 #define STR_001                         "abcde"
