@@ -129,7 +129,7 @@ void silgy_app_user_logout(int ci)
 
 
 /* --------------------------------------------------------------------------------
-   Called when closing user session
+   Called when closing anonymous user session
    After calling this the session memory will be zero-ed
 -------------------------------------------------------------------------------- */
 void silgy_app_session_done(int ci)
