@@ -123,7 +123,7 @@ bool silgy_app_user_login(int ci)
    ------------------------------
    Called when downgrading logged in user session to anonymous
 -------------------------------------------------------------------------------- */
-void silgy_app_user_logout(int usi)
+void silgy_app_user_logout(int ci)
 {
 }
 
@@ -132,7 +132,7 @@ void silgy_app_user_logout(int usi)
    Called when closing user session
    After calling this the session memory will be zero-ed
 -------------------------------------------------------------------------------- */
-void silgy_app_session_done(int usi)
+void silgy_app_session_done(int ci)
 {
 }
 
