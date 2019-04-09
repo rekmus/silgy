@@ -283,9 +283,13 @@ typedef char str64k[1024*64];
 
 #define CLOSING_SESSION_CI              MAX_CONNECTIONS
 
+#ifndef CONN_TIMEOUT
 #define CONN_TIMEOUT                    180             /* idle connection timeout in seconds */
+#endif
 
+#ifndef USES_TIMEOUT
 #define USES_TIMEOUT                    300             /* anonymous user session timeout in seconds */
+#endif
 
 #define NOT_CONNECTED                   -1
 

@@ -123,8 +123,9 @@
 #define MSG_CAT_USR_OLD_PASSWORD        "msgPasswordOld"
 
 
+#ifndef LUSES_TIMEOUT
 #define LUSES_TIMEOUT                   1800                /* logged in user session timeout in seconds (120 for tests / 1800 live) */
-                                                            /* it's now how long it stays in cache */
+#endif                                                      /* it's now how long it stays in cache */
 
 /* user authentication */
 
