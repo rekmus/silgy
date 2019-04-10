@@ -5228,7 +5228,7 @@ mqd_t       G_queue_res={0};            /* response queue */
 int         G_usersRequireAccountActivation=0;
 char        *G_req=NULL;
 char        *G_res=NULL;
-conn_t      conn[MAX_CONNECTIONS]={0};  /* dummy */
+conn_t      conn[MAX_CONNECTIONS+1]={0}; /* dummy */
 int         ci=0;
 usession_t  uses={0};                   /* user session */
 
