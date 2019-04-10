@@ -697,11 +697,13 @@ typedef struct {
 
 typedef struct {
     char    sesid[SESID_LEN+1];
+    /* connection data */
     char    ip[INET_ADDRSTRLEN];
     char    uagent[MAX_VALUE_LEN+1];
     char    referer[MAX_VALUE_LEN+1];
     char    lang[LANG_LEN+1];
     bool    logged;
+    /* users table record */
     long    uid;
     char    login[LOGIN_LEN+1];
     char    email[EMAIL_LEN+1];
