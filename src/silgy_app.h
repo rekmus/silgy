@@ -20,6 +20,7 @@
 
 typedef struct {
     int id;
+    // add your own struct members here
 } ausession_t;
 
 
