@@ -16,7 +16,7 @@ Besides, any modern C / C++ compiler will do.
 
 ASYNC module requires POSIX message queues, so it's not available on Windows for now.
 
-Silgy has build-in (and enabled by default) protection against most popular attacks, including SQL-injection, XSS, and password and cookie brute-force. It does not directly expose the filesystem nor allows any scripting. Its random string generator is FIPS-compliant.
+Silgy has build-in (and enabled by default) protection against most popular attacks, including BEAST, SQL-injection, XSS, and password and cookie brute-force. It does not directly expose the filesystem nor allows any scripting. Its random string generator is FIPS-compliant.
 
 TCO for a mid-sized web application with a small database and moderate load (<100,000 requests/day) can be as low as $3 per month (Amazon EC2 t2.micro).
 
@@ -26,8 +26,12 @@ TCO for a mid-sized web application with a small database and moderate load (<10
 
 ## [Full Reference](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros)
 
+## [Application upgrade from Silgy 3.x to 4.0](https://github.com/silgy/silgy/wiki/Application-upgrade-from-Silgy-3.x-to-4.0)
+
 ## Hello World
+
 Simplest Hello World:
+
 ```source.c++
 void silgy_app_main(int ci)
 {
@@ -36,6 +40,7 @@ void silgy_app_main(int ci)
 ```
 
 Simple HTML with 2 pages:
+
 ```source.c++
 void silgy_app_main(int ci)
 {
@@ -63,6 +68,7 @@ void silgy_app_main(int ci)
 ```
 
 And this is a tad extended Hello World example to demonstrate query string handling:
+
 ```source.c++
 void silgy_app_main(int ci)
 {
@@ -108,4 +114,5 @@ void silgy_app_main(int ci)
 ```
 
 ## Feedback & Support
+
 If you're not sure how to start, or you're not sure whether Silgy will be able to meet your needs, there's something wrong, you think there should be some feature or you just got stuck with your project, please [email me](mailto:silgy.help@gmail.com). I am currently developing about a dozen apps in Silgy, from simple Angular app hosting, through traditional web app, to RESTful API and every project adds some ideas how to make Silgy better, so I will gladly help.
