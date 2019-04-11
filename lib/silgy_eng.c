@@ -433,18 +433,16 @@ struct timeval  timeout;                    /* Timeout for select */
                     /* --------------------------------------------------------------------------------------- */
                     if ( FD_ISSET(conn[i].fd, &M_readfds) )     /* incoming data ready */
                     {
-//                      DBG("\nfd=%d has incoming data ready to read", conn[i].fd);
 #ifdef HTTPS
                         if ( conn[i].secure )   /* HTTPS */
                         {
-//                          DBG("secure, state=%c, pending=%d", conn[i].conn_state, SSL_pending(conn[i].ssl));
-
                             if ( conn[i].conn_state != CONN_STATE_READING_DATA )
                             {
 #ifdef DUMP
                                 DBG("Trying SSL_read from fd=%d (ci=%d)", conn[i].fd, i);
 #endif
                                 bytes = SSL_read(conn[i].ssl, conn[i].in, IN_BUFSIZE-1);
+
                                 if ( bytes > 1 )
                                     conn[i].in[bytes] = EOS;
                                 else if ( bytes == 1 )  /* when browser splits the request to prevent BEAST attack */
@@ -453,6 +451,7 @@ struct timeval  timeout;                    /* Timeout for select */
                                     if ( bytes > 1 )
                                         conn[i].in[bytes] = EOS;
                                 }
+
                                 set_state_sec(i, bytes);
                             }
                             else    /* POST */
@@ -462,29 +461,27 @@ struct timeval  timeout;                    /* Timeout for select */
                                 DBG("Trying SSL_read %ld bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
 #endif  /* DUMP */
                                 bytes = SSL_read(conn[i].ssl, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read);
+
                                 if ( bytes > 0 )
                                     conn[i].was_read += bytes;
+
                                 set_state_sec(i, bytes);
                             }
                         }
                         else        /* HTTP */
 #endif  /* HTTPS */
                         {
-//                          DBG("not secure, state=%c", conn[i].conn_state);
-
                             if ( conn[i].conn_state == CONN_STATE_CONNECTED )
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_CONNECTED", i);
                                 DBG("Trying read from fd=%d (ci=%d)", conn[i].fd, i);
 #endif  /* DUMP */
-#ifdef _WIN32   /* Windows */
                                 bytes = recv(conn[i].fd, conn[i].in, IN_BUFSIZE-1, 0);
-#else
-                                bytes = read(conn[i].fd, conn[i].in, IN_BUFSIZE-1);
-#endif  /* _WIN32 */
+
                                 if ( bytes > 0 )
                                     conn[i].in[bytes] = EOS;
+
                                 set_state(i, bytes);    /* possibly:    CONN_STATE_DISCONNECTED (if error or closed by peer) */
                                                         /*              CONN_STATE_READY_FOR_PARSE */
                             }
@@ -494,13 +491,11 @@ struct timeval  timeout;                    /* Timeout for select */
                                 DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
                                 DBG("Trying to read %ld bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
 #endif  /* DUMP */
-#ifdef _WIN32   /* Windows */
                                 bytes = recv(conn[i].fd, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read, 0);
-#else
-                                bytes = read(conn[i].fd, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read);
-#endif  /* _WIN32 */
+
                                 if ( bytes > 0 )
                                     conn[i].was_read += bytes;
+
                                 set_state(i, bytes);    /* possibly:    CONN_STATE_DISCONNECTED (if error or closed by peer) */
                                                         /*              CONN_STATE_READY_FOR_PROCESS */
                             }
@@ -567,8 +562,6 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef HTTPS
                         if ( conn[i].secure )   /* HTTPS */
                         {
-//                          DBG("secure, state=%c", conn[i].conn_state);
-
                             if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER )
                             {
 #ifdef DUMP
@@ -576,6 +569,7 @@ struct timeval  timeout;                    /* Timeout for select */
                                 DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", strlen(conn[i].header), conn[i].fd, i);
 #endif  /* DUMP */
                                 bytes = SSL_write(conn[i].ssl, conn[i].header, strlen(conn[i].header));
+
                                 set_state_sec(i, bytes);
                             }
                             else if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY || conn[i].conn_state == CONN_STATE_SENDING_BODY)
@@ -588,25 +582,21 @@ struct timeval  timeout;                    /* Timeout for select */
                                     bytes = SSL_write(conn[i].ssl, conn[i].out_data, conn[i].clen);
                                 else
                                     bytes = SSL_write(conn[i].ssl, M_stat[conn[i].static_res].data, conn[i].clen);
+
                                 set_state_sec(i, bytes);
                             }
                         }
                         else    /* HTTP */
 #endif  /* HTTPS */
                         {
-//                          DBG("not secure, state=%c", conn[i].conn_state);
-
                             if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_HEADER )
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
                                 DBG("Trying to write %ld bytes to fd=%d (ci=%d)", strlen(conn[i].header), conn[i].fd, i);
 #endif  /* DUMP */
-#ifdef _WIN32   /* Windows */
                                 bytes = send(conn[i].fd, conn[i].header, strlen(conn[i].header), 0);
-#else
-                                bytes = write(conn[i].fd, conn[i].header, strlen(conn[i].header));
-#endif  /* _WIN32 */
+
                                 set_state(i, bytes);    /* possibly:    CONN_STATE_DISCONNECTED (if error or closed by peer) */
                                                         /*              CONN_STATE_READY_TO_SEND_BODY */
                             }
@@ -615,24 +605,12 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
                                 DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].clen-conn[i].data_sent, conn[i].fd, i);
-//                                log_long(conn[i].out_data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, "Body to send");
 #endif  /* DUMP */
                                 if ( conn[i].static_res == NOT_STATIC )
-                                {
-#ifdef _WIN32   /* Windows */
                                     bytes = send(conn[i].fd, conn[i].out_data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, 0);
-#else
-                                    bytes = write(conn[i].fd, conn[i].out_data+conn[i].data_sent, conn[i].clen-conn[i].data_sent);
-#endif  /* _WIN32 */
-                                }
                                 else
-                                {
-#ifdef _WIN32   /* Windows */
                                     bytes = send(conn[i].fd, M_stat[conn[i].static_res].data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, 0);
-#else
-                                    bytes = write(conn[i].fd, M_stat[conn[i].static_res].data+conn[i].data_sent, conn[i].clen-conn[i].data_sent);
-#endif  /* _WIN32 */
-                                }
+
                                 conn[i].data_sent += bytes;
                                 set_state(i, bytes);    /* possibly:    CONN_STATE_DISCONNECTED (if error or closed by peer or !keep_alive) */
                                                         /*              CONN_STATE_SENDING_BODY (if data_sent < clen) */
@@ -1200,11 +1178,7 @@ static void respond_to_expect(int ci)
             bytes = SSL_write(conn[ci].ssl, reply_refuse, 41);
         else
 #endif
-#ifdef _WIN32   /* Windows */
             bytes = send(conn[ci].fd, reply_refuse, 41, 0);
-#else
-            bytes = write(conn[ci].fd, reply_refuse, 41);
-#endif  /* _WIN32 */
 
         if ( bytes < 41 ) ERR("write error, bytes = %d", bytes);
     }
@@ -1217,11 +1191,7 @@ static void respond_to_expect(int ci)
             bytes = SSL_write(conn[ci].ssl, reply_accept, 25);
         else
 #endif
-#ifdef _WIN32   /* Windows */
             bytes = send(conn[ci].fd, reply_accept, 25, 0);
-#else
-            bytes = write(conn[ci].fd, reply_accept, 25);
-#endif  /* _WIN32 */
 
         if ( bytes < 25 ) ERR("write error, bytes = %d", bytes);
     }
@@ -1881,11 +1851,9 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     {
         /* No room left in the queue! */
         WAR("No room left for new client, sending 503");
-#ifdef _WIN32   /* Windows */
+
         bytes = send(connection, "HTTP/1.1 503 Service Unavailable\r\n\r\n", 36, 0);
-#else
-        bytes = write(connection, "HTTP/1.1 503 Service Unavailable\r\n\r\n", 36);
-#endif  /* _WIN32 */
+
         if ( bytes < 36 )
             ERR("write error, bytes = %d of 36", bytes);
 #ifdef _WIN32   /* Windows */
