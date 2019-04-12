@@ -5038,9 +5038,6 @@ bool log_start(const char *prefix, bool test)
 -------------------------------------------------------------------------- */
 void log_write_time(int level, const char *message, ...)
 {
-    va_list plist;
-    char    buffer[MAX_LOG_STR_LEN+1+64];
-
     if ( level > G_logLevel ) return;
 
     /* output timestamp */
@@ -5053,6 +5050,9 @@ void log_write_time(int level, const char *message, ...)
         fprintf(M_log_fd, "WARNING: ");
 
     /* compile message with arguments into buffer */
+
+    va_list plist;
+    char buffer[MAX_LOG_STR_LEN+1+64];
 
     va_start(plist, message);
     vsprintf(buffer, message, plist);
@@ -5075,9 +5075,6 @@ void log_write_time(int level, const char *message, ...)
 -------------------------------------------------------------------------- */
 void log_write(int level, const char *message, ...)
 {
-    va_list plist;
-    char    buffer[MAX_LOG_STR_LEN+1+64];
-
     if ( level > G_logLevel ) return;
 
     if ( LOG_ERR == level )
@@ -5086,6 +5083,9 @@ void log_write(int level, const char *message, ...)
         fprintf(M_log_fd, "WARNING: ");
 
     /* compile message with arguments into buffer */
+
+    va_list plist;
+    char buffer[MAX_LOG_STR_LEN+1+64];
 
     va_start(plist, message);
     vsprintf(buffer, message, plist);
@@ -5104,20 +5104,21 @@ void log_write(int level, const char *message, ...)
 
 
 /* --------------------------------------------------------------------------
-   Write looong string to a log or --
+   Write looong message to a log or --
    its first (MAX_LOG_STR_LEN-50) part if it's longer
 -------------------------------------------------------------------------- */
-void log_long(const char *str, long len, const char *desc)
+void log_long(const char *message, long len, const char *desc)
 {
-static char log_buffer[MAX_LOG_STR_LEN+1];
+    if ( G_logLevel < LOG_DBG ) return;
 
     if ( len < MAX_LOG_STR_LEN-50 )
-        DBG("%s:\n\n[%s]\n", desc, str);
+        DBG("%s:\n\n[%s]\n", desc, message);
     else
     {
-        strncpy(log_buffer, str, MAX_LOG_STR_LEN-50);
-        strcpy(log_buffer+MAX_LOG_STR_LEN-50, " (...)");
-        DBG("%s:\n\n[%s]\n", desc, log_buffer);
+        char buffer[MAX_LOG_STR_LEN+1];
+        strncpy(buffer, message, MAX_LOG_STR_LEN-50);
+        strcpy(buffer+MAX_LOG_STR_LEN-50, " (...)");
+        DBG("%s:\n\n[%s]\n", desc, buffer);
     }
 }
 
