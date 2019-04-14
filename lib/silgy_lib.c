@@ -884,7 +884,6 @@ static void rest_disconnect()
     if ( M_rest_ssl )
     {
         SSL_free(M_rest_ssl);
-//        DBG("Should be NULL: M_rest_ssl = %d", M_rest_ssl);
         M_rest_ssl = NULL;
     }
 #endif  /* HTTPS */
@@ -1124,7 +1123,7 @@ static char buffer[JSON_BUFSIZE];
     /* -------------------------------------------------------------------------- */
 
     if ( connected
-            && (secure!=prev_secure || 0 != strcmp(host, prev_host) || 0 != strcmp(port, prev_port) || G_now-connected_time > 60) )
+            && (secure!=prev_secure || 0 != strcmp(host, prev_host) || 0 != strcmp(port, prev_port) || G_now-connected_time > CONN_TIMEOUT) )
     {
         /* reconnect anyway */
         DBG("different host, port or old connection, reconnecting");

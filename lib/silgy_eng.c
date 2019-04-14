@@ -13,6 +13,12 @@
 
 #ifndef SILGY_SVC
 
+#ifdef FD_MON_POLL
+#ifndef _WIN32
+#include <poll.h>
+#endif
+#endif  /* FD_MON_POLL */
+
 /* globals */
 
 /* read from the config file */
@@ -99,6 +105,7 @@ static struct {
     };
 
 static char         *M_pidfile;                 /* pid file name */
+
 #ifdef _WIN32   /* Windows */
 static SOCKET       M_listening_fd=0;           /* The socket file descriptor for "listening" socket */
 static SOCKET       M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
@@ -106,12 +113,31 @@ static SOCKET       M_listening_sec_fd=0;       /* The socket file descriptor fo
 static int          M_listening_fd=0;           /* The socket file descriptor for "listening" socket */
 static int          M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
 #endif  /* _WIN32 */
+
 #ifdef HTTPS
 static SSL_CTX      *M_ssl_ctx;
 #endif
+
+#ifdef FD_MON_SELECT
 static fd_set       M_readfds={0};              /* Socket file descriptors we want to wake up for, using select() */
 static fd_set       M_writefds={0};             /* Socket file descriptors we want to wake up for, using select() */
 static int          M_highsock=0;               /* Highest #'d file descriptor, needed for select() */
+#endif  /* FD_MON_SELECT */
+
+#ifdef FD_MON_POLL
+
+#ifdef HTTPS
+#define LISTENING_FDS    2
+#else
+#define LISTENING_FDS    1
+#endif
+
+static struct pollfd M_pollfds[MAX_CONNECTIONS+LISTENING_FDS]={0};
+static int          M_pollfds_cnt=0;
+static int          M_poll_ci[MAX_CONNECTIONS+LISTENING_FDS]={0};
+
+#endif  /* FD_MON_POLL */
+
 static stat_res_t   M_stat[MAX_STATICS];        /* static resources */
 static char         M_resp_date[32];            /* response header field Date */
 static char         M_expires[32];              /* response header field one month ahead for static resources */
@@ -119,9 +145,11 @@ static int          M_max_static=-1;            /* highest static resource M_sta
 static bool         M_favicon_exists=FALSE;     /* special case statics */
 static bool         M_robots_exists=FALSE;      /* -''- */
 static bool         M_appleicon_exists=FALSE;   /* -''- */
+
 #ifdef _WIN32   /* Windows */
 WSADATA             wsa;
 #endif
+
 static bool         M_shutdown=FALSE;
 static int          M_prev_minute;
 static int          M_prev_day;
@@ -153,7 +181,7 @@ static bool a_usession_ok(int ci);
 static void close_old_conn(void);
 static void uses_close_timeouted(void);
 static void close_uses(int usi, int ci);
-static void reset_conn(int ci, char conn_state);
+static void reset_conn(int ci, char new_state);
 static int parse_req(int ci, long len);
 static int set_http_req_val(int ci, const char *label, const char *value);
 static bool check_block_ip(int ci, const char *rule, const char *value);
@@ -184,8 +212,16 @@ struct timeval  timeout;                    /* Timeout for select */
     int         failed_select_cnt=0;
     int         j=0;
 #ifdef DUMP
+    time_t      dbg_last_time0=0;
     time_t      dbg_last_time1=0;
     time_t      dbg_last_time2=0;
+    time_t      dbg_last_time3=0;
+    time_t      dbg_last_time4=0;
+    time_t      dbg_last_time5=0;
+    time_t      dbg_last_time6=0;
+    time_t      dbg_last_time7=0;
+    time_t      dbg_last_time8=0;
+    time_t      dbg_last_time9=0;
 #endif  /* DUMP */
 
     if ( !init(argc, argv) )
@@ -201,7 +237,7 @@ struct timeval  timeout;                    /* Timeout for select */
 
 #ifdef _WIN32   /* Windows */
 
-    DBG("Initialising Winsock...");
+    DBG("Initializing Winsock...");
 
     if ( WSAStartup(MAKEWORD(2,2), &wsa) != 0 )
     {
@@ -344,6 +380,22 @@ struct timeval  timeout;                    /* Timeout for select */
 
     /* main server loop ------------------------------------------------------------------------- */
 
+#ifdef FD_MON_POLL
+
+    M_pollfds[0].fd = M_listening_fd;
+    M_pollfds[0].events = POLLIN;
+    M_pollfds_cnt = 1;
+
+#ifdef HTTPS
+    M_pollfds[1].fd = M_listening_sec_fd;
+    M_pollfds[1].events = POLLIN;
+    M_pollfds_cnt = 2;
+#endif
+
+    int pi;     /* poll loop index */
+
+#endif  /* FD_MON_POLL */
+
 //  for ( ; hit<1000; ++hit )   /* test only */
     for ( ;; )
     {
@@ -364,15 +416,30 @@ struct timeval  timeout;                    /* Timeout for select */
             {
                 DBG("Async request %d timeout-ed", j);
                 ares[j].hdr.state = ASYNC_STATE_TIMEOUTED;
+                conn[ares[j].hdr.ci].ai = j;
             }
         }
 #endif
+
+        /* use your favourite fd monitoring */
+
+#ifdef FD_MON_SELECT
         build_fd_sets();
 
         timeout.tv_sec = 1;
         timeout.tv_usec = 0;
 
         sockets_ready = select(M_highsock+1, &M_readfds, &M_writefds, NULL, &timeout);
+#endif  /* FD_MON_SELECT */
+
+#ifdef FD_MON_POLL
+        sockets_ready = poll(M_pollfds, M_pollfds_cnt, 1000);
+#endif  /* FD_MON_POLL */
+
+#ifdef FD_MON_EPOLL
+        ALWAYS("epoll not implemented yet!");
+        return EXIT_FAILURE;
+#endif  /* FD_MON_EPOLL */
 
 #ifdef _WIN32
         if ( M_shutdown ) break;
@@ -414,25 +481,80 @@ struct timeval  timeout;                    /* Timeout for select */
         }
         else    /* sockets_ready > 0 */
         {
+#ifdef DUMP
+            if ( G_now != dbg_last_time0 )   /* only once in a second */
+            {
+                DBG("    connected = %d", G_open_conn);
+#ifdef FD_MON_POLL
+                DBG("M_pollfds_cnt = %d", M_pollfds_cnt);
+#endif
+                DBG("sockets_ready = %d", sockets_ready);
+                DBG("");
+                dbg_last_time0 = G_now;
+            }
+#endif  /* DUMP */
+#ifdef FD_MON_SELECT
             if ( FD_ISSET(M_listening_fd, &M_readfds) )
             {
+#endif  /* FD_MON_SELECT */
+#ifdef FD_MON_POLL
+            if ( M_pollfds[0].revents & POLLIN )
+            {
+                M_pollfds[0].revents = 0;
+#endif  /* FD_MON_POLL */
                 accept_http();
                 sockets_ready--;
             }
 #ifdef HTTPS
+#ifdef FD_MON_SELECT
             else if ( FD_ISSET(M_listening_sec_fd, &M_readfds) )
             {
+#endif  /* FD_MON_SELECT */
+#ifdef FD_MON_POLL
+            else if ( M_pollfds[1].revents & POLLIN )
+            {
+                M_pollfds[1].revents = 0;
+#endif  /* FD_MON_POLL */
                 accept_https();
                 sockets_ready--;
             }
-#endif
+#endif  /* HTTPS */
             else    /* existing connections have something going on on them ---------------------------------- */
             {
+#ifdef FD_MON_SELECT
                 for ( i=0; sockets_ready>0 && i<MAX_CONNECTIONS; ++i )
                 {
-                    /* --------------------------------------------------------------------------------------- */
+#endif  /* FD_MON_SELECT */
+#ifdef FD_MON_POLL
+                for ( pi=LISTENING_FDS; sockets_ready>0 && pi<M_pollfds_cnt; ++pi )
+                {
+                    i = M_poll_ci[pi];   /* set conn array index */
+#ifdef DUMP
+                        if ( G_now != dbg_last_time1 )   /* only once in a second */
+                        {
+                            int l;
+                            for ( l=0; l<M_pollfds_cnt; ++l )
+                                DBG("ci=%d, pi=%d, M_pollfds[pi].revents = %d", M_poll_ci[l], l, M_pollfds[l].revents);
+                            dbg_last_time1 = G_now;
+                        }
+#endif  /* DUMP */
+#endif  /* FD_MON_POLL */
+#ifdef FD_MON_SELECT
                     if ( FD_ISSET(conn[i].fd, &M_readfds) )     /* incoming data ready */
                     {
+#endif  /* FD_MON_SELECT */
+#ifdef FD_MON_POLL
+                    if ( M_pollfds[pi].revents & POLLIN )
+                    {
+                        M_pollfds[pi].revents = 0;
+#endif  /* FD_MON_POLL */
+#ifdef DUMP
+                        if ( G_now != dbg_last_time2 )   /* only once in a second */
+                        {
+                            DBG("ci=%d, fd=%d has incoming data, conn_state = %c", i, conn[i].fd, conn[i].conn_state);
+                            dbg_last_time2 = G_now;
+                        }
+#endif  /* DUMP */
 #ifdef HTTPS
                         if ( conn[i].secure )   /* HTTPS */
                         {
@@ -504,13 +626,20 @@ struct timeval  timeout;                    /* Timeout for select */
                         sockets_ready--;
                     }
                     /* --------------------------------------------------------------------------------------- */
+#ifdef FD_MON_SELECT
                     else if ( FD_ISSET(conn[i].fd, &M_writefds) )        /* ready for outgoing data */
                     {
+#endif  /* FD_MON_SELECT */
+#ifdef FD_MON_POLL
+                    else if ( M_pollfds[pi].revents & POLLOUT )
+                    {
+                        M_pollfds[pi].revents = 0;
+#endif  /* FD_MON_POLL */
 #ifdef DUMP
-                        if ( G_now != dbg_last_time1 )   /* only once in a second */
+                        if ( G_now != dbg_last_time3 )   /* only once in a second */
                         {
                             DBG("ci=%d, fd=%d is ready for outgoing data, conn_state = %c", i, conn[i].fd, conn[i].conn_state);
-                            dbg_last_time1 = G_now;
+                            dbg_last_time3 = G_now;
                         }
 #endif  /* DUMP */
                         /* async processing */
@@ -518,44 +647,43 @@ struct timeval  timeout;                    /* Timeout for select */
                         if ( conn[i].conn_state == CONN_STATE_WAITING_FOR_ASYNC )
                         {
 #ifdef DUMP
-                            if ( G_now != dbg_last_time2 )   /* only once in a second */
+                            if ( G_now != dbg_last_time4 )   /* only once in a second */
                             {
                                 DBG("ci=%d, state == CONN_STATE_WAITING_FOR_ASYNC", i);
-                                dbg_last_time2 = G_now;
+                                dbg_last_time4 = G_now;
                             }
 #endif  /* DUMP */
-                            for ( j=0; j<MAX_ASYNC; ++j )
+                            if ( conn[i].ai != -1 )   /* we have a response from silgy_svc or async call timeouted */
                             {
-                                if ( (ares[j].hdr.state==ASYNC_STATE_RECEIVED || ares[j].hdr.state==ASYNC_STATE_TIMEOUTED) && ares[j].hdr.ci == i )
+                                if ( ares[conn[i].ai].hdr.state == ASYNC_STATE_RECEIVED )
                                 {
-                                    if ( ares[j].hdr.state == ASYNC_STATE_RECEIVED )
+                                    DBG("Async response in an array for ci=%d, processing", i);
+
+                                    strcpy(conn[i].service, ares[conn[i].ai].hdr.service);
+                                    conn[i].async_err_code = ares[conn[i].ai].hdr.err_code;
+                                    conn[i].status = ares[conn[i].ai].hdr.status;
+
+                                    if ( conn[i].usi )  /* update user session */
                                     {
-                                        DBG("Async response in an array for ci=%d, processing", i);
-
-                                        strcpy(conn[i].service, ares[j].hdr.service);
-                                        conn[i].async_err_code = ares[j].hdr.err_code;
-                                        conn[i].status = ares[j].hdr.status;
-
-                                        if ( conn[i].usi )  /* update user session */
-                                        {
-                                            memcpy(&uses[conn[i].usi], &ares[j].hdr.uses, sizeof(usession_t));
+                                        memcpy(&uses[conn[i].usi], &ares[conn[i].ai].hdr.uses, sizeof(usession_t));
 #ifdef ASYNC_AUSES
-                                            memcpy(&auses[conn[i].usi], &ares[j].hdr.auses, sizeof(ausession_t));
+                                        memcpy(&auses[conn[i].usi], &ares[conn[i].ai].hdr.auses, sizeof(ausession_t));
 #endif
-                                        }
+                                    }
 
-                                        silgy_app_continue(i, ares[j].data);
-                                    }
-                                    else if ( ares[j].hdr.state == ASYNC_STATE_TIMEOUTED )
-                                    {
-                                        DBG("Async response continue as timeout-ed for ci=%d", i);
-                                        conn[i].async_err_code = ERR_ASYNC_TIMEOUT;
-                                        silgy_app_continue(i, NULL);
-                                    }
-                                    gen_response_header(i);
-                                    ares[j].hdr.state = ASYNC_STATE_FREE;
-                                    break;
+                                    silgy_app_continue(i, ares[conn[i].ai].data);
                                 }
+                                else if ( ares[conn[i].ai].hdr.state == ASYNC_STATE_TIMEOUTED )
+                                {
+                                    DBG("Async response continue as timeout-ed for ci=%d", i);
+                                    conn[i].async_err_code = ERR_ASYNC_TIMEOUT;
+                                    silgy_app_continue(i, NULL);
+                                }
+
+                                gen_response_header(i);
+
+                                ares[conn[i].ai].hdr.state = ASYNC_STATE_FREE;
+                                conn[i].ai = -1;
                             }
                         }
 #endif  /* ASYNC */
@@ -685,7 +813,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
         if ( sockets_ready != 0 )
         {
-            static time_t last_time=0;  /* prevent log overflow */
+            static time_t last_time=0;   /* prevent log overflow */
 
             if ( last_time != G_now )
             {
@@ -725,6 +853,7 @@ struct timeval  timeout;                    /* Timeout for select */
                     DBG("ares record found");
                     memcpy(&ares[j], (char*)&res, sizeof(async_res_t));
                     ares[j].hdr.state = ASYNC_STATE_RECEIVED;
+                    conn[res.hdr.ci].ai = j;    /* avoid unnecessary looping later */
                     break;
                 }
             }
@@ -732,7 +861,7 @@ struct timeval  timeout;                    /* Timeout for select */
 #ifdef DUMP
         else
         {
-            static time_t last_time=0;  /* prevent log overflow */
+            static time_t last_time=0;   /* prevent log overflow */
 
             if ( last_time != G_now )
             {
@@ -1019,6 +1148,12 @@ static void set_state_sec(int ci, long bytes)
             close_conn(ci);
         }
 
+#ifdef FD_MON_POLL
+        if ( conn[ci].ssl_err == SSL_ERROR_WANT_READ )
+            M_pollfds[conn[ci].pi].events = POLLIN;
+        else if ( conn[ci].ssl_err == SSL_ERROR_WANT_WRITE )
+            M_pollfds[conn[ci].pi].events = POLLOUT;
+#endif
         return;
     }
 
@@ -1232,6 +1367,7 @@ static void close_conn(int ci)
 #ifdef DUMP
     DBG("Closing connection ci=%d, fd=%d", ci, conn[ci].fd);
 #endif
+
 #ifdef HTTPS
     if ( conn[ci].ssl )
     {
@@ -1239,6 +1375,21 @@ static void close_conn(int ci)
         conn[ci].ssl = NULL;
     }
 #endif
+
+#ifdef FD_MON_POLL  /* remove from monitored set */
+
+    M_pollfds_cnt--;
+
+    if ( conn[ci].pi != M_pollfds_cnt )    /* move the last one to just freed spot */
+    {
+        memcpy(&M_pollfds[conn[ci].pi], &M_pollfds[M_pollfds_cnt], sizeof(struct pollfd));
+        /* update cross-references */
+        M_poll_ci[conn[ci].pi] = M_poll_ci[M_pollfds_cnt];
+        conn[M_poll_ci[M_pollfds_cnt]].pi = conn[ci].pi;
+    }
+
+#endif  /* FD_MON_POLL */
+
 #ifdef _WIN32   /* Windows */
     closesocket(conn[ci].fd);
 #else
@@ -1382,6 +1533,17 @@ static bool init(int argc, char **argv)
 #endif
     ALWAYS("       MAX_CONNECTIONS = %d", MAX_CONNECTIONS);
     ALWAYS("          MAX_SESSIONS = %d", MAX_SESSIONS);
+    ALWAYS("");
+#ifdef FD_MON_SELECT
+    ALWAYS("         FD monitoring = FD_MON_SELECT");
+#endif
+#ifdef FD_MON_POLL
+    ALWAYS("         FD monitoring = FD_MON_POLL");
+#endif
+#ifdef FD_MON_EPOLL
+    ALWAYS("         FD monitoring = FD_MON_EPOLL");
+#endif
+    ALWAYS("");
     ALWAYS("          CONN_TIMEOUT = %d seconds", CONN_TIMEOUT);
     ALWAYS("          USES_TIMEOUT = %d seconds", USES_TIMEOUT);
 #ifdef USERS
@@ -1693,6 +1855,7 @@ static bool init(int argc, char **argv)
 -------------------------------------------------------------------------- */
 static void build_fd_sets()
 {
+#ifdef FD_MON_SELECT
     FD_ZERO(&M_readfds);
     FD_ZERO(&M_writefds);
 
@@ -1761,6 +1924,7 @@ static void build_fd_sets()
 #ifdef HTTPS
         }
 #endif
+
         if ( conn[i].fd > M_highsock )
             M_highsock = conn[i].fd;
 
@@ -1770,6 +1934,7 @@ static void build_fd_sets()
     if ( remain )
         DBG_T("remain should be 0 but currently %d", remain);
 #endif
+#endif  /* FD_MON_SELECT */
 }
 
 
@@ -1784,15 +1949,11 @@ static void accept_http()
 static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     socklen_t   addr_len;
     char    remote_addr[INET_ADDRSTRLEN]="";    /* remote address */
-    long    bytes;
 
     /* We have a new connection coming in! We'll
        try to find a spot for it in conn array  */
 
     addr_len = sizeof(cli_addr);
-
-    /* connection is a fd that accept gives us that we'll be communicating through now with the remote client */
-    /* this fd will become our conn id for the whole connection's life (that is, until one of the sides close()-s) */
 
     connection = accept(M_listening_fd, (struct sockaddr*)&cli_addr, &addr_len);
 
@@ -1842,6 +2003,18 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 #endif
             conn[i].conn_state = CONN_STATE_CONNECTED;
             conn[i].last_activity = G_now;
+
+#ifdef FD_MON_POLL  /* add connection to monitored set */
+            /* reference ... */
+            conn[i].pi = M_pollfds_cnt;
+            /* ... each other to avoid unnecessary looping */
+            M_poll_ci[M_pollfds_cnt] = i;
+            M_pollfds[M_pollfds_cnt].fd = connection;
+            M_pollfds[M_pollfds_cnt].events = POLLIN;
+            M_pollfds[M_pollfds_cnt].revents = 0;
+            ++M_pollfds_cnt;
+#endif  /* FD_MON_POLL */
+
             connection = -1;                        /* mark as OK */
             break;
         }
@@ -1849,10 +2022,9 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
     if (connection != -1)   /* none was free */
     {
-        /* No room left in the queue! */
         WAR("No room left for new client, sending 503");
 
-        bytes = send(connection, "HTTP/1.1 503 Service Unavailable\r\n\r\n", 36, 0);
+        int bytes = send(connection, "HTTP/1.1 503 Service Unavailable\r\n\r\n", 36, 0);
 
         if ( bytes < 36 )
             ERR("write error, bytes = %d of 36", bytes);
@@ -1877,16 +2049,12 @@ static void accept_https()
 static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     socklen_t   addr_len;
     char    remote_addr[INET_ADDRSTRLEN]="";    /* remote address */
-    long    bytes;
     int     ret, ssl_err;
 
     /* We have a new connection coming in! We'll
        try to find a spot for it in conn array  */
 
     addr_len = sizeof(cli_addr);
-
-    /* connection is a fd that accept gives us that we'll be communicating through now with the remote client */
-    /* this fd will become our conn id for the whole connection's life (that is, until one of the sides close()-s) */
 
     connection = accept(M_listening_sec_fd, (struct sockaddr*)&cli_addr, &addr_len);
 
@@ -1929,6 +2097,17 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
             if ( ++G_open_conn > G_open_conn_hwm )
                 G_open_conn_hwm = G_open_conn;
 
+#ifdef FD_MON_POLL  /* add connection to monitored set */
+            /* reference ... */
+            conn[i].pi = M_pollfds_cnt;
+            /* ... each other to avoid unnecessary looping */
+            M_poll_ci[M_pollfds_cnt] = i;
+            M_pollfds[M_pollfds_cnt].fd = connection;
+            M_pollfds[M_pollfds_cnt].events = POLLIN;
+            M_pollfds[M_pollfds_cnt].revents = 0;
+            ++M_pollfds_cnt;
+#endif  /* FD_MON_POLL */
+
             conn[i].ssl = SSL_new(M_ssl_ctx);
 
             if ( !conn[i].ssl )
@@ -1970,6 +2149,10 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
                 }
             }
 
+#ifdef FD_MON_POLL
+            if ( conn[i].ssl_err == SSL_ERROR_WANT_WRITE )
+                M_pollfds[conn[i].pi].events = POLLOUT;
+#endif
             strcpy(conn[i].ip, remote_addr);        /* possibly client IP */
             strcpy(conn[i].pip, remote_addr);       /* possibly proxy IP */
 #ifdef DUMP
@@ -1984,8 +2167,12 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 
     if (connection != -1)   /* none was free */
     {
-        /* No room left in the queue! */
-        WAR("No room left for new client, closing");
+        WAR("No room left for new client, sending 503");
+
+        int bytes = send(connection, "HTTP/1.1 503 Service Unavailable\r\n\r\n", 36, 0);
+
+        if ( bytes < 36 )
+            ERR("write error, bytes = %d of 36", bytes);
 #ifdef _WIN32   /* Windows */
         closesocket(connection);
 #else
@@ -2818,6 +3005,10 @@ static void gen_response_header(int ci)
 #endif
     conn[ci].conn_state = CONN_STATE_READY_TO_SEND_HEADER;
 
+#ifdef FD_MON_POLL
+    M_pollfds[conn[ci].pi].events = POLLOUT;
+#endif
+
     DBG("\nResponse header:\n\n[%s]\n", conn[ci].header);
 
 #ifdef DUMP     /* low-level tests */
@@ -2874,21 +3065,42 @@ static void print_content_type(int ci, char type)
 
 /* --------------------------------------------------------------------------
    Verify IP & User-Agent against sesid in uses (anonymous users)
-   Return user session array index if all ok
+   Return true if session exists
 -------------------------------------------------------------------------- */
 static bool a_usession_ok(int ci)
 {
-    int i;
+    DBG("a_usession_ok");
 
-    for ( i=1; i<=MAX_SESSIONS; ++i )
+    if ( conn[ci].usi )   /* existing connection */
     {
-        if ( uses[i].sesid[0] && !uses[i].logged && 0==strcmp(conn[ci].cookie_in_a, uses[i].sesid)
-/*              && 0==strcmp(conn[ci].ip, uses[i].ip) */
-                && 0==strcmp(conn[ci].uagent, uses[i].uagent) )
+        if ( uses[conn[ci].usi].sesid[0]
+                && !uses[conn[ci].usi].logged
+                && 0==strcmp(conn[ci].cookie_in_a, uses[conn[ci].usi].sesid)
+                && 0==strcmp(conn[ci].uagent, uses[conn[ci].usi].uagent) )
         {
-            DBG("Anonymous session found, usi=%d, sesid [%s]", i, uses[i].sesid);
-            conn[ci].usi = i;
+            DBG("Anonymous session found, usi=%d, sesid [%s]", conn[ci].usi, uses[conn[ci].usi].sesid);
             return TRUE;
+        }
+        else    /* session was closed */
+        {
+            conn[ci].usi = 0;
+        }
+    }
+    else    /* fresh connection */
+    {
+        int i;
+
+        for ( i=1; i<=MAX_SESSIONS; ++i )
+        {
+            if ( uses[i].sesid[0]
+                    && !uses[i].logged
+                    && 0==strcmp(conn[ci].cookie_in_a, uses[i].sesid)
+                    && 0==strcmp(conn[ci].uagent, uses[i].uagent) )
+            {
+                DBG("Anonymous session found, usi=%d, sesid [%s]", i, uses[i].sesid);
+                conn[ci].usi = i;
+                return TRUE;
+            }
         }
     }
 
@@ -2967,13 +3179,13 @@ static void close_uses(int usi, int ci)
 /* --------------------------------------------------------------------------
    Reset connection after processing request
 -------------------------------------------------------------------------- */
-static void reset_conn(int ci, char conn_state)
+static void reset_conn(int ci, char new_state)
 {
 #ifdef DUMP
-    DBG("Resetting connection ci=%d, fd=%d, new state == %s\n", ci, conn[ci].fd, conn_state==CONN_STATE_CONNECTED?"CONN_STATE_CONNECTED":"CONN_STATE_DISCONNECTED");
+    DBG("Resetting connection ci=%d, fd=%d, new state == %s\n", ci, conn[ci].fd, new_state==CONN_STATE_CONNECTED?"CONN_STATE_CONNECTED":"CONN_STATE_DISCONNECTED");
 #endif
 
-    conn[ci].conn_state = conn_state;
+    conn[ci].conn_state = new_state;
 
     conn[ci].status = 200;
     conn[ci].method[0] = EOS;
@@ -3008,7 +3220,10 @@ static void reset_conn(int ci, char conn_state)
     conn[ci].boundary[0] = EOS;
     conn[ci].authorization[0] = EOS;
     conn[ci].auth_level = APP_DEF_AUTH_LEVEL;
-    conn[ci].usi = 0;
+
+    if ( new_state == CONN_STATE_DISCONNECTED )
+        conn[ci].usi = 0;
+
     conn[ci].static_res = NOT_STATIC;
     conn[ci].ctype = RES_HTML;
     conn[ci].cdisp[0] = EOS;
@@ -3022,6 +3237,21 @@ static void reset_conn(int ci, char conn_state)
     conn[ci].expect100 = FALSE;
     conn[ci].dont_cache = FALSE;
     conn[ci].keep_content = FALSE;
+
+#ifdef ASYNC
+    conn[ci].service[0] = EOS;
+    conn[ci].async_err_code = OK;
+    conn[ci].ai = -1;
+#endif
+
+    if ( new_state == CONN_STATE_CONNECTED )
+    {
+#ifdef FD_MON_POLL
+        M_pollfds[conn[ci].pi].events = POLLIN;
+#endif
+        conn[ci].last_activity = G_now;
+        if ( conn[ci].usi ) US.last_activity = G_now;
+    }
 }
 
 
@@ -4121,6 +4351,10 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         DBG("Changing state to CONN_STATE_WAITING_FOR_ASYNC");
 #endif
         conn[ci].conn_state = CONN_STATE_WAITING_FOR_ASYNC;
+
+#ifdef FD_MON_POLL
+        M_pollfds[conn[ci].pi].events = POLLOUT;
+#endif
     }
 #endif
 }

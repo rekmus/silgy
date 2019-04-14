@@ -22,7 +22,7 @@
 #define	R_OK    0x04    /* test for read permission */
 #endif  /* _MSC_VER */
 #undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0501
+#define _WIN32_WINNT 0x0501 /* Windows XP or higher required */
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <psapi.h>
@@ -63,7 +63,7 @@ typedef char                        bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "4.0.1"
+#define WEB_SERVER_VERSION          "4.1"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
@@ -276,10 +276,22 @@ typedef char str64k[1024*64];
 #endif
 #endif  /* SILGY_SVC */
 
+/* select() vs poll() vs epoll() */
+
+#ifdef _WIN32
+#define FD_MON_SELECT   /* WSAPoll doesn't seem to be reliable alternative */
+#else
+#ifndef FD_MON_POLL
+#define FD_MON_SELECT
+#endif
+#endif  /* _WIN32 */
+
+#ifdef FD_MON_SELECT
 #if MAX_CONNECTIONS > FD_SETSIZE-2
 #undef MAX_CONNECTIONS
 #define MAX_CONNECTIONS FD_SETSIZE-2
 #endif
+#endif  /* FD_MON_SELECT */
 
 #define CLOSING_SESSION_CI              MAX_CONNECTIONS
 
@@ -684,10 +696,14 @@ typedef struct {
     bool    bot;
     bool    expect100;
     bool    dont_cache;
-    bool    keep_content;
+    bool    keep_content;                   /* don't reset already rendered content on error */
+#ifdef FD_MON_POLL
+    int     pi;                             /* pollfds array index */
+#endif
 #ifdef ASYNC
     char    service[SVC_NAME_LEN+1];
     int     async_err_code;
+    int     ai;                             /* async responses array index */
 #endif
 } conn_t;
 #endif  /* SILGY_SVC */

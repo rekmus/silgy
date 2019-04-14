@@ -163,32 +163,52 @@ static int upgrade_uses(int ci, long uid, const char *login, const char *email, 
 -------------------------------------------------------------------------- */
 int libusr_luses_ok(int ci)
 {
-    int         ret=OK;
-    int         i;
+    int ret=OK;
+    int i;
+
+    DBG("libusr_luses_ok");
+
+    /* try in hot sessions first */
+
+    if ( conn[ci].usi )   /* existing connection */
+    {
+        if ( uses[conn[ci].usi].sesid[0]
+                && uses[conn[ci].usi].logged
+                && 0==strcmp(conn[ci].cookie_in_l, uses[conn[ci].usi].sesid)
+                && 0==strcmp(conn[ci].uagent, uses[conn[ci].usi].uagent) )
+        {
+            DBG("Logged in session found in cache, usi=%d, sesid [%s]", conn[ci].usi, uses[conn[ci].usi].sesid);
+            return OK;
+        }
+        else    /* session was closed */
+        {
+            conn[ci].usi = 0;
+        }
+    }
+    else    /* fresh connection */
+    {
+        for ( i=1; i<=MAX_SESSIONS; ++i )
+        {
+            if ( uses[i].sesid[0]
+                    && uses[i].logged
+                    && 0==strcmp(conn[ci].cookie_in_l, uses[i].sesid)
+                    && 0==strcmp(conn[ci].uagent, uses[i].uagent) )
+            {
+                DBG("Logged in session found in cache, usi=%d, sesid [%s]", i, uses[i].sesid);
+                conn[ci].usi = i;
+                return OK;
+            }
+        }
+    }
+
+    /* not found in memory -- try database */
+
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
     long        uid;
     time_t      created;
-
-    DBG("libusr_luses_ok");
-
-    /* try in hot sessions first */
-
-    for ( i=1; i<=MAX_SESSIONS; ++i )
-    {
-        if ( uses[i].sesid[0] && uses[i].logged && 0==strcmp(conn[ci].cookie_in_l, uses[i].sesid)
-/*              && 0==strcmp(conn[ci].ip, uses[i].ip) */
-                && 0==strcmp(conn[ci].uagent, uses[i].uagent) )
-        {
-            DBG("Logged in session found in cache, usi=%d, sesid [%s]", i, uses[i].sesid);
-            conn[ci].usi = i;
-            return OK;
-        }
-    }
-
-    /* not found in memory -- try database */
 
     char sanuagent[DB_UAGENT_LEN+1];
     sanitize_sql(sanuagent, conn[ci].uagent, DB_UAGENT_LEN);
