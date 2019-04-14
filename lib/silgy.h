@@ -90,6 +90,19 @@ typedef char str64k[1024*64];
 #include "silgy_app.h"
 
 
+/* select() vs poll() vs epoll() */
+
+#ifdef _WIN32
+#define FD_MON_SELECT   /* WSAPoll doesn't seem to be reliable alternative */
+#undef FD_MON_POLL
+#undef FD_MON_EPOLL
+#else
+#ifndef FD_MON_POLL
+#define FD_MON_SELECT
+#endif
+#endif  /* _WIN32 */
+
+
 #ifdef SILGY_WATCHER
 #ifdef DBMYSQL
 #undef DBMYSQL
@@ -275,16 +288,6 @@ typedef char str64k[1024*64];
 #define MAX_SESSIONS                    10              /* max user sessions */
 #endif
 #endif  /* SILGY_SVC */
-
-/* select() vs poll() vs epoll() */
-
-#ifdef _WIN32
-#define FD_MON_SELECT   /* WSAPoll doesn't seem to be reliable alternative */
-#else
-#ifndef FD_MON_POLL
-#define FD_MON_SELECT
-#endif
-#endif  /* _WIN32 */
 
 #ifdef FD_MON_SELECT
 #if MAX_CONNECTIONS > FD_SETSIZE-2
