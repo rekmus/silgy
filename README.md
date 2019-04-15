@@ -4,6 +4,8 @@ Web application framework for C and C++ programmers.
 
 The latency between receiving HTTP request and application logic has been minimized by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
 
+Silgy Hello World handles ~18,000 requests per second on a single CPU.
+
 Silgy contains everything that is necessary to build a complete, production-grade solution, including session management and REST calls.
 
 The only third-party dependencies are:
@@ -18,7 +20,7 @@ ASYNC module requires POSIX message queues, so it's not available on Windows for
 
 Silgy has build-in (and enabled by default) protection against most popular attacks, including BEAST, SQL-injection, XSS, and password and cookie brute-force. It does not directly expose the filesystem nor allows any scripting. Its random string generator is FIPS-compliant.
 
-TCO for a mid-sized web application with a small database and moderate load (<100,000 requests/day) can be as low as $3 per month (Amazon EC2 t2.micro).
+TCO for a mid-sized web application with a small database and moderate load (<1,000,000 requests/day) can be as low as $3 per month (Amazon EC2 t2.micro).
 
 Silgy Hello World's [quick performance test](https://github.com/silgy/silgy/wiki/Performance-test) on the free-tier AWS EC2 instance.
 
