@@ -4,7 +4,7 @@ Web application framework for C and C++ programmers.
 
 The latency between receiving HTTP request and application logic has been minimized by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
 
-Silgy Hello World handles ~18,000 requests per second on a single CPU.
+Silgy Hello World handles ~20,000 requests per second on a single CPU.
 
 Silgy contains everything that is necessary to build a complete, production-grade solution, including session management and REST calls.
 
