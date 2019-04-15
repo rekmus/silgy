@@ -438,6 +438,7 @@ struct timeval  timeout;                    /* Timeout for select */
 
 #ifdef FD_MON_EPOLL
         ALWAYS("epoll not implemented yet!");
+        clean_up();
         return EXIT_FAILURE;
 #endif  /* FD_MON_EPOLL */
 
@@ -694,10 +695,17 @@ struct timeval  timeout;                    /* Timeout for select */
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
-                                DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", strlen(conn[i].header), conn[i].fd, i);
+                                DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", conn[i].out_hlen, conn[i].fd, i);
 #endif  /* DUMP */
-                                bytes = SSL_write(conn[i].ssl, conn[i].header, strlen(conn[i].header));
-
+#ifdef SEND_ALL_AT_ONCE
+                                bytes = SSL_write(conn[i].ssl, conn[i].out_start, conn[i].out_len);
+#ifdef DUMP
+                                DBG("ci=%d, changing state to CONN_STATE_READY_TO_SEND_BODY", i);
+#endif
+                                conn[i].conn_state = CONN_STATE_READY_TO_SEND_BODY;
+#else
+                                bytes = SSL_write(conn[i].ssl, conn[i].out_header, conn[i].out_hlen);
+#endif  /* SEND_ALL_AT_ONCE */
                                 set_state_sec(i, bytes);
                             }
                             else if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY || conn[i].conn_state == CONN_STATE_SENDING_BODY)
@@ -706,11 +714,11 @@ struct timeval  timeout;                    /* Timeout for select */
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
                                 DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", conn[i].clen, conn[i].fd, i);
 #endif  /* DUMP */
-                                if ( conn[i].static_res == NOT_STATIC )
-                                    bytes = SSL_write(conn[i].ssl, conn[i].out_data, conn[i].clen);
-                                else
-                                    bytes = SSL_write(conn[i].ssl, M_stat[conn[i].static_res].data, conn[i].clen);
-
+#ifdef SEND_ALL_AT_ONCE
+                                bytes = SSL_write(conn[i].ssl, conn[i].out_start, conn[i].out_len);
+#else
+                                bytes = SSL_write(conn[i].ssl, conn[i].out_data, conn[i].clen);
+#endif
                                 set_state_sec(i, bytes);
                             }
                         }
@@ -721,10 +729,17 @@ struct timeval  timeout;                    /* Timeout for select */
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
-                                DBG("Trying to write %ld bytes to fd=%d (ci=%d)", strlen(conn[i].header), conn[i].fd, i);
+                                DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].out_hlen, conn[i].fd, i);
 #endif  /* DUMP */
-                                bytes = send(conn[i].fd, conn[i].header, strlen(conn[i].header), 0);
-
+#ifdef SEND_ALL_AT_ONCE
+                                bytes = send(conn[i].fd, conn[i].out_start, conn[i].out_len, 0);
+#ifdef DUMP
+                                DBG("ci=%d, changing state to CONN_STATE_READY_TO_SEND_BODY", i);
+#endif
+                                conn[i].conn_state = CONN_STATE_READY_TO_SEND_BODY;
+#else
+                                bytes = send(conn[i].fd, conn[i].out_header, conn[i].out_hlen, 0);
+#endif  /* SEND_ALL_AT_ONCE */
                                 set_state(i, bytes);    /* possibly:    CONN_STATE_DISCONNECTED (if error or closed by peer) */
                                                         /*              CONN_STATE_READY_TO_SEND_BODY */
                             }
@@ -734,11 +749,11 @@ struct timeval  timeout;                    /* Timeout for select */
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
                                 DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].clen-conn[i].data_sent, conn[i].fd, i);
 #endif  /* DUMP */
-                                if ( conn[i].static_res == NOT_STATIC )
-                                    bytes = send(conn[i].fd, conn[i].out_data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, 0);
-                                else
-                                    bytes = send(conn[i].fd, M_stat[conn[i].static_res].data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, 0);
-
+#ifdef SEND_ALL_AT_ONCE
+                                bytes = send(conn[i].fd, conn[i].out_start+conn[i].data_sent, conn[i].out_len-conn[i].data_sent, 0);
+#else
+                                bytes = send(conn[i].fd, conn[i].out_data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, 0);
+#endif
                                 conn[i].data_sent += bytes;
                                 set_state(i, bytes);    /* possibly:    CONN_STATE_DISCONNECTED (if error or closed by peer or !keep_alive) */
                                                         /*              CONN_STATE_SENDING_BODY (if data_sent < clen) */
@@ -799,8 +814,8 @@ struct timeval  timeout;                    /* Timeout for select */
                                 ++G_cnts_today.visits_dsk;
                         }
 
-                        /* process request */
-                        process_req(i);
+                        if ( conn[i].static_res == NOT_STATIC )   /* process request */
+                            process_req(i);
 #ifdef ASYNC
                         if ( conn[i].conn_state != CONN_STATE_WAITING_FOR_ASYNC )
 #endif
@@ -1077,7 +1092,11 @@ static void set_state(int ci, long bytes)
     }
     else if ( conn[ci].conn_state == CONN_STATE_READY_TO_SEND_BODY )    /* it could have been sent only partially */
     {
+#ifdef SEND_ALL_AT_ONCE
+        if ( bytes < conn[ci].out_len )
+#else
         if ( bytes < conn[ci].clen )
+#endif
         {
 #ifdef DUMP
             DBG("ci=%d, changing state to CONN_STATE_SENDING_BODY", ci);
@@ -1101,7 +1120,11 @@ static void set_state(int ci, long bytes)
     }
     else if ( conn[ci].conn_state == CONN_STATE_SENDING_BODY )
     {
+#ifdef SEND_ALL_AT_ONCE
+        if ( conn[ci].data_sent < conn[ci].out_len )
+#else
         if ( conn[ci].data_sent < conn[ci].clen )
+#endif
         {
             DBG("Continue sending");
         }
@@ -1544,6 +1567,10 @@ static bool init(int argc, char **argv)
     ALWAYS("         FD monitoring = FD_MON_EPOLL");
 #endif
     ALWAYS("");
+#ifdef SEND_ALL_AT_ONCE
+    ALWAYS("    Response send mode = SEND_ALL_AT_ONCE");
+    ALWAYS("");
+#endif
     ALWAYS("          CONN_TIMEOUT = %d seconds", CONN_TIMEOUT);
     ALWAYS("          USES_TIMEOUT = %d seconds", USES_TIMEOUT);
 #ifdef USERS
@@ -1744,7 +1771,7 @@ static bool init(int argc, char **argv)
     for ( i=0; i<MAX_CONNECTIONS; ++i )
     {
 #ifdef OUTCHECKREALLOC
-        if ( !(conn[i].out_data = (char*)malloc(OUT_BUFSIZE)) )
+        if ( !(conn[i].out_data_alloc = (char*)malloc(OUT_BUFSIZE)) )
         {
             ERR("malloc for conn[%d].out_data failed", i);
             return FALSE;
@@ -2580,7 +2607,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
                 fread(data_tmp, M_stat[i].len, 1, fd);
                 *(data_tmp+M_stat[i].len) = EOS;
 
-                M_stat[i].len = silgy_minify(data_tmp_min, data_tmp);  /* new length */
+                M_stat[i].len = silgy_minify(data_tmp_min, data_tmp);   /* new length */
             }
 
             /* allocate the final destination */
@@ -2588,9 +2615,15 @@ static bool read_files(bool minify, bool first_scan, const char *path)
             if ( reread )
                 free(M_stat[i].data);
 
+#ifdef SEND_ALL_AT_ONCE
+            if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1+OUT_HEADER_BUFSIZE)) )
+            {
+                ERR("Couldn't allocate %ld bytes for %s!", M_stat[i].len+1+OUT_HEADER_BUFSIZE, M_stat[i].name);
+#else
             if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1)) )
             {
                 ERR("Couldn't allocate %ld bytes for %s!", M_stat[i].len+1, M_stat[i].name);
+#endif  /* SEND_ALL_AT_ONCE */
                 fclose(fd);
                 closedir(dir);
                 return FALSE;
@@ -2598,7 +2631,11 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
             if ( minify )
             {
+#ifdef SEND_ALL_AT_ONCE
+                memcpy(M_stat[i].data+OUT_HEADER_BUFSIZE, data_tmp_min, M_stat[i].len+1);
+#else
                 memcpy(M_stat[i].data, data_tmp_min, M_stat[i].len+1);
+#endif
                 free(data_tmp);
                 free(data_tmp_min);
                 data_tmp = NULL;
@@ -2608,7 +2645,11 @@ static bool read_files(bool minify, bool first_scan, const char *path)
             }
             else
             {
+#ifdef SEND_ALL_AT_ONCE
+                fread(M_stat[i].data+OUT_HEADER_BUFSIZE, M_stat[i].len, 1, fd);
+#else
                 fread(M_stat[i].data, M_stat[i].len, 1, fd);
+#endif
 
                 M_stat[i].source = STATIC_SOURCE_RES;
             }
@@ -2701,18 +2742,33 @@ static int is_static_res(int ci, const char *name)
 -------------------------------------------------------------------------- */
 static void process_req(int ci)
 {
-    int     ret=OK;
+    int ret=OK;
 
     DBG("process_req, ci=%d", ci);
+
+    /* ------------------------------------------------------------------------ */
 
 #ifdef DUMP
     if ( conn[ci].post && conn[ci].data )
         log_long(conn[ci].data, conn[ci].was_read, "POST data");
 #endif
 
+    /* ------------------------------------------------------------------------ */
+
+#ifdef SEND_ALL_AT_ONCE  /* make room for a header */
+    conn[ci].p_curr_c = conn[ci].out_data + OUT_HEADER_BUFSIZE;
+#else
     conn[ci].p_curr_c = conn[ci].out_data;
+#endif
+
+    /* ------------------------------------------------------------------------ */
 
     conn[ci].location[COLON_POSITION] = '-';    /* no protocol here yet */
+
+    /* ------------------------------------------------------------------------ */
+
+    if ( conn[ci].status != 200 )
+        return;
 
     /* ------------------------------------------------------------------------ */
     /* Generate HTML content before header -- to know its size & type --------- */
@@ -2720,99 +2776,100 @@ static void process_req(int ci)
     /* ------------------------------------------------------------------------ */
     /* authorization check / log in from cookies ------------------------------ */
 
-    if ( conn[ci].static_res == NOT_STATIC && conn[ci].status == 200 )
-    {
 #ifdef USERS
-        if ( conn[ci].cookie_in_l[0] )  /* logged in sesid cookie present */
-        {
-            ret = libusr_luses_ok(ci);     /* is it valid? */
+    if ( conn[ci].cookie_in_l[0] )  /* logged in sesid cookie present */
+    {
+        ret = libusr_luses_ok(ci);     /* is it valid? */
 
-            if ( ret == OK )    /* valid sesid -- user logged in */
-                DBG("User logged in from cookie");
-            else if ( ret != ERR_INT_SERVER_ERROR && ret != ERR_SERVER_TOOBUSY )    /* dodged sesid... or session expired */
-                WAR("Invalid ls cookie");
-        }
+        if ( ret == OK )    /* valid sesid -- user logged in */
+            DBG("User logged in from cookie");
+        else if ( ret != ERR_INT_SERVER_ERROR && ret != ERR_SERVER_TOOBUSY )    /* dodged sesid... or session expired */
+            WAR("Invalid ls cookie");
+    }
 
-        if ( conn[ci].auth_level==AUTH_LEVEL_ADMIN && !ADMIN )  /* return not found */
-        {
-            INF("AUTH_LEVEL_ADMIN required, returning 404");
-            ret = ERR_NOT_FOUND;
-            RES_DONT_CACHE;
-        }
-        else if ( conn[ci].auth_level==AUTH_LEVEL_LOGGEDIN && !LOGGED )    /* redirect to login page */
-        {
-            INF("AUTH_LEVEL_LOGGEDIN required, redirecting to login");
-            ret = ERR_REDIRECTION;
-            if ( !strlen(APP_LOGIN_URI) )   /* login page = landing page */
-                sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host);
-            else
-                strcpy(conn[ci].location, APP_LOGIN_URI);
-        }
-        else    /* login not required for this URI */
-        {
-            ret = OK;
-        }
+    if ( conn[ci].auth_level==AUTH_LEVEL_ADMIN && !ADMIN )  /* return not found */
+    {
+        INF("AUTH_LEVEL_ADMIN required, returning 404");
+        ret = ERR_NOT_FOUND;
+        RES_DONT_CACHE;
+    }
+    else if ( conn[ci].auth_level==AUTH_LEVEL_LOGGEDIN && !LOGGED )    /* redirect to login page */
+    {
+        INF("AUTH_LEVEL_LOGGEDIN required, redirecting to login");
+        ret = ERR_REDIRECTION;
+        if ( !strlen(APP_LOGIN_URI) )   /* login page = landing page */
+            sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host);
+        else
+            strcpy(conn[ci].location, APP_LOGIN_URI);
+    }
+    else    /* login not required for this URI */
+    {
+        ret = OK;
+    }
 
-        if ( conn[ci].auth_level==AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only && !LOGGED )    /* anonymous user session required */
+    if ( conn[ci].auth_level==AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only && !LOGGED )    /* anonymous user session required */
 #else
-        if ( conn[ci].auth_level==AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only )
+    if ( conn[ci].auth_level==AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only )
 #endif
+    {
+        if ( !conn[ci].cookie_in_a[0] || !a_usession_ok(ci) )       /* valid anonymous sesid cookie not present */
         {
-            if ( !conn[ci].cookie_in_a[0] || !a_usession_ok(ci) )       /* valid anonymous sesid cookie not present */
-            {
-                ret = eng_uses_start(ci, NULL);
-            }
+            ret = eng_uses_start(ci, NULL);
         }
+    }
 
-        /* ------------------------------------------------------------------------ */
-        /* process request -------------------------------------------------------- */
+    /* ------------------------------------------------------------------------ */
+    /* process request -------------------------------------------------------- */
 
-        if ( ret == OK )
-        {
-            if ( !conn[ci].location[0] )
-                silgy_app_main(ci);  /* main application called here */
-        }
+    if ( ret == OK )
+    {
+        if ( !conn[ci].location[0] )
+            silgy_app_main(ci);  /* main application called here */
+    }
 
-        /* ------------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------------ */
 
-        conn[ci].last_activity = G_now;
-        if ( conn[ci].usi ) US.last_activity = G_now;
+    conn[ci].last_activity = G_now;
+    if ( conn[ci].usi ) US.last_activity = G_now;
 
 #ifdef ASYNC
-        if ( conn[ci].conn_state == CONN_STATE_WAITING_FOR_ASYNC ) return;
+    if ( conn[ci].conn_state == CONN_STATE_WAITING_FOR_ASYNC ) return;
 #endif
-        /* ------------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------------ */
 
-        if ( conn[ci].location[0] || ret == ERR_REDIRECTION )   /* redirection has a priority */
-            conn[ci].status = 303;
-        else if ( ret == ERR_INVALID_REQUEST )
-            conn[ci].status = 400;
-        else if ( ret == ERR_UNAUTHORIZED )
-            conn[ci].status = 401;
-        else if ( ret == ERR_FORBIDDEN )
-            conn[ci].status = 403;
-        else if ( ret == ERR_NOT_FOUND )
-            conn[ci].status = 404;
-        else if ( ret == ERR_INT_SERVER_ERROR )
-            conn[ci].status = 500;
-        else if ( ret == ERR_SERVER_TOOBUSY )
-            conn[ci].status = 503;
+    if ( conn[ci].location[0] || ret == ERR_REDIRECTION )   /* redirection has a priority */
+        conn[ci].status = 303;
+    else if ( ret == ERR_INVALID_REQUEST )
+        conn[ci].status = 400;
+    else if ( ret == ERR_UNAUTHORIZED )
+        conn[ci].status = 401;
+    else if ( ret == ERR_FORBIDDEN )
+        conn[ci].status = 403;
+    else if ( ret == ERR_NOT_FOUND )
+        conn[ci].status = 404;
+    else if ( ret == ERR_INT_SERVER_ERROR )
+        conn[ci].status = 500;
+    else if ( ret == ERR_SERVER_TOOBUSY )
+        conn[ci].status = 503;
 
-        if ( ret==ERR_REDIRECTION || conn[ci].status==400 || conn[ci].status==401 || conn[ci].status==403 || conn[ci].status==404 || conn[ci].status==500 || conn[ci].status==503 )
-        {
+    if ( ret==ERR_REDIRECTION || conn[ci].status==400 || conn[ci].status==401 || conn[ci].status==403 || conn[ci].status==404 || conn[ci].status==500 || conn[ci].status==503 )
+    {
 #ifdef USERS
-            if ( conn[ci].usi && !LOGGED ) close_uses(conn[ci].usi, ci);
+        if ( conn[ci].usi && !LOGGED ) close_uses(conn[ci].usi, ci);
 #else
-            if ( conn[ci].usi ) close_uses(conn[ci].usi, ci);
+        if ( conn[ci].usi ) close_uses(conn[ci].usi, ci);
 #endif
-            if ( !conn[ci].keep_content )
-            {
-                conn[ci].p_curr_c = conn[ci].out_data;      /* reset out buffer pointer as it could have contained something already */
-                gen_page_msg(ci, ret);
-            }
-
-            RES_DONT_CACHE;
+        if ( !conn[ci].keep_content )   /* reset out buffer pointer as it could have contained something already */
+        {
+#ifdef SEND_ALL_AT_ONCE
+            conn[ci].p_curr_c = conn[ci].out_data + OUT_HEADER_BUFSIZE;
+#else
+            conn[ci].p_curr_c = conn[ci].out_data;
+#endif
+            gen_page_msg(ci, ret);
         }
+
+        RES_DONT_CACHE;
     }
 }
 
@@ -2824,7 +2881,12 @@ static void gen_response_header(int ci)
 {
     DBG("gen_response_header, ci=%d", ci);
 
-    conn[ci].p_curr_h = conn[ci].header;
+#ifdef SEND_ALL_AT_ONCE
+    char out_header[OUT_HEADER_BUFSIZE];
+    conn[ci].p_curr_h = out_header;
+#else
+    conn[ci].p_curr_h = conn[ci].out_header;
+#endif
 
     PRINT_HTTP_STATUS(conn[ci].status);
 
@@ -2920,8 +2982,12 @@ static void gen_response_header(int ci)
             }
         }
 
-        if ( conn[ci].static_res == NOT_STATIC )
+        if ( conn[ci].static_res == NOT_STATIC )    /* determine the content length */
+#ifdef SEND_ALL_AT_ONCE
+            conn[ci].clen = conn[ci].p_curr_c - conn[ci].out_data - OUT_HEADER_BUFSIZE;
+#else
             conn[ci].clen = conn[ci].p_curr_c - conn[ci].out_data;
+#endif
         else
             conn[ci].clen = M_stat[conn[ci].static_res].len;
     }
@@ -2998,6 +3064,18 @@ static void gen_response_header(int ci)
 
     PRINT_HTTP_END_OF_HEADER;
 
+    /* header length */
+
+#ifdef SEND_ALL_AT_ONCE
+    conn[ci].out_hlen = conn[ci].p_curr_h - out_header;
+#else
+    conn[ci].out_hlen = conn[ci].p_curr_h - conn[ci].out_header;
+#endif
+
+#ifdef DUMP
+    DBG("ci=%d, out_hlen = %d", ci, conn[ci].out_hlen);
+#endif
+
     DBG("Response status: %d", conn[ci].status);
 
 #ifdef DUMP     /* low-level tests */
@@ -3009,13 +3087,35 @@ static void gen_response_header(int ci)
     M_pollfds[conn[ci].pi].events = POLLOUT;
 #endif
 
-    DBG("\nResponse header:\n\n[%s]\n", conn[ci].header);
+#ifdef SEND_ALL_AT_ONCE
+    DBG("\nResponse header:\n\n[%s]\n", out_header);
+#else
+    DBG("\nResponse header:\n\n[%s]\n", conn[ci].out_header);
+#endif
+
+#ifdef SEND_ALL_AT_ONCE
+    /* ----------------------------------------------------------------- */
+    /* try to send everything at once */
+    /* copy response header just before the content */
+
+    conn[ci].out_start = conn[ci].out_data + (OUT_HEADER_BUFSIZE - conn[ci].out_hlen);
+    memcpy(conn[ci].out_start, out_header, conn[ci].out_hlen);
+    conn[ci].out_len = conn[ci].out_hlen + conn[ci].clen;
+
+    /* ----------------------------------------------------------------- */
+#endif
 
 #ifdef DUMP     /* low-level tests */
     if ( G_logLevel>=LOG_DBG && conn[ci].clen > 0 && !conn[ci].head_only && conn[ci].static_res == NOT_STATIC
             && (conn[ci].ctype==CONTENT_TYPE_UNSET || conn[ci].ctype==RES_TEXT || conn[ci].ctype==RES_HTML || conn[ci].ctype==RES_JSON) )
+#ifdef SEND_ALL_AT_ONCE
+        log_long(conn[ci].out_data+OUT_HEADER_BUFSIZE, conn[ci].clen, "Content to send");
+#else
         log_long(conn[ci].out_data, conn[ci].clen, "Content to send");
 #endif
+#endif  /* DUMP */
+
+    /* ----------------------------------------------------------------- */
 
     conn[ci].last_activity = G_now;
     if ( conn[ci].usi ) US.last_activity = G_now;
@@ -3027,7 +3127,7 @@ static void gen_response_header(int ci)
 -------------------------------------------------------------------------- */
 static void print_content_type(int ci, char type)
 {
-    char    http_type[32]="text/plain";     /* default */
+    char http_type[256];
 
     if ( type == RES_HTML )
         strcpy(http_type, "text/html; charset=utf-8");
@@ -3057,6 +3157,8 @@ static void print_content_type(int ci, char type)
         strcpy(http_type, "application/x-msdownload");
     else if ( type == RES_ZIP )
         strcpy(http_type, "application/zip");
+    else
+        strcpy(http_type, "text/plain");
 
     sprintf(G_tmp, "Content-Type: %s\r\n", http_type);
     HOUT(G_tmp);
@@ -3081,8 +3183,9 @@ static bool a_usession_ok(int ci)
             DBG("Anonymous session found, usi=%d, sesid [%s]", conn[ci].usi, uses[conn[ci].usi].sesid);
             return TRUE;
         }
-        else    /* session was closed */
+        else    /* session was closed -- it should never happen */
         {
+            WAR("usi > 0 and no session!");
             conn[ci].usi = 0;
         }
     }
@@ -3220,6 +3323,8 @@ static void reset_conn(int ci, char new_state)
     conn[ci].boundary[0] = EOS;
     conn[ci].authorization[0] = EOS;
     conn[ci].auth_level = APP_DEF_AUTH_LEVEL;
+
+    conn[ci].out_data = conn[ci].out_data_alloc;
 
     if ( new_state == CONN_STATE_DISCONNECTED )
         conn[ci].usi = 0;
@@ -3586,6 +3691,9 @@ static int parse_req(int ci, long len)
 
         conn[ci].static_res = is_static_res(ci, conn[ci].uri);     /* statics --> set the flag!!! */
         /* now, it may have set conn[ci].status to 304 */
+
+        if ( conn[ci].static_res != NOT_STATIC )    /* static resource */
+            conn[ci].out_data = M_stat[conn[ci].static_res].data;
     }
 
     /* get the required authorization level for this resource */
@@ -4373,6 +4481,18 @@ void silgy_add_to_static_res(const char *name, const char *src)
 
     M_stat[i].len = strlen(src);   /* internal are text based */
 
+#ifdef SEND_ALL_AT_ONCE
+
+    if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1+OUT_HEADER_BUFSIZE)) )
+    {
+        ERR("Couldn't allocate %ld bytes for %s!!!", M_stat[i].len+1+OUT_HEADER_BUFSIZE, M_stat[i].name);
+        return;
+    }
+
+    strcpy(M_stat[i].data+OUT_HEADER_BUFSIZE, src);
+
+#else
+
     if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1)) )
     {
         ERR("Couldn't allocate %ld bytes for %s!!!", M_stat[i].len+1, M_stat[i].name);
@@ -4380,6 +4500,8 @@ void silgy_add_to_static_res(const char *name, const char *src)
     }
 
     strcpy(M_stat[i].data, src);
+
+#endif  /* SEND_ALL_AT_ONCE */
 
     M_stat[i].type = get_res_type(M_stat[i].name);
     M_stat[i].modified = G_now;

@@ -87,6 +87,9 @@ typedef char str32k[1024*32];
 typedef char str64k[1024*64];
 
 
+#define SEND_ALL_AT_ONCE    /* don't split response to two send-s */
+
+
 #include "silgy_app.h"
 
 
@@ -97,8 +100,8 @@ typedef char str64k[1024*64];
 #undef FD_MON_POLL
 #undef FD_MON_EPOLL
 #else
-#ifndef FD_MON_POLL
-#define FD_MON_SELECT
+#ifndef FD_MON_SELECT
+#define FD_MON_POLL
 #endif
 #endif  /* _WIN32 */
 
@@ -258,9 +261,8 @@ typedef char str64k[1024*64];
 
 #define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
 #define OUT_HEADER_BUFSIZE              4096            /* response header buffer length */
-#define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
 #define TMP_BUFSIZE                     1048576         /* temporary string buffer size (1 MB) */
-#define MAX_POST_DATA_BUFSIZE           16777216+1048576    /* max incoming POST data length (16+1 MB) */
+#define MAX_POST_DATA_BUFSIZE           16777216+1048576 /* max incoming POST data length (16+1 MB) */
 #define MAX_LOG_STR_LEN                 4095            /* max log string length */
 #define MAX_METHOD_LEN                  7               /* method length */
 #define MAX_URI_LEN                     2047            /* max request URI length */
@@ -275,15 +277,19 @@ typedef char str64k[1024*64];
 #define MAX_CONNECTIONS                 1               /* dummy */
 #else
 #ifdef MEM_MEDIUM
+#define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
 #define MAX_CONNECTIONS                 200             /* max TCP connections (2 per user session) */
 #define MAX_SESSIONS                    100             /* max user sessions */
 #elif defined(MEM_BIG)
+#define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
 #define MAX_CONNECTIONS                 1000            /* max TCP connections */
 #define MAX_SESSIONS                    500             /* max user sessions */
 #elif defined(MEM_HUGE)
+#define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
 #define MAX_CONNECTIONS                 5000            /* max TCP connections */
 #define MAX_SESSIONS                    2500            /* max user sessions */
 #else   /* MEM_SMALL -- default */
+#define OUT_BUFSIZE                     131072          /* initial HTTP response buffer length (128 kB) */
 #define MAX_CONNECTIONS                 20              /* max TCP connections */
 #define MAX_SESSIONS                    10              /* max user sessions */
 #endif
@@ -664,15 +670,22 @@ typedef struct {
     char    boundary[MAX_VALUE_LEN+1];      /* for POST multipart/form-data type */
     char    authorization[MAX_VALUE_LEN+1]; /* Authorization */
     /* what goes out */
-    char    header[OUT_HEADER_BUFSIZE];     /* outgoing HTTP header */
-#ifdef OUTCHECKREALLOC
-    char    *out_data;                      /* body */
+    int     out_hlen;                       /* outgoing header length */
+#ifdef SEND_ALL_AT_ONCE
+    long    out_len;                        /* outgoing length (all) */
+    char    *out_start;
 #else
-    char    out_data[OUT_BUFSIZE];
+    char    out_header[OUT_HEADER_BUFSIZE]; /* outgoing HTTP header */
 #endif
-    long    out_data_allocated;
+#ifdef OUTCHECKREALLOC
+    char    *out_data_alloc;                /* allocated space for rendered content */
+#else
+    char    out_data_alloc[OUT_BUFSIZE];
+#endif
+    long    out_data_allocated;             /* number of allocated bytes */
+    char    *out_data;                      /* pointer to the data to send */
     int     status;                         /* HTTP status */
-    long    data_sent;                      /* how many body bytes has been sent */
+    long    data_sent;                      /* how many body bytes have been sent */
     char    ctype;                          /* content type */
     char    ctypestr[256];                  /* user (custom) content type */
     char    cdisp[256];                     /* content disposition */
