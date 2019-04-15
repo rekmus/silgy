@@ -93,7 +93,7 @@ typedef char str64k[1024*64];
 /* select() vs poll() vs epoll() */
 
 #ifdef _WIN32
-#define FD_MON_SELECT   /* WSAPoll doesn't seem to be reliable alternative */
+#define FD_MON_SELECT   /* WSAPoll doesn't seem to be a reliable alternative */
 #undef FD_MON_POLL
 #undef FD_MON_EPOLL
 #else

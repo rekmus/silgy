@@ -118,6 +118,12 @@ static int          M_listening_sec_fd=0;       /* The socket file descriptor fo
 static SSL_CTX      *M_ssl_ctx;
 #endif
 
+#ifdef HTTPS
+#define LISTENING_FDS    2
+#else
+#define LISTENING_FDS    1
+#endif
+
 #ifdef FD_MON_SELECT
 static fd_set       M_readfds={0};              /* Socket file descriptors we want to wake up for, using select() */
 static fd_set       M_writefds={0};             /* Socket file descriptors we want to wake up for, using select() */
@@ -125,12 +131,6 @@ static int          M_highsock=0;               /* Highest #'d file descriptor, 
 #endif  /* FD_MON_SELECT */
 
 #ifdef FD_MON_POLL
-
-#ifdef HTTPS
-#define LISTENING_FDS    2
-#else
-#define LISTENING_FDS    1
-#endif
 
 static struct pollfd M_pollfds[MAX_CONNECTIONS+LISTENING_FDS]={0};
 static int          M_pollfds_cnt=0;
@@ -494,7 +494,7 @@ struct timeval  timeout;                    /* Timeout for select */
             }
 #endif  /* DUMP */
 #ifdef FD_MON_SELECT
-            if ( FD_ISSET(M_listening_fd, &M_readfds) )
+            if ( FD_ISSET(M_listening_fd, &M_readfds) )   /* new http connection */
             {
 #endif  /* FD_MON_SELECT */
 #ifdef FD_MON_POLL
@@ -507,7 +507,7 @@ struct timeval  timeout;                    /* Timeout for select */
             }
 #ifdef HTTPS
 #ifdef FD_MON_SELECT
-            else if ( FD_ISSET(M_listening_sec_fd, &M_readfds) )
+            else if ( FD_ISSET(M_listening_sec_fd, &M_readfds) )   /* new https connection */
             {
 #endif  /* FD_MON_SELECT */
 #ifdef FD_MON_POLL
@@ -1407,8 +1407,8 @@ static void close_conn(int ci)
 -------------------------------------------------------------------------- */
 static bool init(int argc, char **argv)
 {
-    time_t      sometimeahead;
-    int         i=0;
+    time_t  sometimeahead;
+    int     i=0;
 
     /* init globals */
 
@@ -1944,11 +1944,11 @@ static void build_fd_sets()
 -------------------------------------------------------------------------- */
 static void accept_http()
 {
-    int     i;          /* current item in conn for for loops */
-    int     connection; /* socket file descriptor for incoming connections */
+    int         i;
+    int         connection;
 static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     socklen_t   addr_len;
-    char    remote_addr[INET_ADDRSTRLEN]="";    /* remote address */
+    char        remote_addr[INET_ADDRSTRLEN]="";
 
     /* We have a new connection coming in! We'll
        try to find a spot for it in conn array  */
@@ -2044,12 +2044,12 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
 static void accept_https()
 {
 #ifdef HTTPS
-    int     i;          /* current item in conn for for loops */
-    int     connection; /* socket file descriptor for incoming connections */
+    int         i;
+    int         connection;
 static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
     socklen_t   addr_len;
-    char    remote_addr[INET_ADDRSTRLEN]="";    /* remote address */
-    int     ret, ssl_err;
+    char        remote_addr[INET_ADDRSTRLEN]="";
+    int         ret, ssl_err;
 
     /* We have a new connection coming in! We'll
        try to find a spot for it in conn array  */
@@ -2135,7 +2135,7 @@ static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
                 return;
             }
 
-            ret = SSL_accept(conn[i].ssl);  /* handshake here */
+            ret = SSL_accept(conn[i].ssl);   /* handshake here */
 
             if ( ret <= 0 )
             {
