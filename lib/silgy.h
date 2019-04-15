@@ -197,11 +197,19 @@ typedef char str64k[1024*64];
 
     #ifdef OUTFAST
         #define OUTSS(str)                  (conn[ci].p_curr_c = stpcpy(conn[ci].p_curr_c, str))
+#ifdef SEND_ALL_AT_ONCE
+        #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE-OUT_HEADER_BUFSIZE?OUT_BUFSIZE-OUT_HEADER_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
+#else
         #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
+#endif
     #else
         #ifdef OUTCHECK
             #define OUTSS(str)                  eng_out_check(ci, str)
+#ifdef SEND_ALL_AT_ONCE
+            #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE-OUT_HEADER_BUFSIZE?OUT_BUFSIZE-OUT_HEADER_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
+#else
             #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
+#endif
         #else   /* OUTCHECKREALLOC */
             #define OUTSS(str)                  eng_out_check_realloc(ci, str)
             #define OUT_BIN(data, len)          eng_out_check_realloc_bin(ci, data, len)

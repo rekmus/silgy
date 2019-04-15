@@ -4640,13 +4640,14 @@ void eng_out_check_realloc(int ci, const char *str)
     else    /* resize output buffer and try again */
     {
         long used = conn[ci].p_curr_c - conn[ci].out_data;
-        char *tmp = (char*)realloc(conn[ci].out_data, conn[ci].out_data_allocated*2);
+        char *tmp = (char*)realloc(conn[ci].out_data_alloc, conn[ci].out_data_allocated*2);
         if ( !tmp )
         {
             ERR("Couldn't reallocate output buffer for ci=%d, tried %ld bytes", ci, conn[ci].out_data_allocated*2);
             return;
         }
-        conn[ci].out_data = tmp;
+        conn[ci].out_data_alloc = tmp;
+        conn[ci].out_data = conn[ci].out_data_alloc;
         conn[ci].out_data_allocated = conn[ci].out_data_allocated * 2;
         conn[ci].p_curr_c = conn[ci].out_data + used;
         INF("Reallocated output buffer for ci=%d, new size = %ld bytes", ci, conn[ci].out_data_allocated);
@@ -4668,13 +4669,14 @@ void eng_out_check_realloc_bin(int ci, const char *data, long len)
     else    /* resize output buffer and try again */
     {
         long used = conn[ci].p_curr_c - conn[ci].out_data;
-        char *tmp = (char*)realloc(conn[ci].out_data, conn[ci].out_data_allocated*2);
+        char *tmp = (char*)realloc(conn[ci].out_data_alloc, conn[ci].out_data_allocated*2);
         if ( !tmp )
         {
             ERR("Couldn't reallocate output buffer for ci=%d, tried %ld bytes", ci, conn[ci].out_data_allocated*2);
             return;
         }
-        conn[ci].out_data = tmp;
+        conn[ci].out_data_alloc = tmp;
+        conn[ci].out_data = conn[ci].out_data_alloc;
         conn[ci].out_data_allocated = conn[ci].out_data_allocated * 2;
         conn[ci].p_curr_c = conn[ci].out_data + used;
         INF("Reallocated output buffer for ci=%d, new size = %ld bytes", ci, conn[ci].out_data_allocated);
