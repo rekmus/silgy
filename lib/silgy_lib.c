@@ -5110,15 +5110,20 @@ void log_long(const char *message, long len, const char *desc)
 {
     if ( G_logLevel < LOG_DBG ) return;
 
+    char buffer[MAX_LOG_STR_LEN+1];
+
     if ( len < MAX_LOG_STR_LEN-50 )
-        DBG("%s:\n\n[%s]\n", desc, message);
+    {
+        strncpy(buffer, message, len);
+        buffer[len] = EOS;
+    }
     else
     {
-        char buffer[MAX_LOG_STR_LEN+1];
         strncpy(buffer, message, MAX_LOG_STR_LEN-50);
         strcpy(buffer+MAX_LOG_STR_LEN-50, " (...)");
-        DBG("%s:\n\n[%s]\n", desc, buffer);
     }
+
+    DBG("%s:\n\n[%s]\n", desc, buffer);
 }
 
 
