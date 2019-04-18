@@ -22,7 +22,7 @@ Silgy has build-in (and enabled by default) protection against most popular atta
 
 TCO for a mid-sized web application with a small database and moderate load (<1,000,000 requests/day) can be as low as $3 per month (Amazon EC2 t2.micro).
 
-Silgy Hello World's [quick performance test](https://github.com/silgy/silgy/wiki/Performance-test) on the free-tier AWS EC2 instance.
+Silgy Hello World's [quick performance test](https://github.com/silgy/silgy/wiki/Performance-test:-select()-vs-poll()) on the free-tier AWS EC2 instance.
 
 ## [Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Windows)
 
