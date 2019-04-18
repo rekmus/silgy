@@ -531,13 +531,13 @@ struct timeval  timeout;                    /* Timeout for select */
                 {
                     i = M_poll_ci[pi];   /* set conn array index */
 #ifdef DUMP
-                        if ( G_now != dbg_last_time1 )   /* only once in a second */
-                        {
-                            int l;
-                            for ( l=0; l<M_pollfds_cnt; ++l )
-                                DBG("ci=%d, pi=%d, M_pollfds[pi].revents = %d", M_poll_ci[l], l, M_pollfds[l].revents);
-                            dbg_last_time1 = G_now;
-                        }
+                    if ( G_now != dbg_last_time1 )   /* only once in a second */
+                    {
+                        int l;
+                        for ( l=0; l<M_pollfds_cnt; ++l )
+                            DBG("ci=%d, pi=%d, M_pollfds[pi].revents = %d", M_poll_ci[l], l, M_pollfds[l].revents);
+                        dbg_last_time1 = G_now;
+                    }
 #endif  /* DUMP */
 #endif  /* FD_MON_POLL */
 #ifdef FD_MON_SELECT
@@ -1074,7 +1074,7 @@ static void set_state(int ci, long bytes)
 #endif
             conn[ci].conn_state = CONN_STATE_READY_TO_SEND_BODY;
         }
-        else /* no body to send */
+        else    /* no body to send */
         {
             DBG("clen = 0");
             log_proc_time(ci);
@@ -1217,7 +1217,7 @@ static void set_state_sec(int ci, long bytes)
 #endif
             conn[ci].conn_state = CONN_STATE_READY_TO_SEND_BODY;
         }
-        else /* no body to send */
+        else    /* no body to send */
         {
             DBG("clen = 0");
             log_proc_time(ci);
