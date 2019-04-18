@@ -1053,7 +1053,7 @@ static void set_state(int ci, long bytes)
     {
         if ( conn[ci].was_read < conn[ci].clen )
         {
-            DBG("Continue receiving");
+            DBG("ci=%d, was_read=%ld, continue receiving", ci, conn[ci].was_read);
         }
         else    /* data received */
         {
@@ -1542,14 +1542,17 @@ static bool init(int argc, char **argv)
     ALWAYS("-------");
     ALWAYS("              SILGYDIR = %s", G_appdir);
     ALWAYS("    WEB_SERVER_VERSION = %s", WEB_SERVER_VERSION);
+#ifdef MEM_TINY
+    ALWAYS("          Memory model = MEM_TINY");
+#endif
 #ifdef MEM_SMALL
     ALWAYS("          Memory model = MEM_SMALL");
 #endif
 #ifdef MEM_MEDIUM
     ALWAYS("          Memory model = MEM_MEDIUM");
 #endif
-#ifdef MEM_BIG
-    ALWAYS("          Memory model = MEM_BIG");
+#ifdef MEM_LARGE
+    ALWAYS("          Memory model = MEM_LARGE");
 #endif
 #ifdef MEM_HUGE
     ALWAYS("          Memory model = MEM_HUGE");
@@ -3087,6 +3090,8 @@ static void gen_response_header(int ci)
     M_pollfds[conn[ci].pi].events = POLLOUT;
 #endif
 
+/* make sure OUT_HEADER_BUFSIZE is not greater than MAX_LOG_STR_LEN! */
+
 #ifdef SEND_ALL_AT_ONCE
     DBG("\nResponse header:\n\n[%s]\n", out_header);
 #else
@@ -3427,12 +3432,11 @@ static int parse_req(int ci, long len)
 
     hlen = p_hend - conn[ci].in;    /* HTTP header length including first of the last new line characters to simplify parsing algorithm in the third 'for' loop below */
 
-    /* temporarily insert EOS at the end of header to avoid logging POST data */
+#ifdef DUMP
+    DBG("hlen = %d", hlen);
+#endif
 
-    char eoh = conn[ci].in[hlen];
-    conn[ci].in[hlen] = EOS;
-    DBG("Incoming buffer:\n\n[%s]\n", conn[ci].in);
-    conn[ci].in[hlen] = eoh;
+    log_long(conn[ci].in, hlen, "Incoming buffer");     /* IN_BUFSIZE > MAX_LOG_STR_LEN! */
 
     ++hlen;     /* HTTP header length including first of the last new line characters to simplify parsing algorithm in the third 'for' loop below */
 
@@ -3526,7 +3530,7 @@ static int parse_req(int ci, long len)
 #endif
         strcpy(conn[ci].uri, tmp);
     }
-#endif
+#endif  /* APP_ROOT_URI */
 
     /* only for low-level tests ------------------------------------- */
 #ifdef DUMP
@@ -3569,13 +3573,13 @@ static int parse_req(int ci, long len)
             if ( now_value )
             {
                 value[j] = EOS;
+                now_value = FALSE;
                 if ( j == 0 )
                     WAR("Value of %s is empty!", label);
                 else
                     if ( (ret=set_http_req_val(ci, label, value+1)) != 200 ) return ret;
             }
             now_label = TRUE;
-            now_value = FALSE;
             j = 0;
         }
         else if ( now_label && conn[ci].in[i] == ':' )  /* end of label, start of value */
@@ -3599,6 +3603,7 @@ static int parse_req(int ci, long len)
         else if ( now_value )   /* value */
         {
             value[j++] = conn[ci].in[i];
+
             if ( j == MAX_VALUE_LEN )   /* truncate here */
             {
                 WAR("Truncating %s's value", label);
@@ -3779,7 +3784,7 @@ static int parse_req(int ci, long len)
 
         if ( len < conn[ci].clen )      /* the whole content not received yet */
         {                               /* this is the only case when conn_state != received */
-            DBG("The whole content not received yet");
+            DBG("The whole content not received yet, len=%d", len);
 #ifdef DUMP
             DBG("Changing state to CONN_STATE_READING_DATA");
 #endif
@@ -4806,12 +4811,12 @@ void eng_send_msg_description(int ci, int code)
 #ifdef MSG_FORMAT_JSON
     OUT("{\"code\":%d,\"category\":\"%s\",\"message\":\"%s\"}", code, cat, msg);
     conn[ci].ctype = RES_JSON;
-    RES_KEEP_CONTENT;
 #else
     OUT("%d|%s|%s", code, cat, msg);
     conn[ci].ctype = RES_TEXT;
-    RES_KEEP_CONTENT;
 #endif
+
+    RES_KEEP_CONTENT;
 
     DBG("eng_send_msg_description: [%s]", G_tmp);
 

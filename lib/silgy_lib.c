@@ -5057,9 +5057,10 @@ void log_write_time(int level, const char *message, ...)
     vsprintf(buffer, message, plist);
     va_end(plist);
 
-    /* write to log file */
+    /* write to the log file */
 
-    fprintf(M_log_fd, "%s\n", buffer);
+    fprintf(M_log_fd, buffer);
+    fprintf(M_log_fd, "\n");
 
 #ifdef DUMP
     fflush(M_log_fd);
@@ -5090,9 +5091,10 @@ void log_write(int level, const char *message, ...)
     vsprintf(buffer, message, plist);
     va_end(plist);
 
-    /* write to log file */
+    /* write to the log file */
 
-    fprintf(M_log_fd, "%s\n", buffer);
+    fprintf(M_log_fd, buffer);
+    fprintf(M_log_fd, "\n");
 
 #ifdef DUMP
     fflush(M_log_fd);

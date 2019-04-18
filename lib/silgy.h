@@ -162,11 +162,13 @@ typedef char str64k[1024*64];
 
 /* defaults */
 
+#ifndef MEM_TINY
 #ifndef MEM_MEDIUM
-#ifndef MEM_BIG
+#ifndef MEM_LARGE
 #ifndef MEM_HUGE
 #ifndef MEM_SMALL
 #define MEM_SMALL   /* default memory model */
+#endif
 #endif
 #endif
 #endif
@@ -267,7 +269,6 @@ typedef char str64k[1024*64];
 #define PRINT_HTTP_END_OF_HEADER        HOUT("\r\n")
 
 
-#define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
 #define OUT_HEADER_BUFSIZE              4096            /* response header buffer length */
 #define TMP_BUFSIZE                     1048576         /* temporary string buffer size (1 MB) */
 #define MAX_POST_DATA_BUFSIZE           16777216+1048576 /* max incoming POST data length (16+1 MB) */
@@ -284,19 +285,28 @@ typedef char str64k[1024*64];
 #ifdef SILGY_SVC
 #define MAX_CONNECTIONS                 1               /* dummy */
 #else
-#ifdef MEM_MEDIUM
+#ifdef MEM_TINY
+#define IN_BUFSIZE                      4096            /* incoming request buffer length (4 kB) */
+#define OUT_BUFSIZE                     65536           /* initial HTTP response buffer length (64 kB) */
+#define MAX_CONNECTIONS                 10              /* max TCP connections */
+#define MAX_SESSIONS                    10              /* max user sessions */
+#elif defined MEM_MEDIUM
+#define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
 #define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
 #define MAX_CONNECTIONS                 200             /* max TCP connections (2 per user session) */
 #define MAX_SESSIONS                    100             /* max user sessions */
-#elif defined(MEM_BIG)
+#elif defined MEM_LARGE
+#define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
 #define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
 #define MAX_CONNECTIONS                 1000            /* max TCP connections */
 #define MAX_SESSIONS                    500             /* max user sessions */
-#elif defined(MEM_HUGE)
+#elif defined MEM_HUGE
+#define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
 #define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
 #define MAX_CONNECTIONS                 5000            /* max TCP connections */
 #define MAX_SESSIONS                    2500            /* max user sessions */
 #else   /* MEM_SMALL -- default */
+#define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
 #define OUT_BUFSIZE                     131072          /* initial HTTP response buffer length (128 kB) */
 #define MAX_CONNECTIONS                 20              /* max TCP connections */
 #define MAX_SESSIONS                    10              /* max user sessions */
