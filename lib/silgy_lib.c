@@ -153,6 +153,8 @@ char *silgy_message(int code)
 -------------------------------------------------------------------------- */
 char *silgy_message_lang(int ci, int code)
 {
+#ifndef SILGY_WATCHER
+
     int i;
     for ( i=0; i<G_next_message; ++i )
         if ( G_messages[i].code == code && 0==strcmp(G_messages[i].lang, conn[ci].lang) )
@@ -161,6 +163,8 @@ char *silgy_message_lang(int ci, int code)
     /* fallback */
 
     return silgy_message(code);
+
+#endif  /* SILGY_WATCHER */
 }
 
 
