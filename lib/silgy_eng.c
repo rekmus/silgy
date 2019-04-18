@@ -3061,9 +3061,18 @@ static void gen_response_header(int ci)
         HOUT(G_tmp);
     }
 
+#ifdef HTTPS
+#ifndef NO_HSTS
+    if ( !G_test && !conn[ci].secure )
+        PRINT_HTTP_HSTS;
+#endif
+#endif  /* HTTPS */
+
 #ifndef NO_IDENTITY
     PRINT_HTTP_SERVER;
 #endif
+
+    /* ------------------------------------------------------------- */
 
     PRINT_HTTP_END_OF_HEADER;
 

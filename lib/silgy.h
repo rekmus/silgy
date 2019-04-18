@@ -262,6 +262,12 @@ typedef char str64k[1024*64];
 /* content length */
 #define PRINT_HTTP_CONTENT_LEN(len)     (sprintf(G_tmp, "Content-Length: %d\r\n", len), HOUT(G_tmp))
 
+/* HSTS */
+#ifndef HSTS_MAX_AGE
+#define HSTS_MAX_AGE                    31536000    /* a year */
+#endif
+#define PRINT_HTTP_HSTS                 (sprintf(G_tmp, "Strict-Transport-Security: max-age=%d\r\n", HSTS_MAX_AGE), HOUT(G_tmp))
+
 /* identity */
 #define PRINT_HTTP_SERVER               HOUT("Server: Silgy\r\n")
 
