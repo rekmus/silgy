@@ -872,7 +872,7 @@ extern int      G_logToStdout;
 extern int      G_logCombined;
 extern int      G_httpPort;
 extern int      G_httpsPort;
-extern char     G_cipherList[256];
+extern char     G_cipherList[1024];
 extern char     G_certFile[256];
 extern char     G_certChainFile[256];
 extern char     G_keyFile[256];

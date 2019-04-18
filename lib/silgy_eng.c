@@ -24,7 +24,7 @@
 /* read from the config file */
 int         G_httpPort=80;
 int         G_httpsPort=443;
-char        G_cipherList[256]="";
+char        G_cipherList[1024]="";
 char        G_certFile[256]="";
 char        G_certChainFile[256]="";
 char        G_keyFile[256]="";
@@ -4190,8 +4190,15 @@ static bool init_ssl()
        https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers
        https://www.ssllabs.com/ssltest
        Last update: 2019-04-08
+       Qualys says Forward Secrecy isn't enabled
     */
-    char ciphers[256]="ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS";
+//    char ciphers[1024]="ECDH+AESGCM:ECDH+CHACHA20:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS";
+
+    /*
+       https://www.digicert.com/ssl-support/ssl-enabling-perfect-forward-secrecy.htm
+       Last update: 2019-04-18
+    */
+    char ciphers[1024]="EECDH+ECDSA+AESGCM EECDH+aRSA+AESGCM EECDH+ECDSA+SHA384 EECDH+ECDSA+SHA256 EECDH+aRSA+SHA384 EECDH+aRSA+SHA256 EECDH+aRSA+RC4 EECDH EDH+aRSA RC4 !aNULL !eNULL !LOW !3DES !MD5 !EXP !PSK !SRP !DSS !RC4";
 
     DBG("init_ssl");
 
@@ -4215,16 +4222,16 @@ static bool init_ssl()
         return FALSE;
     }
 
-    /* support ECDH using the most appropriate shared curve */
-
-//  if ( SSL_CTX_set_ecdh_auto(M_ssl_ctx, 1) <= 0 )     /* undefined reference?? */
-/*  {
-        ERR("SSL_CTX_set_ecdh_auto failed");
-        return FALSE;
-    } */
-
     const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1;
     SSL_CTX_set_options(M_ssl_ctx, flags);
+
+    /* support ECDH using the most appropriate shared curve */
+
+    if ( SSL_CTX_set_ecdh_auto(M_ssl_ctx, 1) <= 0 )
+    {
+        ERR("SSL_CTX_set_ecdh_auto failed");
+        return FALSE;
+    }
 
     if ( G_cipherList[0] )
         strcpy(ciphers, G_cipherList);
