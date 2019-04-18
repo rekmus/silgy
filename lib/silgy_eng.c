@@ -3090,13 +3090,19 @@ static void gen_response_header(int ci)
     M_pollfds[conn[ci].pi].events = POLLOUT;
 #endif
 
-/* make sure OUT_HEADER_BUFSIZE is not greater than MAX_LOG_STR_LEN! */
-
+#if OUT_HEADER_BUFSIZE-1 <= MAX_LOG_STR_LEN
 #ifdef SEND_ALL_AT_ONCE
     DBG("\nResponse header:\n\n[%s]\n", out_header);
 #else
     DBG("\nResponse header:\n\n[%s]\n", conn[ci].out_header);
 #endif
+#else
+#ifdef SEND_ALL_AT_ONCE
+    log_long(out_header, conn[ci].out_hlen, "\nResponse header");
+#else
+    log_long(conn[ci].out_header, conn[ci].out_hlen, "\nResponse header");
+#endif
+#endif  /* OUT_HEADER_BUFSIZE-1 <= MAX_LOG_STR_LEN */
 
 #ifdef SEND_ALL_AT_ONCE
     /* ----------------------------------------------------------------- */
