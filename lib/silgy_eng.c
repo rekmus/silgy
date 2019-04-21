@@ -43,6 +43,7 @@ conn_t      conn[MAX_CONNECTIONS+1]={0}; /* HTTP connections & requests -- by fa
 int         G_open_conn=0;              /* number of open connections */
 int         G_open_conn_hwm=0;          /* highest number of open connections (high water mark) */
 usession_t  uses[MAX_SESSIONS+1]={0};   /* user sessions -- they start from 1 */
+ausession_t auses[MAX_SESSIONS+1]={0};  /* app user sessions, using the same index (usi) */
 int         G_sessions=0;               /* number of active user sessions */
 int         G_sessions_hwm=0;           /* highest number of active user sessions (high water mark) */
 char        G_last_modified[32]="";     /* response header field with server's start time */
@@ -3289,6 +3290,7 @@ static void close_uses(int usi, int ci)
     /* reset session data */
 
     memset(&uses[usi], 0, sizeof(usession_t));
+    memset(&auses[usi], 0, sizeof(ausession_t));
 
     G_sessions--;
 
