@@ -584,7 +584,7 @@ struct timeval  timeout;                    /* Timeout for select */
                                 DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
                                 DBG("Trying SSL_read %ld bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
 #endif  /* DUMP */
-                                bytes = SSL_read(conn[i].ssl, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read);
+                                bytes = SSL_read(conn[i].ssl, conn[i].in_data+conn[i].was_read, conn[i].clen-conn[i].was_read);
 
                                 if ( bytes > 0 )
                                     conn[i].was_read += bytes;
@@ -615,7 +615,7 @@ struct timeval  timeout;                    /* Timeout for select */
                                 DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
                                 DBG("Trying to read %ld bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
 #endif  /* DUMP */
-                                bytes = recv(conn[i].fd, conn[i].data+conn[i].was_read, conn[i].clen-conn[i].was_read, 0);
+                                bytes = recv(conn[i].fd, conn[i].in_data+conn[i].was_read, conn[i].clen-conn[i].was_read, 0);
 
                                 if ( bytes > 0 )
                                     conn[i].was_read += bytes;
@@ -713,7 +713,11 @@ struct timeval  timeout;                    /* Timeout for select */
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
+#ifdef SEND_ALL_AT_ONCE
+                                DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", conn[i].out_len, conn[i].fd, i);
+#else
                                 DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", conn[i].clen, conn[i].fd, i);
+#endif
 #endif  /* DUMP */
 #ifdef SEND_ALL_AT_ONCE
                                 bytes = SSL_write(conn[i].ssl, conn[i].out_start, conn[i].out_len);
@@ -730,7 +734,11 @@ struct timeval  timeout;                    /* Timeout for select */
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
+#ifdef SEND_ALL_AT_ONCE
+                                DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].out_len, conn[i].fd, i);
+#else
                                 DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].out_hlen, conn[i].fd, i);
+#endif
 #endif  /* DUMP */
 #ifdef SEND_ALL_AT_ONCE
                                 bytes = send(conn[i].fd, conn[i].out_start, conn[i].out_len, 0);
@@ -748,14 +756,17 @@ struct timeval  timeout;                    /* Timeout for select */
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
+#ifdef SEND_ALL_AT_ONCE
+                                DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].out_len-conn[i].data_sent, conn[i].fd, i);
+#else
                                 DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].clen-conn[i].data_sent, conn[i].fd, i);
+#endif
 #endif  /* DUMP */
 #ifdef SEND_ALL_AT_ONCE
                                 bytes = send(conn[i].fd, conn[i].out_start+conn[i].data_sent, conn[i].out_len-conn[i].data_sent, 0);
 #else
                                 bytes = send(conn[i].fd, conn[i].out_data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, 0);
 #endif
-                                conn[i].data_sent += bytes;
                                 set_state(i, bytes);    /* possibly:    CONN_STATE_DISCONNECTED (if error or closed by peer or !keep_alive) */
                                                         /*              CONN_STATE_SENDING_BODY (if data_sent < clen) */
                                                         /*              CONN_STATE_CONNECTED */
@@ -1041,8 +1052,6 @@ static void set_state(int ci, long bytes)
 
     /* bytes > 0 */
 
-    DBG("bytes = %ld", bytes);
-
     if ( conn[ci].conn_state == CONN_STATE_CONNECTED )  /* assume the whole header has been read */
     {
 #ifdef DUMP
@@ -1058,7 +1067,7 @@ static void set_state(int ci, long bytes)
         }
         else    /* data received */
         {
-            conn[ci].data[conn[ci].was_read] = EOS;
+            conn[ci].in_data[conn[ci].was_read] = EOS;
             DBG("POST data received");
 #ifdef DUMP
             DBG("ci=%d, changing state to CONN_STATE_READY_FOR_PROCESS", ci);
@@ -1093,6 +1102,8 @@ static void set_state(int ci, long bytes)
     }
     else if ( conn[ci].conn_state == CONN_STATE_READY_TO_SEND_BODY )    /* it could have been sent only partially */
     {
+        conn[ci].data_sent += bytes;
+
 #ifdef SEND_ALL_AT_ONCE
         if ( bytes < conn[ci].out_len )
 #else
@@ -1107,6 +1118,7 @@ static void set_state(int ci, long bytes)
         else /* assuming the whole body has been sent at once */
         {
             log_proc_time(ci);
+
             if ( conn[ci].keep_alive )
             {
                 DBG("End of processing, reset_conn\n");
@@ -1121,17 +1133,20 @@ static void set_state(int ci, long bytes)
     }
     else if ( conn[ci].conn_state == CONN_STATE_SENDING_BODY )
     {
+        conn[ci].data_sent += bytes;
+
 #ifdef SEND_ALL_AT_ONCE
         if ( conn[ci].data_sent < conn[ci].out_len )
 #else
         if ( conn[ci].data_sent < conn[ci].clen )
 #endif
         {
-            DBG("Continue sending");
+            DBG("ci=%d, data_sent=%d, continue sending", ci, conn[ci].data_sent);
         }
         else    /* body sent */
         {
             log_proc_time(ci);
+
             if ( conn[ci].keep_alive )
             {
                 DBG("End of processing, reset_conn\n");
@@ -1157,6 +1172,9 @@ static void set_state_sec(int ci, long bytes)
 #ifdef HTTPS
     e = errno;
 
+#ifdef DUMP
+    DBG("set_state_sec ci=%d, bytes=%ld", ci, bytes);
+#endif
     conn[ci].ssl_err = SSL_get_error(conn[ci].ssl, bytes);
 
     if ( bytes <= 0 )
@@ -1183,9 +1201,7 @@ static void set_state_sec(int ci, long bytes)
 
     /* bytes > 0 */
 
-    DBG("bytes = %ld", bytes);
-
-    // we have no way of knowing if accept finished before reading actual request
+    /* we have no way of knowing if accept finished before reading actual request */
     if ( conn[ci].conn_state == CONN_STATE_ACCEPTING || conn[ci].conn_state == CONN_STATE_CONNECTED )   /* assume the whole header has been read */
     {
 #ifdef DUMP
@@ -1201,7 +1217,7 @@ static void set_state_sec(int ci, long bytes)
         }
         else    /* data received */
         {
-            conn[ci].data[conn[ci].was_read] = EOS;
+            conn[ci].in_data[conn[ci].was_read] = EOS;
             DBG("POST data received");
 #ifdef DUMP
             DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
@@ -1236,7 +1252,10 @@ static void set_state_sec(int ci, long bytes)
     }
     else if ( conn[ci].conn_state == CONN_STATE_READY_TO_SEND_BODY || conn[ci].conn_state == CONN_STATE_SENDING_BODY )
     {
+        conn[ci].data_sent += bytes;
+
         log_proc_time(ci);
+
         if ( conn[ci].keep_alive )
         {
             DBG("End of processing, reset_conn\n");
@@ -1377,9 +1396,9 @@ static void log_proc_time(int ci)
     strftime(logtime, 64, "%d/%b/%Y:%H:%M:%S +0000", G_ptm);
 
     if ( G_logCombined )
-        ALWAYS("%s - - [%s] \"%s /%s %s\" %d %d \"%s\" \"%s\"  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].data_sent, conn[ci].referer, conn[ci].uagent, conn[ci].req, elapsed, REQ_BOT?"  [bot]":"");
+        INF("%s - - [%s] \"%s /%s %s\" %d %d \"%s\" \"%s\"  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].clen, conn[ci].referer, conn[ci].uagent, conn[ci].req, elapsed, REQ_BOT?"  [bot]":"");
     else
-        ALWAYS("%s - - [%s] \"%s /%s %s\" %d %d  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].data_sent, conn[ci].req, elapsed, REQ_BOT?"  [bot]":"");
+        INF("%s - - [%s] \"%s /%s %s\" %d %d  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].clen, conn[ci].req, elapsed, REQ_BOT?"  [bot]":"");
 }
 
 
@@ -1783,7 +1802,7 @@ static bool init(int argc, char **argv)
 #endif  /* OUTCHECKREALLOC */
 
         conn[i].out_data_allocated = OUT_BUFSIZE;
-        conn[i].data = NULL;
+        conn[i].in_data = NULL;
         reset_conn(i, CONN_STATE_DISCONNECTED);
 
 #ifdef HTTPS
@@ -2753,16 +2772,16 @@ static void process_req(int ci)
     /* ------------------------------------------------------------------------ */
 
 #ifdef DUMP
-    if ( conn[ci].post && conn[ci].data )
-        log_long(conn[ci].data, conn[ci].was_read, "POST data");
+    if ( conn[ci].post && conn[ci].in_data )
+        log_long(conn[ci].in_data, conn[ci].was_read, "POST data");
 #endif
 
     /* ------------------------------------------------------------------------ */
 
 #ifdef SEND_ALL_AT_ONCE  /* make room for a header */
-    conn[ci].p_curr_c = conn[ci].out_data + OUT_HEADER_BUFSIZE;
+    conn[ci].p_content = conn[ci].out_data + OUT_HEADER_BUFSIZE;
 #else
-    conn[ci].p_curr_c = conn[ci].out_data;
+    conn[ci].p_content = conn[ci].out_data;
 #endif
 
     /* ------------------------------------------------------------------------ */
@@ -2866,9 +2885,9 @@ static void process_req(int ci)
         if ( !conn[ci].keep_content )   /* reset out buffer pointer as it could have contained something already */
         {
 #ifdef SEND_ALL_AT_ONCE
-            conn[ci].p_curr_c = conn[ci].out_data + OUT_HEADER_BUFSIZE;
+            conn[ci].p_content = conn[ci].out_data + OUT_HEADER_BUFSIZE;
 #else
-            conn[ci].p_curr_c = conn[ci].out_data;
+            conn[ci].p_content = conn[ci].out_data;
 #endif
             gen_page_msg(ci, ret);
         }
@@ -2887,9 +2906,9 @@ static void gen_response_header(int ci)
 
 #ifdef SEND_ALL_AT_ONCE
     char out_header[OUT_HEADER_BUFSIZE];
-    conn[ci].p_curr_h = out_header;
+    conn[ci].p_header = out_header;
 #else
-    conn[ci].p_curr_h = conn[ci].out_header;
+    conn[ci].p_header = conn[ci].out_header;
 #endif
 
     PRINT_HTTP_STATUS(conn[ci].status);
@@ -2988,9 +3007,9 @@ static void gen_response_header(int ci)
 
         if ( conn[ci].static_res == NOT_STATIC )    /* determine the content length */
 #ifdef SEND_ALL_AT_ONCE
-            conn[ci].clen = conn[ci].p_curr_c - conn[ci].out_data - OUT_HEADER_BUFSIZE;
+            conn[ci].clen = conn[ci].p_content - conn[ci].out_data - OUT_HEADER_BUFSIZE;
 #else
-            conn[ci].clen = conn[ci].p_curr_c - conn[ci].out_data;
+            conn[ci].clen = conn[ci].p_content - conn[ci].out_data;
 #endif
         else
             conn[ci].clen = M_stat[conn[ci].static_res].len;
@@ -3080,9 +3099,9 @@ static void gen_response_header(int ci)
     /* header length */
 
 #ifdef SEND_ALL_AT_ONCE
-    conn[ci].out_hlen = conn[ci].p_curr_h - out_header;
+    conn[ci].out_hlen = conn[ci].p_header - out_header;
 #else
-    conn[ci].out_hlen = conn[ci].p_curr_h - conn[ci].out_header;
+    conn[ci].out_hlen = conn[ci].p_header - conn[ci].out_header;
 #endif
 
 #ifdef DUMP
@@ -3128,7 +3147,7 @@ static void gen_response_header(int ci)
 
 #ifdef DUMP     /* low-level tests */
     if ( G_logLevel>=LOG_DBG && conn[ci].clen > 0 && !conn[ci].head_only && conn[ci].static_res == NOT_STATIC
-            && (conn[ci].ctype==CONTENT_TYPE_UNSET || conn[ci].ctype==RES_TEXT || conn[ci].ctype==RES_HTML || conn[ci].ctype==RES_JSON) )
+            && (conn[ci].ctype==RES_TEXT || conn[ci].ctype==RES_JSON) )
 #ifdef SEND_ALL_AT_ONCE
         log_long(conn[ci].out_data+OUT_HEADER_BUFSIZE, conn[ci].clen, "Content to send");
 #else
@@ -3316,10 +3335,10 @@ static void reset_conn(int ci, char new_state)
     conn[ci].method[0] = EOS;
     conn[ci].head_only = FALSE;
     conn[ci].post = FALSE;
-    if ( conn[ci].data )
+    if ( conn[ci].in_data )
     {
-        free(conn[ci].data);
-        conn[ci].data = NULL;
+        free(conn[ci].in_data);
+        conn[ci].in_data = NULL;
     }
     conn[ci].was_read = 0;
     conn[ci].upgrade2https = FALSE;
@@ -3788,15 +3807,15 @@ static int parse_req(int ci, long len)
         if ( len > conn[ci].clen )
             return 400;     /* Bad Request */
 
-        /* copy so far received POST data from conn[ci].in to conn[ci].data */
+        /* copy so far received POST data from conn[ci].in to conn[ci].in_data */
 
-        if ( NULL == (conn[ci].data=(char*)malloc(conn[ci].clen+1)) )
+        if ( NULL == (conn[ci].in_data=(char*)malloc(conn[ci].clen+1)) )
         {
             ERR("Couldn't allocate %d bytes for POST data!!!", conn[ci].clen);
             return 500;     /* Internal Sever Error */
         }
 
-        memcpy(conn[ci].data, p_hend, len);
+        memcpy(conn[ci].in_data, p_hend, len);
         conn[ci].was_read = len;    /* if POST then was_read applies to data section only! */
 
         if ( len < conn[ci].clen )      /* the whole content not received yet */
@@ -3810,7 +3829,7 @@ static int parse_req(int ci, long len)
         }
         else    /* the whole content received with the header at once */
         {
-            conn[ci].data[len] = EOS;
+            conn[ci].in_data[len] = EOS;
             DBG("POST data received with header");
         }
     }
@@ -4643,16 +4662,16 @@ void eng_set_res_content_disposition(int ci, const char *str, ...)
 -------------------------------------------------------------------------- */
 void eng_out_check(int ci, const char *str)
 {
-    int available = OUT_BUFSIZE - (conn[ci].p_curr_c - conn[ci].out_data);
+    int available = OUT_BUFSIZE - (conn[ci].p_content - conn[ci].out_data);
 
     if ( strlen(str) < available )  /* the whole string will fit */
     {
-        conn[ci].p_curr_c = stpcpy(conn[ci].p_curr_c, str);
+        conn[ci].p_content = stpcpy(conn[ci].p_content, str);
     }
     else    /* let's write only what we can. WARNING: no UTF-8 checking is done here! */
     {
-        conn[ci].p_curr_c = stpncpy(conn[ci].p_curr_c, str, available-1);
-        *conn[ci].p_curr_c = EOS;
+        conn[ci].p_content = stpncpy(conn[ci].p_content, str, available-1);
+        *conn[ci].p_content = EOS;
     }
 }
 
@@ -4662,13 +4681,13 @@ void eng_out_check(int ci, const char *str)
 -------------------------------------------------------------------------- */
 void eng_out_check_realloc(int ci, const char *str)
 {
-    if ( strlen(str) < conn[ci].out_data_allocated - (conn[ci].p_curr_c-conn[ci].out_data) )    /* the whole string will fit */
+    if ( strlen(str) < conn[ci].out_data_allocated - (conn[ci].p_content-conn[ci].out_data) )    /* the whole string will fit */
     {
-        conn[ci].p_curr_c = stpcpy(conn[ci].p_curr_c, str);
+        conn[ci].p_content = stpcpy(conn[ci].p_content, str);
     }
     else    /* resize output buffer and try again */
     {
-        long used = conn[ci].p_curr_c - conn[ci].out_data;
+        long used = conn[ci].p_content - conn[ci].out_data;
         char *tmp = (char*)realloc(conn[ci].out_data_alloc, conn[ci].out_data_allocated*2);
         if ( !tmp )
         {
@@ -4678,7 +4697,7 @@ void eng_out_check_realloc(int ci, const char *str)
         conn[ci].out_data_alloc = tmp;
         conn[ci].out_data = conn[ci].out_data_alloc;
         conn[ci].out_data_allocated = conn[ci].out_data_allocated * 2;
-        conn[ci].p_curr_c = conn[ci].out_data + used;
+        conn[ci].p_content = conn[ci].out_data + used;
         INF("Reallocated output buffer for ci=%d, new size = %ld bytes", ci, conn[ci].out_data_allocated);
         eng_out_check_realloc(ci, str);     /* call itself! */
     }
@@ -4690,14 +4709,14 @@ void eng_out_check_realloc(int ci, const char *str)
 -------------------------------------------------------------------------- */
 void eng_out_check_realloc_bin(int ci, const char *data, long len)
 {
-    if ( len < conn[ci].out_data_allocated - (conn[ci].p_curr_c-conn[ci].out_data) )    /* the whole data will fit */
+    if ( len < conn[ci].out_data_allocated - (conn[ci].p_content-conn[ci].out_data) )    /* the whole data will fit */
     {
-        memcpy(conn[ci].p_curr_c, data, len);
-        conn[ci].p_curr_c += len;
+        memcpy(conn[ci].p_content, data, len);
+        conn[ci].p_content += len;
     }
     else    /* resize output buffer and try again */
     {
-        long used = conn[ci].p_curr_c - conn[ci].out_data;
+        long used = conn[ci].p_content - conn[ci].out_data;
         char *tmp = (char*)realloc(conn[ci].out_data_alloc, conn[ci].out_data_allocated*2);
         if ( !tmp )
         {
@@ -4707,7 +4726,7 @@ void eng_out_check_realloc_bin(int ci, const char *data, long len)
         conn[ci].out_data_alloc = tmp;
         conn[ci].out_data = conn[ci].out_data_alloc;
         conn[ci].out_data_allocated = conn[ci].out_data_allocated * 2;
-        conn[ci].p_curr_c = conn[ci].out_data + used;
+        conn[ci].p_content = conn[ci].out_data + used;
         INF("Reallocated output buffer for ci=%d, new size = %ld bytes", ci, conn[ci].out_data_allocated);
         eng_out_check_realloc_bin(ci, data, len);       /* call itself! */
     }
@@ -5204,7 +5223,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
     fnamelen = strlen(fieldname);
 
     if ( conn[ci].post )
-        querystring = conn[ci].data;
+        querystring = conn[ci].in_data;
     else
         querystring = strchr(conn[ci].uri, '?');
 
@@ -5352,7 +5371,7 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
         return NULL;
     }
 
-    cp = conn[ci].data;
+    cp = conn[ci].in_data;
 
     if ( !conn[ci].boundary[0] )    /* find first end of line -- that would be end of boundary */
     {
@@ -5384,7 +5403,7 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
 
     blen = strlen(conn[ci].boundary);
 
-    if ( conn[ci].data[conn[ci].clen-4] != '-' || conn[ci].data[conn[ci].clen-3] != '-' )
+    if ( conn[ci].in_data[conn[ci].clen-4] != '-' || conn[ci].in_data[conn[ci].clen-3] != '-' )
     {
         WAR("Content doesn't end with '--'");
         return NULL;
@@ -5506,7 +5525,7 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
     }
     else    /* potentially binary content -- calculate rather than use strstr */
     {
-        len = conn[ci].clen - (cp - conn[ci].data) - blen - 8;  /* fast version */
+        len = conn[ci].clen - (cp - conn[ci].in_data) - blen - 8;  /* fast version */
                                                                 /* Note that the file content must come as last! */
     }
 

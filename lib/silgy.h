@@ -195,22 +195,22 @@ typedef char str64k[1024*64];
 
 #else
 
-    #define HOUT(str)                   (conn[ci].p_curr_h = stpcpy(conn[ci].p_curr_h, str))
+    #define HOUT(str)                   (conn[ci].p_header = stpcpy(conn[ci].p_header, str))
 
     #ifdef OUTFAST
-        #define OUTSS(str)                  (conn[ci].p_curr_c = stpcpy(conn[ci].p_curr_c, str))
+        #define OUTSS(str)                  (conn[ci].p_content = stpcpy(conn[ci].p_content, str))
 #ifdef SEND_ALL_AT_ONCE
-        #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE-OUT_HEADER_BUFSIZE?OUT_BUFSIZE-OUT_HEADER_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
+        #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE-OUT_HEADER_BUFSIZE?OUT_BUFSIZE-OUT_HEADER_BUFSIZE:len), memcpy(conn[ci].p_content, data, len), conn[ci].p_content += len)
 #else
-        #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
+        #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_content, data, len), conn[ci].p_content += len)
 #endif
     #else
         #ifdef OUTCHECK
             #define OUTSS(str)                  eng_out_check(ci, str)
 #ifdef SEND_ALL_AT_ONCE
-            #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE-OUT_HEADER_BUFSIZE?OUT_BUFSIZE-OUT_HEADER_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
+            #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE-OUT_HEADER_BUFSIZE?OUT_BUFSIZE-OUT_HEADER_BUFSIZE:len), memcpy(conn[ci].p_content, data, len), conn[ci].p_content += len)
 #else
-            #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_curr_c, data, len), conn[ci].p_curr_c += len)
+            #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_content, data, len), conn[ci].p_content += len)
 #endif
         #else   /* OUTCHECKREALLOC */
             #define OUTSS(str)                  eng_out_check_realloc(ci, str)
@@ -563,7 +563,7 @@ typedef char str64k[1024*64];
 #ifdef SILGY_SVC
 #define REQ_DATA                        G_req
 #else
-#define REQ_DATA                        conn[ci].data
+#define REQ_DATA                        conn[ci].in_data
 #endif
 
 #define REST_HEADER_PASS(header)        eng_rest_header_pass(ci, header)
@@ -676,13 +676,13 @@ typedef struct {
     char    req1[MAX_RESOURCE_LEN+1];       /* from URI -- level 1 */
     char    req2[MAX_RESOURCE_LEN+1];       /* from URI -- level 2 */
     char    req3[MAX_RESOURCE_LEN+1];       /* from URI -- level 3 */
-    char    proto[16];                      /* HTTP request protocol */
+    char    proto[16];                      /* HTTP request version */
     char    uagent[MAX_VALUE_LEN+1];        /* user agent string */
     bool    mobile;
     bool    keep_alive;
     char    referer[MAX_VALUE_LEN+1];
     long    clen;                           /* incoming & outgoing content length */
-    char    *data;                          /* POST data */
+    char    *in_data;                       /* POST data */
     char    cookie_in_a[SESID_LEN+1];       /* anonymous */
     char    cookie_in_l[SESID_LEN+1];       /* logged in */
     char    host[MAX_VALUE_LEN+1];
@@ -723,8 +723,8 @@ typedef struct {
     long    req;                            /* request count */
     struct timespec proc_start;
     char    conn_state;                     /* connection state (STATE_XXX) */
-    char    *p_curr_h;                      /* current header pointer */
-    char    *p_curr_c;                      /* current content pointer */
+    char    *p_header;                      /* current header pointer */
+    char    *p_content;                     /* current content pointer */
 #ifdef HTTPS
     SSL     *ssl;
 #endif
