@@ -4859,7 +4859,7 @@ void eng_send_msg_description(int ci, int code)
         /* keep default category */
     }
 
-    strcpy(msg, silgy_message(code));
+    strcpy(msg, silgy_message_lang(ci, code));
 
 #ifdef MSG_FORMAT_JSON
     OUT("{\"code\":%d,\"category\":\"%s\",\"message\":\"%s\"}", code, cat, msg);
@@ -5165,7 +5165,7 @@ static char *uri_decode_sql_esc(char *src, int srclen, char *dest, int maxlen)
 -------------------------------------------------------------------------- */
 bool get_qs_param(int ci, const char *fieldname, char *retbuf)
 {
-static char buf[MAX_URI_VAL_LEN*2+1];
+    char buf[MAX_URI_VAL_LEN*2+1];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
     {
@@ -5183,7 +5183,7 @@ static char buf[MAX_URI_VAL_LEN*2+1];
 -------------------------------------------------------------------------- */
 bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf)
 {
-static char buf[MAX_URI_VAL_LEN*2+1];
+    char buf[MAX_URI_VAL_LEN*2+1];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
     {
@@ -5201,7 +5201,7 @@ static char buf[MAX_URI_VAL_LEN*2+1];
 -------------------------------------------------------------------------- */
 bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf)
 {
-static char buf[MAX_URI_VAL_LEN*2+1];
+    char buf[MAX_URI_VAL_LEN*2+1];
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
     {
@@ -5330,9 +5330,9 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 -------------------------------------------------------------------------- */
 bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
 {
-static char buf[MAX_LONG_URI_VAL_LEN+1];
+    char buf[MAX_LONG_URI_VAL_LEN*2+1];
 
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_LONG_URI_VAL_LEN) )
+    if ( get_qs_param_raw(ci, fieldname, buf, MAX_LONG_URI_VAL_LEN*2) )
     {
         uri_decode(buf, strlen(buf), retbuf, MAX_LONG_URI_VAL_LEN);
         return TRUE;
