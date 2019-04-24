@@ -345,10 +345,12 @@ extern "C" {
     char *silgy_convert(char *src, const char *cp_from, const char *cp_to);
 #endif
 
+    char *md5(const char* str);
+
     int Base64encode_len(int len);
-    int Base64encode(char * coded_dst, const char *plain_src,int len_plain_src);
-    int Base64decode_len(const char * coded_src);
-    int Base64decode(char * plain_dst, const char *coded_src);
+    int Base64encode(char *coded_dst, const char *plain_src, int len_plain_src);
+    int Base64decode_len(const char *coded_src);
+    int Base64decode(char *plain_dst, const char *coded_src);
 
 #ifdef _WIN32   /* Windows */
     int getpid(void);

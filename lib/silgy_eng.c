@@ -183,7 +183,7 @@ static void close_old_conn(void);
 static void uses_close_timeouted(void);
 static void close_uses(int usi, int ci);
 static void reset_conn(int ci, char new_state);
-static int parse_req(int ci, long len);
+static int parse_req(int ci, int len);
 static int set_http_req_val(int ci, const char *label, const char *value);
 static bool check_block_ip(int ci, const char *rule, const char *value);
 static char *get_http_descr(int status_code);
@@ -3405,19 +3405,9 @@ static void reset_conn(int ci, char new_state)
    Parse HTTP request
    Return HTTP status code
 -------------------------------------------------------------------------- */
-static int parse_req(int ci, long len)
+static int parse_req(int ci, int len)
 {
-    int     ret=200;
-    long    hlen;
-    char    *p_hend=NULL;
-    long    i;
-    long    j=0;
-    char    flg_data=FALSE;
-    char    now_label=TRUE;
-    char    now_value=FALSE;
-    char    was_cr=FALSE;
-    char    label[MAX_LABEL_LEN+1];
-    char    value[MAX_VALUE_LEN+1];
+    int  ret=200;
 
     /* --------------------------------------------
 
@@ -3440,12 +3430,12 @@ static int parse_req(int ci, long len)
     if ( len < 14 ) /* ignore any junk */
     {
         DBG("request len < 14, ignoring");
-        return 400; /* Bad Request */
+        return 400;  /* Bad Request */
     }
 
     /* look for end of header */
 
-    p_hend = strstr(conn[ci].in, "\r\n\r\n");
+    char *p_hend = strstr(conn[ci].in, "\r\n\r\n");
 
     if ( !p_hend )
     {
@@ -3461,12 +3451,12 @@ static int parse_req(int ci, long len)
             else
             {
                 DBG("Request syntax error, ignoring");
-                return 400; /* Bad Request */
+                return 400;  /* Bad Request */
             }
         }
     }
 
-    hlen = p_hend - conn[ci].in;    /* HTTP header length including first of the last new line characters to simplify parsing algorithm in the third 'for' loop below */
+    int hlen = p_hend - conn[ci].in;    /* HTTP header length including first of the last new line characters to simplify parsing algorithm in the third 'for' loop below */
 
 #ifdef DUMP
     DBG("hlen = %d", hlen);
@@ -3478,6 +3468,8 @@ static int parse_req(int ci, long len)
 
     /* parse the header -------------------------------------------------------------------------- */
 
+    int i;
+
     for ( i=0; i<hlen; ++i )    /* the first line is special -- consists of more than one token */
     {                                   /* the very first token is a request method */
         if ( isalpha(conn[ci].in[i]) )
@@ -3487,7 +3479,7 @@ static int parse_req(int ci, long len)
             else
             {
                 ERR("Method too long, ignoring");
-                return 400; /* Bad Request */
+                return 400;  /* Bad Request */
             }
         }
         else    /* most likely space = end of method */
@@ -3527,6 +3519,7 @@ static int parse_req(int ci, long len)
     /* -------------------------------------------------------------- */
 
     i += 2;     /* skip " /" */
+    int j=0;
 
     for ( i; i<hlen; ++i )  /* URI */
     {
@@ -3586,11 +3579,20 @@ static int parse_req(int ci, long len)
 //    DBG("proto [%s]", conn[ci].proto);
 #endif
 
+    /* -------------------------------------------------------------- */
+
+    char flg_data=FALSE;
+    char now_label=TRUE;
+    char now_value=FALSE;
+    char was_cr=FALSE;
+    char label[MAX_LABEL_LEN+1];
+    char value[MAX_VALUE_LEN+1];
+
     while ( i < hlen && conn[ci].in[i] != '\n' ) ++i;
 
     j = 0;
 
-    for ( i; i<hlen; ++i )  /* next lines */
+    for ( i; i<hlen; ++i )   /* next lines */
     {
         if ( !now_value && (conn[ci].in[i] == ' ' || conn[ci].in[i] == '\t') )  /* omit whitespaces */
             continue;
@@ -3618,7 +3620,7 @@ static int parse_req(int ci, long len)
             now_label = TRUE;
             j = 0;
         }
-        else if ( now_label && conn[ci].in[i] == ':' )  /* end of label, start of value */
+        else if ( now_label && conn[ci].in[i] == ':' )   /* end of label, start of value */
         {
             label[j] = EOS;
             now_label = FALSE;
@@ -3633,7 +3635,7 @@ static int parse_req(int ci, long len)
             {
                 label[j] = EOS;
                 WAR("Label [%s] too long, ignoring", label);
-                return 400; /* Bad Request */
+                return 400;  /* Bad Request */
             }
         }
         else if ( now_value )   /* value */
@@ -3644,6 +3646,9 @@ static int parse_req(int ci, long len)
             {
                 WAR("Truncating %s's value", label);
                 value[j] = EOS;
+#ifdef DUMP
+                DBG("value: [%s]", value);
+#endif
                 if ( (ret=set_http_req_val(ci, label, value+1)) != 200 ) return ret;
                 now_value = FALSE;
             }
@@ -3730,7 +3735,7 @@ static int parse_req(int ci, long len)
         DBG("REQ2 [%s]", conn[ci].req2);
         DBG("REQ3 [%s]", conn[ci].req3);
 
-        conn[ci].static_res = is_static_res(ci, conn[ci].uri);     /* statics --> set the flag!!! */
+        conn[ci].static_res = is_static_res(ci, conn[ci].uri);    /* statics --> set the flag!!! */
         /* now, it may have set conn[ci].status to 304 */
 
         if ( conn[ci].static_res != NOT_STATIC )    /* static resource */
@@ -3802,7 +3807,11 @@ static int parse_req(int ci, long len)
         else    /* was "\n\n" */
             p_hend += 2;
 
-        len = conn[ci].in+len - p_hend;         /* remaining request length -- likely a content */
+        len = conn[ci].in+len - p_hend;   /* remaining request length -- likely a content */
+
+#ifdef DUMP
+        DBG("Remaining request length (content) = %d", len);
+#endif
 
         if ( len > conn[ci].clen )
             return 400;     /* Bad Request */
@@ -3842,9 +3851,9 @@ static int parse_req(int ci, long len)
 
 
 /* --------------------------------------------------------------------------
-  set request properties read from HTTP request header
-  caller is responsible for ensuring value length > 0
-  return HTTP status code
+   Set request properties read from HTTP request header
+   Caller is responsible for ensuring value length > 0
+   Return HTTP status code
 -------------------------------------------------------------------------- */
 static int set_http_req_val(int ci, const char *label, const char *value)
 {
@@ -4051,7 +4060,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
 -------------------------------------------------------------------------- */
 static bool check_block_ip(int ci, const char *rule, const char *value)
 {
-    if ( G_test ) return FALSE;     // don't block for tests
+    if ( G_test ) return FALSE;    /* don't block for tests */
 
 #ifdef BLACKLISTAUTOUPDATE
     if ( (rule[0]=='H' && conn[ci].post && 0==strcmp(value, APP_IP))        /* Host */
@@ -4061,6 +4070,7 @@ static bool check_block_ip(int ci, const char *rule, const char *value)
             || (rule[0]=='R' && 0==strcmp(value, "administrator"))          /* Resource */
             || (rule[0]=='R' && 0==strcmp(value, "phpmyadmin"))             /* Resource */
             || (rule[0]=='R' && 0==strcmp(value, "java.php"))               /* Resource */
+            || (rule[0]=='R' && 0==strcmp(value, ".env"))                   /* Resource */
             || (rule[0]=='R' && strstr(value, "setup.php")) )               /* Resource */
     {
         eng_block_ip(conn[ci].ip, TRUE);
@@ -4074,7 +4084,7 @@ static bool check_block_ip(int ci, const char *rule, const char *value)
 
 
 /* --------------------------------------------------------------------------
-  return HTTP status description
+   Return HTTP status description
 -------------------------------------------------------------------------- */
 static char *get_http_descr(int status_code)
 {
@@ -5209,23 +5219,23 @@ static char buf[MAX_URI_VAL_LEN*2+1];
 -------------------------------------------------------------------------- */
 bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 {
-    int     fnamelen;
-    char    *p, *equals, *ampersand;
-    int     len1;       /* fieldname len */
-    int     len2;       /* value len */
-    char    *querystring;
-    int     vallen;
+    char *querystring, *end;
 
 #ifdef DUMP
-//    DBG("get_qs_param_raw, fieldname [%s], maxlen = %d", fieldname, maxlen);
+    DBG("get_qs_param_raw: fieldname [%s]", fieldname);
 #endif
 
-    fnamelen = strlen(fieldname);
+    int fnamelen = strlen(fieldname);
 
     if ( conn[ci].post )
+    {
         querystring = conn[ci].in_data;
+        end = querystring + conn[ci].clen;
+    }
     else
+    {
         querystring = strchr(conn[ci].uri, '?');
+    }
 
     if ( querystring == NULL )
     {
@@ -5234,13 +5244,21 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
     }
 
     if ( !conn[ci].post )
+    {
         ++querystring;      /* skip the question mark */
+        end = querystring + (strlen(conn[ci].uri) - (querystring-conn[ci].uri));
+    }
 
 #ifdef DUMP
-//    DBG("get_qs_param_raw before loop");
+    DBG("get_qs_param_raw: before loop");
 #endif
 
-    for ( p=querystring; *p!=EOS; )
+    char *p, *equals, *ampersand;
+    int  len1;      /* fieldname len */
+    int  len2;      /* value len */
+    int  vallen;    /* returned value length */
+
+    for ( p=querystring; p<end; )
     {
         equals = strchr(p, '=');    /* end of field name */
         ampersand = strchr(p, '&');    /* end of value */
@@ -5252,7 +5270,12 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
         else    /* no ampersand ==> only one field */
         {
             if ( !equals )
+            {
+#ifdef DUMP
+                DBG("get_qs_param_raw: no ampersand, no equals, returning FALSE");
+#endif
                 return FALSE;
+            }
             else
                 len2 = strlen(p);
         }
@@ -5264,14 +5287,10 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
             continue;
         }
 
-        len1 = equals - p;  /* field name length */
+        len1 = equals - p;   /* field name length */
 
-        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )
+        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )   /* found it */
         {
-            /* found it */
-#ifdef DUMP
-//            DBG("get_qs_param_raw equals+1: [%s]", equals+1);
-#endif
             if ( retbuf )
             {
                 vallen = len2 - len1 - 1;
@@ -5280,6 +5299,9 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 
                 strncpy(retbuf, equals+1, vallen);
                 retbuf[vallen] = EOS;
+#ifdef DUMP
+                DBG("get_qs_param_raw: retbuf [%s]", retbuf);
+#endif
             }
 
             return TRUE;
@@ -5288,7 +5310,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
         /* try next value */
 
         p += len2;      /* skip current value */
-        if ( *p == '&' ) ++p;   /* skip & */
+        if ( *p == '&' ) ++p;   /* skip '&' */
     }
 
     /* not found */
@@ -5296,7 +5318,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
     if ( retbuf ) retbuf[0] = EOS;
 
 #ifdef DUMP
-    DBG("get_qs_param_raw returning FALSE");
+    DBG("get_qs_param_raw: returning FALSE");
 #endif
 
     return FALSE;
