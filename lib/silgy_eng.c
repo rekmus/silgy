@@ -105,18 +105,18 @@ static struct {
         {"-", EOS}
     };
 
-static char         *M_pidfile;                 /* pid file name */
+static char     *M_pidfile;                 /* pid file name */
 
 #ifdef _WIN32   /* Windows */
-static SOCKET       M_listening_fd=0;           /* The socket file descriptor for "listening" socket */
-static SOCKET       M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
+static SOCKET   M_listening_fd=0;           /* The socket file descriptor for "listening" socket */
+static SOCKET   M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
 #else
-static int          M_listening_fd=0;           /* The socket file descriptor for "listening" socket */
-static int          M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
+static int      M_listening_fd=0;           /* The socket file descriptor for "listening" socket */
+static int      M_listening_sec_fd=0;       /* The socket file descriptor for secure "listening" socket */
 #endif  /* _WIN32 */
 
 #ifdef HTTPS
-static SSL_CTX      *M_ssl_ctx;
+static SSL_CTX  *M_ssl_ctx;
 #endif
 
 #ifdef HTTPS
