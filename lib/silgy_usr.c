@@ -1174,10 +1174,7 @@ int silgy_usr_create_account(int ci)
 -------------------------------------------------------------------------- */
 int silgy_usr_send_message(int ci)
 {
-static char message[MAX_LONG_URI_VAL_LEN+1];
-static char sanmessage[MAX_LONG_URI_VAL_LEN+1];
-    QSVAL   email;
-static char sql_query[MAX_LONG_URI_VAL_LEN*2];
+    char message[MAX_LONG_URI_VAL_LEN+1];
 
     DBG("silgy_usr_send_message");
 
@@ -1187,10 +1184,15 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
         return ERR_INVALID_REQUEST;
     }
 
+    QSVAL   email;
+static char sanmessage[MAX_LONG_URI_VAL_LEN*2];
+static char sql_query[MAX_LONG_URI_VAL_LEN*2];
+
     if ( QS_HTML_ESCAPE("email", email) )
         stp_right(email);
 
-    strcpy(sanmessage, silgy_html_esc(message));
+    sprintf(sanmessage, "Sent from %s\n\n", conn[ci].ip);
+    strcpy(sanmessage+strlen(sanmessage), silgy_html_esc(message));
 
     /* remember user details in case of error or warning to correct */
 

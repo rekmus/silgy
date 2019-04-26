@@ -126,11 +126,18 @@ typedef struct {
 #ifdef APP_JSON_MAX_LEVELS
 #define JSON_MAX_LEVELS         APP_JSON_MAX_LEVELS
 #else
+#ifdef MEM_TINY
+#define JSON_MAX_LEVELS         2
+#else
 #define JSON_MAX_LEVELS         4
 #endif
+#endif  /* APP_JSON_MAX_LEVELS */
 
-#define JSON_MAX_JSONS          1000    /* size of the array used for auto-initializing JSON variables */
+#ifdef MEM_TINY
+#define JSON_POOL_SIZE          100     /* for storing sub-JSONs */
+#else
 #define JSON_POOL_SIZE          1000    /* for storing sub-JSONs */
+#endif
 
 
 /* single JSON element */

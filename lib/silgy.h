@@ -165,9 +165,13 @@ typedef char str64k[1024*64];
 #ifndef MEM_TINY
 #ifndef MEM_MEDIUM
 #ifndef MEM_LARGE
-#ifndef MEM_HUGE
+#ifndef MEM_XLARGE
+#ifndef MEM_XXLARGE
+#ifndef MEM_XXXLARGE
 #ifndef MEM_SMALL
 #define MEM_SMALL   /* default memory model */
+#endif
+#endif
 #endif
 #endif
 #endif
@@ -306,11 +310,21 @@ typedef char str64k[1024*64];
 #define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
 #define MAX_CONNECTIONS                 1000            /* max TCP connections */
 #define MAX_SESSIONS                    500             /* max user sessions */
-#elif defined MEM_HUGE
+#elif defined MEM_XLARGE
 #define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
 #define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
 #define MAX_CONNECTIONS                 5000            /* max TCP connections */
 #define MAX_SESSIONS                    2500            /* max user sessions */
+#elif defined MEM_XXLARGE
+#define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
+#define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
+#define MAX_CONNECTIONS                 10000           /* max TCP connections */
+#define MAX_SESSIONS                    5000            /* max user sessions */
+#elif defined MEM_XXXLARGE
+#define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
+#define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
+#define MAX_CONNECTIONS                 20000           /* max TCP connections */
+#define MAX_SESSIONS                    10000           /* max user sessions */
 #else   /* MEM_SMALL -- default */
 #define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
 #define OUT_BUFSIZE                     131072          /* initial HTTP response buffer length (128 kB) */

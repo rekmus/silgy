@@ -1574,8 +1574,14 @@ static bool init(int argc, char **argv)
 #ifdef MEM_LARGE
     ALWAYS("          Memory model = MEM_LARGE");
 #endif
-#ifdef MEM_HUGE
-    ALWAYS("          Memory model = MEM_HUGE");
+#ifdef MEM_XLARGE
+    ALWAYS("          Memory model = MEM_XLARGE");
+#endif
+#ifdef MEM_XXLARGE
+    ALWAYS("          Memory model = MEM_XXLARGE");
+#endif
+#ifdef MEM_XXXLARGE
+    ALWAYS("          Memory model = MEM_XXXLARGE");
 #endif
     ALWAYS("       MAX_CONNECTIONS = %d", MAX_CONNECTIONS);
     ALWAYS("          MAX_SESSIONS = %d", MAX_SESSIONS);

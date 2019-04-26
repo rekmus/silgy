@@ -73,11 +73,6 @@ static void *M_rest_ssl=NULL;    /* dummy */
 static unsigned char M_random_numbers[RANDOM_NUMBERS];
 static char M_random_initialized=0;
 
-#ifdef AUTO_INIT_EXPERIMENT
-static void *M_jsons[JSON_MAX_JSONS];   /* array of pointers for auto-init */
-static int M_jsons_cnt=0;
-#endif  /* AUTO_INIT_EXPERIMENT */
-
 static void seed_rand(void);
 static void minify_1(char *dest, const char *src);
 static int minify_2(char *dest, const char *src);
