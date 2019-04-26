@@ -3979,18 +3979,24 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     }
     else if ( 0==strcmp(ulabel, "X-FORWARDED-FOR") )    /* keep first IP as client IP */
     {
+        /* it can be 'unknown' */
+
+        char tmp[INET_ADDRSTRLEN+1];
         len = strlen(value);
         i = 0;
 
         while ( i<len && (value[i]=='.' || isdigit(value[i])) && i<INET_ADDRSTRLEN )
         {
-            conn[ci].ip[i] = value[i];
+            tmp[i] = value[i];
             ++i;
         }
 
-        conn[ci].ip[i] = EOS;
+        tmp[i] = EOS;
 
-        DBG("%s's value: [%s]", label, conn[ci].ip);
+        DBG("%s's value: [%s]", label, tmp);
+
+        if ( strlen(tmp) > 6 )
+            strcpy(conn[ci].ip, tmp);
     }
     else if ( 0==strcmp(ulabel, "CONTENT-LENGTH") )
     {
