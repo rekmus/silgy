@@ -1191,7 +1191,7 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
     if ( QS_HTML_ESCAPE("email", email) )
         stp_right(email);
 
-    sprintf(sanmessage, "Sent from %s\n\n", conn[ci].ip);
+    sprintf(sanmessage, "From %s\n\n", conn[ci].ip);
     strcpy(sanmessage+strlen(sanmessage), silgy_html_esc(message));
 
     /* remember user details in case of error or warning to correct */
@@ -1211,7 +1211,7 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
     /* send an email to admin */
 
 #ifdef APP_CONTACT_EMAIL
-    silgy_email(APP_CONTACT_EMAIL, "New message!", message);
+    silgy_email(APP_CONTACT_EMAIL, "New message!", sanmessage);
 #endif
 
     return OK;
