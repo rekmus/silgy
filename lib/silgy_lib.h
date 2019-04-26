@@ -262,6 +262,7 @@ extern "C" {
     void silgy_add_message(int code, const char *lang, const char *message, ...);
     char *silgy_message(int code);
     char *silgy_message_lang(int ci, int code);
+    char *urlencode(const char *src);
     bool lib_open_db(void);
     void lib_close_db(void);
     bool lib_file_exists(const char *fname);
