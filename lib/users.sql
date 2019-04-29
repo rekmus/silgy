@@ -50,6 +50,8 @@ create table users_logins (
     last_used datetime not null
 );
 
+create index users_logins_uid on users_logins (user_id);
+
 
 -- account activations
 

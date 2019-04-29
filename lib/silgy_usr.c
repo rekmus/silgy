@@ -383,6 +383,33 @@ void libusr_luses_close_timeouted()
 
 
 /* --------------------------------------------------------------------------
+   Invalidate active user sessions belonging to user_id
+   Called after password change
+-------------------------------------------------------------------------- */
+static void downgrade_uses_by_uid(long uid, int ci)
+{
+    int i;
+
+    if ( ci > -1 )  /* keep the current session */
+    {
+        for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
+        {
+            if ( uses[i].sesid[0] && uses[i].logged && uses[i].uid==uid && 0!=strcmp(uses[i].sesid, US.sesid) )
+                downgrade_uses(i, NOT_CONNECTED, FALSE);
+        }
+    }
+    else    /* all sessions */
+    {
+        for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
+        {
+            if ( uses[i].sesid[0] && uses[i].logged && uses[i].uid==uid )
+                downgrade_uses(i, NOT_CONNECTED, FALSE);
+        }
+    }
+}
+
+
+/* --------------------------------------------------------------------------
    Downgrade logged in user session to anonymous
 -------------------------------------------------------------------------- */
 static void downgrade_uses(int usi, int ci, bool usr_logout)
@@ -1411,6 +1438,26 @@ unsigned long   sql_records;
     strcpy(US.phone, US.phone_tmp);
     strcpy(US.about, US.about_tmp);
 
+    /* On password change invalidate all existing sessions except of the current one */
+
+    if ( passwd[0] && 0!=strcmp(passwd, opasswd) )
+    {
+        DBG("Password change => invalidating all other session tokens");
+
+        sprintf(sql_query, "DELETE FROM users_logins WHERE user_id = %ld AND sesid != BINARY '%s'", UID, US.sesid);
+        DBG("sql_query: %s", sql_query);
+        if ( mysql_query(G_dbconn, sql_query) )
+        {
+            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            return ERR_INT_SERVER_ERROR;
+        }
+
+        /* downgrade all currently active sessions belonging to this user */
+        /* except of the current one */
+
+        downgrade_uses_by_uid(UID, ci);
+    }
+
     return OK;
 }
 #endif  /* SILGY_SVC */
@@ -1803,6 +1850,8 @@ unsigned long   sql_records;
 
     mysql_free_result(result);
 
+    DBG("Updating users...");
+
     sprintf(sql_query, "UPDATE users SET passwd1='%s', passwd2='%s' WHERE id=%ld", str1, str2, uid);
 // !!!!!!   DBG("sql_query: %s", sql_query);
     if ( mysql_query(G_dbconn, sql_query) )
@@ -1811,7 +1860,25 @@ unsigned long   sql_records;
         return ERR_INT_SERVER_ERROR;
     }
 
+    /* Invalidate all existing sessions */
+
+    DBG("Invalidating all session tokens...");
+
+    sprintf(sql_query, "DELETE FROM users_logins WHERE user_id = %ld", uid);
+    DBG("sql_query: %s", sql_query);
+    if ( mysql_query(G_dbconn, sql_query) )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    /* downgrade all currently active sessions belonging to this user */
+
+    downgrade_uses_by_uid(uid, -1);
+
     /* remove all password reset keys */
+
+    DBG("Deleting from users_p_resets...");
 
     sprintf(sql_query, "DELETE FROM users_p_resets WHERE user_id=%ld", uid);
     DBG("sql_query: %s", sql_query);
