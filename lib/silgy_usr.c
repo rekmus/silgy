@@ -60,6 +60,7 @@ void libusr_init()
     silgy_add_message(WAR_BEFORE_DELETE,            "EN-US", "You are about to delete your %s's account. All your details and data will be removed from our database. If you are sure you want this, enter your password and click 'Delete my account'.", APP_WEBSITE);
     silgy_add_message(WAR_ULA_FIRST,                "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least a minute before trying again.", MAX_ULA_BEFORE_FIRST_SLOW);
     silgy_add_message(WAR_ULA_SECOND,               "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least an hour before trying again.", MAX_ULA_BEFORE_SECOND_SLOW);
+    silgy_add_message(WAR_ULA_THIRD,                "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least a day before trying again.", MAX_ULA_BEFORE_THIRD_SLOW);
 
     silgy_add_message(MSG_WELCOME_NO_ACTIVATION,    "EN-US", "Welcome to %s! You can now log in:", APP_WEBSITE);
     silgy_add_message(MSG_WELCOME_NEED_ACTIVATION,  "EN-US", "Welcome to %s! Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE, APP_WEBSITE);
@@ -929,11 +930,17 @@ unsigned long   sql_records;
             WAR("Trying again too soon (wait a minute)");
             return WAR_ULA_FIRST;
         }
-        else if ( last_ula_epoch > G_now-3600 )   /* ula_cnt > MAX_ULA_BEFORE_SECOND_SLOW */
+        else if ( ula_cnt <= MAX_ULA_BEFORE_THIRD_SLOW && last_ula_epoch > G_now-3600 )
         {
             /* less than an hour => wait before the next attempt */
             WAR("Trying again too soon (wait an hour)");
             return WAR_ULA_SECOND;
+        }
+        else if ( last_ula_epoch > G_now-3600*24 )   /* ula_cnt > MAX_ULA_BEFORE_THIRD_SLOW */
+        {
+            /* less than a day => wait before the next attempt */
+            WAR("Trying again too soon (wait a day)");
+            return WAR_ULA_THIRD;
         }
     }
 

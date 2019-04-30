@@ -33,6 +33,10 @@
 #define MAX_ULA_BEFORE_SECOND_SLOW      10
 #endif
 
+#ifndef MAX_ULA_BEFORE_THIRD_SLOW                               /* maximum unsuccessful login tries before slowing down to 1 per day */
+#define MAX_ULA_BEFORE_THIRD_SLOW       20
+#endif
+
 #ifndef MAX_ULA_BEFORE_LOCK                                     /* maximum unsuccessful login tries before user lockout */
 #define MAX_ULA_BEFORE_LOCK             100
 #endif
@@ -109,6 +113,7 @@
 #define WAR_BEFORE_DELETE               202
 #define WAR_ULA_FIRST                   203
 #define WAR_ULA_SECOND                  204
+#define WAR_ULA_THIRD                   205
 /* ------------------------------------- */
 #define WAR_MAX_USR_WARNING             299
 /* ------------------------------------- */
