@@ -556,7 +556,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
     char        email[EMAIL_LEN+1];
     char        name[UNAME_LEN+1];
     char        phone[PHONE_LEN+1];
-    char        about[256];
+    char        about[ABOUT_LEN+1];
 
     DBG("do_login");
 
@@ -803,7 +803,7 @@ int silgy_usr_login(int ci)
     QSVAL       email;
     char        name[UNAME_LEN+1];
     char        phone[PHONE_LEN+1];
-    char        about[256];
+    char        about[ABOUT_LEN+1];
     short       user_status;
     QSVAL       passwd;
     QSVAL       keep;
@@ -811,16 +811,14 @@ int silgy_usr_login(int ci)
     char        sql_query[SQLBUF];
     char        p1[32], p2[32];
     char        str1[32], str2[32];
-    long        ula_cnt;
+    int         ula_cnt;
     char        ula_time[32];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
     unsigned long sql_records;
     long        uid;
-    long        new_ula_cnt;
-    time_t      sometimeahead;
+    int         new_ula_cnt;
     long        visits;
-    char        deleted[4];
 
     DBG("silgy_usr_login");
 
@@ -883,7 +881,7 @@ int silgy_usr_login(int ci)
     strcpy(about, sql_row[7]?sql_row[7]:"");
     user_status = atoi(sql_row[8]);
     strcpy(ula_time, sql_row[9]?sql_row[9]:"");
-    ula_cnt = atol(sql_row[10]);
+    ula_cnt = atoi(sql_row[10]);
     visits = atol(sql_row[11]);
 
     mysql_free_result(result);
@@ -989,7 +987,7 @@ int silgy_usr_login(int ci)
     {
         DBG("Invalid password");
         new_ula_cnt = ula_cnt + 1;
-        sprintf(sql_query, "UPDATE users SET ula_cnt=%ld, ula_time='%s' WHERE id=%ld", new_ula_cnt, G_dt, uid);
+        sprintf(sql_query, "UPDATE users SET ula_cnt=%d, ula_time='%s' WHERE id=%ld", new_ula_cnt, G_dt, uid);
         DBG("sql_query: %s", sql_query);
         if ( mysql_query(G_dbconn, sql_query) )
         {
@@ -1064,7 +1062,7 @@ int silgy_usr_login(int ci)
     if ( QS_HTML_ESCAPE("keep", keep) && 0==strcmp(keep, "on") )
     {
         DBG("keep is ON!");
-        sometimeahead = G_now + 3600*24*30; /* 30 days */
+        time_t sometimeahead = G_now + 3600*24*30; /* 30 days */
         G_ptm = gmtime(&sometimeahead);
         strftime(conn[ci].cookie_out_l_exp, 32, "%a, %d %b %Y %T GMT", G_ptm);
 //      DBG("conn[ci].cookie_out_l_exp: [%s]", conn[ci].cookie_out_l_exp);

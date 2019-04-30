@@ -1450,8 +1450,7 @@ static void close_conn(int ci)
 -------------------------------------------------------------------------- */
 static bool init(int argc, char **argv)
 {
-    time_t  sometimeahead;
-    int     i=0;
+    int i=0;
 
     /* init globals */
 
@@ -1763,7 +1762,7 @@ static bool init(int argc, char **argv)
 #endif  /* _WIN32 */
     DBG("Now is: %s\n", G_last_modified);
 
-    sometimeahead = G_now + 3600*24*EXPIRES_IN_DAYS;
+    time_t sometimeahead = G_now + 3600*24*EXPIRES_IN_DAYS;
     G_ptm = gmtime(&sometimeahead);
 #ifdef _WIN32   /* Windows */
     strftime(M_expires, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
