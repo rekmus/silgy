@@ -15,14 +15,12 @@ create table users (
     passwd1 char(30) not null,
     passwd2 char(30) not null,
     about varchar(250),
-    status tinyint not null,        -- 0 = inactive, 1 = active
+    status tinyint not null,        -- 0 = inactive, 1 = active, 2 = locked, 9 = deleted
     created datetime not null,
     last_login datetime,
     visits integer not null,
-    settings integer not null,
     ula_time datetime,              -- unsuccessful login attempt time
     ula_cnt tinyint not null,       -- and count
-    deleted char(1) not null        -- 'Y' / 'N'
 );
 
 create index users_login on users (login_u);

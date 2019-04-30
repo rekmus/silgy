@@ -50,15 +50,16 @@ void libusr_init()
     silgy_add_message(ERR_SESSION_EXPIRED,          "EN-US", "Your session has expired. Please log in to continue:");
     silgy_add_message(ERR_LINK_BROKEN,              "EN-US", "It looks like this link is broken. If you clicked on the link you've received from us in email, you can try to copy and paste it in your browser's address bar instead.");
     silgy_add_message(ERR_LINK_MAY_BE_EXPIRED,      "EN-US", "Your link is invalid or may be expired");
-    silgy_add_message(ERR_LINK_EXPIRED,             "EN-US", "It looks like you entered email that doesn't exist in our database or your link has expired.");
-    silgy_add_message(ERR_LINK_TOO_MANY_TRIES,      "EN-US", "It looks like you entered email that doesn't exist in our database or your link has expired.");
+    silgy_add_message(ERR_LINK_EXPIRED,             "EN-US", "It looks like you entered email that doesn't exist in our database or your link has expired");
+    silgy_add_message(ERR_LINK_TOO_MANY_TRIES,      "EN-US", "It looks like you entered email that doesn't exist in our database or your link has expired");
     silgy_add_message(ERR_ROBOT,                    "EN-US", "I'm afraid you are a robot?");
     silgy_add_message(ERR_WEBSITE_FIRST_LETTER,     "EN-US", "The first letter of this website's name should be %c", APP_WEBSITE[0]);
     silgy_add_message(ERR_NOT_ACTIVATED,            "EN-US", "Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE);
 
     silgy_add_message(WAR_NO_EMAIL,                 "EN-US", "You didn't provide your email address. This is fine, however please remember that in case you forget your password, there's no way for us to send you reset link.");
     silgy_add_message(WAR_BEFORE_DELETE,            "EN-US", "You are about to delete your %s's account. All your details and data will be removed from our database. If you are sure you want this, enter your password and click 'Delete my account'.", APP_WEBSITE);
-    silgy_add_message(WAR_ULA,                      "EN-US", "Someone tried to log in to this account unsuccessfully more than 3 times. To protect your account from brute-force attack, this system requires some wait: 1 minute, then 10 minutes, then 1 hour before trying again.");
+    silgy_add_message(WAR_ULA_FIRST,                "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least a minute before trying again.", MAX_ULA_BEFORE_FIRST_SLOW);
+    silgy_add_message(WAR_ULA_SECOND,               "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least an hour before trying again.", MAX_ULA_BEFORE_SECOND_SLOW);
 
     silgy_add_message(MSG_WELCOME_NO_ACTIVATION,    "EN-US", "Welcome to %s! You can now log in:", APP_WEBSITE);
     silgy_add_message(MSG_WELCOME_NEED_ACTIVATION,  "EN-US", "Welcome to %s! Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE, APP_WEBSITE);
@@ -236,7 +237,7 @@ unsigned long   sql_records;
     if ( 0 == sql_records )     /* no such session in database */
     {
         mysql_free_result(result);
-        DBG("No logged in session in database [%s]", sanlscookie);
+        INF("No logged in session in database [%s]", sanlscookie);
         strcpy(conn[ci].cookie_out_l, "x");
         strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* expire ls cookie */
 
@@ -254,8 +255,8 @@ unsigned long   sql_records;
         {
             if ( 0==strcmp(conn[ci].ip, failed_cnt[i].ip) )
             {
-                if ( (failed_cnt[i].cnt > 10 && failed_cnt[i].when > G_now-60)      /* 10 failed attempts within a minute */
-                    || (failed_cnt[i].cnt > 100 && failed_cnt[i].when > G_now-3600) /* 100 failed attempts within an hour */
+                if ( (failed_cnt[i].cnt > 10 && failed_cnt[i].when > G_now-60)      /* 10 failed attempts within a minute or */
+                    || (failed_cnt[i].cnt > 100 && failed_cnt[i].when > G_now-3600) /* 100 failed attempts within an hour or */
                     || failed_cnt[i].cnt > 1000 )                                   /* 1000 failed attempts */
                 {
                     WAR("Looks like brute-force cookie attack, blocking IP");
@@ -502,7 +503,7 @@ static int user_exists(const char *login)
 
 
 /* --------------------------------------------------------------------------
-  check whether email exists in database
+   Check whether email exists in database
 -------------------------------------------------------------------------- */
 static int email_exists(const char *email)
 {
@@ -811,7 +812,6 @@ int silgy_usr_login(int ci)
     char        str1[32], str2[32];
     long        ula_cnt;
     char        ula_time[32];
-    time_t      ula_time_epoch;
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
 unsigned long   sql_records;
@@ -831,7 +831,7 @@ unsigned long   sql_records;
         return ERR_INVALID_REQUEST;
     }
     stp_right(email);
-    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,status,ula_time,ula_cnt,visits,deleted FROM users WHERE email_u='%s'", upper(email));
+    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,status,ula_time,ula_cnt,visits FROM users WHERE email_u='%s'", upper(email));
 
 #else    /* by login */
 
@@ -842,7 +842,7 @@ unsigned long   sql_records;
     }
     stp_right(login);
     strcpy(ulogin, upper(login));
-    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,status,ula_time,ula_cnt,visits,deleted FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
+    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,status,ula_time,ula_cnt,visits FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
 
 #endif  /* USERSBYEMAIL */
 
@@ -884,27 +884,57 @@ unsigned long   sql_records;
     strcpy(ula_time, sql_row[9]?sql_row[9]:"");
     ula_cnt = atol(sql_row[10]);
     visits = atol(sql_row[11]);
-    strcpy(deleted, sql_row[12]?sql_row[12]:"N");
 
     mysql_free_result(result);
 
     /* deleted? */
 
-    if ( deleted[0]=='Y' )
+    if ( user_status == USER_STATUS_DELETED )
     {
         WAR("User deleted");
-        return ERR_INVALID_LOGIN;   /* invalid user and/or password */
+        return ERR_INVALID_LOGIN;
+    }
+
+    /* locked out? */
+
+    if ( user_status == USER_STATUS_LOCKED )
+    {
+        WAR("User locked");
+        return ERR_INVALID_LOGIN;
     }
 
     /* check ULA (Unsuccessful Login Attempts) info to prevent brute-force password attacks */
 
-    ula_time_epoch = db2epoch(ula_time);
-
-    if ( (ula_cnt > 5 && ula_time_epoch > G_now-3600)           /* 3600 secs = 1 hour */
-            || (ula_cnt == 5 && ula_time_epoch > G_now-600)     /* 600 secs = 10 mins */
-            || (ula_cnt == 4 && ula_time_epoch > G_now-60) )    /* 60 secs = 1 min */
+    if ( ula_cnt > MAX_ULA_BEFORE_FIRST_SLOW )
     {
-        return WAR_ULA; /* wait before the next attempt */
+        if ( ula_cnt > MAX_ULA_BEFORE_LOCK )
+        {
+            WAR("ula_cnt > MAX_ULA_BEFORE_LOCK (%d) => locking user account", MAX_ULA_BEFORE_LOCK);
+
+            sprintf(sql_query, "UPDATE users SET status=%d WHERE id=%ld", USER_STATUS_LOCKED, uid);
+            DBG("sql_query: %s", sql_query);
+            if ( mysql_query(G_dbconn, sql_query) )
+                ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+
+            return ERR_INVALID_LOGIN;
+        }
+
+        WAR("ula_cnt = %d", ula_cnt);
+
+        time_t last_ula_epoch = db2epoch(ula_time);
+
+        if ( ula_cnt <= MAX_ULA_BEFORE_SECOND_SLOW && last_ula_epoch > G_now-60 )
+        {
+            /* less than a minute => wait before the next attempt */
+            WAR("Trying again too soon (wait a minute)");
+            return WAR_ULA_FIRST;
+        }
+        else if ( last_ula_epoch > G_now-3600 )   /* ula_cnt > MAX_ULA_BEFORE_SECOND_SLOW */
+        {
+            /* less than an hour => wait before the next attempt */
+            WAR("Trying again too soon (wait an hour)");
+            return WAR_ULA_SECOND;
+        }
     }
 
     /* now check username/email and password pairs as they should be */
@@ -917,7 +947,7 @@ unsigned long   sql_records;
 
     /* are these as expected? */
 
-    if ( 0 != strcmp(str1, p1) || (email[0] && 0 != strcmp(str2, p2)) ) /* passwd1, passwd2 */
+    if ( 0 != strcmp(str1, p1) || (email[0] && 0 != strcmp(str2, p2)) )  /* passwd1, passwd2 */
     {
         DBG("Invalid password");
         new_ula_cnt = ula_cnt + 1;
@@ -945,7 +975,7 @@ unsigned long   sql_records;
 
     /* successful login ------------------------------------------------------------ */
 
-    if ( ula_cnt )  /* clear it */
+    if ( ula_cnt )   /* clear it */
     {
         DBG("Clearing ula_cnt");
         sprintf(sql_query, "UPDATE users SET ula_cnt=0 WHERE id=%ld", uid);
@@ -1163,7 +1193,7 @@ int silgy_usr_create_account(int ci)
     else
         user_status = USER_STATUS_ACTIVE;
 
-    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,about,status,created,visits,settings,ula_cnt,deleted) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%hd,'%s',0,0,0,'N')", login, login_u, email, email_u, name, phone, str1, str2, about, user_status, G_dt);
+    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,about,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%hd,'%s',0,0)", login, login_u, email, email_u, name, phone, str1, str2, about, user_status, G_dt);
 
     DBG("sql_query: INSERT INTO users (id,login,email,name,phone,...) VALUES (0,'%s','%s','%s','%s',...)", login, email, name, phone);
 
@@ -1399,7 +1429,7 @@ unsigned long   sql_records;
             return WAR_BEFORE_DELETE;
         else
         {
-            sprintf(sql_query, "UPDATE users SET deleted='Y' WHERE id=%ld", US.uid);
+            sprintf(sql_query, "UPDATE users SET status=%d WHERE id=%ld", USER_STATUS_DELETED, US.uid);
             DBG("sql_query: %s", sql_query);
             if ( mysql_query(G_dbconn, sql_query) )
             {
@@ -1515,9 +1545,9 @@ unsigned long   sql_records;
         return ERR_EMAIL_FORMAT;
 
 #ifdef USERSBYEMAIL
-    sprintf(sql_query, "SELECT id, name, deleted FROM users WHERE email_u='%s'", upper(email));
+    sprintf(sql_query, "SELECT id, name, status FROM users WHERE email_u='%s'", upper(email));
 #else
-    sprintf(sql_query, "SELECT id, login, deleted FROM users WHERE email_u='%s'", upper(email));
+    sprintf(sql_query, "SELECT id, login, status FROM users WHERE email_u='%s'", upper(email));
 #endif
 
     DBG("sql_query: %s", sql_query);
@@ -1540,7 +1570,7 @@ unsigned long   sql_records;
     {
         sql_row = mysql_fetch_row(result);
 
-        if ( sql_row[2][0]=='Y' )   /* deleted */
+        if ( atoi(sql_row[2]) == USER_STATUS_DELETED )
         {
             mysql_free_result(result);
             WAR("Password reset link requested for [%s] but user is deleted", email);
@@ -1567,7 +1597,7 @@ unsigned long   sql_records;
 
         /* send an email */
 
-        char tmp[1024];
+        char tmp[4096];
         char *p=message;
 
         sprintf(tmp, "Dear %s,\n\n", login_name);

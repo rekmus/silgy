@@ -11,23 +11,39 @@
 
 
 #define DB_UAGENT_LEN                   250                     /* User-Agent length stored in ulogins table */
+#define PASSWD_RESET_KEY_LEN            30                      /* password reset key length */
+
 #ifdef APP_MIN_USERNAME_LEN                                     /* minimum user name length */
-#define MIN_USERNAME_LEN                APP_MIN_USERNAME_LEN               
+#define MIN_USERNAME_LEN                APP_MIN_USERNAME_LEN
 #else
-#define MIN_USERNAME_LEN                2               
+#define MIN_USERNAME_LEN                2
 #endif
+
 #ifdef APP_MIN_PASSWORD_LEN                                     /* minimum password length */
 #define MIN_PASSWORD_LEN                APP_MIN_PASSWORD_LEN
 #else
 #define MIN_PASSWORD_LEN                5                       /* default minimal password length */
 #endif
-#define PASSWD_RESET_KEY_LEN            30                      /* password reset key length */
+
+#ifndef MAX_ULA_BEFORE_FIRST_SLOW                               /* maximum unsuccessful login tries before slowing down to 1 per minute */
+#define MAX_ULA_BEFORE_FIRST_SLOW       5
+#endif
+
+#ifndef MAX_ULA_BEFORE_SECOND_SLOW                              /* maximum unsuccessful login tries before slowing down to 1 per hour */
+#define MAX_ULA_BEFORE_SECOND_SLOW      10
+#endif
+
+#ifndef MAX_ULA_BEFORE_LOCK                                     /* maximum unsuccessful login tries before user lockout */
+#define MAX_ULA_BEFORE_LOCK             100
+#endif
 
 
 /* user status */
 
 #define USER_STATUS_INACTIVE            0
 #define USER_STATUS_ACTIVE              1
+#define USER_STATUS_LOCKED              2
+#define USER_STATUS_DELETED             9
 
 #ifdef APP_USER_ACTIVATION_HOURS                                /* activate user account within */
 #define USER_ACTIVATION_HOURS           APP_USER_ACTIVATION_HOURS
@@ -91,7 +107,8 @@
 
 #define WAR_NO_EMAIL                    201
 #define WAR_BEFORE_DELETE               202
-#define WAR_ULA                         203
+#define WAR_ULA_FIRST                   203
+#define WAR_ULA_SECOND                  204
 /* ------------------------------------- */
 #define WAR_MAX_USR_WARNING             299
 /* ------------------------------------- */
@@ -167,15 +184,21 @@
 
 /*
    Brute-force ls cookie attack protection.
-   It defines how many different IPs can take part in a botnet attack.
+   It essentially defines how many different IPs can take part in a botnet attack.
 */
 
-#ifdef MEM_MEDIUM
+#ifdef MEM_TINY
+#define FAILED_LOGIN_CNT_SIZE           100
+#elif defined MEM_MEDIUM
 #define FAILED_LOGIN_CNT_SIZE           1000
-#elif defined(MEM_BIG)
+#elif defined MEM_LARGE
 #define FAILED_LOGIN_CNT_SIZE           10000
-#elif defined(MEM_HUGE)
+#elif defined MEM_XLARGE
 #define FAILED_LOGIN_CNT_SIZE           10000
+#elif defined MEM_XXLARGE
+#define FAILED_LOGIN_CNT_SIZE           100000
+#elif defined MEM_XXXLARGE
+#define FAILED_LOGIN_CNT_SIZE           100000
 #else   /* MEM_SMALL -- default */
 #define FAILED_LOGIN_CNT_SIZE           1000
 #endif
