@@ -74,7 +74,7 @@ static unsigned char M_random_numbers[RANDOM_NUMBERS];
 static char M_random_initialized=0;
 
 static void seed_rand(void);
-static void minify_1(char *dest, const char *src);
+static void minify_1(char *dest, const char *src, int len);
 static int minify_2(char *dest, const char *src);
 static void get_byteorder32(void);
 static void get_byteorder64(void);
@@ -136,7 +136,7 @@ char *silgy_message(int code)
         if ( G_messages[i].code == code )
             return G_messages[i].message;
 
-    static char unknown[256];
+static char unknown[128];
     sprintf(unknown, "Unknown code: %d", code);
     return unknown;
 }
@@ -2762,7 +2762,7 @@ static char dst[MAX_LONG_URI_VAL_LEN+1];
 /* --------------------------------------------------------------------------
    Primitive URI encoding
 ---------------------------------------------------------------------------*/
-char *uri_encode(const char *str)
+/*char *uri_encode(const char *str)
 {
 static char uri_encode[4096];
     int     i;
@@ -2778,7 +2778,7 @@ static char uri_encode[4096];
     uri_encode[i] = EOS;
 
     return uri_encode;
-}
+}*/
 
 
 /* --------------------------------------------------------------------------
@@ -2914,7 +2914,7 @@ static unsigned int seeds[SILGY_SEEDS_MEM];
     static int seeded=0;    /* 8 bits */
 
     unsigned int seed;
-    static unsigned int prev_seed=0;
+static unsigned int prev_seed=0;
 
     while ( 1 )
     {
@@ -4401,27 +4401,37 @@ bool silgy_email(const char *to, const char *subject, const char *message)
 -------------------------------------------------------------------------- */
 int silgy_minify(char *dest, const char *src)
 {
-static char temp[4194304];
+    char *temp;
 
-    minify_1(temp, src);
-    return minify_2(dest, temp);
+    int len = strlen(src);
+
+    if ( !(temp=(char*)malloc(len+1)) )
+    {
+        ERR("Couldn't allocate %d bytes for silgy_minify", len);
+        return 0;
+    }
+
+    minify_1(temp, src, len);
+
+    int ret = minify_2(dest, temp);
+
+    free(temp);
+
+    return ret;
 }
 
 
 /* --------------------------------------------------------------------------
    First pass -- only remove comments
 -------------------------------------------------------------------------- */
-static void minify_1(char *dest, const char *src)
+static void minify_1(char *dest, const char *src, int len)
 {
-    int     len;
     int     i;
     int     j=0;
     bool    opensq=FALSE;       /* single quote */
     bool    opendq=FALSE;       /* double quote */
     bool    openco=FALSE;       /* comment */
     bool    opensc=FALSE;       /* star comment */
-
-    len = strlen(src);
 
     for ( i=0; i<len; ++i )
     {
@@ -4466,7 +4476,7 @@ static void minify_1(char *dest, const char *src)
 
 
 /* --------------------------------------------------------------------------
-   return new length
+   Return new length
 -------------------------------------------------------------------------- */
 static int minify_2(char *dest, const char *src)
 {
@@ -5536,7 +5546,7 @@ void MD5_Final(unsigned char *result, MD5_CTX *ctx)
 -------------------------------------------------------------------------- */
 char *md5(const char* str)
 {
-    static char result[33];
+static char result[33];
     unsigned char digest[16];
 
     MD5_CTX context;

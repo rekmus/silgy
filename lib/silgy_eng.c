@@ -202,11 +202,11 @@ int main(int argc, char **argv)
 
 static struct   sockaddr_in serv_addr;      /* static = initialised to zeros */
 static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
-unsigned int    addr_len=0;
-unsigned long   hit=0;
+    unsigned int addr_len=0;
+    unsigned long hit=0;
     char        remote_addr[INET_ADDRSTRLEN]=""; /* remote address */
     int         reuse_addr=1;               /* Used so we can re-bind to our port while a previous connection is still in TIME_WAIT state */
-struct timeval  timeout;                    /* Timeout for select */
+    struct timeval timeout;                    /* Timeout for select */
     int         sockets_ready;              /* Number of sockets ready for I/O */
     int         i=0;                        /* Current item in conn_sockets for for loops */
     long        bytes=0;

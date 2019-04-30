@@ -208,7 +208,7 @@ int libusr_luses_ok(int ci)
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
-unsigned long   sql_records;
+    unsigned long sql_records;
     long        uid;
     time_t      created;
 
@@ -551,7 +551,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
-unsigned long   sql_records;
+    unsigned long sql_records;
     char        login[LOGIN_LEN+1];
     char        email[EMAIL_LEN+1];
     char        name[UNAME_LEN+1];
@@ -648,8 +648,6 @@ static int send_activation_link(int ci, const char *login, const char *email)
 {
     char linkkey[PASSWD_RESET_KEY_LEN+1];
     char sql_query[SQLBUF];
-    char subject[256];
-    char message[4096];
     
     /* generate the key */
 
@@ -666,10 +664,12 @@ static int send_activation_link(int ci, const char *login, const char *email)
 
     /* send an email */
 
+    char subject[256];
+    char message[4096];
     char tmp[1024];
     char *p=message;
 
-    sprintf(tmp, "Dear %s,\n\n", login[0]?login:"User");
+    sprintf(tmp, "Dear %s,\n\n", silgy_usr_name(NULL, NULL, NULL, UID));
     p = stpcpy(p, tmp);
     sprintf(tmp, "Welcome to %s! Your account requires activation. Please visit this URL to activate your account:\n\n", conn[ci].website);
     p = stpcpy(p, tmp);
@@ -713,8 +713,8 @@ static int silgy_usr_verify_activation_key(int ci, char *linkkey, long *uid)
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
-unsigned long   sql_records;
-    char        esc_linkkey[256];
+    unsigned long sql_records;
+    QSVAL       esc_linkkey;
 
     DBG("silgy_usr_verify_activation_key");
 
@@ -815,7 +815,7 @@ int silgy_usr_login(int ci)
     char        ula_time[32];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
-unsigned long   sql_records;
+    unsigned long sql_records;
     long        uid;
     long        new_ula_cnt;
     time_t      sometimeahead;
@@ -916,6 +916,31 @@ unsigned long   sql_records;
             DBG("sql_query: %s", sql_query);
             if ( mysql_query(G_dbconn, sql_query) )
                 ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+
+            if ( email[0] )   /* notify account owner */
+            {
+                char subject[256];
+                char message[4096];
+                char tmp[1024];
+                char *p=message;
+
+                sprintf(tmp, "Dear %s,\n\n", silgy_usr_name(login, email, name, 0));
+                p = stpcpy(p, tmp);
+                sprintf(tmp, "Someone has tried to log in to your %s account unsuccessfully more than %d times. To protect it from brute-force attack your account has been locked.\n\n", conn[ci].website, MAX_ULA_BEFORE_LOCK);
+                p = stpcpy(p, tmp);
+#ifdef APP_CONTACT_EMAIL
+                sprintf(tmp, "Please contact us at %s.\n\n", APP_CONTACT_EMAIL);
+                p = stpcpy(p, tmp);
+#endif
+                p = stpcpy(p, "Kind Regards\n");
+
+                sprintf(tmp, "%s\n", conn[ci].website);
+                p = stpcpy(p, tmp);
+
+                sprintf(subject, "%s account locked", conn[ci].website);
+
+                silgy_email(email, subject, message);
+            }
 
             return ERR_INVALID_LOGIN;
         }
@@ -1312,7 +1337,7 @@ int silgy_usr_save_account(int ci)
     char        sql_query[SQLBUF];
     char        str1[32], str2[32];
     MYSQL_RES   *result;
-unsigned long   sql_records;
+    unsigned long sql_records;
     MYSQL_ROW   sql_row;
 
     DBG("silgy_usr_save_account");
@@ -1528,6 +1553,93 @@ int silgy_usr_email_registered(int ci)
 
 
 /* --------------------------------------------------------------------------
+   Return the best version of the user name for "Dear ..."
+-------------------------------------------------------------------------- */
+char *silgy_usr_name(const char *login, const char *email, const char *name, long uid)
+{
+static char dest[128];
+
+    DBG("silgy_usr_name");
+
+    if ( name && name[0] )
+    {
+        strcpy(dest, name);
+    }
+    else if ( login && login[0] )
+    {
+        strcpy(dest, login);
+    }
+    else if ( email && email[0] )
+    {
+        int i=0;
+        while ( email[i]!='@' && email[i] && i<100 ) dest[i++] = email[i];
+        dest[i] = EOS;
+    }
+    else if ( uid )
+    {
+        char            sql_query[SQLBUF];
+        MYSQL_RES       *result;
+        unsigned long   sql_records;
+        MYSQL_ROW       sql_row;
+
+        sprintf(sql_query, "SELECT login, email, name FROM users WHERE id=%ld", uid);
+        DBG("sql_query: %s", sql_query);
+        mysql_query(G_dbconn, sql_query);
+        result = mysql_store_result(G_dbconn);
+        if ( !result )
+        {
+            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            strcpy(dest, "User");
+        }
+        else    /* OK */
+        {
+            sql_records = mysql_num_rows(result);
+
+            if ( 0 == sql_records )
+            {
+                mysql_free_result(result);
+                strcpy(dest, "User");
+            }
+            else
+            {
+                char db_login[128];
+                char db_email[128];
+                char db_name[128];
+
+                sql_row = mysql_fetch_row(result);
+
+                strcpy(db_login, sql_row[0]?sql_row[0]:"");
+                strcpy(db_email, sql_row[1]?sql_row[1]:"");
+                strcpy(db_name, sql_row[2]?sql_row[2]:"");
+
+                mysql_free_result(result);
+
+                /* we can't use recursion with char * function... */
+                if ( db_name && db_name[0] )
+                    strcpy(dest, db_name);
+                else if ( db_login && db_login[0] )
+                    strcpy(dest, db_login);
+                else if ( db_email && db_email[0] )
+                {
+                    int i=0;
+                    while ( db_email[i]!='@' && db_email[i] && i<100 ) dest[i++] = db_email[i];
+                    dest[i] = EOS;
+                }
+                else
+                    strcpy(dest, "User");
+            }
+        }
+    }
+    else
+    {
+        strcpy(dest, "User");
+    }
+
+    return dest;
+}
+
+
+/* --------------------------------------------------------------------------
    Send an email with password reset link
 -------------------------------------------------------------------------- */
 int silgy_usr_send_passwd_reset_email(int ci)
@@ -1536,13 +1648,8 @@ int silgy_usr_send_passwd_reset_email(int ci)
     QSVAL       submit;
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
-unsigned long   sql_records;
+    unsigned long sql_records;
     MYSQL_ROW   sql_row;
-    long        uid;
-    char        login_name[LOGIN_LEN+1];
-    char        linkkey[256];
-    char        subject[256];
-    char        message[4096];
 
     DBG("silgy_usr_send_passwd_reset_email");
 
@@ -1557,18 +1664,10 @@ unsigned long   sql_records;
     if ( !valid_email(email) )      /* invalid email format */
         return ERR_EMAIL_FORMAT;
 
-#ifdef USERSBYEMAIL
-    sprintf(sql_query, "SELECT id, name, status FROM users WHERE email_u='%s'", upper(email));
-#else
-    sprintf(sql_query, "SELECT id, login, status FROM users WHERE email_u='%s'", upper(email));
-#endif
-
+    sprintf(sql_query, "SELECT id, login, name, status FROM users WHERE email_u='%s'", upper(email));
     DBG("sql_query: %s", sql_query);
-
     mysql_query(G_dbconn, sql_query);
-
     result = mysql_store_result(G_dbconn);
-
     if ( !result )
     {
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
@@ -1579,76 +1678,93 @@ unsigned long   sql_records;
 
     DBG("users: %lu record(s) found", sql_records);
 
-    if ( sql_records )
+    if ( 0 == sql_records )
     {
-        sql_row = mysql_fetch_row(result);
-
-        if ( atoi(sql_row[2]) == USER_STATUS_DELETED )
-        {
-            mysql_free_result(result);
-            WAR("Password reset link requested for [%s] but user is deleted", email);
-            return OK;
-        }
-
-        uid = atol(sql_row[0]);     /* user id */
-        strcpy(login_name, sql_row[1]);
-
         mysql_free_result(result);
+        WAR("Password reset link requested for non-existent [%s]", email);
+        return OK;
+    }
 
-        /* generate a key */
+    /* -------------------------------------------------------------------------- */
 
-        silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
+    sql_row = mysql_fetch_row(result);
 
-        sprintf(sql_query, "INSERT INTO users_p_resets (linkkey,user_id,created,tries) VALUES ('%s',%ld,'%s',0)", linkkey, uid, G_dt);
-        DBG("sql_query: %s", sql_query);
+    if ( atoi(sql_row[3]) == USER_STATUS_DELETED )
+    {
+        mysql_free_result(result);
+        WAR("Password reset link requested for [%s] but user is deleted", email);
+        return OK;
+    }
 
-        if ( mysql_query(G_dbconn, sql_query) )
-        {
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-            return ERR_INT_SERVER_ERROR;
-        }
+    /* -------------------------------------------------------------------------- */
 
-        /* send an email */
+    long uid;
+    char login[128];
+    char name[128];
 
-        char tmp[4096];
-        char *p=message;
+    uid = atol(sql_row[0]);
+    strcpy(login, sql_row[1]?sql_row[1]:"");
+    strcpy(name, sql_row[2]?sql_row[2]:"");
 
-        sprintf(tmp, "Dear %s,\n\n", login_name);
-        p = stpcpy(p, tmp);
-        sprintf(tmp, "You have requested to have your password reset for your account at %s. Please visit this URL to reset your password:\n\n", conn[ci].website);
-        p = stpcpy(p, tmp);
+    mysql_free_result(result);
+
+    /* -------------------------------------------------------------------------- */
+    /* generate a key */
+
+    char linkkey[PASSWD_RESET_KEY_LEN+1];
+
+    silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
+
+    sprintf(sql_query, "INSERT INTO users_p_resets (linkkey,user_id,created,tries) VALUES ('%s',%ld,'%s',0)", linkkey, uid, G_dt);
+    DBG("sql_query: %s", sql_query);
+
+    if ( mysql_query(G_dbconn, sql_query) )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    /* -------------------------------------------------------------------------- */
+    /* send an email */
+
+    char subject[256];
+    char message[4096];
+    char tmp[1024];
+    char *p=message;
+
+    sprintf(tmp, "Dear %s,\n\n", silgy_usr_name(login, email, name, 0));
+    p = stpcpy(p, tmp);
+    sprintf(tmp, "You have requested to have your password reset for your account at %s. Please visit this URL to reset your password:\n\n", conn[ci].website);
+    p = stpcpy(p, tmp);
 
 #ifdef HTTPS
-        if ( G_test )
-            sprintf(tmp, "http://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
-        else
-            sprintf(tmp, "https://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
-#else
+    if ( G_test )
         sprintf(tmp, "http://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
+    else
+        sprintf(tmp, "https://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
+#else
+    sprintf(tmp, "http://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
 #endif  /* HTTPS */
 
-        p = stpcpy(p, tmp);
+    p = stpcpy(p, tmp);
 
-        p = stpcpy(p, "Please keep in mind that this link will only be valid for the next 24 hours.\n\n");
-        p = stpcpy(p, "If you did this by mistake or it wasn't you, you can safely ignore this email.\n\n");
+    p = stpcpy(p, "Please keep in mind that this link will only be valid for the next 24 hours.\n\n");
+    p = stpcpy(p, "If you did this by mistake or it wasn't you, you can safely ignore this email.\n\n");
 #ifdef APP_CONTACT_EMAIL
-        sprintf(tmp, "In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
-        p = stpcpy(p, tmp);
+    sprintf(tmp, "In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
+    p = stpcpy(p, tmp);
 #endif
-        p = stpcpy(p, "Kind Regards\n");
+    p = stpcpy(p, "Kind Regards\n");
 
-        sprintf(tmp, "%s\n", conn[ci].website);
-        p = stpcpy(p, tmp);
+    sprintf(tmp, "%s\n", conn[ci].website);
+    p = stpcpy(p, tmp);
 
-        sprintf(subject, "%s Password Reset", conn[ci].website);
+    sprintf(subject, "%s Password Reset", conn[ci].website);
 
-        if ( !silgy_email(email, subject, message) )
-            return ERR_INT_SERVER_ERROR;
-    }
-    else
-    {
-        mysql_free_result(result);
-    }
+    if ( !silgy_email(email, subject, message) )
+        return ERR_INT_SERVER_ERROR;
+
+    /* -------------------------------------------------------------------------- */
 
     INF("Password reset link requested for [%s]", email);
 
@@ -1664,7 +1780,7 @@ int silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid)
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
-unsigned long   sql_records;
+    unsigned long sql_records;
     char        esc_linkkey[256];
     int         tries;
 
@@ -1755,7 +1871,7 @@ int silgy_usr_activate(int ci)
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
-unsigned long   sql_records;
+    unsigned long sql_records;
 
     DBG("silgy_usr_activate");
 
@@ -1812,7 +1928,7 @@ int silgy_usr_reset_password(int ci)
     char        str1[32], str2[32];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
-unsigned long   sql_records;
+    unsigned long sql_records;
 
     DBG("silgy_usr_reset_password");
 
@@ -2032,7 +2148,7 @@ int silgy_usr_get_str(int ci, const char *us_key, char *us_val)
     char        sql_query[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   sql_row;
-unsigned long   sql_records;
+    unsigned long sql_records;
 
     sprintf(sql_query, "SELECT us_val FROM users_settings WHERE user_id=%ld AND us_key='%s'", US.uid, us_key);
 

@@ -223,6 +223,7 @@ extern "C" {
     int  silgy_usr_send_message(int ci);
     int  silgy_usr_save_account(int ci);
     int  silgy_usr_email_registered(int ci);
+    char *silgy_usr_name(const char *login, const char *email, const char *name, long uid);
     int  silgy_usr_send_passwd_reset_email(int ci);
     int  silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid);
     int  silgy_usr_activate(int ci);
