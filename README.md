@@ -24,9 +24,9 @@ TCO for a mid-sized web application with a small database and moderate load (<1,
 
 Silgy Hello World's [quick performance test](https://github.com/silgy/silgy/wiki/Performance-test:-select()-vs-poll()) on the free-tier AWS EC2 instance.
 
-## [Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Windows)
+## [Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%93-Getting-Started-on-Windows)
 
-## [Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%94-Getting-Started-on-Linux)
+## [Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%93-Getting-Started-on-Linux)
 
 ## [Silgy functions and macros](https://github.com/silgy/silgy/wiki/Silgy-functions-and-macros)
 
