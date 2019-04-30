@@ -238,7 +238,7 @@ unsigned long   sql_records;
     if ( 0 == sql_records )     /* no such session in database */
     {
         mysql_free_result(result);
-        INF("No logged in session in database [%s]", sanlscookie);
+        WAR("No logged in session in database [%s]", sanlscookie);
         strcpy(conn[ci].cookie_out_l, "x");
         strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* expire ls cookie */
 
@@ -924,23 +924,29 @@ unsigned long   sql_records;
 
         time_t last_ula_epoch = db2epoch(ula_time);
 
-        if ( ula_cnt <= MAX_ULA_BEFORE_SECOND_SLOW && last_ula_epoch > G_now-60 )
+        if ( ula_cnt <= MAX_ULA_BEFORE_SECOND_SLOW )
         {
-            /* less than a minute => wait before the next attempt */
-            WAR("Trying again too soon (wait a minute)");
-            return WAR_ULA_FIRST;
+            if ( last_ula_epoch > G_now-60 )    /* less than a minute => wait before the next attempt */
+            {
+                WAR("Trying again too soon (wait a minute)");
+                return WAR_ULA_FIRST;
+            }
         }
-        else if ( ula_cnt <= MAX_ULA_BEFORE_THIRD_SLOW && last_ula_epoch > G_now-3600 )
+        else if ( ula_cnt <= MAX_ULA_BEFORE_THIRD_SLOW )
         {
-            /* less than an hour => wait before the next attempt */
-            WAR("Trying again too soon (wait an hour)");
-            return WAR_ULA_SECOND;
+            if ( last_ula_epoch > G_now-3600 )  /* less than an hour => wait before the next attempt */
+            {
+                WAR("Trying again too soon (wait an hour)");
+                return WAR_ULA_SECOND;
+            }
         }
-        else if ( last_ula_epoch > G_now-3600*24 )   /* ula_cnt > MAX_ULA_BEFORE_THIRD_SLOW */
+        else    /* ula_cnt > MAX_ULA_BEFORE_THIRD_SLOW */
         {
-            /* less than a day => wait before the next attempt */
-            WAR("Trying again too soon (wait a day)");
-            return WAR_ULA_THIRD;
+            if ( last_ula_epoch > G_now-3600*24 )   /* less than a day => wait before the next attempt */
+            {
+                WAR("Trying again too soon (wait a day)");
+                return WAR_ULA_THIRD;
+            }
         }
     }
 
