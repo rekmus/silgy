@@ -4373,9 +4373,10 @@ bool silgy_email(const char *to, const char *subject, const char *message)
     }
     else
     {
-        fprintf(mailpipe, "To: %s\n", to);
         fprintf(mailpipe, "From: %s\n", sender);
-        fprintf(mailpipe, "Subject: %s\n\n", subject);
+        fprintf(mailpipe, "To: %s\n", to);
+        fprintf(mailpipe, "Subject: %s\n", subject);
+        fprintf(mailpipe, "Content-Type: text/plain; charset=\"utf-8\"\n\n");
         fwrite(message, 1, strlen(message), mailpipe);
         fwrite("\n.\n", 1, 3, mailpipe);
         pclose(mailpipe);
