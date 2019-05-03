@@ -5638,6 +5638,7 @@ char        *G_res=NULL;
 conn_t      conn[MAX_CONNECTIONS+1]={0}; /* dummy */
 int         ci=0;
 usession_t  uses={0};                   /* user session */
+ausession_t auses={0};                  /* app user session */
 
 /* counters */
 
