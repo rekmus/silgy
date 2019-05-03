@@ -10,7 +10,7 @@ create table users (
     login_u char(30) not null,      -- uppercase version
     email char(120),
     email_u char(120),              -- uppercase version
-    name char(60),
+    name varchar(120),
     phone char(30),
     passwd1 char(30) not null,
     passwd2 char(30) not null,

@@ -45,6 +45,7 @@
 /* user role */
 
 #define USER_ROLE_ANONYMOUS             0
+#define USER_ROLE_CUSTOMER              5
 #define USER_ROLE_USER                  10
 #define USER_ROLE_MODERATOR             20
 #define USER_ROLE_ADMIN                 30
@@ -185,6 +186,7 @@
 
 
 #define LOGGED                          US.logged
+#define CUSTOMER                        US.role==USER_ROLE_CUSTOMER
 #define MODERATOR                       US.role==USER_ROLE_MODERATOR
 #define ADMIN                           US.role==USER_ROLE_ADMIN
 #define UID                             US.uid

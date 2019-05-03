@@ -415,7 +415,7 @@ typedef char str64k[1024*64];
 
 #define LOGIN_LEN                       30
 #define EMAIL_LEN                       120
-#define UNAME_LEN                       60
+#define UNAME_LEN                       120
 #define PHONE_LEN                       30
 #define ABOUT_LEN                       250
 
