@@ -42,6 +42,14 @@
 #endif
 
 
+/* user role */
+
+#define USER_ROLE_ANONYMOUS             0
+#define USER_ROLE_USER                  10
+#define USER_ROLE_MODERATOR             20
+#define USER_ROLE_ADMIN                 30
+
+
 /* user status */
 
 #define USER_STATUS_INACTIVE            0
@@ -177,7 +185,8 @@
 
 
 #define LOGGED                          US.logged
-#define ADMIN                           (LOGGED && 0==strcmp(US.login, "admin"))
+#define MODERATOR                       US.role==USER_ROLE_MODERATOR
+#define ADMIN                           US.role==USER_ROLE_ADMIN
 #define UID                             US.uid
 
 

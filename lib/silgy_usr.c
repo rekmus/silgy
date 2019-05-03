@@ -19,11 +19,11 @@ long     G_new_user_id=0;
 
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
-static int  upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about);
+static int  upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, short role);
 static void downgrade_uses(int usi, int ci, bool usr_logout);
 static int  user_exists(const char *login);
 static int  email_exists(const char *email);
-static int  do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits);
+static int  do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, short p_role, long visits);
 static void doit(char *result1, char *result2, const char *usr, const char *email, const char *src);
 static long get_max(int ci, const char *table);
 
@@ -127,7 +127,7 @@ static bool valid_email(const char *email)
 /* --------------------------------------------------------------------------
    Upgrade anonymous user session to logged in
 -------------------------------------------------------------------------- */
-static int upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about)
+static int upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, short role)
 {
     DBG("upgrade_uses");
 
@@ -144,6 +144,7 @@ static int upgrade_uses(int ci, long uid, const char *login, const char *email, 
     strcpy(US.name_tmp, name);
     strcpy(US.phone_tmp, phone);
     strcpy(US.about_tmp, about);
+    US.role = role;
     US.uid = uid;
 
     if ( !silgy_app_user_login(ci) )
@@ -362,7 +363,7 @@ int libusr_luses_ok(int ci)
         return ERR_INT_SERVER_ERROR;
     }
 
-    return do_login(ci, uid, NULL, NULL, NULL, NULL, NULL, 0);
+    return do_login(ci, uid, NULL, NULL, NULL, NULL, NULL, 0, 0);
 }
 
 
@@ -434,6 +435,7 @@ static void downgrade_uses(int usi, int ci, bool usr_logout)
     uses[usi].name_tmp[0] = EOS;
     uses[usi].phone_tmp[0] = EOS;
     uses[usi].about_tmp[0] = EOS;
+    uses[usi].role = USER_ROLE_ANONYMOUS;
 
     if ( ci != NOT_CONNECTED )   /* still connected */
         silgy_app_user_logout(ci);
@@ -545,7 +547,7 @@ static int email_exists(const char *email)
    Log user in -- called either by l_usession_ok or silgy_usr_login
    Authentication has already been done prior to calling this
 -------------------------------------------------------------------------- */
-static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, long visits)
+static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, short p_role, long visits)
 {
     int         ret=OK;
     char        sql_query[SQLBUF];
@@ -557,14 +559,15 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
     char        name[UNAME_LEN+1];
     char        phone[PHONE_LEN+1];
     char        about[ABOUT_LEN+1];
+    short       role;
 
     DBG("do_login");
 
     /* get user record by id */
 
-    if ( !p_login )  /* login from cookie */
+    if ( !p_login )   /* login from cookie */
     {
-        sprintf(sql_query, "SELECT login,email,name,phone,about,visits FROM users WHERE id=%ld", uid);
+        sprintf(sql_query, "SELECT login,email,name,phone,about,role,visits FROM users WHERE id=%ld", uid);
         DBG("sql_query: %s", sql_query);
         mysql_query(G_dbconn, sql_query);
         result = mysql_store_result(G_dbconn);
@@ -594,7 +597,8 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
         strcpy(name, sql_row[2]?sql_row[2]:"");
         strcpy(phone, sql_row[3]?sql_row[3]:"");
         strcpy(about, sql_row[4]?sql_row[4]:"");
-        visits = atol(sql_row[5]);
+        role = sql_row[5]?atoi(sql_row[5]):USER_ROLE_USER;
+        visits = atol(sql_row[6]);
 
         mysql_free_result(result);
     }
@@ -605,6 +609,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
         strcpy(name, p_name);
         strcpy(phone, p_phone);
         strcpy(about, p_about);
+        role = p_role;
     }
 
     /* admin? */
@@ -617,7 +622,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
 
     /* upgrade anonymous session to logged in */
 
-    ret = upgrade_uses(ci, uid, login, email, name, phone, about);
+    ret = upgrade_uses(ci, uid, login, email, name, phone, about, role);
     if ( ret != OK )
         return ret;
 
@@ -804,7 +809,8 @@ int silgy_usr_login(int ci)
     char        name[UNAME_LEN+1];
     char        phone[PHONE_LEN+1];
     char        about[ABOUT_LEN+1];
-    short       user_status;
+    short       role;
+    short       status;
     QSVAL       passwd;
     QSVAL       keep;
     char        ulogin[MAX_VALUE_LEN*2+1];
@@ -830,7 +836,7 @@ int silgy_usr_login(int ci)
         return ERR_INVALID_REQUEST;
     }
     stp_right(email);
-    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,status,ula_time,ula_cnt,visits FROM users WHERE email_u='%s'", upper(email));
+    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,role,status,ula_time,ula_cnt,visits FROM users WHERE email_u='%s'", upper(email));
 
 #else    /* by login */
 
@@ -841,7 +847,7 @@ int silgy_usr_login(int ci)
     }
     stp_right(login);
     strcpy(ulogin, upper(login));
-    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,status,ula_time,ula_cnt,visits FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
+    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,role,status,ula_time,ula_cnt,visits FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
 
 #endif  /* USERSBYEMAIL */
 
@@ -879,16 +885,17 @@ int silgy_usr_login(int ci)
     strcpy(p1, sql_row[5]);
     strcpy(p2, sql_row[6]);
     strcpy(about, sql_row[7]?sql_row[7]:"");
-    user_status = atoi(sql_row[8]);
-    strcpy(ula_time, sql_row[9]?sql_row[9]:"");
-    ula_cnt = atoi(sql_row[10]);
-    visits = atol(sql_row[11]);
+    role = sql_row[8]?atoi(sql_row[8]):USER_ROLE_USER;
+    status = sql_row[9]?atoi(sql_row[9]):USER_STATUS_ACTIVE;
+    strcpy(ula_time, sql_row[10]?sql_row[10]:"");
+    ula_cnt = atoi(sql_row[11]);
+    visits = atol(sql_row[12]);
 
     mysql_free_result(result);
 
     /* deleted? */
 
-    if ( user_status == USER_STATUS_DELETED )
+    if ( status == USER_STATUS_DELETED )
     {
         WAR("User deleted");
         return ERR_INVALID_LOGIN;
@@ -896,7 +903,7 @@ int silgy_usr_login(int ci)
 
     /* locked out? */
 
-    if ( user_status == USER_STATUS_LOCKED )
+    if ( status == USER_STATUS_LOCKED )
     {
         WAR("User locked");
         return ERR_INVALID_LOGIN;
@@ -1001,7 +1008,7 @@ int silgy_usr_login(int ci)
 
     /* activated? */
 
-    if ( user_status != USER_STATUS_ACTIVE )
+    if ( status != USER_STATUS_ACTIVE )
     {
         WAR("User not activated");
         return ERR_NOT_ACTIVATED;
@@ -1071,7 +1078,7 @@ int silgy_usr_login(int ci)
 
     /* finish logging user in */
 
-    return do_login(ci, uid, login, email, name, phone, about, visits);
+    return do_login(ci, uid, login, email, name, phone, about, role, visits);
 }
 
 
@@ -1222,14 +1229,14 @@ int silgy_usr_create_account(int ci)
     strcpy(login_u, upper(login));
     strcpy(email_u, upper(email));
 
-    short user_status;
+    short status;
 
     if ( G_usersRequireAccountActivation )
-        user_status = USER_STATUS_INACTIVE;
+        status = USER_STATUS_INACTIVE;
     else
-        user_status = USER_STATUS_ACTIVE;
+        status = USER_STATUS_ACTIVE;
 
-    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,about,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%hd,'%s',0,0)", login, login_u, email, email_u, name, phone, str1, str2, about, user_status, G_dt);
+    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,about,role,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%hd,%hd,'%s',0,0)", login, login_u, email, email_u, name, phone, str1, str2, about, USER_ROLE_USER, status, G_dt);
 
     DBG("sql_query: INSERT INTO users (id,login,email,name,phone,...) VALUES (0,'%s','%s','%s','%s',...)", login, email, name, phone);
 
@@ -2188,7 +2195,7 @@ int silgy_usr_get_str(int ci, const char *us_key, char *us_val)
 -------------------------------------------------------------------------- */
 int silgy_usr_set_int(int ci, const char *us_key, long us_val)
 {
-    char    val[64];
+    char val[64];
 
     sprintf(val, "%ld", us_val);
     return silgy_usr_set_str(ci, us_key, val);
@@ -2200,8 +2207,8 @@ int silgy_usr_set_int(int ci, const char *us_key, long us_val)
 -------------------------------------------------------------------------- */
 int silgy_usr_get_int(int ci, const char *us_key, long *us_val)
 {
-    int     ret;
-    char    val[64];
+    int  ret;
+    char val[64];
 
     if ( (ret=silgy_usr_get_str(ci, us_key, val)) == OK )
         *us_val = atol(val);

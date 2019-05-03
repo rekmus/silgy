@@ -785,6 +785,7 @@ typedef struct {
     char    name_tmp[UNAME_LEN+1];
     char    phone_tmp[PHONE_LEN+1];
     char    about_tmp[ABOUT_LEN+1];
+    short   role;
     time_t  last_activity;
 } usession_t;
 
