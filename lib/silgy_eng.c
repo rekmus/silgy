@@ -5620,8 +5620,378 @@ void eng_rest_header_pass(int ci, const char *key)
 }
 
 
+/* --------------------------------------------------------------------------
+   Blacklist IP
+-------------------------------------------------------------------------- */
+static void do_add2blocked(int ci)
+{
+    QSVAL   ip;
+    char    comm[1024];
+
+    INF("do_add2blocked");
+
+    OUT_HTML_HEADER;
+
+    if ( G_blacklist_cnt > MAX_BLACKLIST-1 )
+    {
+        WAR("G_blacklist_cnt at max (%d)!", MAX_BLACKLIST);
+        OUT("<p class=m50>ERROR: Blacklist already full!</p>");
+    }
+    else    /* some rudimentary validation */
+    {
+        if ( !QS("ip", ip) )
+        {
+            ERR("ip expected in URI");
+            OUT("<p class=m50>ERROR: ip expected in URI!</p>");
+        }
+        else if ( strlen(ip) > INET_ADDRSTRLEN-1 )
+        {
+            ERR("ip too long");
+            OUT("<p class=m50>ERROR: ip too long!</p>");
+        }
+        else if ( strlen(ip) < 7 )
+        {
+            ERR("ip too short");
+            OUT("<p class=m50>ERROR: ip too short!</p>");
+        }
+        else if ( !isdigit(ip[0]) )
+        {
+            ERR("ip does not start with digit");
+            OUT("<p class=m50>ERROR: ip does not start with digit!</p>");
+        }
+        else
+        {
+            eng_block_ip(ip, FALSE);
+            WAR("IP %s manually blacklisted", ip);
+            OUT("<p class=m50>IP %s blacklisted.</p>", ip);
+        }
+    }
+
+    OUT("<p class=m15><a href=\"/\"><< Back to Main</a></p>");
+
+    OUT_HTML_FOOTER;
+
+    RES_DONT_CACHE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Format counters
+-------------------------------------------------------------------------- */
+static void format_counters(counters_fmt_t *s, counters_t *n)
+{
+    amt(s->req, n->req);
+    amt(s->req_dsk, n->req_dsk);
+    amt(s->req_mob, n->req_mob);
+    amt(s->req_bot, n->req_bot);
+    amt(s->visits, n->visits);
+    amt(s->visits_dsk, n->visits_dsk);
+    amt(s->visits_mob, n->visits_mob);
+    amt(s->blocked, n->blocked);
+    amtd(s->average, n->average);
+}
+
+
+/* --------------------------------------------------------------------------
+   Users info
+-------------------------------------------------------------------------- */
+static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
+{
+#ifdef DBMYSQL
+    char        sql_query[SQLBUF];
+    MYSQL_RES   *result;
+    MYSQL_ROW   sql_row;
+    long        sql_records;
+
+    if ( rows < 1 ) rows = 10;
+
+    char ai_sql[SQLBUF]="";
+
+    if ( ai && ai_cnt )
+    {
+        int i;
+        for ( i=0; i<ai_cnt; ++i )
+        {
+            strcat(ai_sql, ", ");
+            strcat(ai_sql, ai[i].sql);
+        }
+    }
+
+    sprintf(sql_query, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login DESC", ai_sql);
+
+    DBG("sql_query: %s", sql_query);
+
+    mysql_query(G_dbconn, sql_query);
+
+    result = mysql_store_result(G_dbconn);
+
+    if ( !result )
+    {
+        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        OUT("<p>Error %u: %s</p>", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        RES_STATUS(500);
+        return;
+    }
+
+    OUT("<h2>Users</h2>");
+
+    sql_records = mysql_num_rows(result);
+
+    DBG("admin: %ld record(s) found", sql_records);
+
+    int last_to_show = sql_records<rows?sql_records:rows;
+
+    char formatted1[64];
+    char formatted2[64];
+
+    amt(formatted1, sql_records);
+    amt(formatted2, last_to_show);
+    OUT("<p>%s users, showing %s of last seen</p>", formatted1, formatted2);
+
+    OUT("<table cellpadding=4 border=1>");
+
+    char ai_th[1024]="";
+
+    if ( ai && ai_cnt )
+    {
+        int i;
+        for ( i=0; i<ai_cnt; ++i )
+        {
+            strcat(ai_th, "<th>");
+            strcat(ai_th, ai[i].th);
+            strcat(ai_th, "</th>");
+        }
+    }
+
+    OUT("<tr>");
+
+    if ( REQ_DSK )
+        OUT("<th>id</th><th>email</th><th>name</th><th>created</th><th>last_login</th><th>visits</th>%s", ai_th);
+    else
+        OUT("<th>email</th><th>last_login</th><th>visits</th>%s", ai_th);
+
+    OUT("</tr>");
+
+//    long    id;                     /* sql_row[0] */
+//    char    login[LOGIN_LEN+1];     /* sql_row[1] */
+//    char    email[EMAIL_LEN+1];     /* sql_row[2] */
+//    char    name[UNAME_LEN+1];      /* sql_row[3] */
+//    short   status;                 /* sql_row[4] */
+//    char    created[32];            /* sql_row[5] */
+//    char    last_login[32];         /* sql_row[6] */
+//    long    visits;                 /* sql_row[7] */
+
+    char fmt0[64];  /* id */
+    char fmt7[64];  /* visits */
+
+    int  i;
+    char trstyle[16];
+
+    char ai_td[4096]="";
+    double ai_double;
+    char ai_fmt[64];
+
+    for ( i=0; i<last_to_show; ++i )
+    {
+        sql_row = mysql_fetch_row(result);
+
+        amt(fmt0, atol(sql_row[0]));    /* id */
+        amt(fmt7, atol(sql_row[7]));    /* visits */
+
+        if ( atoi(sql_row[4]) != USER_STATUS_ACTIVE )
+            strcpy(trstyle, " class=g");
+        else
+            trstyle[0] = EOS;
+
+        OUT("<tr%s>", trstyle);
+
+        if ( ai && ai_cnt )
+        {
+            ai_td[0] = EOS;
+
+            int j;
+            for ( j=0; j<ai_cnt; ++j )
+            {
+                if ( 0==strcmp(ai[j].type, "int") )
+                {
+                    strcat(ai_td, "<td class=r>");
+                    amt(ai_fmt, atoi(sql_row[j+8]));
+                    strcat(ai_td, ai_fmt);
+                }
+                else if ( 0==strcmp(ai[j].type, "long") )
+                {
+                    strcat(ai_td, "<td class=r>");
+                    amt(ai_fmt, atol(sql_row[j+8]));
+                    strcat(ai_td, ai_fmt);
+                }
+                else if ( 0==strcmp(ai[j].type, "float") || 0==strcmp(ai[j].type, "double") )
+                {
+                    strcat(ai_td, "<td class=r>");
+                    sscanf(sql_row[j+8], "%f", &ai_double);
+                    amtd(ai_fmt, ai_double);
+                    strcat(ai_td, ai_fmt);
+                }
+                else    /* string */
+                {
+                    strcat(ai_td, "<td>");
+                    strcat(ai_td, sql_row[j+8]);
+                }
+
+                strcat(ai_td, "</td>");
+            }
+        }
+
+        if ( REQ_DSK )
+            OUT("<td class=r>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td class=r>%s</td>%s", fmt0, sql_row[2], sql_row[3], sql_row[5], sql_row[6], fmt7, ai_td);
+        else
+            OUT("<td>%s</td><td>%s</td><td class=r>%s</td>%s", sql_row[2], sql_row[6], fmt7, ai_td);
+
+        OUT("</tr>");
+    }
+
+    OUT("</table>");
+
+    mysql_free_result(result);
+
+#endif  /* DBMYSQL */
+}
+
+
+/* --------------------------------------------------------------------------
+   Admin dashboard
+-------------------------------------------------------------------------- */
+void silgy_admin_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
+{
+    OUT_HTML_HEADER;
+
+    /* ------------------------------------------------------------------- */
+    /* Style */
+
+    OUT("<style>");
+    OUT("body{font-family:monospace;font-size:10pt;}");
+    OUT(".r{text-align:right;}");
+    OUT(".g{color:grey;}");
+    OUT("</style>");
+
+    OUT("<h1>Admin Info</h1>");
+
+    if ( !ADMIN )
+    {
+        ERR("Not an admin");
+        OUT("<p>Not an admin</p>");
+        RES_STATUS(403);
+        OUT_HTML_FOOTER;
+        RES_DONT_CACHE;
+        return;
+    }
+
+    OUT("<h2>Server</h2>");
+
+    /* ------------------------------------------------------------------- */
+    /* Server info */
+
+    char formatted[64];
+
+    amt(formatted, G_days_up);
+    OUT("<p>Server started on %s (%s day(s) up) Silgy %s</p>", G_last_modified, formatted, WEB_SERVER_VERSION);
+
+    OUT("<p>App version: %s</p>", APP_VERSION);
+
+    /* ------------------------------------------------------------------- */
+    /* Memory */
+
+    OUT("<h2>Memory</h2>");
+
+    long mem_used;
+    char mem_used_kb[64];
+    char mem_used_mb[64];
+    char mem_used_gb[64];
+
+    mem_used = lib_get_memory();
+
+    amt(mem_used_kb, mem_used);
+    amtd(mem_used_mb, (double)mem_used/1024);
+    amtd(mem_used_gb, (double)mem_used/1024/1024);
+
+    OUT("<p>HWM: %s kB (%s MB / %s GB)</p>", mem_used_kb, mem_used_mb, mem_used_gb);
+
+    OUT("<h2>Counters</h2>");
+
+    OUT("<p>%d open connection(s), HWM: %d</p>", G_open_conn, G_open_conn_hwm);
+
+    OUT("<p>%d user session(s), HWM: %d</p>", G_sessions, G_sessions_hwm);
+
+    /* ------------------------------------------------------------------- */
+    /* Counters */
+
+    counters_fmt_t t;       /* today */
+    counters_fmt_t y;       /* yesterday */
+    counters_fmt_t b;       /* the day before */
+
+    format_counters(&t, &G_cnts_today);
+    format_counters(&y, &G_cnts_yesterday);
+    if ( REQ_DSK )
+        format_counters(&b, &G_cnts_day_before);
+
+    OUT("<table cellpadding=4 border=1>");
+
+    if ( REQ_DSK )  /* desktop -- 3 days' stats */
+    {
+        OUT("<tr><th>counter</th><th colspan=3>the day before</th><th colspan=3>yesterday</th><th colspan=3>today</th></tr>");
+        OUT("<tr><td rowspan=2>all traffic (parsed requests)</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td></tr>");
+        OUT("<tr><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td></tr>", b.req, b.req_dsk, b.req_mob, y.req, y.req_dsk, y.req_mob, t.req, t.req_dsk, t.req_mob);
+        OUT("<tr><td>bots</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td></tr>", b.req_bot, y.req_bot, t.req_bot);
+        OUT("<tr><td rowspan=2>visits</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td></tr>");
+        OUT("<tr><td class=r><b>%s</b></td><td class=r>%s</td><td class=r>%s</td><td class=r><b>%s</b></td><td class=r>%s</td><td class=r>%s</td><td class=r><b>%s</b></td><td class=r>%s</td><td class=r>%s</td></tr>", b.visits, b.visits_dsk, b.visits_mob, y.visits, y.visits_dsk, y.visits_mob, t.visits, t.visits_dsk, t.visits_mob);
+        OUT("<tr><td>attempts blocked</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td></tr>", b.blocked, y.blocked, t.blocked);
+        OUT("<tr><td>average</td><td colspan=3 class=r>%s ms</td><td colspan=3 class=r>%s ms</td><td colspan=3 class=r>%s ms</td></tr>", b.average, y.average, t.average);
+    }
+    else    /* mobile -- 2 days' stats */
+    {
+        OUT("<tr><th>counter</th><th colspan=3>yesterday</th><th colspan=3>today</th></tr>");
+        OUT("<tr><td rowspan=2>all traffic (parsed requests)</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td></tr>");
+        OUT("<tr><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td></tr>", y.req, y.req_dsk, y.req_mob, t.req, t.req_dsk, t.req_mob);
+        OUT("<tr><td>bots</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td></tr>", y.req_bot, t.req_bot);
+        OUT("<tr><td rowspan=2>visits</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td></tr>");
+        OUT("<tr><td class=r><b>%s</b></td><td class=r>%s</td><td class=r>%s</td><td class=r><b>%s</b></td><td class=r>%s</td><td class=r>%s</td></tr>", y.visits, y.visits_dsk, y.visits_mob, t.visits, t.visits_dsk, t.visits_mob);
+        OUT("<tr><td>attempts blocked</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td></tr>", y.blocked, t.blocked);
+        OUT("<tr><td>average</td><td colspan=3 class=r>%s ms</td><td colspan=3 class=r>%s ms</td></tr>", y.average, t.average);
+    }
+
+    OUT("</table>");
+
+    /* ------------------------------------------------------------------- */
+    /* IP blacklist */
+
+    if ( G_blockedIPList[0] )
+    {
+        OUT("<h2>Blacklist</h2>");
+
+        amt(formatted, G_blacklist_cnt);
+        OUT("<p>%s blacklisted IPs</p>", formatted);
+//        OUT("<p><form action=\"add2blocked\" method=\"post\"><input type=\"text\" name=\"ip\"> <input type=\"submit\" onClick=\"wait();\" value=\"Block\"></form></p>");
+    }
+
+    /* ------------------------------------------------------------------- */
+    /* Logs */
+
+//    OUT("<p><a href=\"logs\">Logs</a></p>");
+
+    /* ------------------------------------------------------------------- */
+    /* Users */
+#ifdef USERS
+    users_info(ci, rows, ai, ai_cnt);
+#endif
+
+    OUT_HTML_FOOTER;
+
+    RES_DONT_CACHE;
+}
+
+
 
 #else   /* SILGY_SVC ====================================================================================== */
+
 
 
 char        G_service[SVC_NAME_LEN+1];

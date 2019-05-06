@@ -790,6 +790,21 @@ typedef struct {
 } usession_t;
 
 
+/* user role */
+
+#define USER_ROLE_ANONYMOUS             0
+#define USER_ROLE_CUSTOMER              5
+#define USER_ROLE_USER                  10
+#define USER_ROLE_MODERATOR             20
+#define USER_ROLE_ADMIN                 30
+
+#define LOGGED                          US.logged
+#define CUSTOMER                        US.role==USER_ROLE_CUSTOMER
+#define MODERATOR                       US.role==USER_ROLE_MODERATOR
+#define ADMIN                           US.role==USER_ROLE_ADMIN
+#define UID                             US.uid
+
+
 /* static resources */
 
 typedef struct {
@@ -817,6 +832,32 @@ typedef struct {
     double  average;        /* average request elapsed */
 } counters_t;
 
+
+/* admin info */
+
+typedef struct {
+    char sql[1024];
+    char th[256];
+    char type[32];
+} admin_info_t;
+
+
+/* counters formatted */
+
+typedef struct {
+    char req[64];
+    char req_dsk[64];
+    char req_mob[64];
+    char req_bot[64];
+    char visits[64];
+    char visits_dsk[64];
+    char visits_mob[64];
+    char blocked[64];
+    char average[64];
+} counters_fmt_t;
+
+
+/* messages */
 
 #define MAX_MSG_LEN     255
 #define MAX_MESSAGES    1000
@@ -1026,6 +1067,7 @@ extern "C" {
     char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
     char *eng_get_header(int ci, const char *header);
     void eng_rest_header_pass(int ci, const char *header);
+    void silgy_admin_info(int ci, int rows, admin_info_t ai[], int ai_cnt);
 
     /* public app functions */
 
