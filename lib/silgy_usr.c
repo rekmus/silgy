@@ -1055,7 +1055,8 @@ int silgy_usr_login(int ci)
     if ( mysql_query(G_dbconn, sql_query) )
     {
         ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-        return ERR_INT_SERVER_ERROR;
+        if ( mysql_errno(G_dbconn) != 1062 )    /* duplicate entry */
+            return ERR_INT_SERVER_ERROR;
     }
 
     DBG("User session saved OK");
