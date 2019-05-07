@@ -2001,7 +2001,7 @@ static void accept_http()
 {
     int         i;
     int         connection;
-static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
+    struct sockaddr_in cli_addr;
     socklen_t   addr_len;
     char        remote_addr[INET_ADDRSTRLEN]="";
 
@@ -2101,7 +2101,7 @@ static void accept_https()
 #ifdef HTTPS
     int         i;
     int         connection;
-static struct   sockaddr_in cli_addr;   /* static = initialised to zeros */
+    struct sockaddr_in cli_addr;
     socklen_t   addr_len;
     char        remote_addr[INET_ADDRSTRLEN]="";
     int         ret, ssl_err;
