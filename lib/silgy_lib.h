@@ -280,7 +280,7 @@ extern "C" {
     void lib_rest_header_set(const char *key, const char *value);
     void lib_rest_header_unset(const char *key);
     bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json, bool keep);
-    int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int *msec, void *ssl, int level);
+    int  lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int *msec, void *ssl, int level);
     void lib_get_app_dir(void);
     double lib_elapsed(struct timespec *start);
     long lib_get_memory(void);
@@ -334,9 +334,9 @@ extern "C" {
     void get_byteorder(void);
     time_t db2epoch(const char *str);
     bool silgy_email(const char *to, const char *subject, const char *message);
-    int silgy_minify(char *dest, const char *src);
+    int  silgy_minify(char *dest, const char *src);
     void date_inc(char *str, int days, int *dow);
-    int date_cmp(const char *str1, const char *str2);
+    int  date_cmp(const char *str1, const char *str2);
     bool lib_read_conf(const char *file);
     bool silgy_read_param_str(const char *param, char *dest);
     bool silgy_read_param_int(const char *param, int *dest);

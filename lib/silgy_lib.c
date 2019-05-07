@@ -635,11 +635,6 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
     p = stpcpy(p, host);
     p = stpcpy(p, "\r\n");
 
-    if ( keep )
-        p = stpcpy(p, "Connection: keep-alive\r\n");
-    else
-        p = stpcpy(p, "Connection: close\r\n");
-
     if ( 0 != strcmp(method, "GET") && req )
     {
         if ( json )     /* JSON -> string conversion */
@@ -681,6 +676,11 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
             p = stpcpy(p, "\r\n");
         }
     }
+
+    if ( keep )
+        p = stpcpy(p, "Connection: keep-alive\r\n");
+    else
+        p = stpcpy(p, "Connection: close\r\n");
 
 #ifndef NO_IDENTITY
     if ( !rest_header_present("User-Agent") )
@@ -1228,7 +1228,18 @@ static char buffer[JSON_BUFSIZE];
     {
 #ifdef HTTPS
         if ( secure )
+        {
+/*            char first_char[2];
+            first_char[0] = buffer[0];
+            first_char[1] = EOS;
+
+            bytes = SSL_write(M_rest_ssl, first_char, 1);
+
+            if ( bytes > 0 )
+                bytes = SSL_write(M_rest_ssl, buffer+1, len-1) + bytes; */
+
             bytes = SSL_write(M_rest_ssl, buffer, len);
+        }
         else
 #endif  /* HTTPS */
             bytes = send(M_rest_sock, buffer, len, 0);    /* try in one go */

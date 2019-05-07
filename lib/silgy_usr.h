@@ -26,19 +26,19 @@
 #endif
 
 #ifndef MAX_ULA_BEFORE_FIRST_SLOW                               /* maximum unsuccessful login tries before slowing down to 1 per minute */
-#define MAX_ULA_BEFORE_FIRST_SLOW       5
+#define MAX_ULA_BEFORE_FIRST_SLOW       10
 #endif
 
 #ifndef MAX_ULA_BEFORE_SECOND_SLOW                              /* maximum unsuccessful login tries before slowing down to 1 per hour */
-#define MAX_ULA_BEFORE_SECOND_SLOW      10
+#define MAX_ULA_BEFORE_SECOND_SLOW      25
 #endif
 
 #ifndef MAX_ULA_BEFORE_THIRD_SLOW                               /* maximum unsuccessful login tries before slowing down to 1 per day */
-#define MAX_ULA_BEFORE_THIRD_SLOW       20
+#define MAX_ULA_BEFORE_THIRD_SLOW       100
 #endif
 
 #ifndef MAX_ULA_BEFORE_LOCK                                     /* maximum unsuccessful login tries before user lockout */
-#define MAX_ULA_BEFORE_LOCK             100
+#define MAX_ULA_BEFORE_LOCK             1000
 #endif
 
 
