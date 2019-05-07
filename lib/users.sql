@@ -21,7 +21,7 @@ create table users (
     last_login datetime,
     visits integer not null,
     ula_time datetime,              -- unsuccessful login attempt time
-    ula_cnt tinyint not null,       -- and count
+    ula_cnt tinyint not null       -- and count
 );
 
 create index users_login on users (login_u);

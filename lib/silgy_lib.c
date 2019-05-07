@@ -355,13 +355,13 @@ static bool init_ssl_client()
         return FALSE;
     }
 
-    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
-    SSL_CTX_set_options(M_ssl_ctx, flags);
+//    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
+//    SSL_CTX_set_options(M_ssl_ctx, flags);
 
     /* temporarily ignore server cert errors */
 
     WAR("Ignoring remote server cert errors for REST calls");
-    SSL_CTX_set_verify(M_ssl_ctx, SSL_VERIFY_NONE, NULL);
+//    SSL_CTX_set_verify(M_ssl_ctx, SSL_VERIFY_NONE, NULL);
 
 #endif  /* HTTPS */
     return TRUE;
@@ -635,6 +635,11 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
     p = stpcpy(p, host);
     p = stpcpy(p, "\r\n");
 
+    if ( keep )
+        p = stpcpy(p, "Connection: keep-alive\r\n");
+    else
+        p = stpcpy(p, "Connection: close\r\n");
+
     if ( 0 != strcmp(method, "GET") && req )
     {
         if ( json )     /* JSON -> string conversion */
@@ -676,11 +681,6 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
             p = stpcpy(p, "\r\n");
         }
     }
-
-    if ( keep )
-        p = stpcpy(p, "Connection: keep-alive\r\n");
-    else
-        p = stpcpy(p, "Connection: close\r\n");
 
 #ifndef NO_IDENTITY
     if ( !rest_header_present("User-Agent") )
@@ -936,6 +936,10 @@ static int addresses_cnt=0, addresses_last=0;
         if ( server_cert )
         {
             DBG("Got server certificate");
+			X509_NAME *certname;
+			certname = X509_NAME_new();
+			certname = X509_get_subject_name(server_cert);
+			DBG("server_cert [%s]", X509_NAME_oneline(certname, NULL, 0));
             X509_free(server_cert);
         }
         else
