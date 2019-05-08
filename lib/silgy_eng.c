@@ -5874,9 +5874,10 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
 /* --------------------------------------------------------------------------
    Admin dashboard
 -------------------------------------------------------------------------- */
-void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt)
+void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt, bool header_n_footer)
 {
-    OUT_HTML_HEADER;
+    if ( header_n_footer )
+        OUT_HTML_HEADER;
 
     /* ------------------------------------------------------------------- */
     /* Style */
@@ -5894,7 +5895,8 @@ void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt)
         ERR("Not an admin");
         OUT("<p>Not an admin</p>");
         RES_STATUS(403);
-        OUT_HTML_FOOTER;
+        if ( header_n_footer )
+            OUT_HTML_FOOTER;
         RES_DONT_CACHE;
         return;
     }
@@ -5998,7 +6000,8 @@ void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt)
         users_info(ci, rows, ai, ai_cnt);
 #endif
 
-    OUT_HTML_FOOTER;
+    if ( header_n_footer )
+        OUT_HTML_FOOTER;
 
     RES_DONT_CACHE;
 }

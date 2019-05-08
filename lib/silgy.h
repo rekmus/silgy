@@ -1078,7 +1078,7 @@ extern "C" {
     char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
     char *eng_get_header(int ci, const char *header);
     void eng_rest_header_pass(int ci, const char *header);
-    void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt);
+    void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt, bool header_n_footer);
 
     /* public app functions */
 
