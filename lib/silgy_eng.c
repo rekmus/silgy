@@ -5712,8 +5712,9 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
         int i;
         for ( i=0; i<ai_cnt; ++i )
         {
-            strcat(ai_sql, ", ");
+            strcat(ai_sql, ", (");
             strcat(ai_sql, ai[i].sql);
+            strcat(ai_sql, ")");
         }
     }
 
