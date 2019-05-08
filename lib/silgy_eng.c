@@ -203,7 +203,7 @@ int main(int argc, char **argv)
 
 static struct   sockaddr_in serv_addr;      /* static = initialised to zeros */
 static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
-    unsigned int addr_len=0;
+//    unsigned int addr_len=0;
     unsigned long hit=0;
     char        remote_addr[INET_ADDRSTRLEN]=""; /* remote address */
     int         reuse_addr=1;               /* Used so we can re-bind to our port while a previous connection is still in TIME_WAIT state */
@@ -350,24 +350,7 @@ static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
 
 #endif  /* HTTPS */
 
-    addr_len = sizeof(cli_addr);
-
-
-#ifdef DBMYSQL
-
-    DBG("Trying lib_open_db...");
-
-    if ( !lib_open_db() )
-    {
-        ERR("lib_open_db failed");
-        clean_up();
-        return EXIT_FAILURE;
-    }
-
-    ALWAYS("Database connected");
-
-#endif  /* DBMYSQL */
-
+//    addr_len = sizeof(cli_addr);
 
     /* log currently used memory */
 
@@ -1693,6 +1676,22 @@ static bool init(int argc, char **argv)
     WAR("DUMP is enabled, this file may grow big quickly!");
     ALWAYS("");
 #endif  /* DUMP */
+
+
+#ifdef DBMYSQL
+
+    DBG("Trying lib_open_db...");
+
+    if ( !lib_open_db() )
+    {
+        ERR("lib_open_db failed");
+        return FALSE;
+    }
+
+    ALWAYS("Database connected");
+
+#endif  /* DBMYSQL */
+
 
     /* custom init
        Among others, that may contain generating statics, like css and js */
