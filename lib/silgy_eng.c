@@ -140,8 +140,9 @@ static int          M_poll_ci[MAX_CONNECTIONS+LISTENING_FDS]={0};
 #endif  /* FD_MON_POLL */
 
 static stat_res_t   M_stat[MAX_STATICS];        /* static resources */
-static char         M_resp_date[32];            /* response header field Date */
-static char         M_expires[32];              /* response header field one month ahead for static resources */
+static char         M_resp_date[32];            /* response header Date */
+static char         M_expires_stat[32];         /* response header for static resources */
+static char         M_expires_gen[32];          /* response header for generated resources */
 static int          M_max_static=-1;            /* highest static resource M_stat index */
 static bool         M_favicon_exists=FALSE;     /* special case statics */
 static bool         M_robots_exists=FALSE;      /* -''- */
@@ -933,6 +934,35 @@ static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
 
 
 /* --------------------------------------------------------------------------
+   Set values for Expires response headers
+-------------------------------------------------------------------------- */
+static void set_expiry_dates()
+{
+    time_t sometimeahead;
+
+    sometimeahead = G_now + 3600*24*EXPIRES_STATICS;
+    G_ptm = gmtime(&sometimeahead);
+#ifdef _WIN32   /* Windows */
+    strftime(M_expires_stat, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
+#else
+    strftime(M_expires_stat, 32, "%a, %d %b %Y %T GMT", G_ptm);
+#endif  /* _WIN32 */
+    DBG("New M_expires_stat: %s", M_expires_stat);
+
+    sometimeahead = G_now + 3600*24*EXPIRES_GENERATED;
+    G_ptm = gmtime(&sometimeahead);
+#ifdef _WIN32   /* Windows */
+    strftime(M_expires_gen, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
+#else
+    strftime(M_expires_gen, 32, "%a, %d %b %Y %T GMT", G_ptm);
+#endif  /* _WIN32 */
+    DBG("New M_expires_gen: %s", M_expires_gen);
+
+    G_ptm = gmtime(&G_now);   /* reset to today */
+}
+
+
+/* --------------------------------------------------------------------------
    Close expired sessions etc...
 -------------------------------------------------------------------------- */
 static bool housekeeping()
@@ -991,17 +1021,7 @@ static bool housekeeping()
                 return FALSE;
             }
 
-            /* set new Expires date */
-            time_t sometimeahead;
-            sometimeahead = G_now + 3600*24*EXPIRES_IN_DAYS;
-            G_ptm = gmtime(&sometimeahead);
-#ifdef _WIN32   /* Windows */
-            strftime(M_expires, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
-#else
-            strftime(M_expires, 32, "%a, %d %b %Y %T GMT", G_ptm);
-#endif  /* _WIN32 */
-            ALWAYS("New M_expires: %s", M_expires);
-            G_ptm = gmtime(&G_now);  /* make sure G_ptm is up to date */
+            set_expiry_dates();
 
             if ( G_blockedIPList[0] )
             {
@@ -1762,18 +1782,9 @@ static bool init(int argc, char **argv)
 #endif  /* _WIN32 */
     DBG("Now is: %s\n", G_last_modified);
 
-    time_t sometimeahead = G_now + 3600*24*EXPIRES_IN_DAYS;
-    G_ptm = gmtime(&sometimeahead);
-#ifdef _WIN32   /* Windows */
-    strftime(M_expires, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
-#else
-    strftime(M_expires, 32, "%a, %d %b %Y %T GMT", G_ptm);
-#endif  /* _WIN32 */
-    DBG("M_expires: %s\n", M_expires);
+    set_expiry_dates();
 
-    G_ptm = gmtime(&G_now);  /* reset to today */
-
-	/* handle signals ---------------------------------------------------- */
+    /* handle signals ---------------------------------------------------- */
 
     signal(SIGINT,  sigdisp);   /* Ctrl-C */
     signal(SIGTERM, sigdisp);
@@ -2967,10 +2978,11 @@ static void gen_response_header(int ci)
 
         conn[ci].clen = 0;
     }
-    else if ( conn[ci].status == 304 )      /* not modified since */
+    else if ( conn[ci].status == 304 )   /* not modified since */
     {
-//        DBG("Not Modified");
-
+#ifdef DUMP
+        DBG("Not Modified");
+#endif
         if ( conn[ci].static_res == NOT_STATIC )
         {
             PRINT_HTTP_LAST_MODIFIED(G_last_modified);
@@ -2984,9 +2996,10 @@ static void gen_response_header(int ci)
     }
     else    /* normal response with content: 2xx, 4xx, 5xx */
     {
-//        DBG("Normal response");
-
-        if ( conn[ci].dont_cache )  /* dynamic content */
+#ifdef DUMP
+        DBG("Normal response");
+#endif
+        if ( conn[ci].dont_cache )   /* dynamic content */
         {
             PRINT_HTTP_VARY_DYN;
             PRINT_HTTP_NO_CACHE;
@@ -2995,18 +3008,20 @@ static void gen_response_header(int ci)
         {
             PRINT_HTTP_VARY_STAT;
 
-            if ( conn[ci].static_res == NOT_STATIC )
+            if ( conn[ci].static_res == NOT_STATIC )   /* generated -- moderate caching */
             {
                 if ( conn[ci].modified )
                     PRINT_HTTP_LAST_MODIFIED(time_epoch2http(conn[ci].modified));
                 else
                     PRINT_HTTP_LAST_MODIFIED(G_last_modified);
 
-                PRINT_HTTP_EXPIRES;
+                PRINT_HTTP_EXPIRES_GENERATED;
             }
-            else    /* static res */
+            else    /* static resource -- aggressive caching */
             {
                 PRINT_HTTP_LAST_MODIFIED(time_epoch2http(M_stat[conn[ci].static_res].modified));
+                PRINT_HTTP_CACHE_PUBLIC;
+                PRINT_HTTP_EXPIRES_STATICS;
             }
         }
 
@@ -4764,10 +4779,10 @@ void eng_out_html_header(int ci)
     OUT("<head>");
     OUT("<title>%s</title>", APP_WEBSITE);
 #ifdef APP_DESCRIPTION
-	OUT("<meta name=\"description\" content=\"%s\">", APP_DESCRIPTION);
+    OUT("<meta name=\"description\" content=\"%s\">", APP_DESCRIPTION);
 #endif
 #ifdef APP_KEYWORDS
-	OUT("<meta name=\"keywords\" content=\"%s\">", APP_KEYWORDS);
+    OUT("<meta name=\"keywords\" content=\"%s\">", APP_KEYWORDS);
 #endif
     if ( REQ_MOB )  // if mobile request
         OUT("<meta name=\"viewport\" content=\"width=device-width\">");
@@ -6118,24 +6133,24 @@ int main(int argc, char *argv[])
     sprintf(logprefix, "s_%d", G_pid);
 
     if ( !log_start(logprefix, G_test) )
-		return EXIT_FAILURE;
+        return EXIT_FAILURE;
 
     /* pid file ---------------------------------------------------------- */
 
     if ( !(M_pidfile=lib_create_pid_file(logprefix)) )
-		return EXIT_FAILURE;
+        return EXIT_FAILURE;
 
     /* fill the M_random_numbers up */
 
     init_random_numbers();
 
-	/* handle signals ---------------------------------------------------- */
+    /* handle signals ---------------------------------------------------- */
 
-	signal(SIGINT,  sigdisp);	/* Ctrl-C */
-	signal(SIGTERM, sigdisp);
+    signal(SIGINT,  sigdisp);   /* Ctrl-C */
+    signal(SIGTERM, sigdisp);
 #ifndef _WIN32
-	signal(SIGQUIT, sigdisp);	/* Ctrl-\ */
-	signal(SIGTSTP, sigdisp);	/* Ctrl-Z */
+    signal(SIGQUIT, sigdisp);   /* Ctrl-\ */
+    signal(SIGTSTP, sigdisp);   /* Ctrl-Z */
 
     signal(SIGPIPE, SIG_IGN);   /* ignore SIGPIPE */
 #endif
@@ -6189,35 +6204,35 @@ int main(int argc, char *argv[])
     }
 #endif
 
-	G_queue_req = mq_open(G_req_queue_name, O_RDONLY, NULL, NULL);
+    G_queue_req = mq_open(G_req_queue_name, O_RDONLY, NULL, NULL);
 
-	if ( G_queue_req < 0 )
-	{
-		ERR("mq_open for req failed, errno = %d (%s)", errno, strerror(errno));
-		clean_up();
-		return EXIT_FAILURE;
-	}
+    if ( G_queue_req < 0 )
+    {
+        ERR("mq_open for req failed, errno = %d (%s)", errno, strerror(errno));
+        clean_up();
+        return EXIT_FAILURE;
+    }
 
     INF("G_queue_req open OK");
 
-	G_queue_res = mq_open(G_res_queue_name, O_WRONLY, NULL, NULL);
+    G_queue_res = mq_open(G_res_queue_name, O_WRONLY, NULL, NULL);
 
-	if ( G_queue_res < 0 )
-	{
-		ERR("mq_open for res failed, errno = %d (%s)", errno, strerror(errno));
-		clean_up();
-		return EXIT_FAILURE;
-	}
+    if ( G_queue_res < 0 )
+    {
+        ERR("mq_open for res failed, errno = %d (%s)", errno, strerror(errno));
+        clean_up();
+        return EXIT_FAILURE;
+    }
 
     INF("G_queue_res open OK");
 
     /* ------------------------------------------------------------------- */
 
-	if ( !silgy_svc_init() )
-	{
-		ERR("silgy_svc_init failed");
-		clean_up();
-		return EXIT_FAILURE;
+    if ( !silgy_svc_init() )
+    {
+        ERR("silgy_svc_init failed");
+        clean_up();
+        return EXIT_FAILURE;
     }
 
     /* ------------------------------------------------------------------- */
@@ -6332,9 +6347,9 @@ int main(int argc, char *argv[])
         }
     }
 
-	clean_up();
+    clean_up();
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 

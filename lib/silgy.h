@@ -16,10 +16,10 @@
 /* __VA_ARGS__ issue */
 #define EXPAND_VA(x) x
 /* access function */
-#define	F_OK    0       /* test for existence of file */
-#define	X_OK    0x01    /* test for execute or search permission */
-#define	W_OK    0x02    /* test for write permission */
-#define	R_OK    0x04    /* test for read permission */
+#define F_OK    0       /* test for existence of file */
+#define X_OK    0x01    /* test for execute or search permission */
+#define W_OK    0x02    /* test for write permission */
+#define R_OK    0x04    /* test for read permission */
 #endif  /* _MSC_VER */
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501 /* Windows XP or higher required */
@@ -239,8 +239,10 @@ typedef char str64k[1024*64];
 #define PRINT_HTTP_DATE                 (sprintf(G_tmp, "Date: %s\r\n", M_resp_date), HOUT(G_tmp))
 
 /* cache control */
+#define PRINT_HTTP_CACHE_PUBLIC         HOUT("Cache-Control: public, max-age=31536000\r\n")
 #define PRINT_HTTP_NO_CACHE             HOUT("Cache-Control: private, must-revalidate, no-store, no-cache, max-age=0\r\n")
-#define PRINT_HTTP_EXPIRES              (sprintf(G_tmp, "Expires: %s\r\n", M_expires), HOUT(G_tmp))
+#define PRINT_HTTP_EXPIRES_STATICS      (sprintf(G_tmp, "Expires: %s\r\n", M_expires_stat), HOUT(G_tmp))
+#define PRINT_HTTP_EXPIRES_GENERATED    (sprintf(G_tmp, "Expires: %s\r\n", M_expires_gen), HOUT(G_tmp))
 #define PRINT_HTTP_LAST_MODIFIED(str)   (sprintf(G_tmp, "Last-Modified: %s\r\n", str), HOUT(G_tmp))
 
 /* connection */
@@ -431,7 +433,16 @@ typedef char str64k[1024*64];
 
 #define LANG_LEN                        7
 
-#define EXPIRES_IN_DAYS                 30              /* from app start for Expires HTTP reponse header for static resources */
+
+/* response caching */
+
+#ifndef EXPIRES_STATICS
+#define EXPIRES_STATICS                 90      /* days */
+#endif
+
+#ifndef EXPIRES_GENERATED
+#define EXPIRES_GENERATED               30      /* days */
+#endif
 
 
 /* authorization levels */
