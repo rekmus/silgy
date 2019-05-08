@@ -5996,7 +5996,8 @@ void silgy_admin_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
     /* ------------------------------------------------------------------- */
     /* Users */
 #ifdef USERS
-    users_info(ci, rows, ai, ai_cnt);
+    if ( rows > 0 )
+        users_info(ci, rows, ai, ai_cnt);
 #endif
 
     OUT_HTML_FOOTER;
