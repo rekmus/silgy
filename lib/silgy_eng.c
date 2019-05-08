@@ -5718,8 +5718,6 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
     MYSQL_ROW   sql_row;
     long        sql_records;
 
-    if ( rows < 1 ) rows = 10;
-
     char ai_sql[SQLBUF]="";
 
     if ( ai && ai_cnt )
@@ -5876,7 +5874,7 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
 /* --------------------------------------------------------------------------
    Admin dashboard
 -------------------------------------------------------------------------- */
-void silgy_admin_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
+void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt)
 {
     OUT_HTML_HEADER;
 
