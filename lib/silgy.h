@@ -447,14 +447,19 @@ typedef char str64k[1024*64];
 
 /* authorization levels */
 
-#define AUTH_LEVEL_NONE                 '0'
-#define AUTH_LEVEL_ANONYMOUS            '1'
-#define AUTH_LEVEL_LOGGEDIN             '2'
-#define AUTH_LEVEL_LOGGED               '2'
-#define AUTH_LEVEL_ADMIN                '3'
+#define AUTH_LEVEL_NONE                 0       /* no session */
+#define AUTH_LEVEL_ANONYMOUS            1       /* anonymous session */
+#define AUTH_LEVEL_LOGGED               2       /* logged in session with lowest authorization level */
+#define AUTH_LEVEL_LOGGEDIN             2
+#define AUTH_LEVEL_USER                 10
+#define AUTH_LEVEL_CUSTOMER             20
+#define AUTH_LEVEL_STAFF                30
+#define AUTH_LEVEL_MODERATOR            40
+#define AUTH_LEVEL_ADMIN                50
+#define AUTH_LEVEL_ROOT                 100
 
-#ifndef APP_DEF_AUTH_LEVEL
-#define APP_DEF_AUTH_LEVEL              AUTH_LEVEL_NONE /* default authorization level */
+#ifndef DEF_RES_AUTH_LEVEL
+#define DEF_RES_AUTH_LEVEL              AUTH_LEVEL_NONE     /* default resource authorization level */
 #endif
 
 
@@ -754,7 +759,7 @@ typedef struct {
     SSL     *ssl;
 #endif
     int     ssl_err;
-    char    auth_level;                     /* required authorization level */
+    char    required_auth_level;            /* required authorization level */
     int     usi;                            /* user session index */
     int     static_res;                     /* static resource index in M_stat */
     time_t  last_activity;
@@ -796,23 +801,18 @@ typedef struct {
     char    name_tmp[UNAME_LEN+1];
     char    phone_tmp[PHONE_LEN+1];
     char    about_tmp[ABOUT_LEN+1];
-    short   role;
+    short   auth_level;
     time_t  last_activity;
 } usession_t;
 
 
-/* user role */
-
-#define USER_ROLE_ANONYMOUS             0
-#define USER_ROLE_CUSTOMER              5
-#define USER_ROLE_USER                  10
-#define USER_ROLE_MODERATOR             20
-#define USER_ROLE_ADMIN                 30
+#define CUSTOMER                        (US.auth_level==AUTH_LEVEL_CUSTOMER)
+#define STAFF                           (US.auth_level==AUTH_LEVEL_STAFF)
+#define MODERATOR                       (US.auth_level==AUTH_LEVEL_MODERATOR)
+#define ADMIN                           (US.auth_level==AUTH_LEVEL_ADMIN)
+#define ROOT                            (US.auth_level==AUTH_LEVEL_ROOT)
 
 #define LOGGED                          US.logged
-#define CUSTOMER                        (US.role==USER_ROLE_CUSTOMER)
-#define MODERATOR                       (US.role==USER_ROLE_MODERATOR)
-#define ADMIN                           (US.role==USER_ROLE_ADMIN)
 #define UID                             US.uid
 
 

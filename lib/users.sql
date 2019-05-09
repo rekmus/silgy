@@ -15,8 +15,8 @@ create table users (
     passwd1 char(30) not null,
     passwd2 char(30) not null,
     about varchar(250),
-    role tinyint,                   -- 10 = user, 20 = moderator, 30 = admin
-    status tinyint not null,        -- 0 = inactive, 1 = active, 2 = locked, 9 = deleted
+    auth_level tinyint,             -- 10 = user, 20 = customer, 30 = staff, 40 = moderator, 50 = admin, 100 = root
+    status tinyint not null,        -- 0 = inactive, 1 = active, 2 = locked, 3 = requires password change, 9 = deleted
     created datetime not null,
     last_login datetime,
     visits integer not null,

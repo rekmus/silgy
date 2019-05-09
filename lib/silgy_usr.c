@@ -19,11 +19,11 @@ long     G_new_user_id=0;
 
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
-static int  upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, short role);
+static int  upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, short auth_level);
 static void downgrade_uses(int usi, int ci, bool usr_logout);
 static int  user_exists(const char *login);
 static int  email_exists(const char *email);
-static int  do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, short p_role, long visits);
+static int  do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, short p_auth_level, long visits);
 static void doit(char *result1, char *result2, const char *usr, const char *email, const char *src);
 static long get_max(int ci, const char *table);
 
@@ -61,6 +61,7 @@ void libusr_init()
     silgy_add_message(WAR_ULA_FIRST,                "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least a minute before trying again.", MAX_ULA_BEFORE_FIRST_SLOW);
     silgy_add_message(WAR_ULA_SECOND,               "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least an hour before trying again.", MAX_ULA_BEFORE_SECOND_SLOW);
     silgy_add_message(WAR_ULA_THIRD,                "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least a day before trying again.", MAX_ULA_BEFORE_THIRD_SLOW);
+    silgy_add_message(WAR_PASSWORD_CHANGE,          "EN-US", "You have to change your password");
 
     silgy_add_message(MSG_WELCOME_NO_ACTIVATION,    "EN-US", "Welcome to %s! You can now log in:", APP_WEBSITE);
     silgy_add_message(MSG_WELCOME_NEED_ACTIVATION,  "EN-US", "Welcome to %s! Your account requires activation. Please check your mailbox for a message from %s.", APP_WEBSITE, APP_WEBSITE);
@@ -127,7 +128,7 @@ static bool valid_email(const char *email)
 /* --------------------------------------------------------------------------
    Upgrade anonymous user session to logged in
 -------------------------------------------------------------------------- */
-static int upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, short role)
+static int upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, short auth_level)
 {
     DBG("upgrade_uses");
 
@@ -144,7 +145,7 @@ static int upgrade_uses(int ci, long uid, const char *login, const char *email, 
     strcpy(US.name_tmp, name);
     strcpy(US.phone_tmp, phone);
     strcpy(US.about_tmp, about);
-    US.role = role;
+    US.auth_level = auth_level;
     US.uid = uid;
 
     if ( !silgy_app_user_login(ci) )
@@ -435,7 +436,7 @@ static void downgrade_uses(int usi, int ci, bool usr_logout)
     uses[usi].name_tmp[0] = EOS;
     uses[usi].phone_tmp[0] = EOS;
     uses[usi].about_tmp[0] = EOS;
-    uses[usi].role = USER_ROLE_ANONYMOUS;
+    uses[usi].auth_level = AUTH_LEVEL_ANONYMOUS;
 
     if ( ci != NOT_CONNECTED )   /* still connected */
         silgy_app_user_logout(ci);
@@ -547,7 +548,7 @@ static int email_exists(const char *email)
    Log user in -- called either by l_usession_ok or silgy_usr_login
    Authentication has already been done prior to calling this
 -------------------------------------------------------------------------- */
-static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, short p_role, long visits)
+static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, short p_auth_level, long visits)
 {
     int         ret=OK;
     char        sql_query[SQLBUF];
@@ -559,7 +560,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
     char        name[UNAME_LEN+1];
     char        phone[PHONE_LEN+1];
     char        about[ABOUT_LEN+1];
-    short       role;
+    short       auth_level;
 
     DBG("do_login");
 
@@ -567,7 +568,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
 
     if ( !p_login )   /* login from cookie */
     {
-        sprintf(sql_query, "SELECT login,email,name,phone,about,role,visits FROM users WHERE id=%ld", uid);
+        sprintf(sql_query, "SELECT login,email,name,phone,about,auth_level,visits FROM users WHERE id=%ld", uid);
         DBG("sql_query: %s", sql_query);
         mysql_query(G_dbconn, sql_query);
         result = mysql_store_result(G_dbconn);
@@ -597,7 +598,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
         strcpy(name, sql_row[2]?sql_row[2]:"");
         strcpy(phone, sql_row[3]?sql_row[3]:"");
         strcpy(about, sql_row[4]?sql_row[4]:"");
-        role = sql_row[5]?atoi(sql_row[5]):USER_ROLE_USER;
+        auth_level = sql_row[5]?atoi(sql_row[5]):DEF_USER_AUTH_LEVEL;
         visits = atol(sql_row[6]);
 
         mysql_free_result(result);
@@ -609,7 +610,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
         strcpy(name, p_name);
         strcpy(phone, p_phone);
         strcpy(about, p_about);
-        role = p_role;
+        auth_level = p_auth_level;
     }
 
     /* admin? */
@@ -622,7 +623,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
 
     /* upgrade anonymous session to logged in */
 
-    ret = upgrade_uses(ci, uid, login, email, name, phone, about, role);
+    ret = upgrade_uses(ci, uid, login, email, name, phone, about, auth_level);
     if ( ret != OK )
         return ret;
 
@@ -809,7 +810,7 @@ int silgy_usr_login(int ci)
     char        name[UNAME_LEN+1];
     char        phone[PHONE_LEN+1];
     char        about[ABOUT_LEN+1];
-    short       role;
+    short       auth_level;
     short       status;
     QSVAL       passwd;
     QSVAL       keep;
@@ -836,7 +837,7 @@ int silgy_usr_login(int ci)
         return ERR_INVALID_REQUEST;
     }
     stp_right(email);
-    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,role,status,ula_time,ula_cnt,visits FROM users WHERE email_u='%s'", upper(email));
+    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,auth_level,status,ula_time,ula_cnt,visits FROM users WHERE email_u='%s'", upper(email));
 
 #else    /* by login */
 
@@ -847,7 +848,7 @@ int silgy_usr_login(int ci)
     }
     stp_right(login);
     strcpy(ulogin, upper(login));
-    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,role,status,ula_time,ula_cnt,visits FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
+    sprintf(sql_query, "SELECT id,login,email,name,phone,passwd1,passwd2,about,auth_level,status,ula_time,ula_cnt,visits FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
 
 #endif  /* USERSBYEMAIL */
 
@@ -885,7 +886,7 @@ int silgy_usr_login(int ci)
     strcpy(p1, sql_row[5]);
     strcpy(p2, sql_row[6]);
     strcpy(about, sql_row[7]?sql_row[7]:"");
-    role = sql_row[8]?atoi(sql_row[8]):USER_ROLE_USER;
+    auth_level = sql_row[8]?atoi(sql_row[8]):DEF_USER_AUTH_LEVEL;
     status = sql_row[9]?atoi(sql_row[9]):USER_STATUS_ACTIVE;
     strcpy(ula_time, sql_row[10]?sql_row[10]:"");
     ula_cnt = atoi(sql_row[11]);
@@ -1008,13 +1009,21 @@ int silgy_usr_login(int ci)
 
     /* activated? */
 
-    if ( status != USER_STATUS_ACTIVE )
+    if ( status == USER_STATUS_INACTIVE )
     {
         WAR("User not activated");
         return ERR_NOT_ACTIVATED;
     }
 
     DBG("User activation status OK");
+
+    /* password change? */
+
+    if ( status == USER_STATUS_PASSWORD_CHANGE )
+    {
+        WAR("User is required to change their password");
+        return WAR_PASSWORD_CHANGE;
+    }
 
     /* successful login ------------------------------------------------------------ */
 
@@ -1079,7 +1088,7 @@ int silgy_usr_login(int ci)
 
     /* finish logging user in */
 
-    return do_login(ci, uid, login, email, name, phone, about, role, visits);
+    return do_login(ci, uid, login, email, name, phone, about, auth_level, visits);
 }
 
 
@@ -1237,7 +1246,7 @@ int silgy_usr_create_account(int ci)
     else
         status = USER_STATUS_ACTIVE;
 
-    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,about,role,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%hd,%hd,'%s',0,0)", login, login_u, email, email_u, name, phone, str1, str2, about, USER_ROLE_USER, status, G_dt);
+    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,about,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%hd,%hd,'%s',0,0)", login, login_u, email, email_u, name, phone, str1, str2, about, DEF_USER_AUTH_LEVEL, status, G_dt);
 
     DBG("sql_query: INSERT INTO users (id,login,email,name,phone,...) VALUES (0,'%s','%s','%s','%s',...)", login, email, name, phone);
 
