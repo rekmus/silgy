@@ -380,11 +380,11 @@ typedef char str64k[1024*64];
 #ifndef APP_DOMAIN
 #define APP_DOMAIN                      ""
 #endif
-#ifndef APP_LOGIN_URI
-#define APP_LOGIN_URI                   "login"
-#endif
 #ifndef APP_VERSION
 #define APP_VERSION                     "1.0"
+#endif
+#ifndef APP_LOGIN_URI
+#define APP_LOGIN_URI                   "login"
 #endif
 
 
