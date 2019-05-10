@@ -1048,7 +1048,7 @@ extern "C" {
 
     /* public engine functions */
 
-    void silgy_set_auth_level(const char *resource, char level);
+    void silgy_set_auth_level(const char *resource, short level);
     int  eng_uses_start(int ci, const char *sesid);
     void eng_uses_close(int usi);
     void eng_uses_reset(int usi);

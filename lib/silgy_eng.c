@@ -4385,7 +4385,7 @@ static bool init_ssl()
 /* --------------------------------------------------------------------------
    Set required authorization level for the resource
 -------------------------------------------------------------------------- */
-void silgy_set_auth_level(const char *resource, char level)
+void silgy_set_auth_level(const char *resource, short level)
 {
 static int current=0;
 
