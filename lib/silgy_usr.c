@@ -60,7 +60,7 @@ void libusr_init()
     silgy_add_message(WAR_BEFORE_DELETE,            "EN-US", "You are about to delete your %s's account. All your details and data will be removed from our database. If you are sure you want this, enter your password and click 'Delete my account'.", APP_WEBSITE);
     silgy_add_message(WAR_ULA_FIRST,                "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least a minute before trying again.", MAX_ULA_BEFORE_FIRST_SLOW);
     silgy_add_message(WAR_ULA_SECOND,               "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least an hour before trying again.", MAX_ULA_BEFORE_SECOND_SLOW);
-    silgy_add_message(WAR_ULA_THIRD,                "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least a day before trying again.", MAX_ULA_BEFORE_THIRD_SLOW);
+    silgy_add_message(WAR_ULA_THIRD,                "EN-US", "Someone has tried to log in to this account unsuccessfully more than %d times. To protect your account from brute-force attack, this system requires you to wait for at least 23 hours before trying again.", MAX_ULA_BEFORE_THIRD_SLOW);
     silgy_add_message(WAR_PASSWORD_CHANGE,          "EN-US", "You have to change your password");
 
     silgy_add_message(MSG_WELCOME_NO_ACTIVATION,    "EN-US", "Welcome to %s! You can now log in:", APP_WEBSITE);
@@ -973,7 +973,7 @@ int silgy_usr_login(int ci)
         }
         else    /* ula_cnt > MAX_ULA_BEFORE_THIRD_SLOW */
         {
-            if ( last_ula_epoch > G_now-3600*24 )   /* less than a day => wait before the next attempt */
+            if ( last_ula_epoch > G_now-3600*23 )   /* less than 23 hours => wait before the next attempt */
             {
                 WAR("Trying again too soon (wait a day)");
                 return WAR_ULA_THIRD;
