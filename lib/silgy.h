@@ -1024,7 +1024,6 @@ extern long     G_rest_req;                 /* REST calls counter */
 extern double   G_rest_elapsed;             /* REST calls elapsed for calculating average */
 extern double   G_rest_average;             /* REST calls average elapsed */
 extern char     G_rest_content_type[MAX_VALUE_LEN+1];
-extern bool     G_dont_use_current_session;
 extern long     G_new_user_id;
 
 #ifdef __cplusplus

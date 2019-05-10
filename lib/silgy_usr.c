@@ -13,7 +13,6 @@
 #ifdef USERS
 
 
-bool     G_dont_use_current_session=FALSE;
 long     G_new_user_id=0;
 
 
@@ -1091,18 +1090,8 @@ int silgy_usr_login(int ci)
 
 /* --------------------------------------------------------------------------
    Create user account
-   Return OK or:
-   ERR_INVALID_REQUEST
-   ERR_WEBSITE_FIRST_LETTER
-   ERR_USERNAME_TOO_SHORT
-   ERR_USERNAME_CHARS
-   ERR_USERNAME_TAKEN
-   ERR_EMAIL_FORMAT_OR_EMPTY
-   ERR_PASSWORD_TOO_SHORT
-   ERR_PASSWORD_DIFFERENT
-   ERR_INT_SERVER_ERROR
 -------------------------------------------------------------------------- */
-int silgy_usr_create_account(int ci)
+static int create_account(int ci, short auth_level, short status, bool current_session)
 {
     int     ret=OK;
     QSVAL   login="";
@@ -1115,11 +1104,10 @@ int silgy_usr_create_account(int ci)
     QSVAL   passwd;
     QSVAL   rpasswd;
     QSVAL   message="";
-    int     plen;
     char    sql_query[SQLBUF];
     char    str1[32], str2[32];
 
-    DBG("silgy_usr_create_account");
+    DBG("create_account");
 
     /* get the basics */
 
@@ -1127,14 +1115,14 @@ int silgy_usr_create_account(int ci)
     {
         login[LOGIN_LEN] = EOS;
         stp_right(login);
-        if ( !G_dont_use_current_session && conn[ci].usi ) strcpy(US.login, login);
+        if ( current_session && conn[ci].usi ) strcpy(US.login, login);
     }
 
     if ( QS_HTML_ESCAPE("email", email) )
     {
         email[EMAIL_LEN] = EOS;
         stp_right(email);
-        if ( !G_dont_use_current_session && conn[ci].usi ) strcpy(US.email, email);
+        if ( current_session && conn[ci].usi ) strcpy(US.email, email);
     }
 
     /* basic verification */
@@ -1178,26 +1166,26 @@ int silgy_usr_create_account(int ci)
     {
         name[UNAME_LEN] = EOS;
         stp_right(name);
-        if ( !G_dont_use_current_session && conn[ci].usi ) strcpy(US.name, name);
+        if ( current_session && conn[ci].usi ) strcpy(US.name, name);
     }
 
     if ( QS_HTML_ESCAPE("phone", phone) )
     {
         phone[PHONE_LEN] = EOS;
         stp_right(phone);
-        if ( !G_dont_use_current_session && conn[ci].usi ) strcpy(US.phone, phone);
+        if ( current_session && conn[ci].usi ) strcpy(US.phone, phone);
     }
 
     if ( QS_HTML_ESCAPE("about", about) )
     {
         about[ABOUT_LEN] = EOS;
         stp_right(about);
-        if ( !G_dont_use_current_session && conn[ci].usi ) strcpy(US.about, about);
+        if ( current_session && conn[ci].usi ) strcpy(US.about, about);
     }
 
     /* ----------------------------------------------------------------- */
 
-    plen = strlen(passwd);
+    int plen = strlen(passwd);
 
     if ( QS_HTML_ESCAPE("message", message) && message[0] )
         return ERR_ROBOT;
@@ -1232,14 +1220,7 @@ int silgy_usr_create_account(int ci)
     strcpy(login_u, upper(login));
     strcpy(email_u, upper(email));
 
-    short status;
-
-    if ( G_usersRequireAccountActivation )
-        status = USER_STATUS_INACTIVE;
-    else
-        status = USER_STATUS_ACTIVE;
-
-    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,about,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%hd,%hd,'%s',0,0)", login, login_u, email, email_u, name, phone, str1, str2, about, DEF_USER_AUTH_LEVEL, status, G_dt);
+    sprintf(sql_query, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,about,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s',%hd,%hd,'%s',0,0)", login, login_u, email, email_u, name, phone, str1, str2, about, auth_level, status, G_dt);
 
     DBG("sql_query: INSERT INTO users (id,login,email,name,phone,...) VALUES (0,'%s','%s','%s','%s',...)", login, email, name, phone);
 
@@ -1251,7 +1232,7 @@ int silgy_usr_create_account(int ci)
 
     G_new_user_id = mysql_insert_id(G_dbconn);
 
-    if ( !G_dont_use_current_session )
+    if ( current_session )
         US.uid = G_new_user_id;
 
     if ( G_usersRequireAccountActivation )
@@ -1270,6 +1251,24 @@ int silgy_usr_create_account(int ci)
 
 }
 #endif  /* SILGY_SVC */
+
+
+/* --------------------------------------------------------------------------
+   Create user account (wrapper)
+-------------------------------------------------------------------------- */
+int silgy_usr_create_account(int ci)
+{
+    DBG("silgy_usr_create_account");
+
+    short status;
+
+    if ( G_usersRequireAccountActivation )
+        status = USER_STATUS_INACTIVE;
+    else
+        status = USER_STATUS_ACTIVE;
+
+    return create_account(ci, DEF_USER_AUTH_LEVEL, status, TRUE);
+}
 
 
 /* --------------------------------------------------------------------------
@@ -1322,25 +1321,20 @@ static int new_account_notification(int ci, const char *login, const char *email
 -------------------------------------------------------------------------- */
 int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email, const char *name, const char *passwd, const char *phone, const char *about, short auth_level)
 {
-    int  ret=OK;
-    char password[256];
+    int   ret=OK;
+    QSVAL password;
 
     DBG("silgy_usr_add_user");
 
     if ( use_qs )   /* use query string / POST payload */
     {
-        G_dont_use_current_session = TRUE;
-
-        if ( (ret=silgy_usr_create_account(ci)) != OK )
+        if ( (ret=create_account(ci, auth_level, USER_STATUS_PASSWORD_CHANGE, FALSE)) != OK )
         {
-            ERR("silgy_usr_create_account failed");
-            G_dont_use_current_session = FALSE;
+            ERR("create_account failed");
             return ret;
         }
 
-        G_dont_use_current_session = FALSE;
-
-        strcpy(password, passwd);
+        QS_HTML_ESCAPE("passwd", password);
     }
     else    /* use function arguments */
     {
@@ -1407,8 +1401,14 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
     }
 
 #ifndef DONT_NOTIFY_NEW_USER
-    if ( email[0] )
-        new_account_notification(ci, login, email, name, password);
+    QSVAL email_;
+    if ( use_qs )
+        QS("email", email_);
+    else
+        strcpy(email_, email);
+
+    if ( email_[0] )
+        new_account_notification(ci, login, email_, name, password);
 #endif
 
     return ret;
