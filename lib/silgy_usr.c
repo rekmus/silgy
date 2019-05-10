@@ -24,6 +24,7 @@ static void downgrade_uses(int usi, int ci, bool usr_logout);
 static int  user_exists(const char *login);
 static int  email_exists(const char *email);
 static int  do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, short p_auth_level, long visits, short status);
+static void get_hashes(char *result1, char *result2, const char *login, const char *email, const char *passwd);
 static void doit(char *result1, char *result2, const char *usr, const char *email, const char *src);
 static long get_max(int ci, const char *table);
 
@@ -991,11 +992,7 @@ int silgy_usr_login(int ci)
 
     /* now check username/email and password pairs as they should be */
 
-#ifdef USERSBYEMAIL
-    doit(str1, str2, email, email, passwd);
-#else
-    doit(str1, str2, login, email[0]?email:STR_005, passwd);
-#endif
+    get_hashes(str1, str2, login, email, passwd);
 
     /* are these as expected? */
 
@@ -1230,11 +1227,7 @@ int silgy_usr_create_account(int ci)
 
     /* welcome! -- and generate password hashes ------------------------------------------------------- */
 
-#ifdef USERSBYEMAIL
-    doit(str1, str2, email, email, passwd);
-#else
-    doit(str1, str2, login, email[0]?email:STR_005, passwd);
-#endif
+    get_hashes(str1, str2, login, email, passwd);
 
     strcpy(login_u, upper(login));
     strcpy(email_u, upper(email));
@@ -1385,11 +1378,7 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
 
         /* --------------------------------------------------------------- */
 
-#ifdef USERSBYEMAIL
-        doit(str1, str2, email, email, password);
-#else
-        doit(str1, str2, login, email[0]?email:STR_005, password);
-#endif
+        get_hashes(str1, str2, login, email, password);
 
         /* --------------------------------------------------------------- */
 
@@ -1645,11 +1634,7 @@ int silgy_usr_save_account(int ci)
 
     /* anything else than deleting account -- changing email and/or name and/or password */
 
-#ifdef USERSBYEMAIL
-    doit(str1, str2, email, email, plen?passwd:opasswd);
-#else
-    doit(str1, str2, login, email[0]?email:STR_005, plen?passwd:opasswd);
-#endif
+    get_hashes(str1, str2, login, email, plen?passwd:opasswd);
 
     sprintf(sql_query, "UPDATE users SET login='%s', email='%s', name='%s', phone='%s', passwd1='%s', passwd2='%s', about='%s' WHERE id=%ld", login, email, name, phone, str1, str2, about, US.uid);
     DBG("sql_query: UPDATE users SET login='%s', email='%s', name='%s', phone='%s',... WHERE id=%ld", login, email, name, phone, US.uid);
@@ -2160,11 +2145,7 @@ int silgy_usr_change_password(int ci)
 
     /* everything's OK -- update password -------------------------------- */
 
-#ifdef USERSBYEMAIL
-    doit(str1, str2, US.email, US.email, passwd);
-#else
-    doit(str1, str2, US.login, US.email, passwd);
-#endif
+    get_hashes(str1, str2, US.login, US.email, passwd);
 
     mysql_free_result(result);
 
@@ -2236,11 +2217,7 @@ int silgy_usr_reset_password(int ci)
 
     /* verify that emails match each other */
 
-#ifdef USERSBYEMAIL
-    sprintf(sql_query, "SELECT name, email FROM users WHERE id=%ld", uid);
-#else
     sprintf(sql_query, "SELECT login, email FROM users WHERE id=%ld", uid);
-#endif
     DBG("sql_query: %s", sql_query);
     mysql_query(G_dbconn, sql_query);
     result = mysql_store_result(G_dbconn);
@@ -2271,11 +2248,7 @@ int silgy_usr_reset_password(int ci)
 
     /* everything's OK -- update password -------------------------------- */
 
-#ifdef USERSBYEMAIL
-    doit(str1, str2, email, email, passwd);
-#else
-    doit(str1, str2, sql_row[0], email, passwd);
-#endif
+    get_hashes(str1, str2, sql_row[0], email, passwd);
 
     mysql_free_result(result);
 
@@ -2330,7 +2303,22 @@ void silgy_usr_logout(int ci)
     DBG("silgy_usr_logout");
     downgrade_uses(conn[ci].usi, ci, TRUE);
 }
+
+
 #endif  /* SILGY_SVC */
+
+
+/* --------------------------------------------------------------------------
+   doit wrapper
+-------------------------------------------------------------------------- */
+static void get_hashes(char *result1, char *result2, const char *login, const char *email, const char *passwd)
+{
+#ifdef USERSBYLOGIN
+    doit(result1, result2, login, email[0]?email:STR_005, passwd);
+#else
+    doit(result1, result2, email, email, passwd);
+#endif
+}
 
 
 /* --------------------------------------------------------------------------
