@@ -166,6 +166,7 @@ static void set_state_sec(int ci, long bytes);
 static void read_conf(void);
 static void respond_to_expect(int ci);
 static void log_proc_time(int ci);
+static void log_request(int ci);
 static void close_conn(int ci);
 static bool init(int argc, char **argv);
 static void build_fd_sets(void);
@@ -765,12 +766,6 @@ static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
 
                     if ( conn[i].conn_state == CONN_STATE_READY_FOR_PARSE )
                     {
-#ifdef _WIN32
-                        clock_gettime_win(&conn[i].proc_start);
-#else
-                        clock_gettime(MONOTONIC_CLOCK_NAME, &conn[i].proc_start);
-#endif
-
                         conn[i].status = parse_req(i, bytes);
 #ifdef HTTPS
 #ifdef DOMAINONLY       /* redirect to final domain first */
@@ -796,6 +791,11 @@ static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
 
                     if ( conn[i].conn_state == CONN_STATE_READY_FOR_PROCESS )
                     {
+#ifdef _WIN32
+                        clock_gettime_win(&conn[i].proc_start);
+#else
+                        clock_gettime(MONOTONIC_CLOCK_NAME, &conn[i].proc_start);
+#endif
 #ifdef HTTPS
                         if ( conn[i].upgrade2https && conn[i].status==200 )
                             conn[i].status = 301;
@@ -1071,7 +1071,10 @@ static void set_state(int ci, long bytes)
         else    /* data received */
         {
             conn[ci].in_data[conn[ci].was_read] = EOS;
+
             DBG("POST data received");
+
+            /* ready for processing */
 #ifdef DUMP
             DBG("ci=%d, changing state to CONN_STATE_READY_FOR_PROCESS", ci);
 #endif
@@ -1090,7 +1093,7 @@ static void set_state(int ci, long bytes)
         else    /* no body to send */
         {
             DBG("clen = 0");
-            log_proc_time(ci);
+            log_request(ci);
             if ( conn[ci].keep_alive )
             {
                 DBG("End of processing, reset_conn\n");
@@ -1120,7 +1123,7 @@ static void set_state(int ci, long bytes)
         }
         else /* assuming the whole body has been sent at once */
         {
-            log_proc_time(ci);
+            log_request(ci);
 
             if ( conn[ci].keep_alive )
             {
@@ -1148,7 +1151,7 @@ static void set_state(int ci, long bytes)
         }
         else    /* body sent */
         {
-            log_proc_time(ci);
+            log_request(ci);
 
             if ( conn[ci].keep_alive )
             {
@@ -1221,7 +1224,10 @@ static void set_state_sec(int ci, long bytes)
         else    /* data received */
         {
             conn[ci].in_data[conn[ci].was_read] = EOS;
+
             DBG("POST data received");
+
+            /* ready for processing */
 #ifdef DUMP
             DBG("Changing state to CONN_STATE_READY_FOR_PROCESS");
 #endif
@@ -1240,7 +1246,7 @@ static void set_state_sec(int ci, long bytes)
         else    /* no body to send */
         {
             DBG("clen = 0");
-            log_proc_time(ci);
+            log_request(ci);
             if ( conn[ci].keep_alive )
             {
                 DBG("End of processing, reset_conn\n");
@@ -1257,7 +1263,7 @@ static void set_state_sec(int ci, long bytes)
     {
         conn[ci].data_sent += bytes;
 
-        log_proc_time(ci);
+        log_request(ci);
 
         if ( conn[ci].keep_alive )
         {
@@ -1386,22 +1392,29 @@ static void respond_to_expect(int ci)
 -------------------------------------------------------------------------- */
 static void log_proc_time(int ci)
 {
-    double elapsed = lib_elapsed(&conn[ci].proc_start);
+    conn[ci].elapsed = lib_elapsed(&conn[ci].proc_start);
 
-    DBG("Processing time: %.3lf ms [%s]\n", elapsed, conn[ci].resource);
+    DBG("Processing time: %.3lf ms [%s]\n", conn[ci].elapsed, conn[ci].resource);
 
-    G_cnts_today.elapsed += elapsed;
+    G_cnts_today.elapsed += conn[ci].elapsed;
     G_cnts_today.average = G_cnts_today.elapsed / G_cnts_today.req;
+}
 
+
+/* --------------------------------------------------------------------------
+   Log processing time
+-------------------------------------------------------------------------- */
+static void log_request(int ci)
+{
     /* Use (almost) Combined Log Format */
 
     char logtime[64];
     strftime(logtime, 64, "%d/%b/%Y:%H:%M:%S +0000", G_ptm);
 
     if ( G_logCombined )
-        INF("%s - - [%s] \"%s /%s %s\" %d %d \"%s\" \"%s\"  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].clen, conn[ci].referer, conn[ci].uagent, conn[ci].req, elapsed, REQ_BOT?"  [bot]":"");
+        INF("%s - - [%s] \"%s /%s %s\" %d %d \"%s\" \"%s\"  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].clen, conn[ci].referer, conn[ci].uagent, conn[ci].req, conn[ci].elapsed, REQ_BOT?"  [bot]":"");
     else
-        INF("%s - - [%s] \"%s /%s %s\" %d %d  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].clen, conn[ci].req, elapsed, REQ_BOT?"  [bot]":"");
+        INF("%s - - [%s] \"%s /%s %s\" %d %d  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].clen, conn[ci].req, conn[ci].elapsed, REQ_BOT?"  [bot]":"");
 }
 
 
@@ -3204,6 +3217,8 @@ static void gen_response_header(int ci)
 
     conn[ci].last_activity = G_now;
     if ( conn[ci].usi ) US.last_activity = G_now;
+
+    log_proc_time(ci);
 }
 
 

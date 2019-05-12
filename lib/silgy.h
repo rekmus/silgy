@@ -751,7 +751,8 @@ typedef struct {
     char    location[MAX_URI_LEN+1];        /* redirection */
     /* internal stuff */
     long    req;                            /* request count */
-    struct timespec proc_start;
+    struct timespec proc_start;             /* start processing time */
+    double  elapsed;                        /* processing time in ms */
     char    conn_state;                     /* connection state (STATE_XXX) */
     char    *p_header;                      /* current header pointer */
     char    *p_content;                     /* current content pointer */
