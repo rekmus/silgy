@@ -19,8 +19,7 @@
 /* app user session */
 
 typedef struct {
-    char dummy;
-    // add your own struct members here
+    char dummy;     // replace with your own struct members
 } ausession_t;
 
 
