@@ -3058,7 +3058,7 @@ static void gen_response_header(int ci)
             else    /* static resource -- aggressive caching */
             {
                 PRINT_HTTP_LAST_MODIFIED(time_epoch2http(M_stat[conn[ci].static_res].modified));
-                PRINT_HTTP_CACHE_PUBLIC;
+//                PRINT_HTTP_CACHE_PUBLIC;
                 PRINT_HTTP_EXPIRES_STATICS;
             }
         }
