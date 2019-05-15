@@ -14,8 +14,6 @@ The only third-party dependencies are:
 
 * HTTPS requires OpenSSL library.
 
-ASYNC module requires POSIX message queues, so it's not available on Windows for now.
-
 Silgy has build-in (and enabled by default) protection against most popular attacks, including BEAST, SQL-injection, XSS, and password and cookie brute-force. It does not directly expose the filesystem nor allows any scripting. Its random string generator is FIPS-compliant.
 
 TCO for a mid-sized web application with a small database and moderate load (<1,000,000 requests/day) can be as low as $3 per month (Amazon EC2 t2.micro).
