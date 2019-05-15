@@ -1,6 +1,6 @@
 # Silgy
 
-Web application framework for C and C++ programmers.
+Simple web application framework for C and C++ programmers.
 
 The latency between receiving HTTP request and application logic has been minimized by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
 
