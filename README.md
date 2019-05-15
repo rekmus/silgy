@@ -18,6 +18,8 @@ Silgy has build-in (and enabled by default) protection against most popular atta
 
 TCO for a mid-sized web application with a small database and moderate load (<1,000,000 requests/day) can be as low as $3 per month (Amazon EC2 t2.micro).
 
+For heavy-loaders or third-party callers there's an ASYNC facility, which allows to split (or move) the functionality to multiple service processes, to avoid gateway process blocking.
+
 ## [Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%93-Getting-Started-on-Windows)
 
 ## [Getting Started on Linux](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%93-Getting-Started-on-Linux)
@@ -28,7 +30,7 @@ TCO for a mid-sized web application with a small database and moderate load (<1,
 
 ## Hello World
 
-I believe in practical approach. In this case it means the simplest way to render HTML on the server side. Of course, nothing stops you from using Silgy to write SPA.
+I believe in practical approach. In this case it means the simplest way to render HTML on the server side. Of course, nothing prevents you from using Silgy for SPA.
 
 The simplest Hello World:
 
