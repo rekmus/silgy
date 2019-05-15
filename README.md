@@ -26,8 +26,6 @@ TCO for a mid-sized web application with a small database and moderate load (<1,
 
 ## [Full documentation](https://github.com/silgy/silgy/wiki)
 
-## [Application upgrade from Silgy 3.x to 4.0](https://github.com/silgy/silgy/wiki/Application-upgrade-from-Silgy-3.x-to-4.0)
-
 ## Hello World
 
 I believe in practical approach. In this case it means the simplest way to render HTML on the server side. Of course, nothing stops you from using Silgy to write SPA.
