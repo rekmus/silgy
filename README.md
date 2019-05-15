@@ -1,18 +1,34 @@
 # Silgy
 
+## What is it?
+
 Simple web application framework for C and C++ programmers.
 
-The latency between receiving HTTP request and application logic has been minimized by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
+The latency between receiving HTTP request and application logic has been reduced to single microseconds by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
 
-Silgy Hello World handles [~20,000 requests per second](https://github.com/silgy/silgy/wiki/Performance-test:-select()-vs-poll()) on a single CPU.
+## Why bother?
 
-Silgy contains everything that is necessary to build a complete, production-grade solution, including session management and REST calls.
+Back in 2015 I decided to write a web application and had a wishlist:
+
+1. Host it for free or possibly dirt cheap. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million.
+
+2. It has to be responsive, in a way compiled programs used locally are responsive. I hate slow programs. I hate slow programs!!
+
+3. Independency. AWS getting nasty? It'd take an hour to move anywhere else.
+
+As my wishes had come true, I decided to open my code and become famous. You're welcome.
+
+## What's in the box?
+
+Silgy lib contains everything that is necessary to build a complete, production-grade solution, including session management and REST calls.
 
 The only third-party dependencies are:
 
 * USERS module requires MySQL library.
 
 * HTTPS requires OpenSSL library.
+
+Silgy Hello World handles [~20,000 requests per second](https://github.com/silgy/silgy/wiki/Performance-test:-select()-vs-poll()) on a single CPU, free AWS instance.
 
 Silgy has build-in (and enabled by default) protection against most popular attacks, including BEAST, SQL-injection, XSS, and password and cookie brute-force. It does not directly expose the filesystem nor allows any scripting. Its random string generator is FIPS-compliant.
 
