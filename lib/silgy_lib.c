@@ -66,6 +66,7 @@ static int M_rest_sock;
 #ifdef HTTPS
 static SSL_CTX *M_ssl_ctx=NULL;
 static SSL *M_rest_ssl=NULL;
+//static SSL_SESSION *M_ssl_session=NULL;
 #else
 static void *M_rest_ssl=NULL;    /* dummy */
 #endif  /* HTTPS */
@@ -356,7 +357,8 @@ static bool init_ssl_client()
     }
 
 //    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_COMPRESSION;
-//    SSL_CTX_set_options(M_ssl_ctx, flags);
+    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
+    SSL_CTX_set_options(M_ssl_ctx, flags);
 
     /* temporarily ignore server cert errors */
 
@@ -807,7 +809,7 @@ static int addresses_cnt=0, addresses_last=0;
         {
             break;  /* immediate success */
         }
-        else if ( lib_finish_with_timeout(M_rest_sock, CONNECT, NULL, 0, &timeout_tmp, NULL, 0) == 0 )
+        else if ( lib_finish_with_timeout(M_rest_sock, CONNECT, WRITE, NULL, 0, &timeout_tmp, NULL, 0) == 0 )
         {
             break;  /* success within timeout */
         }
@@ -879,6 +881,7 @@ static int addresses_cnt=0, addresses_last=0;
     /* -------------------------------------------------------------------------- */
 
 #ifdef HTTPS
+
     if ( secure )
     {
         DBG("Trying SSL_new...");
@@ -905,6 +908,19 @@ static int addresses_cnt=0, addresses_last=0;
             return FALSE;
         }
 
+        DBG("Trying SSL_set_tlsext_host_name...");
+
+        ret = SSL_set_tlsext_host_name(M_rest_ssl, host);
+
+        if ( ret <= 0 )
+        {
+            ERR("SSL_set_tlsext_host_name failed, ret = %d", ret);
+            close_conn(M_rest_sock);
+            SSL_free(M_rest_ssl);
+            M_rest_ssl = NULL;
+            return FALSE;
+        }
+
         DBG("Trying SSL_connect...");
 
         ret = SSL_connect(M_rest_ssl);
@@ -915,7 +931,7 @@ static int addresses_cnt=0, addresses_last=0;
         {
             DBG("SSL_connect immediate success");
         }
-        else if ( lib_finish_with_timeout(M_rest_sock, CONNECT, NULL, ret, timeout_remain, M_rest_ssl, 0) > 0 )
+        else if ( lib_finish_with_timeout(M_rest_sock, CONNECT, CONNECT, NULL, ret, timeout_remain, M_rest_ssl, 0) > 0 )
         {
             DBG("SSL_connect successful");
         }
@@ -931,6 +947,8 @@ static int addresses_cnt=0, addresses_last=0;
 #ifdef DUMP
         DBG("elapsed after SSL connect: %.3lf ms", lib_elapsed(start));
 #endif
+//        M_ssl_session = SSL_get_session(M_rest_ssl);
+
         X509 *server_cert;
         server_cert = SSL_get_peer_certificate(M_rest_ssl);
         if ( server_cert )
@@ -954,14 +972,61 @@ static int addresses_cnt=0, addresses_last=0;
 /* --------------------------------------------------------------------------
    REST call / disconnect
 -------------------------------------------------------------------------- */
-static void rest_disconnect()
+static void rest_disconnect(int ssl_ret)
 {
     DBG("rest_disconnect");
 
 #ifdef HTTPS
     if ( M_rest_ssl )
     {
+        bool shutdown=TRUE;
+
+        if ( ssl_ret < 0 )
+        {
+            int ssl_err = SSL_get_error(M_rest_ssl, ssl_ret);
+
+            if ( ssl_err==SSL_ERROR_SYSCALL || ssl_err==SSL_ERROR_SSL )
+                shutdown = FALSE;
+        }
+
+        if ( shutdown )
+        {
+            int timeout_tmp = G_RESTTimeout/5;
+
+            int ret = SSL_shutdown(M_rest_ssl);
+
+            if ( ret == 1 )
+            {
+                DBG("SSL_shutdown immediate success");
+            }
+            else if ( ret == 0 )
+            {
+                DBG("First SSL_shutdown looks fine, trying to complete the bidirectional shutdown handshake...");
+
+                ret = SSL_shutdown(M_rest_ssl);
+
+                if ( ret == 1 )
+                    DBG("SSL_shutdown success");
+                else if ( lib_finish_with_timeout(M_rest_sock, SHUTDOWN, SHUTDOWN, NULL, ret, &timeout_tmp, M_rest_ssl, 0) > 0 )
+                    DBG("SSL_shutdown successful");
+                else
+                    ERR("SSL_shutdown failed");
+            }
+            else if ( lib_finish_with_timeout(M_rest_sock, SHUTDOWN, SHUTDOWN, NULL, ret, &timeout_tmp, M_rest_ssl, 0) > 0 )
+            {
+                DBG("SSL_shutdown successful");
+            }
+            else
+            {
+                ERR("SSL_shutdown failed");
+            }
+        }
+
         SSL_free(M_rest_ssl);
+
+/*        if ( M_ssl_session )
+            SSL_SESSION_free(M_ssl_session); */
+
         M_rest_ssl = NULL;
     }
 #endif  /* HTTPS */
@@ -1208,7 +1273,7 @@ static char buffer[JSON_BUFSIZE];
     {
         /* reconnect anyway */
         DBG("different host, port or old connection, reconnecting");
-        rest_disconnect();
+        rest_disconnect(0);
         connected = FALSE;
     }
 
@@ -1249,32 +1314,32 @@ static char buffer[JSON_BUFSIZE];
             if ( !was_connected || after_reconnect )
             {
                 ERR("Send (after fresh connect) failed");
-                rest_disconnect();
+                rest_disconnect(0);
                 connected = FALSE;
                 return FALSE;
             }
 
             DBG("Disconnected? Trying to reconnect...");
-            rest_disconnect();
+            rest_disconnect(0);
             if ( !rest_connect(host, port, &start, &timeout_remain, secure) ) return FALSE;
             after_reconnect = 1;
         }
         else if ( secure && bytes == -1 )
         {
-            bytes = lib_finish_with_timeout(M_rest_sock, WRITE, buffer, len, &timeout_remain, secure?M_rest_ssl:NULL, 0);
+            bytes = lib_finish_with_timeout(M_rest_sock, WRITE, WRITE, buffer, len, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
             if ( bytes == -1 )
             {
                 if ( !was_connected || after_reconnect )
                 {
                     ERR("Send (after fresh connect) failed");
-                    rest_disconnect();
+                    rest_disconnect(-1);
                     connected = FALSE;
                     return FALSE;
                 }
 
                 DBG("Disconnected? Trying to reconnect...");
-                rest_disconnect();
+                rest_disconnect(-1);
                 if ( !rest_connect(host, port, &start, &timeout_remain, secure) ) return FALSE;
                 after_reconnect = 1;
             }
@@ -1292,7 +1357,7 @@ static char buffer[JSON_BUFSIZE];
     if ( bytes < 15 )
     {
         ERR("send failed, errno = %d (%s)", errno, strerror(errno));
-        rest_disconnect();
+        rest_disconnect(bytes);
         connected = FALSE;
         return FALSE;
     }
@@ -1314,12 +1379,12 @@ static char buffer[JSON_BUFSIZE];
 
     if ( bytes == -1 )
     {
-        bytes = lib_finish_with_timeout(M_rest_sock, READ, res_header, REST_RES_HEADER_LEN, &timeout_remain, secure?M_rest_ssl:NULL, 0);
+        bytes = lib_finish_with_timeout(M_rest_sock, READ, READ, res_header, REST_RES_HEADER_LEN, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
         if ( bytes <= 0 )
         {
             ERR("recv failed, errno = %d (%s)", errno, strerror(errno));
-            rest_disconnect();
+            rest_disconnect(bytes);
             connected = FALSE;
             return FALSE;
         }
@@ -1346,7 +1411,7 @@ static char buffer[JSON_BUFSIZE];
         }
 #endif
         G_rest_status = 500;
-        rest_disconnect();
+        rest_disconnect(bytes);
         connected = FALSE;
         return FALSE;
     }
@@ -1363,7 +1428,7 @@ static char buffer[JSON_BUFSIZE];
     if ( content_length > JSON_BUFSIZE-1 )
     {
         ERR("Response content is too big (%d)", content_length);
-        rest_disconnect();
+        rest_disconnect(bytes);
         connected = FALSE;
         return FALSE;
     }
@@ -1456,7 +1521,7 @@ static char res_content[JSON_BUFSIZE];
                 bytes = recv(M_rest_sock, res_content+content_read, JSON_BUFSIZE-content_read-1, 0);
 
             if ( bytes == -1 )
-                bytes = lib_finish_with_timeout(M_rest_sock, READ, res_content+content_read, JSON_BUFSIZE-content_read-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
+                bytes = lib_finish_with_timeout(M_rest_sock, READ, READ, res_content+content_read, JSON_BUFSIZE-content_read-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
             if ( bytes > 0 )
                 content_read += bytes;
@@ -1465,7 +1530,7 @@ static char res_content[JSON_BUFSIZE];
         if ( bytes < 1 )
         {
             DBG("timeouted?");
-            rest_disconnect();
+            rest_disconnect(bytes);
             connected = FALSE;
             return FALSE;
         }
@@ -1524,7 +1589,7 @@ static char res_content[JSON_BUFSIZE];
                 bytes = recv(M_rest_sock, buffer+buffer_read, JSON_BUFSIZE-buffer_read-1, 0);
 
             if ( bytes == -1 )
-                bytes = lib_finish_with_timeout(M_rest_sock, READ, buffer+buffer_read, JSON_BUFSIZE-buffer_read-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
+                bytes = lib_finish_with_timeout(M_rest_sock, READ, READ, buffer+buffer_read, JSON_BUFSIZE-buffer_read-1, &timeout_remain, secure?M_rest_ssl:NULL, 0);
 
             if ( bytes > 0 )
                 buffer_read += bytes;
@@ -1533,7 +1598,7 @@ static char res_content[JSON_BUFSIZE];
         if ( buffer_read < 5 )
         {
             ERR("buffer_read is only %d, this can't be valid chunked content", buffer_read);
-            rest_disconnect();
+            rest_disconnect(bytes);
             connected = FALSE;
             return FALSE;
         }
@@ -1555,10 +1620,10 @@ static char res_content[JSON_BUFSIZE];
 
     /* ------------------------------------------------------------------- */
 
-    if ( !keep || strstr(res_header, "\nConnection: close") != NULL )
+    if ( !keep || strstr(res_header, "\nConnection: close") != NULL || strstr(res_header, "\nConnection: Close") != NULL )
     {
         DBG("Closing connection");
-        rest_disconnect();
+        rest_disconnect(bytes);
         connected = FALSE;
     }
     else    /* keep the connection open */
@@ -1607,24 +1672,32 @@ static char res_content[JSON_BUFSIZE];
 /* --------------------------------------------------------------------------
    Finish socket operation with timeout
 -------------------------------------------------------------------------- */
-int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int *msec, void *ssl, int level)
+int lib_finish_with_timeout(int sock, char oper, char readwrite, char *buffer, int len, int *msec, void *ssl, int level)
 {
     int             sockerr;
     struct timeval  timeout;
     fd_set          readfds;
     fd_set          writefds;
     int             socks=0;
-
-#ifdef DUMP
-    if ( readwrite==READ )
-        DBG("lib_finish_with_timeout READ");
-    else if ( readwrite==WRITE )
-        DBG("lib_finish_with_timeout WRITE");
-    else
-        DBG("lib_finish_with_timeout CONNECT");
+#ifdef HTTPS
+    int             bytes;
+    int             ssl_err;
 #endif
 
-    if ( level > 10 )
+#ifdef DUMP
+    if ( oper == READ )
+        DBG("lib_finish_with_timeout READ, level=%d", level);
+    else if ( oper == WRITE )
+        DBG("lib_finish_with_timeout WRITE, level=%d", level);
+    else if ( oper == CONNECT )
+        DBG("lib_finish_with_timeout CONNECT, level=%d", level);
+    else if ( oper == SHUTDOWN )
+        DBG("lib_finish_with_timeout SHUTDOWN, level=%d", level);
+    else
+        ERR("lib_finish_with_timeout -- unknown operation: %d", oper);
+#endif
+
+    if ( level > 20 )   /* just in case */
     {
         ERR("lib_finish_with_timeout -- too many levels");
         return -1;
@@ -1633,16 +1706,22 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
     /* get the error code ------------------------------------------------ */
     /* note: during SSL operations it will be 0                            */
 
+#ifdef _WIN32   /* Windows */
+    sockerr = WSAGetLastError();
+#else
+    sockerr = errno;
+#endif
+
     if ( !ssl )
     {
 #ifdef _WIN32   /* Windows */
 
-        sockerr = WSAGetLastError();
+//        sockerr = WSAGetLastError();
 
         if ( sockerr != WSAEWOULDBLOCK )
         {
             wchar_t *s = NULL;
-            FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, sockerr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&s, 0, NULL);
+            FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, sockerr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&s, 0, NULL);
             ERR("%d (%S)", sockerr, s);
             LocalFree(s);
             return -1;
@@ -1650,11 +1729,11 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
 
 #else   /* Linux */
 
-        sockerr = errno;
+//        sockerr = errno;
 
         if ( sockerr != EWOULDBLOCK && sockerr != EINPROGRESS )
         {
-            ERR("sockerr = %d (%s)", sockerr, strerror(sockerr));
+            ERR("errno = %d (%s)", sockerr, strerror(sockerr));
             return -1;
         }
 
@@ -1685,21 +1764,51 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
 
     /* set up fd-s and wait ---------------------------------------------- */
 
-#ifdef DUMP
-    DBG("Waiting on select()...");
-#endif
-
     if ( readwrite == READ )
     {
+#ifdef DUMP
+        DBG("READ, waiting on select()...");
+#endif
         FD_ZERO(&readfds);
         FD_SET(sock, &readfds);
         socks = select(sock+1, &readfds, NULL, NULL, &timeout);
     }
-    else    /* WRITE or CONNECT */
+    else if ( readwrite == WRITE )
     {
+#ifdef DUMP
+        DBG("WRITE, waiting on select()...");
+#endif
         FD_ZERO(&writefds);
         FD_SET(sock, &writefds);
         socks = select(sock+1, NULL, &writefds, NULL, &timeout);
+    }
+    else if ( readwrite == CONNECT || readwrite == SHUTDOWN )   /* SSL only! */
+    {
+#ifdef HTTPS
+#ifdef DUMP
+        DBG("SSL_connect or SSL_shutdown, determining the next step...");
+#endif
+        ssl_err = SSL_get_error((SSL*)ssl, len);
+
+#ifdef DUMP
+        DBG("len = %d", len);
+        log_ssl_error(ssl_err);
+#endif  /* DUMP */
+
+        if ( ssl_err==SSL_ERROR_WANT_READ )
+            return lib_finish_with_timeout(sock, oper, READ, buffer, len, msec, ssl, level+1);
+        else if ( ssl_err==SSL_ERROR_WANT_WRITE )
+            return lib_finish_with_timeout(sock, oper, WRITE, buffer, len, msec, ssl, level+1);
+        else
+        {
+            DBG("SSL_connect or SSL_shutdown error %d", ssl_err);
+            return -1;
+        }
+#endif  /* HTTPS */
+    }
+    else
+    {
+        ERR("lib_finish_with_timeout -- invalid readwrite (%d) for this operation (%d)", readwrite, oper);
     }
 
     *msec -= lib_elapsed(&start);
@@ -1725,11 +1834,6 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
 #ifdef DUMP
         DBG("lib_finish_with_timeout socks > 0");
 #endif
-#ifdef HTTPS
-        int bytes, ssl_err;
-        char ec[128]="";
-#endif
-
         if ( readwrite == READ )
         {
 #ifdef HTTPS
@@ -1737,8 +1841,10 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
             {
                 if ( buffer )
                     bytes = SSL_read((SSL*)ssl, buffer, len);
-                else    /* connect */
+                else if ( oper == CONNECT )
                     bytes = SSL_connect((SSL*)ssl);
+                else    /* SHUTDOWN */
+                    bytes = SSL_shutdown((SSL*)ssl);
 
                 if ( bytes > 0 )
                 {
@@ -1747,16 +1853,16 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
                 else
                 {
                     ssl_err = SSL_get_error((SSL*)ssl, bytes);
-#ifdef DUMP
-                    if ( ssl_err == SSL_ERROR_SYSCALL )
-                        sprintf(ec, ", errno = %d (%s)", sockerr, strerror(sockerr));
 
-                    DBG("bytes = %d, ssl_err = %d%s", bytes, ssl_err, ec);
+#ifdef DUMP
+                    DBG("bytes = %d", bytes);
+                    log_ssl_error(ssl_err);
 #endif  /* DUMP */
+
                     if ( ssl_err==SSL_ERROR_WANT_READ )
-                        return lib_finish_with_timeout(sock, READ, buffer, len, msec, ssl, level+1);
+                        return lib_finish_with_timeout(sock, oper, READ, buffer, len, msec, ssl, level+1);
                     else if ( ssl_err==SSL_ERROR_WANT_WRITE )
-                        return lib_finish_with_timeout(sock, WRITE, buffer, len, msec, ssl, level+1);
+                        return lib_finish_with_timeout(sock, oper, WRITE, buffer, len, msec, ssl, level+1);
                     else
                     {
                         DBG("SSL_read error %d", ssl_err);
@@ -1775,8 +1881,10 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
             {
                 if ( buffer )
                     bytes = SSL_write((SSL*)ssl, buffer, len);
-                else    /* connect */
+                else if ( oper == CONNECT )
                     bytes = SSL_connect((SSL*)ssl);
+                else    /* SHUTDOWN */
+                    bytes = SSL_shutdown((SSL*)ssl);
 
                 if ( bytes > 0 )
                 {
@@ -1785,16 +1893,16 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
                 else
                 {
                     ssl_err = SSL_get_error((SSL*)ssl, bytes);
-#ifdef DUMP
-                    if ( ssl_err == SSL_ERROR_SYSCALL )
-                        sprintf(ec, ", errno = %d (%s)", sockerr, strerror(sockerr));
 
-                    DBG("bytes = %d, ssl_err = %d%s", bytes, ssl_err, ec);
+#ifdef DUMP
+                    DBG("bytes = %d", bytes);
+                    log_ssl_error(ssl_err);
 #endif  /* DUMP */
+
                     if ( ssl_err==SSL_ERROR_WANT_WRITE )
-                        return lib_finish_with_timeout(sock, WRITE, buffer, len, msec, ssl, level+1);
+                        return lib_finish_with_timeout(sock, oper, WRITE, buffer, len, msec, ssl, level+1);
                     else if ( ssl_err==SSL_ERROR_WANT_READ )
-                        return lib_finish_with_timeout(sock, READ, buffer, len, msec, ssl, level+1);
+                        return lib_finish_with_timeout(sock, oper, READ, buffer, len, msec, ssl, level+1);
                     else
                     {
                         DBG("SSL_write error %d", ssl_err);
@@ -1806,33 +1914,47 @@ int lib_finish_with_timeout(int sock, char readwrite, char *buffer, int len, int
 #endif  /* HTTPS */
                 return send(sock, buffer, len, 0);
         }
-        else   /* CONNECT */
+        else
         {
-#ifdef HTTPS
-            if ( ssl )
-            {
-                ssl_err = SSL_get_error((SSL*)ssl, len);
-#ifdef DUMP
-                if ( ssl_err == SSL_ERROR_SYSCALL )
-                    sprintf(ec, ", errno = %d (%s)", sockerr, strerror(sockerr));
-
-                DBG("error = %d, ssl_err = %d%s", len, ssl_err, ec);
-#endif  /* DUMP */
-                if ( ssl_err==SSL_ERROR_WANT_WRITE )
-                    return lib_finish_with_timeout(sock, WRITE, NULL, 0, msec, ssl, level+1);
-                else if ( ssl_err==SSL_ERROR_WANT_READ )
-                    return lib_finish_with_timeout(sock, READ, NULL, 0, msec, ssl, level+1);
-                else
-                {
-                    DBG("SSL_connect error %d", ssl_err);
-                    return -1;
-                }
-            }
-            else
-#endif  /* HTTPS */
-            return 0;
+            ERR("lib_finish_with_timeout -- should have never reached this!");
+            return -1;
         }
     }
+}
+
+
+/* --------------------------------------------------------------------------
+   Log SSL error
+
+   From openssl.h:
+
+#define SSL_ERROR_NONE        (0)
+#define SSL_ERROR_SSL         (1)
+#define SSL_ERROR_WANT_READ   (2)
+#define SSL_ERROR_WANT_WRITE  (3)
+#define SSL_ERROR_SYSCALL     (5)
+#define SSL_ERROR_ZERO_RETURN (6)
+-------------------------------------------------------------------------- */
+void log_ssl_error(int ssl_err)
+{
+    if ( ssl_err != SSL_ERROR_SYSCALL ) return;
+
+#ifdef _WIN32   /* Windows */
+
+    int sockerr = WSAGetLastError();
+
+    wchar_t *s = NULL;
+    FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, sockerr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&s, 0, NULL);
+    DBG("ssl_err=SSL_ERROR_SYSCALL, errno=%d (%S)", sockerr, s);
+    LocalFree(s);
+
+#else   /* Linux */
+
+    int sockerr = errno;
+
+    DBG("ssl_err=SSL_ERROR_SYSCALL, errno=%d (%s)", sockerr, strerror(sockerr));
+
+#endif  /* _WIN32 */
 }
 
 
