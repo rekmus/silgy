@@ -92,7 +92,7 @@ void silgy_app_main(int ci)
 
         QSVAL qs_firstname;   // query string value
 
-        if ( QS("firstname", qs_firstname) )
+        if ( QS("firstname", qs_firstname) )    // if present, bid welcome
             OUT("<p>Welcome %s, my dear friend!</p>", qs_firstname);
 
         OUT("<p><a href=\"/\">Back to landing page</a></p>");
