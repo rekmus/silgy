@@ -121,4 +121,4 @@ void silgy_app_main(int ci)
 
 ## Feedback & Support
 
-If you're not sure how to start, or you're not sure whether Silgy will be able to meet your needs, there's something wrong, you think there should be some feature or you just got stuck with your project, please [email me](mailto:silgy.help@gmail.com). I am currently developing about a dozen apps in Silgy, from simple Angular app hosting, through traditional web app, to RESTful API and every project adds some ideas how to make Silgy better, so I will gladly help.
+Write to silgy.help@gmail.com if you got stuck.
