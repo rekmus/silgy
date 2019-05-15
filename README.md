@@ -18,7 +18,7 @@ As my wishes had come true, I decided to open my code and become famous. You're 
 
 ## What's in the box?
 
-Silgy lib contains everything that is necessary to build a complete, production-grade solution, including session management and REST calls.
+Silgy lib contains everything that is necessary to build a complete, production-grade solution, including [session management](https://github.com/silgy/silgy/wiki/Sessions-in-Silgy) and [REST calls](https://github.com/silgy/silgy/wiki/RESTful-calls-from-Silgy).
 
 The only third-party dependencies are:
 
