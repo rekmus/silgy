@@ -146,7 +146,7 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 
 ### `res`
 
-Static resources. The whole tree under `res` is publicly available for every visitor.
+Static resources. The whole tree under `res` is publicly available.
 
 * images
 * static HTML files
@@ -156,7 +156,7 @@ Static resources. The whole tree under `res` is publicly available for every vis
 
 ### `resmin`
 
-Static resources to be minified. The whole tree under `resmin` is publicly available for every visitor.
+Static resources to be minified. The whole tree under `resmin` is publicly available.
 
 * CSS
 * JS
