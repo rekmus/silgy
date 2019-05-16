@@ -42,7 +42,7 @@ In case of using Silgy under heavy load or with external API calls, there's the 
 
 ## [Full documentation](https://github.com/silgy/silgy/wiki)
 
-## Hello World
+## Hello World-s
 
 I believe in practical approach. In this case it means the simplest way to render HTML on the server side. Of course, nothing prevents you from using Silgy for SPA.
 
@@ -100,7 +100,7 @@ void silgy_app_main(int ci)
 
 ### Using query string value
 
-Finally, some logic. [QS()](https://github.com/silgy/silgy/wiki/QS) will automatically choose between query string or payload, depending on the HTTP request method.
+Finally some logic. [QS()](https://github.com/silgy/silgy/wiki/QS) will automatically choose between query string or payload, depending on the HTTP request method.
 
 ```source.c++
 void silgy_app_main(int ci)
