@@ -46,7 +46,17 @@ In case of using Silgy under heavy load or with external API calls, there's the 
 
 I believe in practical approach. In this case it means the simplest way to render HTML on the server side. Of course, nothing prevents you from using Silgy for SPA.
 
-The simplest Hello World:
+### Empty main
+
+This is just extremely fast static web server. It'll look for `index.html` in [res](https://github.com/silgy/silgy#res) directory if no resource is requested.
+
+```source.c++
+void silgy_app_main(int ci)
+{
+}
+```
+
+### The simplest Hello World
 
 ```source.c++
 void silgy_app_main(int ci)
@@ -55,7 +65,7 @@ void silgy_app_main(int ci)
 }
 ```
 
-Simple HTML with 2 pages:
+### Simple HTML with 2 pages
 
 ```source.c++
 void silgy_app_main(int ci)
@@ -83,7 +93,9 @@ void silgy_app_main(int ci)
 }
 ```
 
-And this is a tad extended Hello World example to demonstrate query string handling:
+### Hello World using query string value
+
+[QS](https://github.com/silgy/silgy/wiki/QS) will automatically choose between query string or payload, depending on the HTTP request method.
 
 ```source.c++
 void silgy_app_main(int ci)
