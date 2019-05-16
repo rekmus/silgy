@@ -120,6 +120,46 @@ void silgy_app_main(int ci)
 }
 ```
 
+## Directories
+
+Although not necessary, it's good to have $SILGYDIR set in the environment, pointing to the project directory. Silgy engine always first looks in `$SILGYDIR/blah` for the particular file, with `blah` being one of the below:
+
+### src
+
+Required only for development.
+
+* application sources, that is, developed by you
+* compilation scripts, i.e. `m`, `ms`, `mw`
+
+### lib
+
+Required only for development.
+
+* Silgy sources
+* `users.sql`
+
+### bin
+
+* executables, i.e. `silgy_app`, `silgy_svc`, `silgy_watcher`
+* runtime scripts, i.e. `silgystart`, `silgystop`
+* configuration: `silgy.conf`
+
+### res
+
+* static resources, i.e. images, \*.txt
+
+### resmin
+
+Static resources to be minified:
+
+* CSS
+* JS
+
+### logs
+
+* log files
+
+
 ## Feedback & Support
 
 Write to silgy.help@gmail.com if you got stuck.
