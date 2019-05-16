@@ -171,7 +171,7 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 
 ### `res`
 
-Static resources. The whole tree under `res` is publicly available. All the files are read on startup and served straight from the memory. File list is then updated once a minute.
+Static resources. The whole tree under `res` is publicly available. All the files are read on startup and served straight from the memory. File list is updated once a minute.
 
 * images
 * static HTML files
@@ -181,7 +181,7 @@ Static resources. The whole tree under `res` is publicly available. All the file
 
 ### `resmin`
 
-Static resources to be minified. The whole tree under `resmin` is publicly available. All the files are read on startup, minified and served straight from the memory. File list is then updated once a minute.
+Static resources to be minified. The whole tree under `resmin` is publicly available. All the files are read on startup, minified and served straight from the memory. File list is updated once a minute.
 
 * CSS
 * JS
