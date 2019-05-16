@@ -42,7 +42,7 @@ In case of using Silgy under heavy load or with external API calls, there's the 
 
 ## [Full documentation](https://github.com/silgy/silgy/wiki)
 
-## Hello World-s
+## Hello Worlds
 
 I believe in practical approach. In this case it means the simplest way to render HTML on the server side. Of course, nothing prevents you from using Silgy for SPA.
 
@@ -171,7 +171,7 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 
 ### `res`
 
-Static resources. The whole tree under `res` is publicly available.
+Static resources. The whole tree under `res` is publicly available. All the files are read on startup and served straight from the memory. File list is then updated once a minute.
 
 * images
 * static HTML files
@@ -181,7 +181,7 @@ Static resources. The whole tree under `res` is publicly available.
 
 ### `resmin`
 
-Static resources to be minified. The whole tree under `resmin` is publicly available.
+Static resources to be minified. The whole tree under `resmin` is publicly available. All the files are read on startup, minified and served straight from the memory. File list is then updated once a minute.
 
 * CSS
 * JS
