@@ -126,14 +126,14 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 
 ### src
 
-Required only for development.
+*(Required only for development)*
 
 * application sources, that is, developed by you
 * compilation scripts, i.e. `m`, `ms`, `mw`
 
 ### lib
 
-Required only for development.
+*(Required only for development)*
 
 * Silgy sources
 * `users.sql`
