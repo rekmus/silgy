@@ -10,7 +10,7 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 1. Host it for free or at negligible cost. Websites that don't survive at least 10 years don't matter, it's not 2000 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~500 users application and use ~1% of server's resources.
 
-2. It has to be responsive, in a way compiled programs used locally are responsive. I hate slow programs. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/preview?p=MWPcAbmY).
+2. It has to be responsive, in a way compiled programs used locally are responsive. I hate slow programs. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/show?p=MWPcAbmY).
 
 3. Independency. AWS getting nasty? It'd take 60 minutes to move anywhere else. I only need to install GCC, MySQL and clone my repo.
 
