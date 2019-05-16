@@ -59,7 +59,7 @@ void silgy_app_main(int ci)
 
 ### Simplest Hello World
 
-Return static file if present, otherwise "Hello World".
+Return static file if present, otherwise "Hello World!".
 
 ```source.c++
 void silgy_app_main(int ci)
@@ -100,7 +100,7 @@ void silgy_app_main(int ci)
 
 ### Using query string value
 
-Finally, some logic. [QS](https://github.com/silgy/silgy/wiki/QS) will automatically choose between query string or payload, depending on the HTTP request method.
+Finally, some logic. [QS()](https://github.com/silgy/silgy/wiki/QS) will automatically choose between query string or payload, depending on the HTTP request method.
 
 ```source.c++
 void silgy_app_main(int ci)
