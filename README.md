@@ -12,7 +12,7 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 2. It has to be **responsive**, in a way compiled programs used locally are responsive. I hate slow programs. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/show?p=MWPcAbmY).
 
-3. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else. I only need to install GCC, MySQL and clone my repo.
+3. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on typing payment details. Then I only need to install GCC, MySQL, restore database from backup, clone my repo and type `silgystart`, Enter.
 
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
 
