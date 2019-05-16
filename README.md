@@ -108,9 +108,17 @@ void silgy_app_main(int ci)
     if ( REQ("") )  // landing page
     {
         OUT_HTML_HEADER;
+
         OUT("<h1>%s</h1>", APP_WEBSITE);
         OUT("<h2>Welcome to my web app!</h2>");
+
+        if ( REQ_DSK )
+            OUT("<p>You're on desktop.</p>");
+        else  /* REQ_MOB */
+            OUT("<p>You're on the phone.</p>");
+
         OUT("<p>Click <a href=\"welcome\">here</a> to try my welcoming bot.</p>");
+
         OUT_HTML_FOOTER;
     }
     else if ( REQ("welcome") )  // welcoming bot
