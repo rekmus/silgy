@@ -1,6 +1,6 @@
 # Silgy
 
-Simple web application framework for C and C++ programmers.
+Simple web application backend framework for C and C++ programmers.
 
 The latency between receiving HTTP request and application logic has been reduced to single microseconds by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
 
@@ -8,11 +8,11 @@ The latency between receiving HTTP request and application logic has been reduce
 
 Back in 2015 I decided to write a web application and had a wishlist:
 
-1. Host it for free or possibly dirt cheap. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million.
+1. Host it for free or at negligible cost. Websites that don't survive at leat 5 years don't matter. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~500 users application and use ~1% of server's resources.
 
-2. It has to be responsive, in a way compiled programs used locally are responsive. I hate slow programs. I hate slow programs!!
+2. It has to be responsive, in a way compiled programs used locally are responsive. I hate slow programs. My application consistently gets "Faster than 100% of tested sites" badge from Pingdom.
 
-3. Independency. AWS getting nasty? It'd take an hour to move anywhere else.
+3. Independency. AWS getting nasty? It'd take 60 minutes to move anywhere else. I only need to install GCC, MySQL and clone my repo.
 
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
 
