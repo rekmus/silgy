@@ -147,7 +147,7 @@ void silgy_app_main(int ci)
 
 ## Directories
 
-Although not necessary, it's good to have $SILGYDIR set in the environment, pointing to the project directory. Silgy engine always first looks in `$SILGYDIR/blah` for the particular file, with `blah` being one of the below:
+Although not necessary, it's good to have $SILGYDIR set in the environment, pointing to the project directory. Silgy engine always first looks in `$SILGYDIR/<dir>` for the particular file, with `<dir>` being one of the below:
 
 ### `src`
 
