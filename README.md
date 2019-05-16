@@ -48,7 +48,7 @@ I believe in practical approach. In this case it means the simplest way to rende
 
 ### Empty application = static web server
 
-This is just extremely fast static web server. It'll look for `index.html` in [res](https://github.com/silgy/silgy#res) directory if no resource is requested. If requested file is not present in `res` nor `resmin`, it'll return 404.
+This is just an extremely fast static web server. If no resource is requested it'll look for `index.html` in [res](https://github.com/silgy/silgy#res) directory. If requested file is not present in `res` nor `resmin`, it'll return 404.
 
 ```source.c++
 void silgy_app_main(int ci)
