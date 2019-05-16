@@ -135,7 +135,7 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 
 *(Required only for development)*
 
-* Silgy sources
+* Silgy engine & library source
 * `users.sql`
 
 ### bin
