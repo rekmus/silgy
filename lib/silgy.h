@@ -664,7 +664,7 @@ typedef struct {
 /* connection */
 
 #ifdef SILGY_SVC
-typedef struct {                            /* dummy */
+typedef struct {                            /* request details for silgy_svc */
     char    ip[INET_ADDRSTRLEN];
     char    method[MAX_METHOD_LEN+1];
     bool    post;

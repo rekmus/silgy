@@ -201,16 +201,12 @@ static bool init_ssl(void);
 -------------------------------------------------------------------------- */
 int main(int argc, char **argv)
 {
-
-static struct   sockaddr_in serv_addr;      /* static = initialised to zeros */
-static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
-//    unsigned int addr_len=0;
+    struct sockaddr_in serv_addr;
     unsigned long hit=0;
-    char        remote_addr[INET_ADDRSTRLEN]=""; /* remote address */
-    int         reuse_addr=1;               /* Used so we can re-bind to our port while a previous connection is still in TIME_WAIT state */
-    struct timeval timeout;                    /* Timeout for select */
-    int         sockets_ready;              /* Number of sockets ready for I/O */
-    int         i=0;                        /* Current item in conn_sockets for for loops */
+    int         reuse_addr=1;       /* Used so we can re-bind to our port while a previous connection is still in TIME_WAIT state */
+    struct timeval timeout;         /* Timeout for select */
+    int         sockets_ready;      /* Number of sockets ready for I/O */
+    int         i=0;
     long        bytes=0;
     int         failed_select_cnt=0;
     int         j=0;
@@ -1919,6 +1915,8 @@ static bool init(int argc, char **argv)
     G_queue_req = mq_open(G_req_queue_name, O_WRONLY | O_CREAT | O_NONBLOCK, 0664, &attr);
     if (G_queue_req < 0)
         ERR("mq_open for req failed, errno = %d (%s)", errno, strerror(errno));
+    else
+        INF("mq_open %s OK", G_req_queue_name);
 
     /* ------------------------------------------------------------------- */
 
@@ -1930,6 +1928,8 @@ static bool init(int argc, char **argv)
     G_queue_res = mq_open(G_res_queue_name, O_RDONLY | O_CREAT | O_NONBLOCK, 0664, &attr);
     if (G_queue_res < 0)
         ERR("mq_open for res failed, errno = %d (%s)", errno, strerror(errno));
+    else
+        INF("mq_open %s OK", G_res_queue_name);
 
     /* ------------------------------------------------------------------- */
 
@@ -1937,6 +1937,8 @@ static bool init(int argc, char **argv)
         ares[i].hdr.state = ASYNC_STATE_FREE;
 
     G_last_call_id = 0;
+
+    INF("");
 
 #endif  /* ASYNC */
 
@@ -5109,7 +5111,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    INF("G_queue_req open OK");
+    INF("mq_open %s OK", G_req_queue_name);
 
     G_queue_res = mq_open(G_res_queue_name, O_WRONLY, NULL, NULL);
 
@@ -5120,7 +5122,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    INF("G_queue_res open OK");
+    INF("mq_open %s OK", G_res_queue_name);
 
     /* ------------------------------------------------------------------- */
 
@@ -5243,6 +5245,7 @@ int main(int argc, char *argv[])
             /* ----------------------------------------------------------- */
 
             res.hdr.err_code = G_error_code;
+
             res.hdr.status = conn[0].status;
             res.hdr.ctype = conn[0].ctype;
             strcpy(res.hdr.ctypestr, conn[0].ctypestr);
@@ -5254,8 +5257,9 @@ int main(int argc, char *argv[])
             strcpy(res.hdr.location, conn[0].location);
             res.hdr.dont_cache = conn[0].dont_cache;
             res.hdr.keep_content = conn[0].keep_content;
+
             res.hdr.rest_status = G_rest_status;
-            res.hdr.rest_req = G_rest_req;    /* only for this async call */
+            res.hdr.rest_req = G_rest_req;          /* only for this async call */
             res.hdr.rest_elapsed = G_rest_elapsed;  /* only for this async call */
 
             if ( req.hdr.response )
