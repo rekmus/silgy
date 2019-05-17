@@ -4591,7 +4591,6 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         /* add to ares (async response array) */
 
         int j;
-        bool found=0;
 
         for ( j=0; j<MAX_ASYNC; ++j )
         {
