@@ -99,6 +99,9 @@ typedef char str64k[1024*64];
 #define FD_MON_SELECT   /* WSAPoll doesn't seem to be a reliable alternative */
 #undef FD_MON_POLL
 #undef FD_MON_EPOLL
+#ifdef ASYNC
+#undef ASYNC
+#endif
 #else
 #ifndef FD_MON_SELECT
 #define FD_MON_POLL
@@ -295,7 +298,8 @@ typedef char str64k[1024*64];
 /* mainly memory usage */
 
 #ifdef SILGY_SVC
-#define MAX_CONNECTIONS                 1               /* dummy */
+#define MAX_CONNECTIONS                 1               /* conn, uses & auses still as arrays to keep the same macros */
+#define MAX_SESSIONS                    1
 #else
 #ifdef MEM_TINY
 #define IN_BUFSIZE                      4096            /* incoming request buffer length (4 kB) */
@@ -580,46 +584,33 @@ typedef char str64k[1024*64];
 #define URI(uri_)                       (0==strcmp(conn[ci].uri, uri_))
 #define REQ(res)                        (0==strcmp(conn[ci].resource, res))
 #define ID(id)                          (0==strcmp(conn[ci].id, id))
-#ifndef SILGY_SVC
 #define US                              uses[conn[ci].usi]
 #define AUS                             auses[conn[ci].usi]
-#else
-#define US                              uses
-#define AUS                             auses
-#endif  /* SILGY_SVC */
 #define HOST(str)                       eng_host(ci, str)
 #define REQ_GET_HEADER(header)          eng_get_header(ci, header)
 
-#ifdef SILGY_SVC
-#define REQ_DATA                        G_req
-#else
 #define REQ_DATA                        conn[ci].in_data
-#endif
 
 #define REST_HEADER_PASS(header)        eng_rest_header_pass(ci, header)
 
 
 /* response macros */
 
-#ifdef SILGY_SVC
-#define RES_STATUS(val)                 (G_status=val)
-#else
-#define RES_STATUS(val)                 eng_set_res_status(ci, val)
-#endif
-#define RES_CONTENT_TYPE(str)           eng_set_res_content_type(ci, str)
-#define RES_LOCATION(str, ...)          eng_set_res_location(ci, str, ##__VA_ARGS__)
+#define RES_STATUS(val)                 lib_set_res_status(ci, val)
+#define RES_CONTENT_TYPE(str)           lib_set_res_content_type(ci, str)
+#define RES_LOCATION(str, ...)          lib_set_res_location(ci, str, ##__VA_ARGS__)
 #define RES_REDIRECT(str, ...)          RES_LOCATION(str, ##__VA_ARGS__)
 #define RES_DONT_CACHE                  conn[ci].dont_cache=TRUE
 #define RES_KEEP_CONTENT                conn[ci].keep_content=TRUE
-#define RES_CONTENT_DISPOSITION(str, ...) eng_set_res_content_disposition(ci, str, ##__VA_ARGS__)
+#define RES_CONTENT_DISPOSITION(str, ...) lib_set_res_content_disposition(ci, str, ##__VA_ARGS__)
 
 #define REDIRECT_TO_LANDING             sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host)
 
-#define OUT_MSG_DESCRIPTION(code)       eng_send_msg_description(ci, code)
-#define OUT_HTML_HEADER                 eng_out_html_header(ci)
-#define OUT_HTML_FOOTER                 eng_out_html_footer(ci)
-#define APPEND_CSS(name, first)         eng_append_css(ci, name, first)
-#define APPEND_SCRIPT(name, first)      eng_append_script(ci, name, first)
+#define OUT_MSG_DESCRIPTION(code)       lib_send_msg_description(ci, code)
+#define OUT_HTML_HEADER                 lib_out_html_header(ci)
+#define OUT_HTML_FOOTER                 lib_out_html_footer(ci)
+#define APPEND_CSS(name, first)         lib_append_css(ci, name, first)
+#define APPEND_SCRIPT(name, first)      lib_append_script(ci, name, first)
 
 #define MAX_URI_VAL_LEN                 255             /* max value length received in URI -- sufficient for 99% cases */
 #define MAX_LONG_URI_VAL_LEN            65535           /* max long value length received in URI -- 64 kB - 1 B */
@@ -675,13 +666,32 @@ typedef struct {
 #ifdef SILGY_SVC
 typedef struct {                            /* dummy */
     char    ip[INET_ADDRSTRLEN];
+    char    method[MAX_METHOD_LEN+1];
+    bool    post;
+    char    uri[MAX_URI_LEN+1];
+    char    resource[MAX_RESOURCE_LEN+1];
     char    uagent[MAX_VALUE_LEN+1];
+    bool    mobile;
+    int     clen;
+    char    in_data[MAX_URI_LEN+1];
+    char    cookie_in_l[SESID_LEN+1];
     char    host[MAX_VALUE_LEN+1];
     char    website[256];
     char    lang[LANG_LEN+1];
+    char    in_ctype;
+    char    boundary[MAX_VALUE_LEN+1];
     char    cookie_out_l[SESID_LEN+1];
     char    cookie_out_l_exp[32];
     int     usi;
+    int     status;
+    char    ctype;
+    char    ctypestr[256];
+    char    cdisp[256];
+    char    cookie_out_a[SESID_LEN+1];
+    char    cookie_out_a_exp[32];
+    char    location[MAX_URI_LEN+1];
+    bool    dont_cache;
+    bool    keep_content;
 } conn_t;
 #else   /* not SILGY_SVC */
 typedef struct {
@@ -696,7 +706,7 @@ typedef struct {
     char    pip[INET_ADDRSTRLEN];           /* proxy IP */
     char    in[IN_BUFSIZE];                 /* the whole incoming request */
     char    method[MAX_METHOD_LEN+1];       /* HTTP method */
-    long    was_read;                       /* request bytes read so far */
+    int     was_read;                       /* request bytes read so far */
     bool    upgrade2https;                  /* Upgrade-Insecure-Requests = 1 */
     /* parsed HTTP request starts here */
     bool    head_only;                      /* request method = HEAD */
@@ -711,7 +721,7 @@ typedef struct {
     bool    mobile;
     bool    keep_alive;
     char    referer[MAX_VALUE_LEN+1];
-    long    clen;                           /* incoming & outgoing content length */
+    int     clen;                           /* incoming & outgoing content length */
     char    *in_data;                       /* POST data */
     char    cookie_in_a[SESID_LEN+1];       /* anonymous */
     char    cookie_in_l[SESID_LEN+1];       /* logged in */
@@ -889,12 +899,25 @@ typedef struct {
     long    call_id;
     int     ci;
     char    service[SVC_NAME_LEN+1];
+    int     ai;
+    /* pass some request details over */
     char    ip[INET_ADDRSTRLEN];
+    char    method[MAX_METHOD_LEN+1];
+    bool    post;
+    char    uri[MAX_URI_LEN+1];
+    char    resource[MAX_RESOURCE_LEN+1];
     char    uagent[MAX_VALUE_LEN+1];
+    bool    mobile;
+    int     clen;
+    char    in_data[MAX_URI_LEN+1];
+    char    cookie_in_l[SESID_LEN+1];
     char    host[MAX_VALUE_LEN+1];
     char    website[256];
     char    lang[LANG_LEN+1];
+    char    in_ctype;
+    char    boundary[MAX_VALUE_LEN+1];
     char    response;
+    int     status;
     usession_t uses;
 #ifdef ASYNC_AUSES
     ausession_t auses;
@@ -902,6 +925,13 @@ typedef struct {
     counters_t cnts_today;
     counters_t cnts_yesterday;
     counters_t cnts_day_before;
+    int     days_up;
+    int     open_conn;
+    int     open_conn_hwm;
+    int     sessions;
+    int     sessions_hwm;
+    char    last_modified[32];
+    int     blacklist_cnt;
 } async_req_hdr_t;
 
 typedef struct {
@@ -915,11 +945,20 @@ typedef struct {
     long    call_id;
     int     ci;
     char    service[SVC_NAME_LEN+1];
+    int     ai;
     char    state;
     time_t  sent;
     int     timeout;
     int     err_code;
     int     status;
+    char    ctype;
+    char    ctypestr[256];
+    char    cdisp[256];
+    char    cookie_out_a[SESID_LEN+1];
+    char    cookie_out_a_exp[32];
+    char    location[MAX_URI_LEN+1];
+    bool    dont_cache;
+    bool    keep_content;
     int     rest_status;
     long    rest_req;
     double  rest_elapsed;
@@ -964,18 +1003,13 @@ extern int      G_test;
 /* end of config params */
 extern int      G_pid;                      /* pid */
 extern char     G_appdir[256];              /* application root dir */
-extern long     G_days_up;                  /* web server's days up */
+extern int      G_days_up;                  /* web server's days up */
 extern conn_t   conn[MAX_CONNECTIONS+1];    /* HTTP connections & requests -- by far the most important structure around */
 extern int      G_open_conn;                /* number of open connections */
 extern int      G_open_conn_hwm;            /* highest number of open connections (high water mark) */
 extern char     G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
-#ifndef SILGY_SVC
 extern usession_t uses[MAX_SESSIONS+1];     /* engine user sessions -- they start from 1 */
 extern ausession_t auses[MAX_SESSIONS+1];   /* app user sessions, using the same index (usi) */
-#else
-extern usession_t uses;
-extern ausession_t auses;
-#endif  /* SILGY_SVC */
 extern int      G_sessions;                 /* number of active user sessions */
 extern int      G_sessions_hwm;             /* highest number of active user sessions (high water mark) */
 extern time_t   G_now;                      /* current time */
@@ -1003,16 +1037,15 @@ extern long     G_last_call_id;             /* counter */
 extern char     G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 extern bool     G_index_present;            /* index.html present in res? */
 #ifdef SILGY_SVC
-extern char     *G_req;
+//extern char     *G_req;
 extern char     *G_res;
 extern char     G_service[SVC_NAME_LEN+1];
 extern int      G_error_code;
-extern int      G_status;
 extern int      ci;
 #endif  /* SILGY_SVC */
 
 extern char     G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
-extern int      G_blacklist_cnt;            /* M_blacklist length */
+extern int      G_blacklist_cnt;            /* G_blacklist length */
 /* counters */
 extern counters_t G_cnts_today;             /* today's counters */
 extern counters_t G_cnts_yesterday;         /* yesterday's counters */
@@ -1054,31 +1087,13 @@ extern "C" {
     void eng_uses_reset(int usi);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size);
     void silgy_add_to_static_res(const char *name, const char *src);
-    void eng_send_msg_description(int ci, int code);
     void eng_block_ip(const char *value, bool autoblocked);
     bool eng_host(int ci, const char *host);
-    void eng_set_res_status(int ci, int status);
-    void eng_set_res_content_type(int ci, const char *str);
-    void eng_set_res_location(int ci, const char *str, ...);
-    void eng_set_res_content_disposition(int ci, const char *str, ...);
     void eng_out_check(int ci, const char *str);
     void eng_out_check_realloc(int ci, const char *str);
     void eng_out_check_realloc_bin(int ci, const char *data, long len);
-    void eng_out_html_header(int ci);
-    void eng_out_html_footer(int ci);
-    void eng_append_css(int ci, const char *fname, bool first);
-    void eng_append_script(int ci, const char *fname, bool first);
-    void eng_send_msg_description(int ci, int errcode);
-    bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen);
-    bool get_qs_param_long(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf);
-    char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
     char *eng_get_header(int ci, const char *header);
     void eng_rest_header_pass(int ci, const char *header);
-    void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt, bool header_n_footer);
 
     /* public app functions */
 
@@ -1091,10 +1106,6 @@ extern "C" {
     void silgy_app_done(void);
     void silgy_app_main(int ci);
     bool silgy_app_session_init(int ci);
-#ifdef USERS
-    bool silgy_app_user_login(int ci);
-    void silgy_app_user_logout(int ci);
-#endif
     void silgy_app_session_done(int ci);
 #ifdef ASYNC
     void silgy_app_continue(int ci, const char *data);
@@ -1106,6 +1117,11 @@ extern "C" {
     void app_every_second(void);
 #endif
 #endif  /* SILGY_SVC */
+
+#ifdef USERS
+    bool silgy_app_user_login(int ci);
+    void silgy_app_user_logout(int ci);
+#endif
 
 #ifdef __cplusplus
 }   /* extern "C" */

@@ -38,7 +38,7 @@ char        G_blockedIPList[256]="";
 int         G_ASYNCId=0;
 int         G_ASYNCDefTimeout=ASYNC_DEF_TIMEOUT;
 /* end of config params */
-long        G_days_up=0;                /* web server's days up */
+int         G_days_up=0;                /* web server's days up */
 conn_t      conn[MAX_CONNECTIONS+1]={0}; /* HTTP connections & requests -- by far the most important structure around */
 int         G_open_conn=0;              /* number of open connections */
 int         G_open_conn_hwm=0;          /* highest number of open connections (high water mark) */
@@ -64,7 +64,7 @@ long        G_last_call_id=0;           /* counter */
 bool        G_index_present=FALSE;      /* index.html present in res? */
 
 char        G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
-int         G_blacklist_cnt=0;          /* M_blacklist length */
+int         G_blacklist_cnt=0;          /* G_blacklist length */
 /* counters */
 counters_t  G_cnts_today={0};           /* today's counters */
 counters_t  G_cnts_yesterday={0};       /* yesterday's counters */
@@ -567,7 +567,7 @@ static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
-                                DBG("Trying SSL_read %ld bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
+                                DBG("Trying SSL_read %d bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
 #endif  /* DUMP */
                                 bytes = SSL_read(conn[i].ssl, conn[i].in_data+conn[i].was_read, conn[i].clen-conn[i].was_read);
 
@@ -598,7 +598,7 @@ static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
-                                DBG("Trying to read %ld bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
+                                DBG("Trying to read %d bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
 #endif  /* DUMP */
                                 bytes = recv(conn[i].fd, conn[i].in_data+conn[i].was_read, conn[i].clen-conn[i].was_read, 0);
 
@@ -701,7 +701,7 @@ static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
 #ifdef SEND_ALL_AT_ONCE
                                 DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", conn[i].out_len, conn[i].fd, i);
 #else
-                                DBG("Trying SSL_write %ld bytes to fd=%d (ci=%d)", conn[i].clen, conn[i].fd, i);
+                                DBG("Trying SSL_write %d bytes to fd=%d (ci=%d)", conn[i].clen, conn[i].fd, i);
 #endif
 #endif  /* DUMP */
 #ifdef SEND_ALL_AT_ONCE
@@ -744,7 +744,7 @@ static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
 #ifdef SEND_ALL_AT_ONCE
                                 DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].out_len-conn[i].data_sent, conn[i].fd, i);
 #else
-                                DBG("Trying to write %ld bytes to fd=%d (ci=%d)", conn[i].clen-conn[i].data_sent, conn[i].fd, i);
+                                DBG("Trying to write %d bytes to fd=%d (ci=%d)", conn[i].clen-conn[i].data_sent, conn[i].fd, i);
 #endif
 #endif  /* DUMP */
 #ifdef SEND_ALL_AT_ONCE
@@ -857,17 +857,23 @@ static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
                 G_rest_average = G_rest_elapsed / G_rest_req;
             }
 
-            for ( j=0; j<MAX_ASYNC; ++j )
-            {
-                if ( ares[j].hdr.call_id == res.hdr.call_id )
-                {
-                    DBG("ares record found");
-                    memcpy(&ares[j], (char*)&res, sizeof(async_res_t));
-                    ares[j].hdr.state = ASYNC_STATE_RECEIVED;
-                    conn[res.hdr.ci].ai = j;    /* avoid unnecessary looping later */
-                    break;
-                }
-            }
+            memcpy(&ares[res.hdr.ai], (char*)&res, sizeof(async_res_t));
+
+            ares[res.hdr.ai].hdr.state = ASYNC_STATE_RECEIVED;
+
+            conn[res.hdr.ci].ai = res.hdr.ai;    /* avoid looping later */
+
+            /* conn update */
+
+            conn[res.hdr.ci].status = res.hdr.status;
+            conn[res.hdr.ci].ctype = res.hdr.ctype;
+            strcpy(conn[res.hdr.ci].ctypestr, res.hdr.ctypestr);
+            strcpy(conn[res.hdr.ci].cdisp, res.hdr.cdisp);
+            strcpy(conn[res.hdr.ci].cookie_out_a, res.hdr.cookie_out_a);
+            strcpy(conn[res.hdr.ci].cookie_out_a_exp, res.hdr.cookie_out_a_exp);
+            strcpy(conn[res.hdr.ci].location, res.hdr.location);
+            conn[res.hdr.ci].dont_cache = res.hdr.dont_cache;
+            conn[res.hdr.ci].keep_content = res.hdr.keep_content;
         }
 #ifdef DUMP
         else
@@ -1066,7 +1072,7 @@ static void set_state(int ci, long bytes)
     {
         if ( conn[ci].was_read < conn[ci].clen )
         {
-            DBG("ci=%d, was_read=%ld, continue receiving", ci, conn[ci].was_read);
+            DBG("ci=%d, was_read=%d, continue receiving", ci, conn[ci].was_read);
         }
         else    /* data received */
         {
@@ -4057,10 +4063,10 @@ static int set_http_req_val(int ci, const char *label, const char *value)
         conn[ci].clen = atol(value);
         if ( conn[ci].clen < 0 || (!conn[ci].post && conn[ci].clen >= IN_BUFSIZE) || (conn[ci].post && conn[ci].clen >= MAX_POST_DATA_BUFSIZE) )
         {
-            ERR("Request too long, clen = %ld, sending 413", conn[ci].clen);
+            ERR("Request too long, clen = %d, sending 413", conn[ci].clen);
             return 413;
         }
-        DBG("conn[ci].clen = %ld", conn[ci].clen);
+        DBG("conn[ci].clen = %d", conn[ci].clen);
     }
     else if ( 0==strcmp(ulabel, "ACCEPT-LANGUAGE") )    /* en-US en-GB pl-PL */
     {
@@ -4509,10 +4515,25 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     /* conn */
 
     strcpy(req.hdr.ip, conn[ci].ip);
+    strcpy(req.hdr.method, conn[ci].method);
+    req.hdr.post = conn[ci].post;
+    strcpy(req.hdr.uri, conn[ci].uri);
+    strcpy(req.hdr.resource, conn[ci].resource);
     strcpy(req.hdr.uagent, conn[ci].uagent);
+    req.hdr.mobile = conn[ci].mobile;
+    req.hdr.clen = conn[ci].clen;
+    if ( conn[ci].post )
+    {
+        strncpy(req.hdr.in_data, conn[ci].in_data, MAX_URI_LEN);
+        req.hdr.in_data[MAX_URI_LEN] = EOS;
+    }
+    strcpy(req.hdr.cookie_in_l, conn[ci].cookie_in_l);
     strcpy(req.hdr.host, conn[ci].host);
     strcpy(req.hdr.website, conn[ci].website);
     strcpy(req.hdr.lang, conn[ci].lang);
+    req.hdr.in_ctype = conn[ci].in_ctype;
+    strcpy(req.hdr.boundary, conn[ci].boundary);
+    req.hdr.status = conn[ci].status;
 
     /* pass user session */
 
@@ -4537,6 +4558,18 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     memcpy(&req.hdr.cnts_yesterday, &G_cnts_yesterday, sizeof(counters_t));
     memcpy(&req.hdr.cnts_day_before, &G_cnts_day_before, sizeof(counters_t));
 
+    req.hdr.days_up = G_days_up;
+    req.hdr.open_conn = G_open_conn;
+    req.hdr.open_conn_hwm = G_open_conn_hwm;
+    req.hdr.sessions = G_sessions;
+    req.hdr.sessions_hwm = G_sessions_hwm;
+
+    req.hdr.blacklist_cnt = G_blacklist_cnt;
+
+    /* other */
+
+    strcpy(req.hdr.last_modified, G_last_modified);
+
     /* data */
 
     if ( data )
@@ -4551,19 +4584,18 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         req.data[0] = EOS;
     }
 
-    DBG("Sending a message on behalf of ci=%d, call_id=%ld, service [%s]", ci, req.hdr.call_id, req.hdr.service);
-
-    mq_send(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, 0);
+    bool found=0;
 
     if ( response )     /* we will wait */
     {
         /* add to ares (async response array) */
 
         int j;
+        bool found=0;
 
         for ( j=0; j<MAX_ASYNC; ++j )
         {
-            if ( ares[j].hdr.state == ASYNC_STATE_FREE )        /* free slot */
+            if ( ares[j].hdr.state == ASYNC_STATE_FREE )    /* free slot */
             {
                 DBG("free slot %d found in ares", j);
                 ares[j].hdr.call_id = req.hdr.call_id;
@@ -4574,20 +4606,37 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
                 if ( timeout < 0 ) timeout = 0;
                 if ( timeout == 0 || timeout > ASYNC_MAX_TIMEOUT ) timeout = ASYNC_MAX_TIMEOUT;
                 ares[j].hdr.timeout = timeout;
+                req.hdr.ai = j;   /* avoid looping later */
+                found = 1;
                 break;
             }
         }
 
-        /* set request state */
+        if ( found )
+        {
+            /* set request state */
 #ifdef DUMP
-        DBG("Changing state to CONN_STATE_WAITING_FOR_ASYNC");
+            DBG("Changing state to CONN_STATE_WAITING_FOR_ASYNC");
 #endif
-        conn[ci].conn_state = CONN_STATE_WAITING_FOR_ASYNC;
+            conn[ci].conn_state = CONN_STATE_WAITING_FOR_ASYNC;
 
 #ifdef FD_MON_POLL
-        M_pollfds[conn[ci].pi].events = POLLOUT;
+            M_pollfds[conn[ci].pi].events = POLLOUT;
 #endif
+        }
+        else
+        {
+            ERR("ares is full");
+        }
     }
+
+    if ( found || !response )
+    {
+        DBG("Sending a message on behalf of ci=%d, call_id=%ld, service [%s]", ci, req.hdr.call_id, req.hdr.service);
+        if ( mq_send(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, 0) != 0 )
+            ERR("mq_send failed, errno = %d (%s)", errno, strerror(errno));
+    }
+
 #endif
 }
 
@@ -4689,51 +4738,6 @@ bool eng_host(int ci, const char *host)
 
 
 /* --------------------------------------------------------------------------
-   Set response status
--------------------------------------------------------------------------- */
-void eng_set_res_status(int ci, int status)
-{
-    conn[ci].status = status;
-}
-
-
-/* --------------------------------------------------------------------------
-   Set response content type
--------------------------------------------------------------------------- */
-void eng_set_res_content_type(int ci, const char *str)
-{
-    conn[ci].ctype = CONTENT_TYPE_USER;
-    strcpy(conn[ci].ctypestr, str);
-}
-
-
-/* --------------------------------------------------------------------------
-   Set location
--------------------------------------------------------------------------- */
-void eng_set_res_location(int ci, const char *str, ...)
-{
-    va_list     plist;
-
-    va_start(plist, str);
-    vsprintf(conn[ci].location, str, plist);
-    va_end(plist);
-}
-
-
-/* --------------------------------------------------------------------------
-   Set response content disposition
--------------------------------------------------------------------------- */
-void eng_set_res_content_disposition(int ci, const char *str, ...)
-{
-    va_list     plist;
-
-    va_start(plist, str);
-    vsprintf(conn[ci].cdisp, str, plist);
-    va_end(plist);
-}
-
-
-/* --------------------------------------------------------------------------
    Write string to output buffer with buffer overwrite protection
 -------------------------------------------------------------------------- */
 void eng_out_check(int ci, const char *str)
@@ -4806,831 +4810,6 @@ void eng_out_check_realloc_bin(int ci, const char *data, long len)
         INF("Reallocated output buffer for ci=%d, new size = %ld bytes", ci, conn[ci].out_data_allocated);
         eng_out_check_realloc_bin(ci, data, len);       /* call itself! */
     }
-}
-
-
-/* --------------------------------------------------------------------------
-   Output standard HTML header
--------------------------------------------------------------------------- */
-void eng_out_html_header(int ci)
-{
-    OUT("<!DOCTYPE html>");
-    OUT("<html>");
-    OUT("<head>");
-    OUT("<title>%s</title>", APP_WEBSITE);
-#ifdef APP_DESCRIPTION
-    OUT("<meta name=\"description\" content=\"%s\">", APP_DESCRIPTION);
-#endif
-#ifdef APP_KEYWORDS
-    OUT("<meta name=\"keywords\" content=\"%s\">", APP_KEYWORDS);
-#endif
-    if ( REQ_MOB )  // if mobile request
-        OUT("<meta name=\"viewport\" content=\"width=device-width\">");
-    OUT("</head>");
-    OUT("<body>");
-}
-
-
-/* --------------------------------------------------------------------------
-   Output standard HTML footer
--------------------------------------------------------------------------- */
-void eng_out_html_footer(int ci)
-{
-    OUT("</body>");
-    OUT("</html>");
-}
-
-
-/* --------------------------------------------------------------------------
-   Add CSS link to HTML head
--------------------------------------------------------------------------- */
-void eng_append_css(int ci, const char *fname, bool first)
-{
-    if ( first )
-    {
-        DBG("first = TRUE; Defining ldlink()");
-        OUT("function ldlink(n){var f=document.createElement('link');f.setAttribute(\"rel\",\"stylesheet\");f.setAttribute(\"type\",\"text/css\");f.setAttribute(\"href\",n);document.getElementsByTagName(\"head\")[0].appendChild(f);}");
-    }
-    OUT("ldlink('%s');", fname);
-}
-
-
-/* --------------------------------------------------------------------------
-   Add script to HTML head
--------------------------------------------------------------------------- */
-void eng_append_script(int ci, const char *fname, bool first)
-{
-    if ( first )
-    {
-        DBG("first = TRUE; Defining ldscript()");
-        OUT("function ldscript(n){var f=document.createElement('script');f.setAttribute(\"type\",\"text/javascript\");f.setAttribute(\"src\",n);document.getElementsByTagName(\"head\")[0].appendChild(f);}");
-    }
-    OUT("ldscript('%s');", fname);
-}
-
-
-/* --------------------------------------------------------------------------
-   Send message description as plain, pipe-delimited text as follows:
-   <category>|<description>
--------------------------------------------------------------------------- */
-void eng_send_msg_description(int ci, int code)
-{
-    char    cat[1024]=MSG_CAT_ERROR;
-    char    msg[1024]="";
-
-    if ( code == OK )
-    {
-        strcpy(cat, MSG_CAT_OK);
-    }
-    else if ( code < ERR_MAX_ENGINE_ERROR )
-    {
-        /* keep default category */
-    }
-#ifdef USERS
-    else if ( code < ERR_MAX_USR_LOGIN_ERROR )
-    {
-        strcpy(cat, MSG_CAT_USR_LOGIN);
-    }
-    else if ( code < ERR_MAX_USR_EMAIL_ERROR )
-    {
-        strcpy(cat, MSG_CAT_USR_EMAIL);
-    }
-    else if ( code < ERR_MAX_USR_PASSWORD_ERROR )
-    {
-        strcpy(cat, MSG_CAT_USR_PASSWORD);
-    }
-    else if ( code < ERR_MAX_USR_REPEAT_PASSWORD_ERROR )
-    {
-        strcpy(cat, MSG_CAT_USR_REPEAT_PASSWORD);
-    }
-    else if ( code < ERR_MAX_USR_OLD_PASSWORD_ERROR )
-    {
-        strcpy(cat, MSG_CAT_USR_OLD_PASSWORD);
-    }
-    else if ( code < ERR_MAX_USR_ERROR )
-    {
-        /* keep default category */
-    }
-    else if ( code < WAR_MAX_USR_WARNING )
-    {
-        strcpy(cat, MSG_CAT_WARNING);
-    }
-    else if ( code < MSG_MAX_USR_MESSAGE )
-    {
-        strcpy(cat, MSG_CAT_MESSAGE);
-    }
-#endif  /* USERS */
-    else    /* app error */
-    {
-        /* keep default category */
-    }
-
-    strcpy(msg, silgy_message_lang(ci, code));
-
-#ifdef MSG_FORMAT_JSON
-    OUT("{\"code\":%d,\"category\":\"%s\",\"message\":\"%s\"}", code, cat, msg);
-    conn[ci].ctype = RES_JSON;
-#else
-    OUT("%d|%s|%s", code, cat, msg);
-    conn[ci].ctype = RES_TEXT;
-#endif
-
-    RES_KEEP_CONTENT;
-
-    DBG("eng_send_msg_description: [%s]", G_tmp);
-
-    RES_DONT_CACHE;
-}
-
-
-/* --------------------------------------------------------------------------
-   URI-decode character
--------------------------------------------------------------------------- */
-static int xctod(int c)
-{
-    if ( isdigit(c) )
-        return c - '0';
-    else if ( isupper(c) )
-        return c - 'A' + 10;
-    else if ( islower(c) )
-        return c - 'a' + 10;
-    else
-        return 0;
-}
-
-
-/* --------------------------------------------------------------------------
-   URI-decode src
--------------------------------------------------------------------------- */
-static char *uri_decode(char *src, int srclen, char *dest, int maxlen)
-{
-    char    *endp=src+srclen;
-    char    *srcp;
-    char    *destp=dest;
-    int     nwrote=0;
-
-    for ( srcp=src; srcp<endp; ++srcp )
-    {
-        if ( *srcp == '+' )
-            *destp++ = ' ';
-        else if ( *srcp == '%' )
-        {
-            *destp++ = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
-            srcp += 2;
-        }
-        else    /* copy as it is */
-            *destp++ = *srcp;
-
-        ++nwrote;
-
-        if ( nwrote == maxlen )
-        {
-            WAR("URI val truncated");
-            break;
-        }
-    }
-
-    *destp = EOS;
-
-    return dest;
-}
-
-
-/* --------------------------------------------------------------------------
-   URI-decode src, HTML-escape
-   Duplicated code for speed
--------------------------------------------------------------------------- */
-static char *uri_decode_html_esc(char *src, int srclen, char *dest, int maxlen)
-{
-    char    *endp=src+srclen;
-    char    *srcp;
-    char    *destp=dest;
-    int     nwrote=0;
-    char    tmp;
-
-    maxlen -= 7;
-
-    for ( srcp=src; srcp<endp; ++srcp )
-    {
-        if ( *srcp == '+' )
-        {
-            *destp++ = ' ';
-            ++nwrote;
-        }
-        else if ( *srcp == '%' )
-        {
-            tmp = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
-            srcp += 2;
-
-            if ( tmp == '\'' )      /* single quote */
-            {
-                *destp++ = '&';
-                *destp++ = 'a';
-                *destp++ = 'p';
-                *destp++ = 'o';
-                *destp++ = 's';
-                *destp++ = ';';
-                nwrote += 6;
-            }
-            else if ( tmp == '"' )  /* double quote */
-            {
-                *destp++ = '&';
-                *destp++ = 'q';
-                *destp++ = 'u';
-                *destp++ = 'o';
-                *destp++ = 't';
-                *destp++ = ';';
-                nwrote += 6;
-            }
-            else if ( tmp == '\\' ) /* backslash */
-            {
-                *destp++ = '\\';
-                *destp++ = '\\';
-                nwrote += 2;
-            }
-            else if ( tmp == '<' )
-            {
-                *destp++ = '&';
-                *destp++ = 'l';
-                *destp++ = 't';
-                *destp++ = ';';
-                nwrote += 4;
-            }
-            else if ( tmp == '>' )
-            {
-                *destp++ = '&';
-                *destp++ = 'g';
-                *destp++ = 't';
-                *destp++ = ';';
-                nwrote += 4;
-            }
-            else if ( tmp == '&' )
-            {
-                *destp++ = '&';
-                *destp++ = 'a';
-                *destp++ = 'm';
-                *destp++ = 'p';
-                *destp++ = ';';
-                nwrote += 5;
-            }
-            else if ( tmp != '\r' && tmp != '\n' )
-            {
-                *destp++ = tmp;
-                ++nwrote;
-            }
-        }
-        else if ( *srcp == '\'' )    /* ugly but fast -- everything again */
-        {
-            *destp++ = '&';
-            *destp++ = 'a';
-            *destp++ = 'p';
-            *destp++ = 'o';
-            *destp++ = 's';
-            *destp++ = ';';
-            nwrote += 6;
-        }
-        else if ( *srcp == '"' )    /* double quote */
-        {
-            *destp++ = '&';
-            *destp++ = 'q';
-            *destp++ = 'u';
-            *destp++ = 'o';
-            *destp++ = 't';
-            *destp++ = ';';
-            nwrote += 6;
-        }
-        else if ( *srcp == '\\' )   /* backslash */
-        {
-            *destp++ = '\\';
-            *destp++ = '\\';
-            nwrote += 2;
-        }
-        else if ( *srcp == '<' )
-        {
-            *destp++ = '&';
-            *destp++ = 'l';
-            *destp++ = 't';
-            *destp++ = ';';
-            nwrote += 4;
-        }
-        else if ( *srcp == '>' )
-        {
-            *destp++ = '&';
-            *destp++ = 'g';
-            *destp++ = 't';
-            *destp++ = ';';
-            nwrote += 4;
-        }
-        else if ( *srcp == '&' )
-        {
-            *destp++ = '&';
-            *destp++ = 'a';
-            *destp++ = 'm';
-            *destp++ = 'p';
-            *destp++ = ';';
-            nwrote += 5;
-        }
-        else if ( *srcp != '\r' && *srcp != '\n' )
-        {
-            *destp++ = *srcp;
-            ++nwrote;
-        }
-
-        if ( nwrote > maxlen )
-        {
-            WAR("URI val truncated");
-            break;
-        }
-    }
-
-    *destp = EOS;
-
-    return dest;
-}
-
-
-/* --------------------------------------------------------------------------
-   URI-decode src, SQL-escape
-   Duplicated code for speed
--------------------------------------------------------------------------- */
-static char *uri_decode_sql_esc(char *src, int srclen, char *dest, int maxlen)
-{
-    char    *endp=src+srclen;
-    char    *srcp;
-    char    *destp=dest;
-    int     nwrote=0;
-    char    tmp;
-
-    maxlen -= 3;
-
-    for ( srcp=src; srcp<endp; ++srcp )
-    {
-        if ( *srcp == '+' )
-        {
-            *destp++ = ' ';
-            ++nwrote;
-        }
-        else if ( *srcp == '%' )
-        {
-            tmp = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
-            srcp += 2;
-
-            if ( tmp == '\'' )      /* single quote */
-            {
-                *destp++ = '\\';
-                *destp++ = '\'';
-                nwrote += 2;
-            }
-            else if ( *srcp == '"' )    /* double quote */
-            {
-                *destp++ = '\\';
-                *destp++ = '"';
-                nwrote += 2;
-            }
-            else if ( tmp == '\\' )     /* backslash */
-            {
-                *destp++ = '\\';
-                *destp++ = '\\';
-                nwrote += 2;
-            }
-        }
-        else if ( *srcp == '\'' )   /* ugly but fast -- everything again */
-        {
-            *destp++ = '\\';
-            *destp++ = '\'';
-            nwrote += 2;
-        }
-        else if ( *srcp == '"' )    /* double quote */
-        {
-            *destp++ = '\\';
-            *destp++ = '"';
-            nwrote += 2;
-        }
-        else if ( *srcp == '\\' )   /* backslash */
-        {
-            *destp++ = '\\';
-            *destp++ = '\\';
-            nwrote += 2;
-        }
-
-        if ( nwrote > maxlen )
-        {
-            WAR("URI val truncated");
-            break;
-        }
-    }
-
-    *destp = EOS;
-
-    return dest;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get query string value and URI-decode. Return TRUE if found.
--------------------------------------------------------------------------- */
-bool get_qs_param(int ci, const char *fieldname, char *retbuf)
-{
-    char buf[MAX_URI_VAL_LEN*2+1];
-
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
-    {
-        if ( retbuf ) uri_decode(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
-        return TRUE;
-    }
-    else if ( retbuf ) retbuf[0] = EOS;
-
-    return FALSE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get, URI-decode and HTML-escape query string value. Return TRUE if found.
--------------------------------------------------------------------------- */
-bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf)
-{
-    char buf[MAX_URI_VAL_LEN*2+1];
-
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
-    {
-        if ( retbuf ) uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
-        return TRUE;
-    }
-    else if ( retbuf ) retbuf[0] = EOS;
-
-    return FALSE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get, URI-decode and SQL-escape query string value. Return TRUE if found.
--------------------------------------------------------------------------- */
-bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf)
-{
-    char buf[MAX_URI_VAL_LEN*2+1];
-
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
-    {
-        if ( retbuf ) uri_decode_sql_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
-        return TRUE;
-    }
-    else if ( retbuf ) retbuf[0] = EOS;
-
-    return FALSE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get query string value. Return TRUE if found.
--------------------------------------------------------------------------- */
-bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
-{
-    char *querystring, *end;
-
-#ifdef DUMP
-    DBG("get_qs_param_raw: fieldname [%s]", fieldname);
-#endif
-
-    int fnamelen = strlen(fieldname);
-
-    if ( conn[ci].post )
-    {
-        querystring = conn[ci].in_data;
-        end = querystring + conn[ci].clen;
-    }
-    else
-    {
-        querystring = strchr(conn[ci].uri, '?');
-    }
-
-    if ( querystring == NULL )
-    {
-        if ( retbuf ) retbuf[0] = EOS;
-        return FALSE;    /* no question mark => no values */
-    }
-
-    if ( !conn[ci].post )
-    {
-        ++querystring;      /* skip the question mark */
-        end = querystring + (strlen(conn[ci].uri) - (querystring-conn[ci].uri));
-    }
-
-#ifdef DUMP
-    DBG("get_qs_param_raw: before loop");
-#endif
-
-    char *p, *equals, *ampersand;
-    int  len1;      /* fieldname len */
-    int  len2;      /* value len */
-    int  vallen;    /* returned value length */
-
-    for ( p=querystring; p<end; )
-    {
-        equals = strchr(p, '=');    /* end of field name */
-        ampersand = strchr(p, '&');    /* end of value */
-
-        if ( ampersand )   /* more than one field */
-        {
-            len2 = ampersand - p;
-        }
-        else    /* no ampersand ==> only one field */
-        {
-            if ( !equals )
-            {
-#ifdef DUMP
-                DBG("get_qs_param_raw: no ampersand, no equals, returning FALSE");
-#endif
-                return FALSE;
-            }
-            else
-                len2 = strlen(p);
-        }
-
-        if ( !equals || (ampersand && equals>ampersand) )
-        {
-            /* no '=' present in this field, move to next */
-            ampersand += len2;
-            continue;
-        }
-
-        len1 = equals - p;   /* field name length */
-
-        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )   /* found it */
-        {
-            if ( retbuf )
-            {
-                vallen = len2 - len1 - 1;
-                if ( vallen > maxlen )
-                    vallen = maxlen;
-
-                strncpy(retbuf, equals+1, vallen);
-                retbuf[vallen] = EOS;
-#ifdef DUMP
-                DBG("get_qs_param_raw: retbuf [%s]", retbuf);
-#endif
-            }
-
-            return TRUE;
-        }
-
-        /* try next value */
-
-        p += len2;      /* skip current value */
-        if ( *p == '&' ) ++p;   /* skip '&' */
-    }
-
-    /* not found */
-
-    if ( retbuf ) retbuf[0] = EOS;
-
-#ifdef DUMP
-    DBG("get_qs_param_raw: returning FALSE");
-#endif
-
-    return FALSE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get incoming request data -- long string version. TRUE if found.
--------------------------------------------------------------------------- */
-bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
-{
-    char buf[MAX_LONG_URI_VAL_LEN*2+1];
-
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_LONG_URI_VAL_LEN*2) )
-    {
-        uri_decode(buf, strlen(buf), retbuf, MAX_LONG_URI_VAL_LEN);
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get text value from multipart-form-data
--------------------------------------------------------------------------- */
-bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf)
-{
-    char    *p;
-    long    len;
-
-    p = get_qs_param_multipart(ci, fieldname, &len, NULL);
-
-    if ( !p ) return FALSE;
-
-    if ( len > MAX_URI_VAL_LEN ) return FALSE;
-
-    strncpy(retbuf, p, len);
-    retbuf[len] = EOS;
-
-    return TRUE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Experimental multipart-form-data receipt
-   Return length or -1 if error
-   If retfname is not NULL then assume binary data and it must be the last
-   data element
--------------------------------------------------------------------------- */
-char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname)
-{
-    int     blen;           /* boundary length */
-    char    *cp;            /* current pointer */
-    char    *p;             /* tmp pointer */
-    long    b;              /* tmp bytes count */
-    char    fn[MAX_LABEL_LEN+1];    /* field name */
-    char    *end;
-    long    len;
-
-    /* Couple of checks to make sure it's properly formatted multipart content */
-
-    if ( conn[ci].in_ctype != CONTENT_TYPE_MULTIPART )
-    {
-        WAR("This is not multipart/form-data");
-        return NULL;
-    }
-
-    if ( conn[ci].clen < 10 )
-    {
-        WAR("Content length seems to be too small for multipart (%ld)", conn[ci].clen);
-        return NULL;
-    }
-
-    cp = conn[ci].in_data;
-
-    if ( !conn[ci].boundary[0] )    /* find first end of line -- that would be end of boundary */
-    {
-        if ( NULL == (p=strchr(cp, '\n')) )
-        {
-            WAR("Request syntax error");
-            return NULL;
-        }
-
-        b = p - cp - 2;     /* skip -- */
-
-        if ( b < 2 )
-        {
-            WAR("Boundary appears to be too short (%ld)", b);
-            return NULL;
-        }
-        else if ( b > 255 )
-        {
-            WAR("Boundary appears to be too long (%ld)", b);
-            return NULL;
-        }
-
-        strncpy(conn[ci].boundary, cp+2, b);
-        if ( conn[ci].boundary[b-1] == '\r' )
-            conn[ci].boundary[b-1] = EOS;
-        else
-            conn[ci].boundary[b] = EOS;
-    }
-
-    blen = strlen(conn[ci].boundary);
-
-    if ( conn[ci].in_data[conn[ci].clen-4] != '-' || conn[ci].in_data[conn[ci].clen-3] != '-' )
-    {
-        WAR("Content doesn't end with '--'");
-        return NULL;
-    }
-
-    while (TRUE)    /* find the right section */
-    {
-        if ( NULL == (p=strstr(cp, conn[ci].boundary)) )
-        {
-            WAR("No (next) boundary found");
-            return NULL;
-        }
-
-        b = p - cp + blen;
-        cp += b;
-
-        if ( NULL == (p=strstr(cp, "Content-Disposition: form-data;")) )
-        {
-            WAR("No Content-Disposition label");
-            return NULL;
-        }
-
-        b = p - cp + 30;
-        cp += b;
-
-        if ( NULL == (p=strstr(cp, "name=\"")) )
-        {
-            WAR("No field name");
-            return NULL;
-        }
-
-        b = p - cp + 6;
-        cp += b;
-
-//      DBG("field name starts from: [%s]", cp);
-
-        if ( NULL == (p=strchr(cp, '"')) )
-        {
-            WAR("No field name closing quote");
-            return NULL;
-        }
-
-        b = p - cp;
-
-        if ( b > MAX_LABEL_LEN )
-        {
-            WAR("Field name too long (%ld)", b);
-            return NULL;
-        }
-
-        strncpy(fn, cp, b);
-        fn[b] = EOS;
-
-//      DBG("fn: [%s]", fn);
-
-        if ( 0==strcmp(fn, fieldname) )     /* found */
-            break;
-
-        cp += b;
-    }
-
-    /* find a file name */
-
-    if ( retfname )
-    {
-        if ( NULL == (p=strstr(cp, "filename=\"")) )
-        {
-            WAR("No file name");
-            return NULL;
-        }
-
-        b = p - cp + 10;
-        cp += b;
-
-    //  DBG("file name starts from: [%s]", cp);
-
-        if ( NULL == (p=strchr(cp, '"')) )
-        {
-            WAR("No file name closing quote");
-            return NULL;
-        }
-
-        b = p - cp;
-
-        if ( b > 255 )
-        {
-            WAR("File name too long (%ld)", b);
-            return NULL;
-        }
-
-        strncpy(fn, cp, b);
-        fn[b] = EOS;        /* fn now contains file name */
-
-        cp += b;
-    }
-
-    /* now look for the section header end where the actual data begins */
-
-    if ( NULL == (p=strstr(cp, "\r\n\r\n")) )
-    {
-        WAR("No section header end");
-        return NULL;
-    }
-
-    b = p - cp + 4;
-    cp += b;        /* cp now points to the actual data */
-
-    /* find out data length */
-
-    if ( !retfname )    /* text */
-    {
-        if ( NULL == (end=strstr(cp, conn[ci].boundary)) )
-        {
-            WAR("No closing boundary found");
-            return NULL;
-        }
-
-        len = end - cp - 4;     /* minus CRLF-- */
-    }
-    else    /* potentially binary content -- calculate rather than use strstr */
-    {
-        len = conn[ci].clen - (cp - conn[ci].in_data) - blen - 8;  /* fast version */
-                                                                /* Note that the file content must come as last! */
-    }
-
-    if ( len < 0 )
-    {
-        WAR("Ooops, something went terribly wrong! Data length = %ld", len);
-        return NULL;
-    }
-
-    /* everything looks good so far */
-
-    *retlen = len;
-
-    if ( retfname )
-        strcpy(retfname, fn);
-
-    return cp;
 }
 
 
@@ -5730,329 +4909,6 @@ static void do_add2blocked(int ci)
 }
 
 
-/* --------------------------------------------------------------------------
-   Format counters
--------------------------------------------------------------------------- */
-static void format_counters(counters_fmt_t *s, counters_t *n)
-{
-    amt(s->req, n->req);
-    amt(s->req_dsk, n->req_dsk);
-    amt(s->req_mob, n->req_mob);
-    amt(s->req_bot, n->req_bot);
-    amt(s->visits, n->visits);
-    amt(s->visits_dsk, n->visits_dsk);
-    amt(s->visits_mob, n->visits_mob);
-    amt(s->blocked, n->blocked);
-    amtd(s->average, n->average);
-}
-
-
-/* --------------------------------------------------------------------------
-   Users info
--------------------------------------------------------------------------- */
-static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
-{
-#ifdef DBMYSQL
-    char        sql_query[SQLBUF];
-    MYSQL_RES   *result;
-    MYSQL_ROW   sql_row;
-    long        sql_records;
-
-    char ai_sql[SQLBUF]="";
-
-    if ( ai && ai_cnt )
-    {
-        int i;
-        for ( i=0; i<ai_cnt; ++i )
-        {
-            strcat(ai_sql, ", (");
-            strcat(ai_sql, ai[i].sql);
-            strcat(ai_sql, ")");
-        }
-    }
-
-    sprintf(sql_query, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login DESC", ai_sql);
-
-    DBG("sql_query: %s", sql_query);
-
-    mysql_query(G_dbconn, sql_query);
-
-    result = mysql_store_result(G_dbconn);
-
-    if ( !result )
-    {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-        OUT("<p>Error %u: %s</p>", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-        RES_STATUS(500);
-        return;
-    }
-
-    OUT("<h2>Users</h2>");
-
-    sql_records = mysql_num_rows(result);
-
-    DBG("admin: %ld record(s) found", sql_records);
-
-    int last_to_show = sql_records<rows?sql_records:rows;
-
-    char formatted1[64];
-    char formatted2[64];
-
-    amt(formatted1, sql_records);
-    amt(formatted2, last_to_show);
-    OUT("<p>%s users, showing %s of last seen</p>", formatted1, formatted2);
-
-    OUT("<table cellpadding=4 border=1>");
-
-    char ai_th[1024]="";
-
-    if ( ai && ai_cnt )
-    {
-        int i;
-        for ( i=0; i<ai_cnt; ++i )
-        {
-            strcat(ai_th, "<th>");
-            strcat(ai_th, ai[i].th);
-            strcat(ai_th, "</th>");
-        }
-    }
-
-    OUT("<tr>");
-
-    if ( REQ_DSK )
-        OUT("<th>id</th><th>login</th><th>email</th><th>name</th><th>created</th><th>last_login</th><th>visits</th>%s", ai_th);
-    else
-        OUT("<th>id</th><th>login</th><th>email</th><th>last_login</th><th>visits</th>%s", ai_th);
-
-    OUT("</tr>");
-
-//    long    id;                     /* sql_row[0] */
-//    char    login[LOGIN_LEN+1];     /* sql_row[1] */
-//    char    email[EMAIL_LEN+1];     /* sql_row[2] */
-//    char    name[UNAME_LEN+1];      /* sql_row[3] */
-//    short   status;                 /* sql_row[4] */
-//    char    created[32];            /* sql_row[5] */
-//    char    last_login[32];         /* sql_row[6] */
-//    long    visits;                 /* sql_row[7] */
-
-    char fmt0[64];  /* id */
-    char fmt7[64];  /* visits */
-
-    int  i;
-    char trstyle[16];
-
-    char ai_td[4096]="";
-    double ai_double;
-    char ai_fmt[64];
-
-    for ( i=0; i<last_to_show; ++i )
-    {
-        sql_row = mysql_fetch_row(result);
-
-        amt(fmt0, atol(sql_row[0]));    /* id */
-        amt(fmt7, atol(sql_row[7]));    /* visits */
-
-        if ( atoi(sql_row[4]) != USER_STATUS_ACTIVE )
-            strcpy(trstyle, " class=g");
-        else
-            trstyle[0] = EOS;
-
-        OUT("<tr%s>", trstyle);
-
-        if ( ai && ai_cnt )
-        {
-            ai_td[0] = EOS;
-
-            int j;
-            for ( j=0; j<ai_cnt; ++j )
-            {
-                if ( 0==strcmp(ai[j].type, "int") )
-                {
-                    strcat(ai_td, "<td class=r>");
-                    amt(ai_fmt, atoi(sql_row[j+8]));
-                    strcat(ai_td, ai_fmt);
-                }
-                else if ( 0==strcmp(ai[j].type, "long") )
-                {
-                    strcat(ai_td, "<td class=r>");
-                    amt(ai_fmt, atol(sql_row[j+8]));
-                    strcat(ai_td, ai_fmt);
-                }
-                else if ( 0==strcmp(ai[j].type, "float") || 0==strcmp(ai[j].type, "double") )
-                {
-                    strcat(ai_td, "<td class=r>");
-                    sscanf(sql_row[j+8], "%f", &ai_double);
-                    amtd(ai_fmt, ai_double);
-                    strcat(ai_td, ai_fmt);
-                }
-                else    /* string */
-                {
-                    strcat(ai_td, "<td>");
-                    strcat(ai_td, sql_row[j+8]);
-                }
-
-                strcat(ai_td, "</td>");
-            }
-        }
-
-        if ( REQ_DSK )
-            OUT("<td class=r>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td class=r>%s</td>%s", fmt0, sql_row[1], sql_row[2], sql_row[3], sql_row[5], sql_row[6], fmt7, ai_td);
-        else
-            OUT("<td class=r>%s</td><td>%s</td><td>%s</td><td>%s</td><td class=r>%s</td>%s", fmt0, sql_row[1], sql_row[2], sql_row[6], fmt7, ai_td);
-
-        OUT("</tr>");
-    }
-
-    OUT("</table>");
-
-    mysql_free_result(result);
-
-#endif  /* DBMYSQL */
-}
-
-
-/* --------------------------------------------------------------------------
-   Admin dashboard
--------------------------------------------------------------------------- */
-void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt, bool header_n_footer)
-{
-#ifdef USERS
-    if ( !LOGGED || uses[conn[ci].usi].auth_level < AUTH_LEVEL_ADMIN )
-    {
-        ERR("silgy_admin_info: user authorization level < %d", AUTH_LEVEL_ADMIN);
-        RES_STATUS(404);
-        return;
-    }
-#endif  /* USERS */
-
-    /* ------------------------------------------------------------------- */
-
-    if ( header_n_footer )
-    {
-        OUT_HTML_HEADER;
-
-        OUT("<style>");
-        OUT("body{font-family:monospace;font-size:10pt;}");
-        OUT(".r{text-align:right;}");
-        OUT(".g{color:grey;}");
-        OUT("</style>");
-    }
-    else
-    {
-        OUT("<style>");
-        OUT(".r{text-align:right;}");
-        OUT(".g{color:grey;}");
-        OUT("</style>");
-    }
-
-    OUT("<h1>Admin Info</h1>");
-
-    OUT("<h2>Server</h2>");
-
-    /* ------------------------------------------------------------------- */
-    /* Server info */
-
-    char formatted[64];
-
-    amt(formatted, G_days_up);
-    OUT("<p>Server started on %s (%s day(s) up) Silgy %s</p>", G_last_modified, formatted, WEB_SERVER_VERSION);
-
-    OUT("<p>App version: %s</p>", APP_VERSION);
-
-    /* ------------------------------------------------------------------- */
-    /* Memory */
-
-    OUT("<h2>Memory</h2>");
-
-    long mem_used;
-    char mem_used_kb[64];
-    char mem_used_mb[64];
-    char mem_used_gb[64];
-
-    mem_used = lib_get_memory();
-
-    amt(mem_used_kb, mem_used);
-    amtd(mem_used_mb, (double)mem_used/1024);
-    amtd(mem_used_gb, (double)mem_used/1024/1024);
-
-    OUT("<p>HWM: %s kB (%s MB / %s GB)</p>", mem_used_kb, mem_used_mb, mem_used_gb);
-
-    OUT("<h2>Counters</h2>");
-
-    OUT("<p>%d open connection(s), HWM: %d</p>", G_open_conn, G_open_conn_hwm);
-
-    OUT("<p>%d user session(s), HWM: %d</p>", G_sessions, G_sessions_hwm);
-
-    /* ------------------------------------------------------------------- */
-    /* Counters */
-
-    counters_fmt_t t;       /* today */
-    counters_fmt_t y;       /* yesterday */
-    counters_fmt_t b;       /* the day before */
-
-    format_counters(&t, &G_cnts_today);
-    format_counters(&y, &G_cnts_yesterday);
-    if ( REQ_DSK )
-        format_counters(&b, &G_cnts_day_before);
-
-    OUT("<table cellpadding=4 border=1>");
-
-    if ( REQ_DSK )  /* desktop -- 3 days' stats */
-    {
-        OUT("<tr><th>counter</th><th colspan=3>the day before</th><th colspan=3>yesterday</th><th colspan=3>today</th></tr>");
-        OUT("<tr><td rowspan=2>all traffic (parsed requests)</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td></tr>");
-        OUT("<tr><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td></tr>", b.req, b.req_dsk, b.req_mob, y.req, y.req_dsk, y.req_mob, t.req, t.req_dsk, t.req_mob);
-        OUT("<tr><td>bots</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td></tr>", b.req_bot, y.req_bot, t.req_bot);
-        OUT("<tr><td rowspan=2>visits</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td></tr>");
-        OUT("<tr><td class=r><b>%s</b></td><td class=r>%s</td><td class=r>%s</td><td class=r><b>%s</b></td><td class=r>%s</td><td class=r>%s</td><td class=r><b>%s</b></td><td class=r>%s</td><td class=r>%s</td></tr>", b.visits, b.visits_dsk, b.visits_mob, y.visits, y.visits_dsk, y.visits_mob, t.visits, t.visits_dsk, t.visits_mob);
-        OUT("<tr><td>attempts blocked</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td></tr>", b.blocked, y.blocked, t.blocked);
-        OUT("<tr><td>average</td><td colspan=3 class=r>%s ms</td><td colspan=3 class=r>%s ms</td><td colspan=3 class=r>%s ms</td></tr>", b.average, y.average, t.average);
-    }
-    else    /* mobile -- 2 days' stats */
-    {
-        OUT("<tr><th>counter</th><th colspan=3>yesterday</th><th colspan=3>today</th></tr>");
-        OUT("<tr><td rowspan=2>all traffic (parsed requests)</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td></tr>");
-        OUT("<tr><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td><td class=r>%s</td></tr>", y.req, y.req_dsk, y.req_mob, t.req, t.req_dsk, t.req_mob);
-        OUT("<tr><td>bots</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td></tr>", y.req_bot, t.req_bot);
-        OUT("<tr><td rowspan=2>visits</td><td>all</td><td>dsk</td><td>mob</td><td>all</td><td>dsk</td><td>mob</td></tr>");
-        OUT("<tr><td class=r><b>%s</b></td><td class=r>%s</td><td class=r>%s</td><td class=r><b>%s</b></td><td class=r>%s</td><td class=r>%s</td></tr>", y.visits, y.visits_dsk, y.visits_mob, t.visits, t.visits_dsk, t.visits_mob);
-        OUT("<tr><td>attempts blocked</td><td colspan=3 class=r>%s</td><td colspan=3 class=r>%s</td></tr>", y.blocked, t.blocked);
-        OUT("<tr><td>average</td><td colspan=3 class=r>%s ms</td><td colspan=3 class=r>%s ms</td></tr>", y.average, t.average);
-    }
-
-    OUT("</table>");
-
-    /* ------------------------------------------------------------------- */
-    /* IP blacklist */
-
-    if ( G_blockedIPList[0] )
-    {
-        OUT("<h2>Blacklist</h2>");
-
-        amt(formatted, G_blacklist_cnt);
-        OUT("<p>%s blacklisted IPs</p>", formatted);
-//        OUT("<p><form action=\"add2blocked\" method=\"post\"><input type=\"text\" name=\"ip\"> <input type=\"submit\" onClick=\"wait();\" value=\"Block\"></form></p>");
-    }
-
-    /* ------------------------------------------------------------------- */
-    /* Logs */
-
-//    OUT("<p><a href=\"logs\">Logs</a></p>");
-
-    /* ------------------------------------------------------------------- */
-    /* Users */
-#ifdef USERS
-    if ( users > 0 )
-        users_info(ci, users, ai, ai_cnt);
-#endif
-
-    if ( header_n_footer )
-        OUT_HTML_FOOTER;
-
-    RES_DONT_CACHE;
-}
-
-
 
 #else   /* SILGY_SVC ====================================================================================== */
 
@@ -6060,25 +4916,32 @@ void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt, bool hea
 
 char        G_service[SVC_NAME_LEN+1];
 int         G_error_code=OK;
-int         G_status=200;
 int         G_ASYNCId=-1;
 char        G_req_queue_name[256]="";
 char        G_res_queue_name[256]="";
 mqd_t       G_queue_req={0};            /* request queue */
 mqd_t       G_queue_res={0};            /* response queue */
 int         G_usersRequireAccountActivation=0;
-char        *G_req=NULL;
+//char        *G_req=NULL;
 char        *G_res=NULL;
-conn_t      conn[MAX_CONNECTIONS+1]={0}; /* dummy */
+conn_t      conn[MAX_CONNECTIONS+1]={0}; /* request details */
 int         ci=0;
-usession_t  uses={0};                   /* user session */
-ausession_t auses={0};                  /* app user session */
+usession_t  uses[MAX_SESSIONS+1]={0};   /* user sessions -- they start from 1 */
+ausession_t auses[MAX_SESSIONS+1]={0};  /* app user sessions, using the same index (usi) */
 
 /* counters */
 
 counters_t  G_cnts_today={0};           /* today's counters */
 counters_t  G_cnts_yesterday={0};       /* yesterday's counters */
 counters_t  G_cnts_day_before={0};      /* day before's counters */
+
+int         G_days_up=0;                /* web server's days up */
+int         G_open_conn=0;              /* number of open connections */
+int         G_open_conn_hwm=0;          /* highest number of open connections (high water mark) */
+int         G_sessions=0;               /* number of active user sessions */
+int         G_sessions_hwm=0;           /* highest number of active user sessions (high water mark) */
+int         G_blacklist_cnt=0;          /* G_blacklist length */
+char        G_last_modified[32]="";     /* response header field with server's start time */
 
 
 #ifdef DBMYSQL
@@ -6096,22 +4959,6 @@ static char *M_pidfile;                 /* pid file name */
 
 static void sigdisp(int sig);
 static void clean_up(void);
-
-
-#ifdef USERS
-/* --------------------------------------------------------------------------
-   Dummies for USERS
--------------------------------------------------------------------------- */
-bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf)
-{
-    return 0;
-}
-
-bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
-{
-    return 0;
-}
-#endif  /* USERS */
 
 
 /* --------------------------------------------------------------------------
@@ -6328,30 +5175,44 @@ int main(int argc, char *argv[])
 
             res.hdr.call_id = req.hdr.call_id;
             res.hdr.ci = req.hdr.ci;
+            strcpy(res.hdr.service, req.hdr.service);
+            res.hdr.ai = req.hdr.ai;
             strcpy(G_service, req.hdr.service);
 
+            /* request details */
+
             strcpy(conn[0].ip, req.hdr.ip);
+            strcpy(conn[0].method, req.hdr.method);
+            conn[0].post = req.hdr.post;
+            strcpy(conn[0].uri, req.hdr.uri);
+            strcpy(conn[0].resource, req.hdr.resource);
             strcpy(conn[0].uagent, req.hdr.uagent);
+            conn[0].mobile = req.hdr.mobile;
+            conn[0].clen = req.hdr.clen;
+            if ( req.hdr.post )
+                strcpy(conn[0].in_data, req.hdr.in_data);
+            strcpy(conn[0].cookie_in_l, req.hdr.cookie_in_l);
             strcpy(conn[0].host, req.hdr.host);
             strcpy(conn[0].website, req.hdr.website);
             strcpy(conn[0].lang, req.hdr.lang);
-
-            strcpy(res.hdr.service, req.hdr.service);
+            conn[0].in_ctype = req.hdr.in_ctype;
+            strcpy(conn[0].boundary, req.hdr.boundary);
+            conn[0].status = req.hdr.status;
 
             /* ----------------------------------------------------------- */
 
             DBG("Processing...");
 
-            G_req = req.data;
+//            G_req = req.data;
             G_res = res.data;
 
             /* user session */
 
-            memcpy(&uses, &req.hdr.uses, sizeof(usession_t));
+            memcpy(&uses[1], &req.hdr.uses, sizeof(usession_t));
 #ifdef ASYNC_AUSES
-            memcpy(&auses, &req.hdr.auses, sizeof(ausession_t));
+            memcpy(&auses[1], &req.hdr.auses, sizeof(ausession_t));
 #endif
-            if ( uses.sesid[0] )
+            if ( uses[1].sesid[0] )
                 conn[0].usi = 1;    /* user session present */
             else
                 conn[0].usi = 0;    /* no session */
@@ -6362,6 +5223,18 @@ int main(int argc, char *argv[])
             memcpy(&G_cnts_yesterday, &req.hdr.cnts_yesterday, sizeof(counters_t));
             memcpy(&G_cnts_day_before, &req.hdr.cnts_day_before, sizeof(counters_t));
             
+            G_days_up = req.hdr.days_up;
+            G_open_conn = req.hdr.open_conn;
+            G_open_conn_hwm = req.hdr.open_conn_hwm;
+            G_sessions = req.hdr.sessions;
+            G_sessions_hwm = req.hdr.sessions_hwm;
+
+            G_blacklist_cnt = req.hdr.blacklist_cnt;
+
+            /* other */
+
+            strcpy(G_last_modified, req.hdr.last_modified);
+
             /* ----------------------------------------------------------- */
 
             silgy_svc_main();
@@ -6369,7 +5242,15 @@ int main(int argc, char *argv[])
             /* ----------------------------------------------------------- */
 
             res.hdr.err_code = G_error_code;
-            res.hdr.status = G_status;
+            res.hdr.status = conn[0].status;
+            res.hdr.ctype = conn[0].ctype;
+            strcpy(res.hdr.ctypestr, conn[0].ctypestr);
+            strcpy(res.hdr.cdisp, conn[0].cdisp);
+            strcpy(res.hdr.cookie_out_a, conn[0].cookie_out_a);
+            strcpy(res.hdr.cookie_out_a_exp, conn[0].cookie_out_a_exp);
+            strcpy(res.hdr.location, conn[0].location);
+            res.hdr.dont_cache = conn[0].dont_cache;
+            res.hdr.keep_content = conn[0].keep_content;
             res.hdr.rest_status = G_rest_status;
             res.hdr.rest_req = G_rest_req;    /* only for this async call */
             res.hdr.rest_elapsed = G_rest_elapsed;  /* only for this async call */
@@ -6377,9 +5258,9 @@ int main(int argc, char *argv[])
             if ( req.hdr.response )
             {
                 DBG_T("Sending response...");
-                memcpy(&res.hdr.uses, &uses, sizeof(usession_t));
+                memcpy(&res.hdr.uses, &uses[1], sizeof(usession_t));
 #ifdef ASYNC_AUSES
-                memcpy(&res.hdr.auses, &auses, sizeof(ausession_t));
+                memcpy(&res.hdr.auses, &auses[1], sizeof(ausession_t));
 #endif
                 mq_send(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, 0);
                 DBG("Sent\n");

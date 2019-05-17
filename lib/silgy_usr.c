@@ -124,7 +124,6 @@ static bool valid_email(const char *email)
 }
 
 
-#ifndef SILGY_SVC
 /* --------------------------------------------------------------------------
    Upgrade anonymous user session to logged in
 -------------------------------------------------------------------------- */
@@ -148,11 +147,13 @@ static int upgrade_uses(int ci, long uid, const char *login, const char *email, 
     US.auth_level = auth_level;
     US.uid = uid;
 
+#ifndef SILGY_SVC
     if ( !silgy_app_user_login(ci) )
     {
         downgrade_uses(conn[ci].usi, ci, FALSE);
         return ERR_INT_SERVER_ERROR;
     }
+#endif
 
     strcpy(conn[ci].cookie_out_a, "x");                     /* no longer needed */
     strcpy(conn[ci].cookie_out_a_exp, G_last_modified);     /* to be removed by browser */
@@ -161,6 +162,7 @@ static int upgrade_uses(int ci, long uid, const char *login, const char *email, 
 }
 
 
+#ifndef SILGY_SVC   /* this is for engine only */
 /* --------------------------------------------------------------------------
    Verify IP & User-Agent against uid and sesid in uses (logged in users)
    set user session array index (usi) if all ok
@@ -262,8 +264,12 @@ int libusr_luses_ok(int ci)
                     || (failed_cnt[i].cnt > 100 && failed_cnt[i].when > G_now-3600) /* 100 failed attempts within an hour or */
                     || failed_cnt[i].cnt > 1000 )                                   /* 1000 failed attempts */
                 {
+#ifndef SILGY_SVC
                     WAR("Looks like brute-force cookie attack, blocking IP");
                     eng_block_ip(conn[ci].ip, TRUE);
+#else
+                    WAR("Looks like brute-force cookie attack");
+#endif  /* SILGY_SVC */
                 }
                 else
                 {
@@ -366,6 +372,7 @@ int libusr_luses_ok(int ci)
 
     return do_login(ci, uid, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 }
+#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
@@ -439,11 +446,17 @@ static void downgrade_uses(int usi, int ci, bool usr_logout)
     uses[usi].auth_level = AUTH_LEVEL_ANONYMOUS;
 
     if ( ci != NOT_CONNECTED )   /* still connected */
+    {
+#ifndef SILGY_SVC
         silgy_app_user_logout(ci);
+#endif
+    }
     else    /* trick to maintain consistency across silgy_app_xxx functions */
     {       /* that use ci for everything -- even to get user session data */
         conn[CLOSING_SESSION_CI].usi = usi;
+#ifndef SILGY_SVC
         silgy_app_user_logout(CLOSING_SESSION_CI);
+#endif
     }
 
     if ( usr_logout )   /* explicit user logout */
@@ -462,7 +475,6 @@ static void downgrade_uses(int usi, int ci, bool usr_logout)
         }
     }
 }
-#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
@@ -800,7 +812,6 @@ static int silgy_usr_verify_activation_key(int ci, char *linkkey, long *uid)
     Public user functions
 ------------------------------------------------------------------------------------------------------------ */
 
-#ifndef SILGY_SVC
 /* --------------------------------------------------------------------------
    Log user in / explicit from Log In page
    Return OK or:
@@ -836,6 +847,13 @@ int silgy_usr_login(int ci)
     long        visits;
 
     DBG("silgy_usr_login");
+
+#ifdef SILGY_SVC
+
+    ERR("silgy_usr_login() is not currently supported in silgy_svc. Move this call do silgy_app.");
+    return ERR_INT_SERVER_ERROR;
+
+#else
 
 #ifdef USERSBYEMAIL
 
@@ -1085,6 +1103,8 @@ int silgy_usr_login(int ci)
     /* finish logging user in */
 
     return do_login(ci, uid, login, email, name, phone, about, auth_level, visits, status);
+
+#endif  /* SILGY_SVC */
 }
 
 
@@ -1250,7 +1270,6 @@ static int create_account(int ci, short auth_level, short status, bool current_s
     return OK;
 
 }
-#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
@@ -1464,7 +1483,6 @@ static char sql_query[MAX_LONG_URI_VAL_LEN*2];
 }
 
 
-#ifndef SILGY_SVC
 /* --------------------------------------------------------------------------
    Save changes to user account
 -------------------------------------------------------------------------- */
@@ -1675,7 +1693,6 @@ int silgy_usr_save_account(int ci)
 
     return OK;
 }
-#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
@@ -2294,7 +2311,6 @@ int silgy_usr_reset_password(int ci)
 }
 
 
-#ifndef SILGY_SVC
 /* --------------------------------------------------------------------------
    Log user out
 -------------------------------------------------------------------------- */
@@ -2303,9 +2319,6 @@ void silgy_usr_logout(int ci)
     DBG("silgy_usr_logout");
     downgrade_uses(conn[ci].usi, ci, TRUE);
 }
-
-
-#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
