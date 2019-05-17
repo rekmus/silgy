@@ -674,7 +674,7 @@ typedef struct {                            /* dummy */
     bool    mobile;
     int     clen;
     char    in_data[MAX_URI_LEN+1];
-    char    cookie_in_l[SESID_LEN+1];
+//    char    cookie_in_l[SESID_LEN+1];
     char    host[MAX_VALUE_LEN+1];
     char    website[256];
     char    lang[LANG_LEN+1];
@@ -910,7 +910,7 @@ typedef struct {
     bool    mobile;
     int     clen;
     char    in_data[MAX_URI_LEN+1];
-    char    cookie_in_l[SESID_LEN+1];
+//    char    cookie_in_l[SESID_LEN+1];
     char    host[MAX_VALUE_LEN+1];
     char    website[256];
     char    lang[LANG_LEN+1];

@@ -4529,7 +4529,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         strncpy(req.hdr.in_data, conn[ci].in_data, MAX_URI_LEN);
         req.hdr.in_data[MAX_URI_LEN] = EOS;
     }
-    strcpy(req.hdr.cookie_in_l, conn[ci].cookie_in_l);
+//    strcpy(req.hdr.cookie_in_l, conn[ci].cookie_in_l);
     strcpy(req.hdr.host, conn[ci].host);
     strcpy(req.hdr.website, conn[ci].website);
     strcpy(req.hdr.lang, conn[ci].lang);
@@ -5192,7 +5192,7 @@ int main(int argc, char *argv[])
             conn[0].clen = req.hdr.clen;
             if ( req.hdr.post )
                 strcpy(conn[0].in_data, req.hdr.in_data);
-            strcpy(conn[0].cookie_in_l, req.hdr.cookie_in_l);
+//            strcpy(conn[0].cookie_in_l, req.hdr.cookie_in_l);
             strcpy(conn[0].host, req.hdr.host);
             strcpy(conn[0].website, req.hdr.website);
             strcpy(conn[0].lang, req.hdr.lang);
