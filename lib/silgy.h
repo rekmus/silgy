@@ -680,8 +680,6 @@ typedef struct {                            /* dummy */
     char    lang[LANG_LEN+1];
     char    in_ctype;
     char    boundary[MAX_VALUE_LEN+1];
-    char    cookie_out_l[SESID_LEN+1];
-    char    cookie_out_l_exp[32];
     int     usi;
     int     status;
     char    ctype;
@@ -689,6 +687,8 @@ typedef struct {                            /* dummy */
     char    cdisp[256];
     char    cookie_out_a[SESID_LEN+1];
     char    cookie_out_a_exp[32];
+    char    cookie_out_l[SESID_LEN+1];
+    char    cookie_out_l_exp[32];
     char    location[MAX_URI_LEN+1];
     bool    dont_cache;
     bool    keep_content;
@@ -956,6 +956,8 @@ typedef struct {
     char    cdisp[256];
     char    cookie_out_a[SESID_LEN+1];
     char    cookie_out_a_exp[32];
+    char    cookie_out_l[SESID_LEN+1];
+    char    cookie_out_l_exp[32];
     char    location[MAX_URI_LEN+1];
     bool    dont_cache;
     bool    keep_content;

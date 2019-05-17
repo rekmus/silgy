@@ -871,6 +871,8 @@ static struct   sockaddr_in cli_addr;       /* static = initialised to zeros */
             strcpy(conn[res.hdr.ci].cdisp, res.hdr.cdisp);
             strcpy(conn[res.hdr.ci].cookie_out_a, res.hdr.cookie_out_a);
             strcpy(conn[res.hdr.ci].cookie_out_a_exp, res.hdr.cookie_out_a_exp);
+            strcpy(conn[res.hdr.ci].cookie_out_l, res.hdr.cookie_out_l);
+            strcpy(conn[res.hdr.ci].cookie_out_l_exp, res.hdr.cookie_out_l_exp);
             strcpy(conn[res.hdr.ci].location, res.hdr.location);
             conn[res.hdr.ci].dont_cache = res.hdr.dont_cache;
             conn[res.hdr.ci].keep_content = res.hdr.keep_content;
@@ -5247,6 +5249,8 @@ int main(int argc, char *argv[])
             strcpy(res.hdr.cdisp, conn[0].cdisp);
             strcpy(res.hdr.cookie_out_a, conn[0].cookie_out_a);
             strcpy(res.hdr.cookie_out_a_exp, conn[0].cookie_out_a_exp);
+            strcpy(res.hdr.cookie_out_l, conn[0].cookie_out_l);
+            strcpy(res.hdr.cookie_out_l_exp, conn[0].cookie_out_l_exp);
             strcpy(res.hdr.location, conn[0].location);
             res.hdr.dont_cache = conn[0].dont_cache;
             res.hdr.keep_content = conn[0].keep_content;
