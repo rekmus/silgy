@@ -197,8 +197,8 @@ typedef char str64k[1024*64];
 
 #ifdef SILGY_SVC
 
-    #define OUTSS(str)                  (G_res = stpcpy(G_res, str))
-    #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(res, data, len), res += len)
+    #define OUTSS(str)                  (p_content = stpcpy(p_content, str))
+    #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(p_content, data, len), p_content += len)
 
 #else
 
@@ -950,6 +950,7 @@ typedef struct {
     time_t  sent;
     int     timeout;
     int     err_code;
+    int     len;
     int     status;
     char    ctype;
     char    ctypestr[256];
@@ -1040,7 +1041,7 @@ extern char     G_dt[20];                   /* datetime for database or log (YYY
 extern bool     G_index_present;            /* index.html present in res? */
 #ifdef SILGY_SVC
 //extern char     *G_req;
-extern char     *G_res;
+extern char     *p_content;
 extern char     G_service[SVC_NAME_LEN+1];
 extern int      G_error_code;
 extern int      ci;

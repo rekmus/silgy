@@ -653,14 +653,28 @@ int main(int argc, char **argv)
                                         memcpy(&auses[conn[i].usi], &ares[conn[i].ai].hdr.auses, sizeof(ausession_t));
 #endif
                                     }
-
+#ifdef ASYNC_USE_APP_CONTINUE   /* depreciated */
                                     silgy_app_continue(i, ares[conn[i].ai].data);
+#else
+#ifdef OUTCHECKREALLOC
+                                    eng_out_check_realloc_bin(i, ares[conn[i].ai].data, ares[conn[i].ai].hdr.len);
+#else
+                                    int checked_len = ares[conn[i].ai].hdr.len > OUT_BUFSIZE-OUT_HEADER_BUFSIZE ? OUT_BUFSIZE-OUT_HEADER_BUFSIZE : ares[conn[i].ai].hdr.len;
+                                    memcpy(conn[i].p_content, ares[conn[i].ai].data, checked_len);
+                                    conn[i].p_content += checked_len;
+#endif
+#endif  /* ASYNC_USE_APP_CONTINUE */
                                 }
                                 else if ( ares[conn[i].ai].hdr.state == ASYNC_STATE_TIMEOUTED )
                                 {
-                                    DBG("Async response continue as timeout-ed for ci=%d", i);
+                                    ERR("CALL_ASYNC call_id=%ld timeouted", ares[conn[i].ai].hdr.call_id);
                                     conn[i].async_err_code = ERR_ASYNC_TIMEOUT;
+#ifdef ASYNC_USE_APP_CONTINUE   /* depreciated */
+                                    DBG("Async response continue as timeout-ed for ci=%d", i);
                                     silgy_app_continue(i, NULL);
+#else
+                                    conn[i].status = 500;
+#endif  /* ASYNC_USE_APP_CONTINUE */
                                 }
 
                                 gen_response_header(i);
@@ -1630,8 +1644,11 @@ static bool init(int argc, char **argv)
     ALWAYS("           conn's size = %lu B (%lu kB / %0.2lf MB)", sizeof(conn), sizeof(conn)/1024, (double)sizeof(conn)/1024/1024);
     ALWAYS("            uses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(uses), sizeof(uses)/1024, (double)sizeof(uses)/1024/1024);
     ALWAYS("");
+    ALWAYS("    ASYNC_REQ_MSG_SIZE = %d B", ASYNC_REQ_MSG_SIZE);
     ALWAYS("    ASYNC req.hdr size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_req_hdr_t), sizeof(async_req_hdr_t)/1024, (double)sizeof(async_req_hdr_t)/1024/1024);
     ALWAYS("    ASYNC req     size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_req_t), sizeof(async_req_t)/1024, (double)sizeof(async_req_t)/1024/1024);
+    ALWAYS("");
+    ALWAYS("    ASYNC_RES_MSG_SIZE = %d B", ASYNC_RES_MSG_SIZE);
     ALWAYS("    ASYNC res.hdr size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_res_hdr_t), sizeof(async_res_hdr_t)/1024, (double)sizeof(async_res_hdr_t)/1024/1024);
     ALWAYS("    ASYNC res     size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_res_t), sizeof(async_res_t)/1024, (double)sizeof(async_res_t)/1024/1024);
     ALWAYS("");
@@ -1703,6 +1720,23 @@ static bool init(int argc, char **argv)
     WAR("DUMP is enabled, this file may grow big quickly!");
     ALWAYS("");
 #endif  /* DUMP */
+
+
+    /* ensure the message sizes are sufficient */
+
+#ifdef ASYNC
+    if ( sizeof(async_req_hdr_t) > ASYNC_REQ_MSG_SIZE )
+    {
+        ERR("sizeof(async_req_hdr_t) > ASYNC_REQ_MSG_SIZE, increase APP_ASYNC_REQ_MSG_SIZE");
+        return FALSE;
+    }
+
+    if ( sizeof(async_res_hdr_t) > ASYNC_RES_MSG_SIZE )
+    {
+        ERR("sizeof(async_res_hdr_t) > ASYNC_RES_MSG_SIZE, increase APP_ASYNC_RES_MSG_SIZE");
+        return FALSE;
+    }
+#endif
 
 
 #ifdef DBMYSQL
@@ -4925,8 +4959,7 @@ char        G_res_queue_name[256]="";
 mqd_t       G_queue_req={0};            /* request queue */
 mqd_t       G_queue_res={0};            /* response queue */
 int         G_usersRequireAccountActivation=0;
-//char        *G_req=NULL;
-char        *G_res=NULL;
+char        *p_content=NULL;
 conn_t      conn[MAX_CONNECTIONS+1]={0}; /* request details */
 int         ci=0;
 usession_t  uses[MAX_SESSIONS+1]={0};   /* user sessions -- they start from 1 */
@@ -5206,8 +5239,9 @@ int main(int argc, char *argv[])
 
             DBG("Processing...");
 
-//            G_req = req.data;
-            G_res = res.data;
+            /* response data */
+
+            p_content = res.data;
 
             /* user session */
 
@@ -5245,6 +5279,7 @@ int main(int argc, char *argv[])
             /* ----------------------------------------------------------- */
 
             res.hdr.err_code = G_error_code;
+            res.hdr.len = p_content - res.data;
 
             res.hdr.status = conn[0].status;
             res.hdr.ctype = conn[0].ctype;
