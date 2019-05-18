@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export SILGY_SVC_PROCESSES=0
+
 echo "Starting Silgy..."
 
 # ---------------------------------------------------------------------
@@ -10,10 +12,10 @@ sleep 1
 
 # ---------------------------------------------------------------------
 # Services
-# Start as many as you need
 
-#nohup $SILGYDIR/bin/silgy_svc &
-#nohup $SILGYDIR/bin/silgy_svc &
-#nohup $SILGYDIR/bin/silgy_svc &
+for i in `seq 1 $SILGY_SVC_PROCESSES`
+do
+    nohup $SILGYDIR/bin/silgy_svc &
+done
 
-#sleep 1  # return to prompt
+sleep 1  # return to prompt
