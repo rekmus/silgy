@@ -62,17 +62,6 @@ void silgy_app_main(int ci)
 
 
 /* --------------------------------------------------------------------------------
-   ******* Only for ASYNC *******
-   ------------------------------
-   Called after CALL_ASYNC()
-   when response has been received from silgy_svc process
--------------------------------------------------------------------------------- */
-void silgy_app_continue(int ci, const char *data)
-{
-}
-
-
-/* --------------------------------------------------------------------------------
    Called when application starts
    ------------------------------
    Return true if everything OK
