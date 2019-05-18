@@ -1887,23 +1887,6 @@ static bool init(int argc, char **argv)
         conn[i].req = 0;
     }
 
-    /* Add error messages ------------------------------------------------ */
-
-    silgy_add_message(OK,                        "EN-US", "OK");
-    silgy_add_message(ERR_INT_SERVER_ERROR,      "EN-US", "Apologies, this is our fault. Please try again later.");
-    silgy_add_message(ERR_SERVER_TOOBUSY,        "EN-US", "Apologies, we are experiencing very high demand right now, please try again in a few minutes.");
-    silgy_add_message(ERR_INVALID_REQUEST,       "EN-US", "Invalid HTTP request");
-    silgy_add_message(ERR_NOT_FOUND,             "EN-US", "Page not found");
-    silgy_add_message(ERR_UNAUTHORIZED,          "EN-US", "Unauthorized");
-    silgy_add_message(ERR_FORBIDDEN,             "EN-US", "Forbidden");
-    silgy_add_message(ERR_FILE_TOO_BIG,          "EN-US", "File too big");
-    silgy_add_message(ERR_REDIRECTION,           "EN-US", "Redirection error");
-    silgy_add_message(ERR_ASYNC_NO_SUCH_SERVICE, "EN-US", "No such service");
-    silgy_add_message(ERR_ASYNC_TIMEOUT,         "EN-US", "Asynchronous service timeout");
-    silgy_add_message(ERR_REMOTE_CALL,           "EN-US", "Couldn't call the remote service");
-    silgy_add_message(ERR_REMOTE_CALL_STATUS,    "EN-US", "Remote service call returned unsuccessful status");
-    silgy_add_message(ERR_REMOTE_CALL_DATA,      "EN-US", "Data returned from the remote service is invalid");
-
     /* read blocked IPs list --------------------------------------------- */
 
     read_blocked_ips();
