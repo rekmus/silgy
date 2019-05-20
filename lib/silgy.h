@@ -198,9 +198,9 @@ typedef char str64k[1024*64];
 #ifdef SILGY_SVC
 
     #define OUTSS(str)                  (p_content = stpcpy(p_content, str))
-    #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(p_content, data, len), p_content += len)
+    #define OUT_BIN(data, len)          (len=(len>G_async_res_data_size?G_async_res_data_size:len), memcpy(p_content, data, len), p_content += len)
 
-#else
+#else   /* SILGY_APP */
 
     #define HOUT(str)                   (conn[ci].p_header = stpcpy(conn[ci].p_header, str))
 
@@ -534,7 +534,7 @@ typedef char str64k[1024*64];
 #endif
 #define ASYNC_REQ_QUEUE                 "/silgy_req"            /* request queue name */
 #define ASYNC_RES_QUEUE                 "/silgy_res"            /* response queue name */
-#define ASYNC_DEF_TIMEOUT               30                      /* in seconds */
+#define ASYNC_DEF_TIMEOUT               60                      /* in seconds */
 #define ASYNC_MAX_TIMEOUT               1800                    /* in seconds ==> 30 minutes */
 #ifdef SILGY_SVC
 #define SVC(svc)                        (0==strcmp(G_service, svc))
@@ -543,9 +543,15 @@ typedef char str64k[1024*64];
 #define SVC(svc)                        (0==strcmp(conn[ci].service, svc))
 #define ASYNC_ERR_CODE                  conn[ci].async_err_code
 #endif
+#ifdef ASYNC_USE_APP_CONTINUE   /* the old way */
 #define CALL_ASYNC(svc, data)           eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout, 0)
 #define CALL_ASYNC_TM(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, tmout, 0)
 #define CALL_ASYNC_NR(svc, data)        eng_async_req(ci, svc, data, FALSE, 0, 0)
+#else
+#define CALL_ASYNC(svc)                 eng_async_req(ci, svc, NULL, TRUE, G_ASYNCDefTimeout, 0)
+#define CALL_ASYNC_TM(svc, tmout)       eng_async_req(ci, svc, NULL, TRUE, tmout, 0)
+#define CALL_ASYNC_NR(svc)              eng_async_req(ci, svc, NULL, FALSE, 0, 0)
+#endif  /* ASYNC_USE_APP_CONTINUE */
 #define CALL_ASYNC_BIN(svc, data, size) eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout, size)
 
 
@@ -554,7 +560,7 @@ typedef char str64k[1024*64];
 /* incoming */
 
 #define CONTENT_TYPE_URLENCODED         'U'
-#define CONTENT_TYPE_MULTIPART          'L'
+#define CONTENT_TYPE_MULTIPART          'M'
 
 /* outgoing */
 
@@ -661,6 +667,145 @@ typedef struct {
 } date_t;
 
 
+/* user session */
+
+typedef struct {
+    char    sesid[SESID_LEN+1];
+    /* connection data */
+    char    ip[INET_ADDRSTRLEN];
+    char    uagent[MAX_VALUE_LEN+1];
+    char    referer[MAX_VALUE_LEN+1];
+    char    lang[LANG_LEN+1];
+    bool    logged;
+    /* users table record */
+    long    uid;
+    char    login[LOGIN_LEN+1];
+    char    email[EMAIL_LEN+1];
+    char    name[UNAME_LEN+1];
+    char    phone[PHONE_LEN+1];
+    char    about[ABOUT_LEN+1];
+    char    login_tmp[LOGIN_LEN+1];     /* while My Profile isn't saved */
+    char    email_tmp[EMAIL_LEN+1];
+    char    name_tmp[UNAME_LEN+1];
+    char    phone_tmp[PHONE_LEN+1];
+    char    about_tmp[ABOUT_LEN+1];
+    short   auth_level;
+    time_t  last_activity;
+} usession_t;
+
+
+#define CUSTOMER                        (US.auth_level==AUTH_LEVEL_CUSTOMER)
+#define STAFF                           (US.auth_level==AUTH_LEVEL_STAFF)
+#define MODERATOR                       (US.auth_level==AUTH_LEVEL_MODERATOR)
+#define ADMIN                           (US.auth_level==AUTH_LEVEL_ADMIN)
+#define ROOT                            (US.auth_level==AUTH_LEVEL_ROOT)
+
+#define LOGGED                          US.logged
+#define UID                             US.uid
+
+
+/* counters */
+
+typedef struct {
+    long    req;            /* all parsed requests */
+    long    req_dsk;        /* all requests with desktop UA */
+    long    req_mob;        /* all requests with mobile UA */
+    long    req_bot;        /* all requests with HTTP header indicating well-known search-engine bots */
+    long    visits;         /* all visits to domain (Host=APP_DOMAIN) landing page (no action/resource), excl. bots that got 200 */
+    long    visits_dsk;     /* like visits -- desktop only */
+    long    visits_mob;     /* like visits -- mobile only */
+    long    blocked;        /* attempts from blocked IP */
+    double  elapsed;        /* sum of elapsed time of all requests for calculating average */
+    double  average;        /* average request elapsed */
+} counters_t;
+
+
+/* asynchorous processing */
+
+/* request */
+
+typedef struct {
+    long    call_id;
+    int     ci;
+    char    service[SVC_NAME_LEN+1];
+    int     ai;
+    /* pass some request details over */
+    char    ip[INET_ADDRSTRLEN];
+    char    method[MAX_METHOD_LEN+1];
+    bool    post;
+    int     len;    /* only passed part of the POST data */
+    char    uri[MAX_URI_LEN+1];
+    char    resource[MAX_RESOURCE_LEN+1];
+    char    uagent[MAX_VALUE_LEN+1];
+    bool    mobile;
+    int     clen;
+//    char    in_data[MAX_URI_LEN+1];
+    char    host[MAX_VALUE_LEN+1];
+    char    website[256];
+    char    lang[LANG_LEN+1];
+    char    in_ctype;
+    char    boundary[MAX_VALUE_LEN+1];
+    char    response;
+    int     status;
+    usession_t uses;
+#ifdef ASYNC_AUSES
+    ausession_t auses;
+#endif
+    counters_t cnts_today;
+    counters_t cnts_yesterday;
+    counters_t cnts_day_before;
+    int     days_up;
+    int     open_conn;
+    int     open_conn_hwm;
+    int     sessions;
+    int     sessions_hwm;
+    char    last_modified[32];
+    int     blacklist_cnt;
+} async_req_hdr_t;
+
+typedef struct {
+    async_req_hdr_t hdr;
+    char            data[ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t)];
+} async_req_t;
+
+/* response */
+
+typedef struct {
+    long    call_id;
+    int     ci;
+    char    service[SVC_NAME_LEN+1];
+    int     ai;
+    char    state;
+    time_t  sent;
+    int     timeout;
+    int     err_code;
+    int     len;
+    int     status;
+    char    ctype;
+    char    ctypestr[256];
+    char    cdisp[256];
+    char    cookie_out_a[SESID_LEN+1];
+    char    cookie_out_a_exp[32];
+    char    cookie_out_l[SESID_LEN+1];
+    char    cookie_out_l_exp[32];
+    char    location[MAX_URI_LEN+1];
+    bool    dont_cache;
+    bool    keep_content;
+    int     rest_status;
+    long    rest_req;
+    double  rest_elapsed;
+    usession_t uses;
+#ifdef ASYNC_AUSES
+    ausession_t auses;
+#endif
+} async_res_hdr_t;
+
+typedef struct {
+    async_res_hdr_t hdr;
+    char            data[ASYNC_RES_MSG_SIZE-sizeof(async_res_hdr_t)];
+} async_res_t;
+
+
 /* connection */
 
 #ifdef SILGY_SVC
@@ -673,8 +818,7 @@ typedef struct {                            /* request details for silgy_svc */
     char    uagent[MAX_VALUE_LEN+1];
     bool    mobile;
     int     clen;
-    char    in_data[MAX_URI_LEN+1];
-//    char    cookie_in_l[SESID_LEN+1];
+    char    in_data[ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t)];
     char    host[MAX_VALUE_LEN+1];
     char    website[256];
     char    lang[LANG_LEN+1];
@@ -790,43 +934,6 @@ typedef struct {
 #endif  /* SILGY_SVC */
 
 
-/* user session */
-
-typedef struct {
-    char    sesid[SESID_LEN+1];
-    /* connection data */
-    char    ip[INET_ADDRSTRLEN];
-    char    uagent[MAX_VALUE_LEN+1];
-    char    referer[MAX_VALUE_LEN+1];
-    char    lang[LANG_LEN+1];
-    bool    logged;
-    /* users table record */
-    long    uid;
-    char    login[LOGIN_LEN+1];
-    char    email[EMAIL_LEN+1];
-    char    name[UNAME_LEN+1];
-    char    phone[PHONE_LEN+1];
-    char    about[ABOUT_LEN+1];
-    char    login_tmp[LOGIN_LEN+1];     /* while My Profile isn't saved */
-    char    email_tmp[EMAIL_LEN+1];
-    char    name_tmp[UNAME_LEN+1];
-    char    phone_tmp[PHONE_LEN+1];
-    char    about_tmp[ABOUT_LEN+1];
-    short   auth_level;
-    time_t  last_activity;
-} usession_t;
-
-
-#define CUSTOMER                        (US.auth_level==AUTH_LEVEL_CUSTOMER)
-#define STAFF                           (US.auth_level==AUTH_LEVEL_STAFF)
-#define MODERATOR                       (US.auth_level==AUTH_LEVEL_MODERATOR)
-#define ADMIN                           (US.auth_level==AUTH_LEVEL_ADMIN)
-#define ROOT                            (US.auth_level==AUTH_LEVEL_ROOT)
-
-#define LOGGED                          US.logged
-#define UID                             US.uid
-
-
 /* static resources */
 
 typedef struct {
@@ -837,22 +944,6 @@ typedef struct {
     time_t  modified;
     char    source;
 } stat_res_t;
-
-
-/* counters */
-
-typedef struct {
-    long    req;            /* all parsed requests */
-    long    req_dsk;        /* all requests with desktop UA */
-    long    req_mob;        /* all requests with mobile UA */
-    long    req_bot;        /* all requests with HTTP header indicating well-known search-engine bots */
-    long    visits;         /* all visits to domain (Host=APP_DOMAIN) landing page (no action/resource), excl. bots that got 200 */
-    long    visits_dsk;     /* like visits -- desktop only */
-    long    visits_mob;     /* like visits -- mobile only */
-    long    blocked;        /* attempts from blocked IP */
-    double  elapsed;        /* sum of elapsed time of all requests for calculating average */
-    double  average;        /* average request elapsed */
-} counters_t;
 
 
 /* admin info */
@@ -890,91 +981,6 @@ typedef struct {
     char message[MAX_MSG_LEN+1];
 } messages_t;
 
-
-/* asynchorous processing */
-
-/* request */
-
-typedef struct {
-    long    call_id;
-    int     ci;
-    char    service[SVC_NAME_LEN+1];
-    int     ai;
-    /* pass some request details over */
-    char    ip[INET_ADDRSTRLEN];
-    char    method[MAX_METHOD_LEN+1];
-    bool    post;
-    char    uri[MAX_URI_LEN+1];
-    char    resource[MAX_RESOURCE_LEN+1];
-    char    uagent[MAX_VALUE_LEN+1];
-    bool    mobile;
-    int     clen;
-    char    in_data[MAX_URI_LEN+1];
-//    char    cookie_in_l[SESID_LEN+1];
-    char    host[MAX_VALUE_LEN+1];
-    char    website[256];
-    char    lang[LANG_LEN+1];
-    char    in_ctype;
-    char    boundary[MAX_VALUE_LEN+1];
-    char    response;
-    int     status;
-    usession_t uses;
-#ifdef ASYNC_AUSES
-    ausession_t auses;
-#endif
-    counters_t cnts_today;
-    counters_t cnts_yesterday;
-    counters_t cnts_day_before;
-    int     days_up;
-    int     open_conn;
-    int     open_conn_hwm;
-    int     sessions;
-    int     sessions_hwm;
-    char    last_modified[32];
-    int     blacklist_cnt;
-} async_req_hdr_t;
-
-typedef struct {
-    async_req_hdr_t hdr;
-    char            data[ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t)];
-} async_req_t;
-
-/* response */
-
-typedef struct {
-    long    call_id;
-    int     ci;
-    char    service[SVC_NAME_LEN+1];
-    int     ai;
-    char    state;
-    time_t  sent;
-    int     timeout;
-    int     err_code;
-    int     len;
-    int     status;
-    char    ctype;
-    char    ctypestr[256];
-    char    cdisp[256];
-    char    cookie_out_a[SESID_LEN+1];
-    char    cookie_out_a_exp[32];
-    char    cookie_out_l[SESID_LEN+1];
-    char    cookie_out_l_exp[32];
-    char    location[MAX_URI_LEN+1];
-    bool    dont_cache;
-    bool    keep_content;
-    int     rest_status;
-    long    rest_req;
-    double  rest_elapsed;
-    usession_t uses;
-#ifdef ASYNC_AUSES
-    ausession_t auses;
-#endif
-} async_res_hdr_t;
-
-typedef struct {
-    async_res_hdr_t hdr;
-    char            data[ASYNC_RES_MSG_SIZE-sizeof(async_res_hdr_t)];
-} async_res_t;
 
 
 #ifdef __cplusplus
@@ -1020,27 +1026,33 @@ extern struct tm *G_ptm;                    /* human readable current time */
 extern char     G_last_modified[32];        /* response header field with server's start time */
 extern messages_t G_messages[MAX_MESSAGES];
 extern int      G_next_message;
+
 #ifdef HTTPS
 extern bool     G_ssl_lib_initialized;
 #endif
+
 #ifdef DBMYSQL
 extern MYSQL    *G_dbconn;                  /* database connection */
 #endif
-#ifndef _WIN32
+
 /* asynchorous processing */
+#ifndef _WIN32
 extern char     G_req_queue_name[256];
 extern char     G_res_queue_name[256];
 extern mqd_t    G_queue_req;                /* request queue */
 extern mqd_t    G_queue_res;                /* response queue */
 #ifdef ASYNC
 extern async_res_t ares[MAX_ASYNC];         /* async response array */
-extern long     G_last_call_id;             /* counter */
+extern int      G_last_call_id;             /* counter */
 #endif  /* ASYNC */
 #endif  /* _WIN32 */
+extern int      G_async_req_data_size;      /* how many bytes are left for data */
+extern int      G_async_res_data_size;      /* how many bytes are left for data */
+
 extern char     G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 extern bool     G_index_present;            /* index.html present in res? */
+
 #ifdef SILGY_SVC
-//extern char     *G_req;
 extern char     *p_content;
 extern char     G_service[SVC_NAME_LEN+1];
 extern int      G_error_code;

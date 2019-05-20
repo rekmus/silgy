@@ -47,20 +47,25 @@ ausession_t auses[MAX_SESSIONS+1]={0};  /* app user sessions, using the same ind
 int         G_sessions=0;               /* number of active user sessions */
 int         G_sessions_hwm=0;           /* highest number of active user sessions (high water mark) */
 char        G_last_modified[32]="";     /* response header field with server's start time */
+
 #ifdef DBMYSQL
 MYSQL       *G_dbconn=NULL;             /* database connection */
 #endif
-#ifndef _WIN32
+
 /* asynchorous processing */
+#ifndef _WIN32
 char        G_req_queue_name[256]="";
 char        G_res_queue_name[256]="";
 mqd_t       G_queue_req={0};            /* request queue */
 mqd_t       G_queue_res={0};            /* response queue */
 #ifdef ASYNC
 async_res_t ares[MAX_ASYNC]={0};        /* async response array */
-long        G_last_call_id=0;           /* counter */
+int         G_last_call_id=0;           /* counter */
 #endif  /* ASYNC */
 #endif  /* _WIN32 */
+int         G_async_req_data_size=ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t); /* how many bytes are left for data */
+int         G_async_res_data_size=ASYNC_RES_MSG_SIZE-sizeof(async_res_hdr_t); /* how many bytes are left for data */
+
 bool        G_index_present=FALSE;      /* index.html present in res? */
 
 char        G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
@@ -1646,10 +1651,12 @@ static bool init(int argc, char **argv)
     ALWAYS("");
     ALWAYS("    ASYNC_REQ_MSG_SIZE = %d B", ASYNC_REQ_MSG_SIZE);
     ALWAYS("    ASYNC req.hdr size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_req_hdr_t), sizeof(async_req_hdr_t)/1024, (double)sizeof(async_req_hdr_t)/1024/1024);
+    ALWAYS(" G_async_req_data_size = %lu B (%lu kB / %0.2lf MB)", G_async_req_data_size, G_async_req_data_size/1024, (double)G_async_req_data_size/1024/1024);
     ALWAYS("    ASYNC req     size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_req_t), sizeof(async_req_t)/1024, (double)sizeof(async_req_t)/1024/1024);
     ALWAYS("");
     ALWAYS("    ASYNC_RES_MSG_SIZE = %d B", ASYNC_RES_MSG_SIZE);
     ALWAYS("    ASYNC res.hdr size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_res_hdr_t), sizeof(async_res_hdr_t)/1024, (double)sizeof(async_res_hdr_t)/1024/1024);
+    ALWAYS(" G_async_res_data_size = %lu B (%lu kB / %0.2lf MB)", G_async_res_data_size, G_async_res_data_size/1024, (double)G_async_res_data_size/1024/1024);
     ALWAYS("    ASYNC res     size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_res_t), sizeof(async_res_t)/1024, (double)sizeof(async_res_t)/1024/1024);
     ALWAYS("");
 #ifdef OUTFAST
@@ -4150,6 +4157,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
 /* --------------------------------------------------------------------------
    Check the rules and block IP if matches
    Return TRUE if blocked
+   It doesn't really change anything security-wise but just saves bandwidth
 -------------------------------------------------------------------------- */
 static bool check_block_ip(int ci, const char *rule, const char *value)
 {
@@ -4163,6 +4171,12 @@ static bool check_block_ip(int ci, const char *rule, const char *value)
             || (rule[0]=='R' && 0==strcmp(value, "administrator"))          /* Resource */
             || (rule[0]=='R' && 0==strcmp(value, "phpmyadmin"))             /* Resource */
             || (rule[0]=='R' && 0==strcmp(value, "java.php"))               /* Resource */
+            || (rule[0]=='R' && 0==strcmp(value, "logon.php"))              /* Resource */
+            || (rule[0]=='R' && 0==strcmp(value, "log.php"))                /* Resource */
+            || (rule[0]=='R' && 0==strcmp(value, "hell.php"))               /* Resource */
+            || (rule[0]=='R' && 0==strcmp(value, "shell.php"))              /* Resource */
+            || (rule[0]=='R' && 0==strcmp(value, "tty.php"))                /* Resource */
+            || (rule[0]=='R' && 0==strcmp(value, "cmd.php"))                /* Resource */
             || (rule[0]=='R' && 0==strcmp(value, ".env"))                   /* Resource */
             || (rule[0]=='R' && strstr(value, "setup.php")) )               /* Resource */
     {
@@ -4521,7 +4535,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     async_req_t req;
 
-    if ( G_last_call_id > 10000000 ) G_last_call_id = 0;
+    if ( G_last_call_id >= 1000000000 ) G_last_call_id = 0;
 
     req.hdr.call_id = ++G_last_call_id;
     req.hdr.ci = ci;
@@ -4545,10 +4559,21 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     req.hdr.clen = conn[ci].clen;
     if ( conn[ci].post )
     {
-        strncpy(req.hdr.in_data, conn[ci].in_data, MAX_URI_LEN);
-        req.hdr.in_data[MAX_URI_LEN] = EOS;
+/*        strncpy(req.hdr.in_data, conn[ci].in_data, MAX_URI_LEN);
+        req.hdr.in_data[MAX_URI_LEN] = EOS; */
+
+        if ( conn[ci].clen < G_async_req_data_size )
+        {
+            memcpy(req.data, conn[ci].in_data, conn[ci].clen+1);
+            req.hdr.len = conn[ci].clen;
+        }
+        else    /* copy only what we can */
+        {
+            memcpy(req.data, conn[ci].in_data, G_async_req_data_size);
+            req.data[G_async_req_data_size-1] = EOS;
+            req.hdr.len = G_async_req_data_size;
+        }
     }
-//    strcpy(req.hdr.cookie_in_l, conn[ci].cookie_in_l);
     strcpy(req.hdr.host, conn[ci].host);
     strcpy(req.hdr.website, conn[ci].website);
     strcpy(req.hdr.lang, conn[ci].lang);
@@ -4593,17 +4618,17 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     /* data */
 
-    if ( data )
-    {
-        if ( size )     /* binary */
-            memcpy(req.data, data, size);
-        else    /* text */
-            strcpy(req.data, data);
-    }
-    else
-    {
-        req.data[0] = EOS;
-    }
+//    if ( data )
+//    {
+//        if ( size )     /* binary */
+//            memcpy(req.data, data, size);
+//        else    /* text */
+//            strcpy(req.data, data);
+//    }
+//    else
+//    {
+//        req.data[0] = EOS;
+//    }
 
     bool found=0;
 
@@ -4941,6 +4966,8 @@ char        G_req_queue_name[256]="";
 char        G_res_queue_name[256]="";
 mqd_t       G_queue_req={0};            /* request queue */
 mqd_t       G_queue_res={0};            /* response queue */
+int         G_async_req_data_size=ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t); /* how many bytes are left for data */
+int         G_async_res_data_size=ASYNC_RES_MSG_SIZE-sizeof(async_res_hdr_t); /* how many bytes are left for data */
 int         G_usersRequireAccountActivation=0;
 char        *p_content=NULL;
 conn_t      conn[MAX_CONNECTIONS+1]={0}; /* request details */
@@ -5209,8 +5236,10 @@ int main(int argc, char *argv[])
             conn[0].mobile = req.hdr.mobile;
             conn[0].clen = req.hdr.clen;
             if ( req.hdr.post )
-                strcpy(conn[0].in_data, req.hdr.in_data);
-//            strcpy(conn[0].cookie_in_l, req.hdr.cookie_in_l);
+            {
+//                strcpy(conn[0].in_data, req.hdr.in_data);
+                memcpy(conn[0].in_data, req.data, req.hdr.len);
+            }
             strcpy(conn[0].host, req.hdr.host);
             strcpy(conn[0].website, req.hdr.website);
             strcpy(conn[0].lang, req.hdr.lang);

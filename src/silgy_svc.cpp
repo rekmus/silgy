@@ -20,7 +20,10 @@
 -------------------------------------------------------------------------- */
 void getCustomer()
 {
-    OUT("Hello from getCustomer service!");
+    OUT_HTML_HEADER;
+    OUT("<h1>%s</h1>", APP_WEBSITE);
+    OUT("<p>Hello from getCustomer service!</p>");
+    OUT_HTML_FOOTER;
 }
 
 
@@ -29,7 +32,10 @@ void getCustomer()
 -------------------------------------------------------------------------- */
 void getAccounts()
 {
-    OUT("Hello from getAccounts service!");
+    OUT_HTML_HEADER;
+    OUT("<h1>%s</h1>", APP_WEBSITE);
+    OUT("<p>Hello from getAccounts service!</p>");
+    OUT_HTML_FOOTER;
 }
 
 
