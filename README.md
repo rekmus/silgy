@@ -44,8 +44,6 @@ In case of using Silgy under heavy load or with external API calls, there's the 
 
 ## Hello Worlds
 
-I believe in practical approach. In this case it means the simplest way to render HTML on the server side. Of course, nothing prevents you from using Silgy for SPA.
-
 ### Empty application = static web server
 
 This is just an extremely fast static web server. If no resource is requested it'll look for `index.html` in [res](https://github.com/silgy/silgy#res) directory. If requested file is not present in `res` nor `resmin`, it'll return 404.
