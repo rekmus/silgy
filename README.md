@@ -8,9 +8,9 @@ The latency between receiving HTTP request and application logic has been reduce
 
 Back in 2015 I decided to write a web application and had a wishlist:
 
-1. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~500 users application and use ~1% of the server's resources.
+1. It has to be **responsive**, in a way compiled programs used locally are responsive. It needs to feel solid and reliable. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/show?p=MWPcAbmY).
 
-2. It has to be **responsive**, in a way compiled programs used locally are responsive. I hate slow programs. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/show?p=MWPcAbmY).
+2. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~500 users application and use ~1% of the server's resources.
 
 3. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo and type `silgystart`, Enter.
 
