@@ -198,8 +198,16 @@ typedef char str64k[1024*64];
 
 #ifdef SILGY_SVC
 
-    #define OUTSS(str)                  (p_content = stpcpy(p_content, str))
-    #define OUT_BIN(data, len)          (len=(len>G_async_res_data_size?G_async_res_data_size:len), memcpy(p_content, data, len), p_content += len)
+    #ifdef OUTFAST
+        #define OUTSS(str)                  (p_content = stpcpy(p_content, str))
+        #define OUT_BIN(data, len)          (len=(len>G_async_res_data_size?G_async_res_data_size:len), memcpy(p_content, data, len), p_content += len)
+    #elif defined (OUTCHECK)
+        #define OUTSS(str)                  svc_out_check(str)
+        #define OUT_BIN(data, len)          (len=(len>G_async_res_data_size?G_async_res_data_size:len), memcpy(p_content, data, len), p_content += len)
+    #else   /* OUTCHECKREALLOC */
+        #define OUTSS(str)                  svc_out_check_realloc(str)
+        #define OUT_BIN(data, len)          svc_out_check_realloc_bin(data, len)
+    #endif
 
 #else   /* SILGY_APP */
 
@@ -547,6 +555,12 @@ typedef char str64k[1024*64];
 
 #define ASYNC_SHM_SIZE                  MAX_PAYLOAD_SIZE
 
+/* these are flags */
+#define ASYNC_CHUNK_FIRST               0x4000
+#define ASYNC_CHUNK_LAST                0x8000
+#define ASYNC_CHUNK_IS_FIRST(n)         ((n & ASYNC_CHUNK_FIRST) == ASYNC_CHUNK_FIRST)
+#define ASYNC_CHUNK_IS_LAST(n)          ((n & ASYNC_CHUNK_LAST) == ASYNC_CHUNK_LAST)
+
 #ifdef SILGY_SVC
 #define SVC(svc)                        (0==strcmp(G_service, svc))
 #define ASYNC_ERR_CODE                  G_error_code
@@ -738,7 +752,7 @@ typedef struct {
 /* request */
 
 typedef struct {
-    long    call_id;
+    int     call_id;
     int     ci;
     char    service[SVC_NAME_LEN+1];
     int     ai;
@@ -783,7 +797,7 @@ typedef struct {
 /* response */
 
 typedef struct {
-    long    call_id;
+    int     call_id;
     int     ci;
     char    service[SVC_NAME_LEN+1];
     int     ai;
@@ -791,8 +805,9 @@ typedef struct {
     time_t  sent;
     int     timeout;
     int     err_code;
-    int     len;
     int     status;
+    int     chunk;
+    int     clen;
     char    ctype;
     char    ctypestr[256];
     char    cdisp[256];
@@ -804,7 +819,7 @@ typedef struct {
     bool    dont_cache;
     bool    keep_content;
     int     rest_status;
-    long    rest_req;
+    int     rest_req;
     double  rest_elapsed;
     usession_t uses;
 #ifndef ASYNC_EXCLUDE_AUSES
@@ -894,7 +909,7 @@ typedef struct {
     /* what goes out */
     int     out_hlen;                       /* outgoing header length */
 #ifdef SEND_ALL_AT_ONCE
-    long    out_len;                        /* outgoing length (all) */
+    int     out_len;                        /* outgoing length (all) */
     char    *out_start;
 #else
     char    out_header[OUT_HEADER_BUFSIZE]; /* outgoing HTTP header */
@@ -904,10 +919,10 @@ typedef struct {
 #else
     char    out_data_alloc[OUT_BUFSIZE];
 #endif
-    long    out_data_allocated;             /* number of allocated bytes */
+    int     out_data_allocated;             /* number of allocated bytes */
     char    *out_data;                      /* pointer to the data to send */
     int     status;                         /* HTTP status */
-    long    data_sent;                      /* how many body bytes have been sent */
+    int     data_sent;                      /* how many body bytes have been sent */
     char    ctype;                          /* content type */
     char    ctypestr[256];                  /* user (custom) content type */
     char    cdisp[256];                     /* content disposition */
@@ -1067,6 +1082,11 @@ extern char     G_dt[20];                   /* datetime for database or log (YYY
 extern bool     G_index_present;            /* index.html present in res? */
 
 #ifdef SILGY_SVC
+extern async_req_t req;
+extern async_res_t res;
+#ifdef OUTCHECKREALLOC
+extern char     *out_data;
+#endif
 extern char     *p_content;
 extern char     G_service[SVC_NAME_LEN+1];
 extern int      G_error_code;
@@ -1081,7 +1101,7 @@ extern counters_t G_cnts_yesterday;         /* yesterday's counters */
 extern counters_t G_cnts_day_before;        /* day before's counters */
 /* REST */
 extern int      G_rest_status;              /* last REST call response status */
-extern long     G_rest_req;                 /* REST calls counter */
+extern int      G_rest_req;                 /* REST calls counter */
 extern double   G_rest_elapsed;             /* REST calls elapsed for calculating average */
 extern double   G_rest_average;             /* REST calls average elapsed */
 extern char     G_rest_content_type[MAX_VALUE_LEN+1];
@@ -1118,13 +1138,16 @@ extern "C" {
     bool eng_host(int ci, const char *host);
     void eng_out_check(int ci, const char *str);
     void eng_out_check_realloc(int ci, const char *str);
-    void eng_out_check_realloc_bin(int ci, const char *data, long len);
+    void eng_out_check_realloc_bin(int ci, const char *data, int len);
     char *eng_get_header(int ci, const char *header);
     void eng_rest_header_pass(int ci, const char *header);
 
     /* public app functions */
 
 #ifdef SILGY_SVC
+    void svc_out_check(const char *str);
+    void svc_out_check_realloc(const char *str);
+    void svc_out_check_realloc_bin(const char *data, int len);
     bool silgy_svc_init(void);
     void silgy_svc_main(void);
     void silgy_svc_done(void);

@@ -38,7 +38,7 @@ int         G_next_message=0;
 bool        G_ssl_lib_initialized=0;
 #endif
 
-long        G_rest_req=0;               /* REST calls counter */
+int         G_rest_req=0;               /* REST calls counter */
 double      G_rest_elapsed=0;           /* REST calls elapsed for calculating average */
 double      G_rest_average=0;           /* REST calls average elapsed */
 int         G_rest_status;              /* last REST call response status */
