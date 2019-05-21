@@ -162,6 +162,10 @@ static int          M_prev_minute;
 static int          M_prev_day;
 static time_t       M_last_housekeeping=0;
 
+#ifdef ASYNC
+static char         *M_async_shm=NULL;
+#endif
+
 
 /* prototypes */
 
@@ -1380,7 +1384,7 @@ static void respond_to_expect(int ci)
     static char reply_refuse[]="HTTP/1.1 413 Request Entity Too Large\r\n\r\n";
     int bytes;
 
-    if ( conn[ci].clen >= MAX_POST_DATA_BUFSIZE )   /* refuse */
+    if ( conn[ci].clen >= MAX_PAYLOAD_SIZE )   /* refuse */
     {
         INF("Sending 413");
 #ifdef HTTPS
@@ -4089,7 +4093,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     else if ( 0==strcmp(ulabel, "CONTENT-LENGTH") )
     {
         conn[ci].clen = atol(value);
-        if ( conn[ci].clen < 0 || (!conn[ci].post && conn[ci].clen >= IN_BUFSIZE) || (conn[ci].post && conn[ci].clen >= MAX_POST_DATA_BUFSIZE) )
+        if ( conn[ci].clen < 0 || (!conn[ci].post && conn[ci].clen >= IN_BUFSIZE) || (conn[ci].post && conn[ci].clen >= MAX_PAYLOAD_SIZE) )
         {
             ERR("Request too long, clen = %d, sending 413", conn[ci].clen);
             return 413;
@@ -4557,23 +4561,37 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     strcpy(req.hdr.uagent, conn[ci].uagent);
     req.hdr.mobile = conn[ci].mobile;
     req.hdr.clen = conn[ci].clen;
+
+    /* For POST, the payload can be in the data space of the message,
+       or -- if it's bigger -- in the shared memory */
+
     if ( conn[ci].post )
     {
-/*        strncpy(req.hdr.in_data, conn[ci].in_data, MAX_URI_LEN);
-        req.hdr.in_data[MAX_URI_LEN] = EOS; */
-
         if ( conn[ci].clen < G_async_req_data_size )
         {
+            DBG("Payload fits in msg");
+
             memcpy(req.data, conn[ci].in_data, conn[ci].clen+1);
-            req.hdr.len = conn[ci].clen;
+            req.hdr.payload_location = ASYNC_PAYLOAD_MSG;
         }
-        else    /* copy only what we can */
+        else    /* ASYNC_PAYLOAD_SHM */
         {
-            memcpy(req.data, conn[ci].in_data, G_async_req_data_size);
-            req.data[G_async_req_data_size-1] = EOS;
-            req.hdr.len = G_async_req_data_size;
+            DBG("Payload needs SHM");
+
+            if ( !M_async_shm )
+            {
+                if ( (M_async_shm=lib_shm_create(MAX_PAYLOAD_SIZE, 0)) == NULL )
+                {
+                    ERR("Couldn't create / attach to SHM");
+                    return;
+                }
+            }
+
+            memcpy(M_async_shm, conn[ci].in_data, conn[ci].clen+1);
+            req.hdr.payload_location = ASYNC_PAYLOAD_SHM;
         }
     }
+
     strcpy(req.hdr.host, conn[ci].host);
     strcpy(req.hdr.website, conn[ci].website);
     strcpy(req.hdr.lang, conn[ci].lang);
@@ -4616,19 +4634,21 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     strcpy(req.hdr.last_modified, G_last_modified);
 
-    /* data */
 
-//    if ( data )
-//    {
-//        if ( size )     /* binary */
-//            memcpy(req.data, data, size);
-//        else    /* text */
-//            strcpy(req.data, data);
-//    }
-//    else
-//    {
-//        req.data[0] = EOS;
-//    }
+#ifdef ASYNC_USE_APP_CONTINUE   /* depreciated */
+    if ( data )
+    {
+        if ( size )     /* binary */
+            memcpy(req.data, data, size);
+        else    /* text */
+            strcpy(req.data, data);
+    }
+    else
+    {
+        req.data[0] = EOS;
+    }
+#endif  /* ASYNC_USE_APP_CONTINUE */
+
 
     bool found=0;
 
@@ -5001,6 +5021,7 @@ char        G_dbPassword[128]="";
 
 
 static char *M_pidfile;                 /* pid file name */
+static char *M_async_shm=NULL;
 
 
 static void sigdisp(int sig);
@@ -5100,6 +5121,14 @@ int main(int argc, char *argv[])
 
     strcpy(conn[0].host, APP_DOMAIN);
     strcpy(conn[0].website, APP_WEBSITE);
+
+    if ( !(conn[0].in_data = (char*)malloc(G_async_req_data_size)) )
+    {
+        ERR("malloc for conn[0].in_data failed");
+        return EXIT_FAILURE;
+    }
+
+    conn[0].in_data_allocated = G_async_req_data_size;
 
     /* open database ----------------------------------------------------- */
 
@@ -5235,11 +5264,44 @@ int main(int argc, char *argv[])
             strcpy(conn[0].uagent, req.hdr.uagent);
             conn[0].mobile = req.hdr.mobile;
             conn[0].clen = req.hdr.clen;
+
+            /* For POST, the payload can be in the data space of the message,
+               or -- if it's bigger -- in the shared memory */
+
             if ( req.hdr.post )
             {
-//                strcpy(conn[0].in_data, req.hdr.in_data);
-                memcpy(conn[0].in_data, req.data, req.hdr.len);
+                if ( req.hdr.payload_location == ASYNC_PAYLOAD_MSG )
+                {
+                    memcpy(conn[0].in_data, req.data, req.hdr.clen+1);
+                }
+                else    /* ASYNC_PAYLOAD_SHM */
+                {
+                    if ( conn[0].in_data_allocated < req.hdr.clen+1 )
+                    {
+                        char *tmp = (char*)realloc(conn[0].in_data, req.hdr.clen+1);
+                        if ( !tmp )
+                        {
+                            ERR("Couldn't realloc in_data, tried %d bytes", req.hdr.clen+1);
+                            continue;
+                        }
+                        conn[0].in_data = tmp;
+                        conn[0].in_data_allocated = req.hdr.clen+1;
+                        INF("Reallocated in_data, new size = %d bytes", req.hdr.clen+1);
+                    }
+
+                    if ( !M_async_shm )
+                    {
+                        if ( (M_async_shm=lib_shm_create(MAX_PAYLOAD_SIZE, 0)) == NULL )
+                        {
+                            ERR("Couldn't create / attach to SHM");
+                            continue;
+                        }
+                    }
+
+                    memcpy(conn[0].in_data, M_async_shm, req.hdr.clen+1);
+                }
             }
+
             strcpy(conn[0].host, req.hdr.host);
             strcpy(conn[0].website, req.hdr.website);
             strcpy(conn[0].lang, req.hdr.lang);

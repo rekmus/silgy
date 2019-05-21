@@ -60,6 +60,8 @@ typedef char                    QSVAL[QSBUF];
 #define SHUTDOWN    3
 
 
+#define MAX_SHM_SEGMENTS                            100
+
 
 /* REST calls */
 
@@ -360,8 +362,8 @@ extern "C" {
     bool silgy_read_param_str(const char *param, char *dest);
     bool silgy_read_param_int(const char *param, int *dest);
     char *lib_create_pid_file(const char *name);
-    bool lib_shm_create(long bytes);
-    void lib_shm_delete(long bytes);
+    char *lib_shm_create(long bytes, int index);
+    void lib_shm_delete(long bytes, int index);
     bool log_start(const char *prefix, bool test);
     void log_write_time(int level, const char *message, ...);
     void log_write(int level, const char *message, ...);

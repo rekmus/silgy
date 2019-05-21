@@ -63,7 +63,7 @@ typedef char                        bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "4.2.1"
+#define WEB_SERVER_VERSION          "4.3"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
@@ -162,6 +162,7 @@ typedef char str64k[1024*64];
 
 #define PROTOCOL                    (conn[ci].secure?"https":"http")
 #define COLON_POSITION              (conn[ci].secure?5:4)
+
 
 /* defaults */
 
@@ -286,7 +287,9 @@ typedef char str64k[1024*64];
 
 #define OUT_HEADER_BUFSIZE              4096            /* response header buffer length */
 #define TMP_BUFSIZE                     1048576         /* temporary string buffer size (1 MB) */
-#define MAX_POST_DATA_BUFSIZE           16777216+1048576 /* max incoming POST data length (16+1 MB) */
+#ifndef MAX_PAYLOAD_SIZE
+#define MAX_PAYLOAD_SIZE                16777216        /* max incoming POST data length (16 MB) */
+#endif
 #define MAX_LOG_STR_LEN                 4095            /* max log string length */
 #define MAX_METHOD_LEN                  7               /* method length */
 #define MAX_URI_LEN                     2047            /* max request URI length */
@@ -297,10 +300,6 @@ typedef char str64k[1024*64];
 
 /* mainly memory usage */
 
-#ifdef SILGY_SVC
-#define MAX_CONNECTIONS                 1               /* conn, uses & auses still as arrays to keep the same macros */
-#define MAX_SESSIONS                    1
-#else
 #ifdef MEM_TINY
 #define IN_BUFSIZE                      4096            /* incoming request buffer length (4 kB) */
 #define OUT_BUFSIZE                     65536           /* initial HTTP response buffer length (64 kB) */
@@ -337,6 +336,12 @@ typedef char str64k[1024*64];
 #define MAX_CONNECTIONS                 20              /* max TCP connections */
 #define MAX_SESSIONS                    10              /* max user sessions */
 #endif
+
+#ifdef SILGY_SVC
+#undef MAX_CONNECTIONS
+#define MAX_CONNECTIONS                 1               /* conn, uses & auses still as arrays to keep the same macros */
+#undef MAX_SESSIONS
+#define MAX_SESSIONS                    1
 #endif  /* SILGY_SVC */
 
 #ifdef FD_MON_SELECT
@@ -536,6 +541,12 @@ typedef char str64k[1024*64];
 #define ASYNC_RES_QUEUE                 "/silgy_res"            /* response queue name */
 #define ASYNC_DEF_TIMEOUT               60                      /* in seconds */
 #define ASYNC_MAX_TIMEOUT               1800                    /* in seconds ==> 30 minutes */
+
+#define ASYNC_PAYLOAD_MSG               0
+#define ASYNC_PAYLOAD_SHM               1
+
+#define ASYNC_SHM_SIZE                  MAX_PAYLOAD_SIZE
+
 #ifdef SILGY_SVC
 #define SVC(svc)                        (0==strcmp(G_service, svc))
 #define ASYNC_ERR_CODE                  G_error_code
@@ -543,6 +554,7 @@ typedef char str64k[1024*64];
 #define SVC(svc)                        (0==strcmp(conn[ci].service, svc))
 #define ASYNC_ERR_CODE                  conn[ci].async_err_code
 #endif
+
 #ifdef ASYNC_USE_APP_CONTINUE   /* the old way */
 #define CALL_ASYNC(svc, data)           eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout, 0)
 #define CALL_ASYNC_TM(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, tmout, 0)
@@ -552,6 +564,7 @@ typedef char str64k[1024*64];
 #define CALL_ASYNC_TM(svc, tmout)       eng_async_req(ci, svc, NULL, TRUE, tmout, 0)
 #define CALL_ASYNC_NR(svc)              eng_async_req(ci, svc, NULL, FALSE, 0, 0)
 #endif  /* ASYNC_USE_APP_CONTINUE */
+
 #define CALL_ASYNC_BIN(svc, data, size) eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout, size)
 
 
@@ -733,13 +746,12 @@ typedef struct {
     char    ip[INET_ADDRSTRLEN];
     char    method[MAX_METHOD_LEN+1];
     bool    post;
-    int     len;    /* only passed part of the POST data */
+    char    payload_location;
     char    uri[MAX_URI_LEN+1];
     char    resource[MAX_RESOURCE_LEN+1];
     char    uagent[MAX_VALUE_LEN+1];
     bool    mobile;
     int     clen;
-//    char    in_data[MAX_URI_LEN+1];
     char    host[MAX_VALUE_LEN+1];
     char    website[256];
     char    lang[LANG_LEN+1];
@@ -818,7 +830,9 @@ typedef struct {                            /* request details for silgy_svc */
     char    uagent[MAX_VALUE_LEN+1];
     bool    mobile;
     int     clen;
-    char    in_data[ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t)];
+//    char    in_data[ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t)];
+    char    *in_data;
+    int     in_data_allocated;
     char    host[MAX_VALUE_LEN+1];
     char    website[256];
     char    lang[LANG_LEN+1];
@@ -1065,8 +1079,6 @@ extern int      G_blacklist_cnt;            /* G_blacklist length */
 extern counters_t G_cnts_today;             /* today's counters */
 extern counters_t G_cnts_yesterday;         /* yesterday's counters */
 extern counters_t G_cnts_day_before;        /* day before's counters */
-/* SHM */
-extern char     *G_shm_segptr;              /* SHM pointer */
 /* REST */
 extern int      G_rest_status;              /* last REST call response status */
 extern long     G_rest_req;                 /* REST calls counter */
@@ -1123,7 +1135,9 @@ extern "C" {
     bool silgy_app_session_init(int ci);
     void silgy_app_session_done(int ci);
 #ifdef ASYNC
+#ifdef ASYNC_USE_APP_CONTINUE   /* depreciated */
     void silgy_app_continue(int ci, const char *data);
+#endif
 #endif
 #ifdef APP_ERROR_PAGE
     void silgy_app_error_page(int ci, int code);
