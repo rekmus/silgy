@@ -760,7 +760,7 @@ typedef struct {
     char    response;
     int     status;
     usession_t uses;
-#ifdef ASYNC_AUSES
+#ifndef ASYNC_EXCLUDE_AUSES
     ausession_t auses;
 #endif
     counters_t cnts_today;
@@ -807,7 +807,7 @@ typedef struct {
     long    rest_req;
     double  rest_elapsed;
     usession_t uses;
-#ifdef ASYNC_AUSES
+#ifndef ASYNC_EXCLUDE_AUSES
     ausession_t auses;
 #endif
 } async_res_hdr_t;

@@ -658,7 +658,7 @@ int main(int argc, char **argv)
                                     if ( conn[i].usi )  /* update user session */
                                     {
                                         memcpy(&uses[conn[i].usi], &ares[conn[i].ai].hdr.uses, sizeof(usession_t));
-#ifdef ASYNC_AUSES
+#ifndef ASYNC_EXCLUDE_AUSES
                                         memcpy(&auses[conn[i].usi], &ares[conn[i].ai].hdr.auses, sizeof(ausession_t));
 #endif
                                     }
@@ -4604,14 +4604,14 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     if ( conn[ci].usi )
     {
         memcpy(&req.hdr.uses, &US, sizeof(usession_t));
-#ifdef ASYNC_AUSES
+#ifndef ASYNC_EXCLUDE_AUSES
         memcpy(&req.hdr.auses, &AUS, sizeof(ausession_t));
 #endif
     }
     else
     {
         memset(&req.hdr.uses, 0, sizeof(usession_t));
-#ifdef ASYNC_AUSES
+#ifndef ASYNC_EXCLUDE_AUSES
         memset(&req.hdr.auses, 0, sizeof(ausession_t));
 #endif
     }
@@ -5320,7 +5320,7 @@ int main(int argc, char *argv[])
             /* user session */
 
             memcpy(&uses[1], &req.hdr.uses, sizeof(usession_t));
-#ifdef ASYNC_AUSES
+#ifndef ASYNC_EXCLUDE_AUSES
             memcpy(&auses[1], &req.hdr.auses, sizeof(ausession_t));
 #endif
             if ( uses[1].sesid[0] )
@@ -5375,7 +5375,7 @@ int main(int argc, char *argv[])
             {
                 DBG_T("Sending response...");
                 memcpy(&res.hdr.uses, &uses[1], sizeof(usession_t));
-#ifdef ASYNC_AUSES
+#ifndef ASYNC_EXCLUDE_AUSES
                 memcpy(&res.hdr.auses, &auses[1], sizeof(ausession_t));
 #endif
                 mq_send(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, 0);
