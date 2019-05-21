@@ -863,8 +863,8 @@ int main(int argc, char **argv)
 
             DBG("res.hdr.chunk = %d", res.hdr.chunk);
 
-            DBG("res.hdr.call_id = %d", res.hdr.call_id);
-            DBG("res.hdr.ci = %d", res.hdr.ci);
+            DBG("res.hdr.call_id=%d", res.hdr.call_id);
+            DBG("res.hdr.ci=%d", res.hdr.ci);
             DBG("res.hdr.service [%s]", res.hdr.service);
             DBG("res.hdr.err_code = %d", res.hdr.err_code);
             DBG("res.hdr.status = %d", res.hdr.status);
@@ -5289,7 +5289,7 @@ int main(int argc, char *argv[])
             DBG_T("Message received");
 
             if ( G_logLevel > LOG_INF )
-                DBG_T("ci = %d, service [%s], call_id = %d", req.hdr.ci, req.hdr.service, req.hdr.call_id);
+                DBG_T("ci=%d, service [%s], call_id=%d", req.hdr.ci, req.hdr.service, req.hdr.call_id);
             else
                 INF_T("%s called (id=%d)", req.hdr.service, req.hdr.call_id);
 
@@ -5360,7 +5360,11 @@ int main(int argc, char *argv[])
 
             /* response data */
 
+#ifdef OUTCHECKREALLOC
+            p_content = out_data;
+#else
             p_content = res.data;
+#endif
 
             /* user session */
 

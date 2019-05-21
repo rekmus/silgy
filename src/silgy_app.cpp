@@ -23,9 +23,17 @@ void silgy_app_main(int ci)
     if ( REQ("") )  // landing page
     {
         OUT_HTML_HEADER;
+
         OUT("<h1>%s</h1>", APP_WEBSITE);
         OUT("<h2>Welcome to my web app!</h2>");
+
+        if ( REQ_DSK )
+            OUT("<p>You're on desktop.</p>");
+        else  /* REQ_MOB */
+            OUT("<p>You're on the phone.</p>");
+
         OUT("<p>Click <a href=\"welcome\">here</a> to try my welcoming bot.</p>");
+
         OUT_HTML_FOOTER;
     }
     else if ( REQ("welcome") )  // welcoming bot
@@ -33,22 +41,13 @@ void silgy_app_main(int ci)
         OUT_HTML_HEADER;
         OUT("<h1>%s</h1>", APP_WEBSITE);
 
-        // show form
-
         OUT("<p>Please enter your name:</p>");
         OUT("<form action=\"welcome\"><input name=\"firstname\" autofocus> <input type=\"submit\" value=\"Run\"></form>");
 
-        QSVAL qs_firstname;  // query string value
+        QSVAL qs_firstname;   // query string value
 
-        // bid welcome
-
-        if ( QS("firstname", qs_firstname) )  // firstname present in query string, copy it to qs_firstname
-        {
-            DBG("query string arrived with firstname %s", qs_firstname);  // this will write to the log file
+        if ( QS("firstname", qs_firstname) )    // if present, bid welcome
             OUT("<p>Welcome %s, my dear friend!</p>", qs_firstname);
-        }
-
-        // show link to main page
 
         OUT("<p><a href=\"/\">Back to landing page</a></p>");
 
