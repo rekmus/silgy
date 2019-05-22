@@ -4321,11 +4321,11 @@ static unsigned int seeds[SILGY_SEEDS_MEM];
     }
     else    /* subsequent calls */
     {
-        pid_remainder = get_random_number() % 63 + 1;
-        yesterday_rem = get_random_number() % 63 + 1;
+        pid_remainder = rand() % 63 + 1;
+        yesterday_rem = rand() % 63 + 1;
     }
 
-    static int seeded=0;    /* 8 bits */
+static int seeded=0;    /* 8 bits */
 
     unsigned int seed;
 static unsigned int prev_seed=0;
@@ -4373,8 +4373,8 @@ static unsigned int prev_seed=0;
 
         /* stir it up to avoid endless loop */
 
-        pid_remainder = get_random_number() % 63 + 1;
-        time_remainder = get_random_number() % 63 + 1;
+        pid_remainder = rand() % 63 + 1;
+        time_remainder = rand() % 63 + 1;
     }
 
     char f[256];
