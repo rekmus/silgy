@@ -32,7 +32,7 @@ Silgy has build-in (and enabled by default) protection against most popular atta
 
 TCO for a mid-sized web application with a small database and moderate load (<1,000,000 requests/day) can be as low as $3 per month (Amazon [EC2 t2.micro](https://aws.amazon.com/ec2/instance-types/t2/)).
 
-In case of using Silgy under heavy load or with external API calls, there's the ASYNC facility designed to prevent main (silgy_app) process blocking. ASYNC allows developer to split (or move) the functionality between gateway and multiple service processes.
+In case of using Silgy under heavy load or with external API calls, there's the [ASYNC facility](https://github.com/silgy/silgy/wiki/Silgy-ASYNC) designed to prevent main (silgy_app) process blocking. ASYNC allows developer to split (or move) the functionality between gateway and multiple service processes.
 
 ## [Getting Started on Windows](https://github.com/silgy/silgy/wiki/Silgy-Hello-World-%E2%80%93-Getting-Started-on-Windows)
 
