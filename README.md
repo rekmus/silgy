@@ -151,8 +151,8 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 
 *(Required only for development)*
 
-* application sources. It has to contain at least `silgy_app.h` and `silgy_app.cpp` with `silgy_app_main()` inside.
-* compilation script: `m`
+* Application sources. It has to contain at least `silgy_app.h` and `silgy_app.cpp` with `silgy_app_main()` inside.
+* Compilation script: `m`
 
 ### `lib`
 
@@ -163,9 +163,9 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 
 ### `bin`
 
-* executables, i.e. `silgy_app`, `silgy_svc`, `silgy_watcher`
-* runtime scripts, i.e. `silgystart`, `silgystop`
-* configuration: `silgy.conf`
+* Executables, i.e. `silgy_app`, `silgy_svc`, `silgy_watcher`
+* Runtime scripts, i.e. `silgystart`, `silgystop`
+* Configuration: `silgy.conf`
 
 ### `res`
 
@@ -186,7 +186,7 @@ Static resources to be minified. The whole tree under `resmin` is publicly avail
 
 ### `logs`
 
-* log files
+* Log files
 
 
 ## Feedback & Support
