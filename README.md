@@ -152,7 +152,7 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 *(Required only for development)*
 
 * application sources. It has to contain at least `silgy_app.h` and `silgy_app.cpp` with `silgy_app_main()` inside.
-* compilation scripts, i.e. `m` (compiles silgy_app), `ms` (compiles silgy_svc), `mw` (compiles silgy_watcher)
+* compilation script: `m`
 
 ### `lib`
 
