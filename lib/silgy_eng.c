@@ -1413,7 +1413,7 @@ static void respond_to_expect(int ci)
     static char reply_refuse[]="HTTP/1.1 413 Request Entity Too Large\r\n\r\n";
     int bytes;
 
-    if ( conn[ci].clen >= MAX_PAYLOAD_SIZE )   /* refuse */
+    if ( conn[ci].clen >= MAX_PAYLOAD_SIZE-1 )   /* refuse */
     {
         INF("Sending 413");
 #ifdef HTTPS
@@ -4122,7 +4122,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     else if ( 0==strcmp(ulabel, "CONTENT-LENGTH") )
     {
         conn[ci].clen = atol(value);
-        if ( conn[ci].clen < 0 || (!conn[ci].post && conn[ci].clen >= IN_BUFSIZE) || (conn[ci].post && conn[ci].clen >= MAX_PAYLOAD_SIZE) )
+        if ( conn[ci].clen < 0 || (!conn[ci].post && conn[ci].clen >= IN_BUFSIZE) || (conn[ci].post && conn[ci].clen >= MAX_PAYLOAD_SIZE-1) )
         {
             ERR("Request too long, clen = %d, sending 413", conn[ci].clen);
             return 413;
@@ -4605,18 +4605,29 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         }
         else    /* ASYNC_PAYLOAD_SHM */
         {
-            DBG("Payload needs SHM");
+            DBG("Payload requires SHM");
 
             if ( !M_async_shm )
             {
                 if ( (M_async_shm=lib_shm_create(MAX_PAYLOAD_SIZE, 0)) == NULL )
                 {
-                    ERR("Couldn't create / attach to SHM");
+                    ERR("Couldn't create SHM");
                     return;
                 }
+
+                M_async_shm[MAX_PAYLOAD_SIZE-1] = 0;
+            }
+
+            /* use the last byte as a simple semaphore */
+
+            while ( M_async_shm[MAX_PAYLOAD_SIZE-1] )
+            {
+                WAR("Waiting for the SHM segment to be freed by silgy_svc process");
+                msleep(100);   /* temporarily */
             }
 
             memcpy(M_async_shm, conn[ci].in_data, conn[ci].clen+1);
+            M_async_shm[MAX_PAYLOAD_SIZE-1] = 1;
             req.hdr.payload_location = ASYNC_PAYLOAD_SHM;
         }
     }
@@ -5338,12 +5349,15 @@ int main(int argc, char *argv[])
                     {
                         if ( (M_async_shm=lib_shm_create(MAX_PAYLOAD_SIZE, 0)) == NULL )
                         {
-                            ERR("Couldn't create / attach to SHM");
+                            ERR("Couldn't attach to SHM");
                             continue;
                         }
                     }
 
                     memcpy(conn[0].in_data, M_async_shm, req.hdr.clen+1);
+
+                    /* mark it as free */
+                    M_async_shm[MAX_PAYLOAD_SIZE-1] = 0;
                 }
             }
 
