@@ -6431,7 +6431,7 @@ char *lib_shm_create(long bytes, int index)
     /* Create unique key via call to ftok() */
 
     key_t key;
-    if ( (key=ftok(".", '0'+(char)index)) == -1 )
+    if ( (key=ftok(G_appdir, '0'+(char)index)) == -1 )
     {
         ERR("ftok, errno = %d (%s)", errno, strerror(errno));
         return NULL;
@@ -6439,7 +6439,7 @@ char *lib_shm_create(long bytes, int index)
 
     /* Open the shared memory segment - create if necessary */
 
-    if ( (M_shmid[index]=shmget(key, bytes, IPC_CREAT|IPC_EXCL|0666)) == -1 )
+    if ( (M_shmid[index]=shmget(key, bytes, IPC_CREAT|IPC_EXCL|0600)) == -1 )
     {
         INF("Shared memory segment exists - opening as client");
 
