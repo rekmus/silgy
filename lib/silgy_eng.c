@@ -4314,7 +4314,7 @@ static void clean_up()
     WSACleanup();
 #endif  /* _WIN32 */
 
-    log_finish();
+    silgy_lib_done();
 }
 
 
@@ -5633,7 +5633,7 @@ static void clean_up()
         mq_unlink(G_res_queue_name);
     }
 
-    log_finish();
+    silgy_lib_done();
 }
 
 #endif  /* SILGY_SVC */

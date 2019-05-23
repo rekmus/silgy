@@ -55,7 +55,7 @@ static char M_tsep=' ';                 /* thousand separator */
 static char M_dsep='.';                 /* decimal separator */
 
 #ifndef _WIN32
-static int  M_shmid[MAX_SHM_SEGMENTS];  /* SHM id-s */
+static int  M_shmid[MAX_SHM_SEGMENTS]={0}; /* SHM id-s */
 #endif
 
 static rest_header_t M_rest_headers[REST_MAX_HEADERS];
@@ -92,17 +92,59 @@ static void get_byteorder64(void);
 -------------------------------------------------------------------------- */
 void silgy_lib_init()
 {
+    int i;
+
     DBG("silgy_lib_init");
+
     /* G_pid */
+
     G_pid = getpid();
+
     /* G_appdir */
+
     lib_get_app_dir();
+
     /* time globals */
+
     lib_update_time_globals();
+
     /* log file fd */
+
     M_log_fd = stdout;
+
     /* load error messages */
+
     load_err_messages();
+
+#ifndef _WIN32
+
+    /* SHM segments array */
+
+//    for ( i=0; i<MAX_SHM_SEGMENTS; ++i )
+//        M_shmid[i] = NULL;
+
+#endif  /* _WIN32 */
+
+}
+
+
+/* --------------------------------------------------------------------------
+   Library clean up
+-------------------------------------------------------------------------- */
+void silgy_lib_done()
+{
+    int i;
+
+    DBG("silgy_lib_done");
+
+#ifndef _WIN32
+
+    for ( i=0; i<MAX_SHM_SEGMENTS; ++i )
+        lib_shm_delete(i);
+
+#endif  /* _WIN32 */
+
+    log_finish();
 }
 
 
@@ -6429,13 +6471,14 @@ char *lib_shm_create(long bytes, int index)
 /* --------------------------------------------------------------------------
    Delete shared memory segment
 -------------------------------------------------------------------------- */
-void lib_shm_delete(long bytes, int index)
+void lib_shm_delete(int index)
 {
 #ifndef _WIN32
-    if ( lib_shm_create(bytes, index) )
+    if ( M_shmid[index] )
     {
         shmctl(M_shmid[index], IPC_RMID, 0);
-        INF("Shared memory segment marked for deletion");
+        M_shmid[index] = 0;
+        INF("Shared memory segment (index=%d) marked for deletion", index);
     }
 #endif  /* _WIN32 */
 }

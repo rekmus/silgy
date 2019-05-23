@@ -269,6 +269,7 @@ typedef json_t JSON;
 extern "C" {
 #endif
     void silgy_lib_init(void);
+    void silgy_lib_done(void);
     void silgy_add_message(int code, const char *lang, const char *message, ...);
     char *silgy_message(int code);
     char *silgy_message_lang(int ci, int code);
@@ -363,7 +364,7 @@ extern "C" {
     bool silgy_read_param_int(const char *param, int *dest);
     char *lib_create_pid_file(const char *name);
     char *lib_shm_create(long bytes, int index);
-    void lib_shm_delete(long bytes, int index);
+    void lib_shm_delete(int index);
     bool log_start(const char *prefix, bool test);
     void log_write_time(int level, const char *message, ...);
     void log_write(int level, const char *message, ...);
