@@ -2,7 +2,7 @@
 
 Simple and fast web application backend framework for C and C++ programmers.
 
-The latency between receiving HTTP request and application logic has been reduced to single microseconds by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
+The latency between receiving HTTP request and application logic has been reduced to **single microseconds** by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic. It can act as a standalone web application or as a fast C++ servlet that makes up a building block of the more complex architecture.
 
 ## Why bother?
 
@@ -12,13 +12,13 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 2. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~500 users application and use ~1% of the server's resources.
 
-3. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo and type `silgystart`, Enter.
+3. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
 
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
 
 ## What's in the box?
 
-As I am writing this in May 2019, Silgy lib contains everything that is necessary to build a complete, production-grade solution, including [session management](https://github.com/silgy/silgy/wiki/Sessions-in-Silgy) and [REST calls](https://github.com/silgy/silgy/wiki/RESTful-calls-from-Silgy).
+As I am writing this in May 2019, Silgy lib contains everything that is necessary to build a complete, production-grade solution, including [session management](https://github.com/silgy/silgy/wiki/Sessions-in-Silgy), [users accounts](https://github.com/silgy/silgy/wiki/USERS-Module) and [REST calls](https://github.com/silgy/silgy/wiki/RESTful-calls-from-Silgy).
 
 The only third-party dependencies are:
 
