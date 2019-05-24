@@ -5,9 +5,9 @@ echo Making silgy_app...
 
 g++ silgy_app.cpp \
 ../lib/silgy_eng.c ../lib/silgy_lib.c ../lib/silgy_usr.c \
--s -O3 \
 -I. -I../lib \
 -lrt \
+-s -O3 \
 -o ../bin/silgy_app
 
 
@@ -16,9 +16,9 @@ echo Making silgy_svc...
 g++ silgy_svc.cpp \
 ../lib/silgy_eng.c ../lib/silgy_lib.c ../lib/silgy_usr.c \
 -D SILGY_SVC \
--s -O3 \
 -I. -I../lib \
 -lrt \
+-s -O3 \
 -o ../bin/silgy_svc
 
 
@@ -27,6 +27,6 @@ echo Making silgy_watcher...
 gcc ../lib/silgy_watcher.c \
 ../lib/silgy_lib.c \
 -D SILGY_WATCHER \
--s -O3 \
 -I. -I../lib \
+-s -O3 \
 -o ../bin/silgy_watcher
