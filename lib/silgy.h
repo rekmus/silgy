@@ -529,22 +529,21 @@ typedef char str64k[1024*64];
 #define ASYNC_STATE_SENT                '1'
 #define ASYNC_STATE_RECEIVED            '2'
 #define ASYNC_STATE_TIMEOUTED           '3'
-#ifdef APP_ASYNC_MQ_MAXMSG                                      /* max messages in a message queue */
-#define ASYNC_MQ_MAXMSG                 APP_ASYNC_MQ_MAXMSG
-#else
+
+#ifndef ASYNC_MQ_MAXMSG                                         /* max messages in a message queue */
 #define ASYNC_MQ_MAXMSG                 10
 #endif
+
 #define MAX_ASYNC                       ASYNC_MQ_MAXMSG*2       /* max queued async responses */
-#ifdef APP_ASYNC_REQ_MSG_SIZE                                   /* request message size */
-#define ASYNC_REQ_MSG_SIZE              APP_ASYNC_REQ_MSG_SIZE
-#else
+
+#ifndef ASYNC_REQ_MSG_SIZE                                      /* request message size */
 #define ASYNC_REQ_MSG_SIZE              8192
 #endif
-#ifdef APP_ASYNC_RES_MSG_SIZE                                   /* response message size */
-#define ASYNC_RES_MSG_SIZE              APP_ASYNC_RES_MSG_SIZE
-#else
+
+#ifndef ASYNC_RES_MSG_SIZE                                      /* response message size */
 #define ASYNC_RES_MSG_SIZE              8192
 #endif
+
 #define ASYNC_REQ_QUEUE                 "/silgy_req"            /* request queue name */
 #define ASYNC_RES_QUEUE                 "/silgy_res"            /* response queue name */
 #define ASYNC_DEF_TIMEOUT               60                      /* in seconds */
@@ -567,9 +566,9 @@ typedef char str64k[1024*64];
 #else
 #define SVC(svc)                        (0==strcmp(conn[ci].service, svc))
 #define ASYNC_ERR_CODE                  conn[ci].async_err_code
-#endif
+#endif  /* SILGY_SVC */
 
-#ifdef ASYNC_USE_APP_CONTINUE   /* the old way */
+#ifdef ASYNC_USE_APP_CONTINUE   /* the old way (temporarily) */
 #define CALL_ASYNC(svc, data)           eng_async_req(ci, svc, data, TRUE, G_ASYNCDefTimeout, 0)
 #define CALL_ASYNC_TM(svc, data, tmout) eng_async_req(ci, svc, data, TRUE, tmout, 0)
 #define CALL_ASYNC_NR(svc, data)        eng_async_req(ci, svc, data, FALSE, 0, 0)
