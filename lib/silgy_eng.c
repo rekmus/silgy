@@ -3641,7 +3641,7 @@ static void reset_conn(int ci, char new_state)
     conn[ci].lang[0] = EOS;
     conn[ci].if_mod_since = 0;
     conn[ci].in_ctypestr[0] = EOS;
-    conn[ci].in_ctype = CONTENT_TYPE_URLENCODED;
+    conn[ci].in_ctype = CONTENT_TYPE_UNSET;
     conn[ci].boundary[0] = EOS;
     conn[ci].authorization[0] = EOS;
     conn[ci].required_auth_level = DEF_RES_AUTH_LEVEL;
@@ -4309,15 +4309,24 @@ static int set_http_req_val(int ci, const char *label, const char *value)
         strcpy(conn[ci].in_ctypestr, value);
 
         len = strlen(value);
-        if ( len > 18 && 0==strncmp(value, "multipart/form-data", 19) )
+
+        if ( len > 32 && 0==strncmp(value, "application/x-www-form-urlencoded", 33) )
+        {
+            conn[ci].in_ctype = CONTENT_TYPE_URLENCODED;
+        }
+        else if ( len > 18 && 0==strncmp(value, "multipart/form-data", 19) )
         {
             conn[ci].in_ctype = CONTENT_TYPE_MULTIPART;
-//          DBG("%s's value: [%s]", label, value);
+
             if ( p=(char*)strstr(value, "boundary=") )
             {
                 strcpy(conn[ci].boundary, p+9);
                 DBG("boundary: [%s]", conn[ci].boundary);
             }
+        }
+        else if ( len > 23 && 0==strncmp(value, "application/octet-stream", 24) )
+        {
+            conn[ci].in_ctype = CONTENT_TYPE_OCTET_STREAM;
         }
     }
     else if ( 0==strcmp(ulabel, "AUTHORIZATION") )

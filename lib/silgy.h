@@ -601,6 +601,7 @@ typedef char str64k[1024*64];
 
 #define CONTENT_TYPE_URLENCODED         'U'
 #define CONTENT_TYPE_MULTIPART          'M'
+#define CONTENT_TYPE_OCTET_STREAM       'O'
 
 /* outgoing */
 
