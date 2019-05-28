@@ -1,5 +1,5 @@
 #!/bin/sh
 
-SILGYDIR=..
+export SILGYDIR=..
 
-../bin/silgy_app 8080
+$SILGYDIR/bin/silgy_app 8080

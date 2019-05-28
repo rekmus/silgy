@@ -290,7 +290,7 @@ extern "C" {
     bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen);
     bool get_qs_param_long(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf);
-    char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname);
+    char *get_qs_param_multipart(int ci, const char *fieldname, unsigned *retlen, char *retfname);
     void lib_set_res_status(int ci, int status);
     void lib_set_res_content_type(int ci, const char *str);
     void lib_set_res_location(int ci, const char *str, ...);
@@ -305,7 +305,7 @@ extern "C" {
     void log_ssl_error(int ssl_err);
     void lib_get_app_dir(void);
     double lib_elapsed(struct timespec *start);
-    long lib_get_memory(void);
+    int  lib_get_memory(void);
     void lib_log_memory(void);
     char *silgy_filter_strict(const char *src);
     char *lib_add_spaces(const char *src, int len);
@@ -363,7 +363,7 @@ extern "C" {
     bool silgy_read_param_str(const char *param, char *dest);
     bool silgy_read_param_int(const char *param, int *dest);
     char *lib_create_pid_file(const char *name);
-    char *lib_shm_create(long bytes, int index);
+    char *lib_shm_create(unsigned bytes, int index);
     void lib_shm_delete(int index);
     bool log_start(const char *prefix, bool test);
     void log_write_time(int level, const char *message, ...);

@@ -63,7 +63,7 @@ typedef char                        bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "4.3"
+#define WEB_SERVER_VERSION          "4.3.1"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
@@ -278,7 +278,10 @@ typedef char str64k[1024*64];
 #define PRINT_HTTP_COOKIE_L_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: ls=%s; Expires=%s; HttpOnly\r\n", conn[ci].cookie_out_l, conn[ci].cookie_out_l_exp), HOUT(G_tmp))
 
 /* content length */
-#define PRINT_HTTP_CONTENT_LEN(len)     (sprintf(G_tmp, "Content-Length: %d\r\n", len), HOUT(G_tmp))
+#define PRINT_HTTP_CONTENT_LEN(len)     (sprintf(G_tmp, "Content-Length: %u\r\n", len), HOUT(G_tmp))
+
+/* content encoding */
+#define PRINT_HTTP_CONTENT_ENCODING_DEFLATE HOUT("Content-Encoding: deflate\r\n")
 
 /* HSTS */
 #ifndef HSTS_MAX_AGE
@@ -406,6 +409,17 @@ typedef char str64k[1024*64];
 
 
 #define SQLBUF                          4096            /* SQL query buffer size */
+
+
+/* compression settings */
+
+#ifndef COMPRESS_TRESHOLD
+#define COMPRESS_TRESHOLD               250
+#endif
+
+#ifndef COMPRESS_LEVEL
+#define COMPRESS_LEVEL                  Z_BEST_SPEED
+#endif
 
 
 /* UTF-8 */
@@ -733,16 +747,16 @@ typedef struct {
 /* counters */
 
 typedef struct {
-    long    req;            /* all parsed requests */
-    long    req_dsk;        /* all requests with desktop UA */
-    long    req_mob;        /* all requests with mobile UA */
-    long    req_bot;        /* all requests with HTTP header indicating well-known search-engine bots */
-    long    visits;         /* all visits to domain (Host=APP_DOMAIN) landing page (no action/resource), excl. bots that got 200 */
-    long    visits_dsk;     /* like visits -- desktop only */
-    long    visits_mob;     /* like visits -- mobile only */
-    long    blocked;        /* attempts from blocked IP */
-    double  elapsed;        /* sum of elapsed time of all requests for calculating average */
-    double  average;        /* average request elapsed */
+    unsigned req;            /* all parsed requests */
+    unsigned req_dsk;        /* all requests with desktop UA */
+    unsigned req_mob;        /* all requests with mobile UA */
+    unsigned req_bot;        /* all requests with HTTP header indicating well-known search-engine bots */
+    unsigned visits;         /* all visits to domain (Host=APP_DOMAIN) landing page (no action/resource), excl. bots that got 200 */
+    unsigned visits_dsk;     /* like visits -- desktop only */
+    unsigned visits_mob;     /* like visits -- mobile only */
+    unsigned blocked;        /* attempts from blocked IP */
+    double   elapsed;        /* sum of elapsed time of all requests for calculating average */
+    double   average;        /* average request elapsed */
 } counters_t;
 
 
@@ -751,27 +765,27 @@ typedef struct {
 /* request */
 
 typedef struct {
-    int     call_id;
-    int     ci;
-    char    service[SVC_NAME_LEN+1];
-    int     ai;
+    unsigned call_id;
+    int      ci;
+    char     service[SVC_NAME_LEN+1];
+    int      ai;
     /* pass some request details over */
-    char    ip[INET_ADDRSTRLEN];
-    char    method[MAX_METHOD_LEN+1];
-    bool    post;
-    char    payload_location;
-    char    uri[MAX_URI_LEN+1];
-    char    resource[MAX_RESOURCE_LEN+1];
-    char    uagent[MAX_VALUE_LEN+1];
-    bool    mobile;
-    int     clen;
-    char    host[MAX_VALUE_LEN+1];
-    char    website[256];
-    char    lang[LANG_LEN+1];
-    char    in_ctype;
-    char    boundary[MAX_VALUE_LEN+1];
-    char    response;
-    int     status;
+    char     ip[INET_ADDRSTRLEN];
+    char     method[MAX_METHOD_LEN+1];
+    bool     post;
+    char     payload_location;
+    char     uri[MAX_URI_LEN+1];
+    char     resource[MAX_RESOURCE_LEN+1];
+    char     uagent[MAX_VALUE_LEN+1];
+    bool     mobile;
+    unsigned clen;
+    char     host[MAX_VALUE_LEN+1];
+    char     website[256];
+    char     lang[LANG_LEN+1];
+    char     in_ctype;
+    char     boundary[MAX_VALUE_LEN+1];
+    char     response;
+    int      status;
     usession_t uses;
 #ifndef ASYNC_EXCLUDE_AUSES
     ausession_t auses;
@@ -796,30 +810,30 @@ typedef struct {
 /* response */
 
 typedef struct {
-    int     call_id;
-    int     ci;
-    char    service[SVC_NAME_LEN+1];
-    int     ai;
-    char    state;
-    time_t  sent;
-    int     timeout;
-    int     err_code;
-    int     status;
-    int     chunk;
-    int     clen;
-    char    ctype;
-    char    ctypestr[256];
-    char    cdisp[256];
-    char    cookie_out_a[SESID_LEN+1];
-    char    cookie_out_a_exp[32];
-    char    cookie_out_l[SESID_LEN+1];
-    char    cookie_out_l_exp[32];
-    char    location[MAX_URI_LEN+1];
-    bool    dont_cache;
-    bool    keep_content;
-    int     rest_status;
-    int     rest_req;
-    double  rest_elapsed;
+    unsigned call_id;
+    int      ci;
+    char     service[SVC_NAME_LEN+1];
+    int      ai;
+    char     state;
+    time_t   sent;
+    int      timeout;
+    int      err_code;
+    int      status;
+    int      chunk;
+    unsigned clen;
+    char     ctype;
+    char     ctypestr[256];
+    char     cdisp[256];
+    char     cookie_out_a[SESID_LEN+1];
+    char     cookie_out_a_exp[32];
+    char     cookie_out_l[SESID_LEN+1];
+    char     cookie_out_l_exp[32];
+    char     location[MAX_URI_LEN+1];
+    bool     dont_cache;
+    bool     keep_content;
+    int      rest_status;
+    unsigned rest_req;
+    double   rest_elapsed;
     usession_t uses;
 #ifndef ASYNC_EXCLUDE_AUSES
     ausession_t auses;
@@ -836,127 +850,127 @@ typedef struct {
 
 #ifdef SILGY_SVC
 typedef struct {                            /* request details for silgy_svc */
-    char    ip[INET_ADDRSTRLEN];
-    char    method[MAX_METHOD_LEN+1];
-    bool    post;
-    char    uri[MAX_URI_LEN+1];
-    char    resource[MAX_RESOURCE_LEN+1];
-    char    uagent[MAX_VALUE_LEN+1];
-    bool    mobile;
-    int     clen;
-//    char    in_data[ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t)];
-    char    *in_data;
-    int     in_data_allocated;
-    char    host[MAX_VALUE_LEN+1];
-    char    website[256];
-    char    lang[LANG_LEN+1];
-    char    in_ctype;
-    char    boundary[MAX_VALUE_LEN+1];
-    int     usi;
-    int     status;
-    char    ctype;
-    char    ctypestr[256];
-    char    cdisp[256];
-    char    cookie_out_a[SESID_LEN+1];
-    char    cookie_out_a_exp[32];
-    char    cookie_out_l[SESID_LEN+1];
-    char    cookie_out_l_exp[32];
-    char    location[MAX_URI_LEN+1];
-    bool    dont_cache;
-    bool    keep_content;
+    char     ip[INET_ADDRSTRLEN];
+    char     method[MAX_METHOD_LEN+1];
+    bool     post;
+    char     uri[MAX_URI_LEN+1];
+    char     resource[MAX_RESOURCE_LEN+1];
+    char     uagent[MAX_VALUE_LEN+1];
+    bool     mobile;
+    unsigned clen;
+    char     *in_data;
+    unsigned in_data_allocated;
+    char     host[MAX_VALUE_LEN+1];
+    char     website[256];
+    char     lang[LANG_LEN+1];
+    char     in_ctype;
+    char     boundary[MAX_VALUE_LEN+1];
+    int      usi;
+    int      status;
+    char     ctype;
+    char     ctypestr[256];
+    char     cdisp[256];
+    char     cookie_out_a[SESID_LEN+1];
+    char     cookie_out_a_exp[32];
+    char     cookie_out_l[SESID_LEN+1];
+    char     cookie_out_l_exp[32];
+    char     location[MAX_URI_LEN+1];
+    bool     dont_cache;
+    bool     keep_content;
 } conn_t;
 #else   /* not SILGY_SVC */
 typedef struct {
     /* what comes in */
 #ifdef _WIN32   /* Windows */
-    SOCKET  fd;                             /* file descriptor */
+    SOCKET   fd;                             /* file descriptor */
 #else
-    int     fd;                             /* file descriptor */
+    int      fd;                             /* file descriptor */
 #endif  /* _WIN32 */
-    bool    secure;                         /* https? */
-    char    ip[INET_ADDRSTRLEN];            /* client IP */
-    char    pip[INET_ADDRSTRLEN];           /* proxy IP */
-    char    in[IN_BUFSIZE];                 /* the whole incoming request */
-    char    method[MAX_METHOD_LEN+1];       /* HTTP method */
-    int     was_read;                       /* request bytes read so far */
-    bool    upgrade2https;                  /* Upgrade-Insecure-Requests = 1 */
+    bool     secure;                         /* https? */
+    char     ip[INET_ADDRSTRLEN];            /* client IP */
+    char     pip[INET_ADDRSTRLEN];           /* proxy IP */
+    char     in[IN_BUFSIZE];                 /* the whole incoming request */
+    char     method[MAX_METHOD_LEN+1];       /* HTTP method */
+    unsigned was_read;                       /* request bytes read so far */
+    bool     upgrade2https;                  /* Upgrade-Insecure-Requests = 1 */
     /* parsed HTTP request starts here */
-    bool    head_only;                      /* request method = HEAD */
-    bool    post;                           /* request method = POST */
-    char    uri[MAX_URI_LEN+1];             /* requested URI string */
-    char    resource[MAX_RESOURCE_LEN+1];   /* from URI (REQ0) */
-    char    req1[MAX_RESOURCE_LEN+1];       /* from URI -- level 1 */
-    char    req2[MAX_RESOURCE_LEN+1];       /* from URI -- level 2 */
-    char    req3[MAX_RESOURCE_LEN+1];       /* from URI -- level 3 */
-    char    proto[16];                      /* HTTP request version */
-    char    uagent[MAX_VALUE_LEN+1];        /* user agent string */
-    bool    mobile;
-    bool    keep_alive;
-    char    referer[MAX_VALUE_LEN+1];
-    int     clen;                           /* incoming & outgoing content length */
-    char    *in_data;                       /* POST data */
-    char    cookie_in_a[SESID_LEN+1];       /* anonymous */
-    char    cookie_in_l[SESID_LEN+1];       /* logged in */
-    char    host[MAX_VALUE_LEN+1];
-    char    website[256];
-    char    lang[LANG_LEN+1];
-    time_t  if_mod_since;
-    char    in_ctypestr[MAX_VALUE_LEN+1];   /* content type as an original string */
-    char    in_ctype;                       /* content type */
-    char    boundary[MAX_VALUE_LEN+1];      /* for POST multipart/form-data type */
-    char    authorization[MAX_VALUE_LEN+1]; /* Authorization */
+    bool     head_only;                      /* request method = HEAD */
+    bool     post;                           /* request method = POST */
+    char     uri[MAX_URI_LEN+1];             /* requested URI string */
+    char     resource[MAX_RESOURCE_LEN+1];   /* from URI (REQ0) */
+    char     req1[MAX_RESOURCE_LEN+1];       /* from URI -- level 1 */
+    char     req2[MAX_RESOURCE_LEN+1];       /* from URI -- level 2 */
+    char     req3[MAX_RESOURCE_LEN+1];       /* from URI -- level 3 */
+    char     proto[16];                      /* HTTP request version */
+    char     uagent[MAX_VALUE_LEN+1];        /* user agent string */
+    bool     mobile;
+    bool     keep_alive;
+    char     referer[MAX_VALUE_LEN+1];
+    unsigned clen;                           /* incoming & outgoing content length */
+    char     *in_data;                       /* POST data */
+    char     cookie_in_a[SESID_LEN+1];       /* anonymous */
+    char     cookie_in_l[SESID_LEN+1];       /* logged in */
+    char     host[MAX_VALUE_LEN+1];
+    char     website[256];
+    char     lang[LANG_LEN+1];
+    time_t   if_mod_since;
+    char     in_ctypestr[MAX_VALUE_LEN+1];   /* content type as an original string */
+    char     in_ctype;                       /* content type */
+    char     boundary[MAX_VALUE_LEN+1];      /* for POST multipart/form-data type */
+    char     authorization[MAX_VALUE_LEN+1]; /* Authorization */
+    bool     accept_deflate;
     /* what goes out */
-    int     out_hlen;                       /* outgoing header length */
+    unsigned out_hlen;                       /* outgoing header length */
 #ifdef SEND_ALL_AT_ONCE
-    int     out_len;                        /* outgoing length (all) */
-    char    *out_start;
+    unsigned out_len;                        /* outgoing length (all) */
+    char     *out_start;
 #else
-    char    out_header[OUT_HEADER_BUFSIZE]; /* outgoing HTTP header */
+    char     out_header[OUT_HEADER_BUFSIZE]; /* outgoing HTTP header */
 #endif
 #ifdef OUTCHECKREALLOC
-    char    *out_data_alloc;                /* allocated space for rendered content */
+    char     *out_data_alloc;                /* allocated space for rendered content */
 #else
-    char    out_data_alloc[OUT_BUFSIZE];
+    char     out_data_alloc[OUT_BUFSIZE];
 #endif
-    int     out_data_allocated;             /* number of allocated bytes */
-    char    *out_data;                      /* pointer to the data to send */
-    int     status;                         /* HTTP status */
-    int     data_sent;                      /* how many body bytes have been sent */
-    char    ctype;                          /* content type */
-    char    ctypestr[256];                  /* user (custom) content type */
-    char    cdisp[256];                     /* content disposition */
-    time_t  modified;
-    char    cookie_out_a[SESID_LEN+1];
-    char    cookie_out_a_exp[32];           /* cookie expires */
-    char    cookie_out_l[SESID_LEN+1];
-    char    cookie_out_l_exp[32];           /* cookie expires */
-    char    location[MAX_URI_LEN+1];        /* redirection */
+    unsigned out_data_allocated;             /* number of allocated bytes */
+    char     *out_data;                      /* pointer to the data to send */
+    int      status;                         /* HTTP status */
+    unsigned data_sent;                      /* how many content bytes have been sent */
+    char     ctype;                          /* content type */
+    char     ctypestr[256];                  /* user (custom) content type */
+    char     cdisp[256];                     /* content disposition */
+    time_t   modified;
+    char     cookie_out_a[SESID_LEN+1];
+    char     cookie_out_a_exp[32];           /* cookie expires */
+    char     cookie_out_l[SESID_LEN+1];
+    char     cookie_out_l_exp[32];           /* cookie expires */
+    char     location[MAX_URI_LEN+1];        /* redirection */
     /* internal stuff */
-    long    req;                            /* request count */
+    unsigned req;                            /* request count */
     struct timespec proc_start;             /* start processing time */
-    double  elapsed;                        /* processing time in ms */
-    char    conn_state;                     /* connection state (STATE_XXX) */
-    char    *p_header;                      /* current header pointer */
-    char    *p_content;                     /* current content pointer */
+    double   elapsed;                        /* processing time in ms */
+    char     conn_state;                     /* connection state (STATE_XXX) */
+    char     *p_header;                      /* current header pointer */
+    char     *p_content;                     /* current content pointer */
 #ifdef HTTPS
-    SSL     *ssl;
+    SSL      *ssl;
 #endif
-    int     ssl_err;
-    char    required_auth_level;            /* required authorization level */
-    int     usi;                            /* user session index */
-    int     static_res;                     /* static resource index in M_stat */
-    time_t  last_activity;
-    bool    bot;
-    bool    expect100;
-    bool    dont_cache;
-    bool    keep_content;                   /* don't reset already rendered content on error */
+    int      ssl_err;
+    char     required_auth_level;            /* required authorization level */
+    int      usi;                            /* user session index */
+    int      static_res;                     /* static resource index in M_stat */
+    time_t   last_activity;
+    bool     bot;
+    bool     expect100;
+    bool     dont_cache;
+    bool     keep_content;                   /* don't reset already rendered content on error */
 #ifdef FD_MON_POLL
-    int     pi;                             /* pollfds array index */
+    int      pi;                             /* pollfds array index */
 #endif
 #ifdef ASYNC
-    char    service[SVC_NAME_LEN+1];
-    int     async_err_code;
-    int     ai;                             /* async responses array index */
+    char     service[SVC_NAME_LEN+1];
+    int      async_err_code;
+    int      ai;                             /* async responses array index */
 #endif
 } conn_t;
 #endif  /* SILGY_SVC */
@@ -965,12 +979,12 @@ typedef struct {
 /* static resources */
 
 typedef struct {
-    char    name[STATIC_PATH_LEN];
-    char    type;
-    char    *data;
-    long    len;
-    time_t  modified;
-    char    source;
+    char     name[STATIC_PATH_LEN];
+    char     type;
+    char     *data;
+    unsigned len;
+    time_t   modified;
+    char     source;
 } stat_res_t;
 
 
@@ -1040,7 +1054,7 @@ extern int      G_test;
 /* end of config params */
 extern int      G_pid;                      /* pid */
 extern char     G_appdir[256];              /* application root dir */
-extern int      G_days_up;                  /* web server's days up */
+extern unsigned G_days_up;                  /* web server's days up */
 extern conn_t   conn[MAX_CONNECTIONS+1];    /* HTTP connections & requests -- by far the most important structure around */
 extern int      G_open_conn;                /* number of open connections */
 extern int      G_open_conn_hwm;            /* highest number of open connections (high water mark) */
@@ -1071,7 +1085,7 @@ extern mqd_t    G_queue_req;                /* request queue */
 extern mqd_t    G_queue_res;                /* response queue */
 #ifdef ASYNC
 extern async_res_t ares[MAX_ASYNC];         /* async response array */
-extern int      G_last_call_id;             /* counter */
+extern unsigned G_last_call_id;             /* counter */
 #endif  /* ASYNC */
 #endif  /* _WIN32 */
 extern int      G_async_req_data_size;      /* how many bytes are left for data */
@@ -1100,7 +1114,7 @@ extern counters_t G_cnts_yesterday;         /* yesterday's counters */
 extern counters_t G_cnts_day_before;        /* day before's counters */
 /* REST */
 extern int      G_rest_status;              /* last REST call response status */
-extern int      G_rest_req;                 /* REST calls counter */
+extern unsigned G_rest_req;                 /* REST calls counter */
 extern double   G_rest_elapsed;             /* REST calls elapsed for calculating average */
 extern double   G_rest_average;             /* REST calls average elapsed */
 extern char     G_rest_content_type[MAX_VALUE_LEN+1];

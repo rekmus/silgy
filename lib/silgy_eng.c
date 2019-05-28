@@ -19,6 +19,11 @@
 #endif
 #endif  /* FD_MON_POLL */
 
+#ifndef _WIN32
+#include <zlib.h>
+#endif
+
+
 /* globals */
 
 /* read from the config file */
@@ -38,7 +43,7 @@ char        G_blockedIPList[256]="";
 int         G_ASYNCId=0;
 int         G_ASYNCDefTimeout=ASYNC_DEF_TIMEOUT;
 /* end of config params */
-int         G_days_up=0;                /* web server's days up */
+unsigned    G_days_up=0;                /* web server's days up */
 conn_t      conn[MAX_CONNECTIONS+1]={0}; /* HTTP connections & requests -- by far the most important structure around */
 int         G_open_conn=0;              /* number of open connections */
 int         G_open_conn_hwm=0;          /* highest number of open connections (high water mark) */
@@ -60,7 +65,7 @@ mqd_t       G_queue_req={0};            /* request queue */
 mqd_t       G_queue_res={0};            /* response queue */
 #ifdef ASYNC
 async_res_t ares[MAX_ASYNC]={0};        /* async response array */
-int         G_last_call_id=0;           /* counter */
+unsigned    G_last_call_id=0;           /* counter */
 #endif  /* ASYNC */
 #endif  /* _WIN32 */
 int         G_async_req_data_size=ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t); /* how many bytes are left for data */
@@ -170,8 +175,8 @@ static char         *M_async_shm=NULL;
 /* prototypes */
 
 static bool housekeeping(void);
-static void set_state(int ci, long bytes);
-static void set_state_sec(int ci, long bytes);
+static void set_state(int ci, int bytes);
+static void set_state_sec(int ci, int bytes);
 static void read_conf(void);
 static void respond_to_expect(int ci);
 static void log_proc_time(int ci);
@@ -194,7 +199,7 @@ static void close_old_conn(void);
 static void uses_close_timeouted(void);
 static void close_uses(int usi, int ci);
 static void reset_conn(int ci, char new_state);
-static int  parse_req(int ci, int len);
+static int  parse_req(int ci, unsigned len);
 static int  set_http_req_val(int ci, const char *label, const char *value);
 static bool check_block_ip(int ci, const char *rule, const char *value);
 static char *get_http_descr(int status_code);
@@ -211,12 +216,12 @@ static bool init_ssl(void);
 int main(int argc, char **argv)
 {
     struct sockaddr_in serv_addr;
-    unsigned long hit=0;
+    unsigned    hit=0;
     int         reuse_addr=1;       /* Used so we can re-bind to our port while a previous connection is still in TIME_WAIT state */
     struct timeval timeout;         /* Timeout for select */
     int         sockets_ready;      /* Number of sockets ready for I/O */
     int         i=0;
-    long        bytes=0;
+    int         bytes=0;
     int         failed_select_cnt=0;
     int         j=0;
 #ifdef DUMP
@@ -574,7 +579,7 @@ int main(int argc, char **argv)
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
-                                DBG("Trying SSL_read %d bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
+                                DBG("Trying SSL_read %u bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
 #endif  /* DUMP */
                                 bytes = SSL_read(conn[i].ssl, conn[i].in_data+conn[i].was_read, conn[i].clen-conn[i].was_read);
 
@@ -605,7 +610,7 @@ int main(int argc, char **argv)
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READING_DATA", i);
-                                DBG("Trying to read %d bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
+                                DBG("Trying to read %u bytes of POST data from fd=%d (ci=%d)", conn[i].clen-conn[i].was_read, conn[i].fd, i);
 #endif  /* DUMP */
                                 bytes = recv(conn[i].fd, conn[i].in_data+conn[i].was_read, conn[i].clen-conn[i].was_read, 0);
 
@@ -696,7 +701,7 @@ int main(int argc, char **argv)
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
-                                DBG("Trying SSL_write %d bytes to fd=%d (ci=%d)", conn[i].out_hlen, conn[i].fd, i);
+                                DBG("Trying SSL_write %u bytes to fd=%d (ci=%d)", conn[i].out_hlen, conn[i].fd, i);
 #endif  /* DUMP */
 #ifdef SEND_ALL_AT_ONCE
                                 bytes = SSL_write(conn[i].ssl, conn[i].out_start, conn[i].out_len);
@@ -714,9 +719,9 @@ int main(int argc, char **argv)
 #ifdef DUMP
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
 #ifdef SEND_ALL_AT_ONCE
-                                DBG("Trying SSL_write %d bytes to fd=%d (ci=%d)", conn[i].out_len, conn[i].fd, i);
+                                DBG("Trying SSL_write %u bytes to fd=%d (ci=%d)", conn[i].out_len, conn[i].fd, i);
 #else
-                                DBG("Trying SSL_write %d bytes to fd=%d (ci=%d)", conn[i].clen, conn[i].fd, i);
+                                DBG("Trying SSL_write %u bytes to fd=%d (ci=%d)", conn[i].clen, conn[i].fd, i);
 #endif
 #endif  /* DUMP */
 #ifdef SEND_ALL_AT_ONCE
@@ -735,9 +740,9 @@ int main(int argc, char **argv)
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
 #ifdef SEND_ALL_AT_ONCE
-                                DBG("Trying to write %d bytes to fd=%d (ci=%d)", conn[i].out_len, conn[i].fd, i);
+                                DBG("Trying to write %u bytes to fd=%d (ci=%d)", conn[i].out_len, conn[i].fd, i);
 #else
-                                DBG("Trying to write %d bytes to fd=%d (ci=%d)", conn[i].out_hlen, conn[i].fd, i);
+                                DBG("Trying to write %u bytes to fd=%d (ci=%d)", conn[i].out_hlen, conn[i].fd, i);
 #endif
 #endif  /* DUMP */
 #ifdef SEND_ALL_AT_ONCE
@@ -757,9 +762,9 @@ int main(int argc, char **argv)
 #ifdef DUMP
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
 #ifdef SEND_ALL_AT_ONCE
-                                DBG("Trying to write %d bytes to fd=%d (ci=%d)", conn[i].out_len-conn[i].data_sent, conn[i].fd, i);
+                                DBG("Trying to write %u bytes to fd=%d (ci=%d)", conn[i].out_len-conn[i].data_sent, conn[i].fd, i);
 #else
-                                DBG("Trying to write %d bytes to fd=%d (ci=%d)", conn[i].clen-conn[i].data_sent, conn[i].fd, i);
+                                DBG("Trying to write %u bytes to fd=%d (ci=%d)", conn[i].clen-conn[i].data_sent, conn[i].fd, i);
 #endif
 #endif  /* DUMP */
 #ifdef SEND_ALL_AT_ONCE
@@ -908,12 +913,12 @@ int main(int argc, char **argv)
 
             /* out data */
 
-            if ( res.hdr.clen )  /* chunk length */
+            if ( res.hdr.clen > 0 )   /* chunk length */
             {
 #ifdef OUTCHECKREALLOC
                 eng_out_check_realloc_bin(res.hdr.ci, res.data, res.hdr.clen);
 #else
-                int checked_len = res.hdr.clen > OUT_BUFSIZE-OUT_HEADER_BUFSIZE ? OUT_BUFSIZE-OUT_HEADER_BUFSIZE : res.hdr.clen;
+                unsigned checked_len = res.hdr.clen > OUT_BUFSIZE-OUT_HEADER_BUFSIZE ? OUT_BUFSIZE-OUT_HEADER_BUFSIZE : res.hdr.clen;
                 memcpy(conn[res.hdr.ci].p_content, res.data, checked_len);
                 conn[res.hdr.ci].p_content += checked_len;
 #endif
@@ -1097,14 +1102,14 @@ static bool housekeeping()
 /* --------------------------------------------------------------------------
    Set new connection state after read or write
 -------------------------------------------------------------------------- */
-static void set_state(int ci, long bytes)
+static void set_state(int ci, int bytes)
 {
 #ifdef DUMP
-        DBG("set_state ci=%d, bytes=%ld", ci, bytes);
+        DBG("set_state ci=%d, bytes=%d", ci, bytes);
 #endif
     if ( bytes <= 0 )
     {
-        DBG("bytes = %ld, errno = %d (%s), disconnecting slot %d\n", bytes, errno, strerror(errno), ci);
+        DBG("bytes = %d, errno = %d (%s), disconnecting slot %d\n", bytes, errno, strerror(errno), ci);
         close_conn(ci);
         return;
     }
@@ -1122,7 +1127,7 @@ static void set_state(int ci, long bytes)
     {
         if ( conn[ci].was_read < conn[ci].clen )
         {
-            DBG("ci=%d, was_read=%d, continue receiving", ci, conn[ci].was_read);
+            DBG("ci=%d, was_read=%u, continue receiving", ci, conn[ci].was_read);
         }
         else    /* data received */
         {
@@ -1203,7 +1208,7 @@ static void set_state(int ci, long bytes)
         if ( conn[ci].data_sent < conn[ci].clen )
 #endif
         {
-            DBG("ci=%d, data_sent=%d, continue sending", ci, conn[ci].data_sent);
+            DBG("ci=%d, data_sent=%u, continue sending", ci, conn[ci].data_sent);
         }
         else    /* body sent */
         {
@@ -1227,7 +1232,7 @@ static void set_state(int ci, long bytes)
 /* --------------------------------------------------------------------------
    Set new connection state after read or write for secure connections
 -------------------------------------------------------------------------- */
-static void set_state_sec(int ci, long bytes)
+static void set_state_sec(int ci, int bytes)
 {
     int     e;
     char    ec[256]="";
@@ -1235,7 +1240,7 @@ static void set_state_sec(int ci, long bytes)
     e = errno;
 
 #ifdef DUMP
-    DBG("set_state_sec ci=%d, bytes=%ld", ci, bytes);
+    DBG("set_state_sec ci=%d, bytes=%d", ci, bytes);
 #endif
     conn[ci].ssl_err = SSL_get_error(conn[ci].ssl, bytes);
 
@@ -1244,7 +1249,7 @@ static void set_state_sec(int ci, long bytes)
         if ( conn[ci].ssl_err == SSL_ERROR_SYSCALL )
             sprintf(ec, ", errno = %d (%s)", e, strerror(e));
 
-        DBG("bytes = %ld, ssl_err = %d%s", bytes, conn[ci].ssl_err, ec);
+        DBG("bytes = %d, ssl_err = %d%s", bytes, conn[ci].ssl_err, ec);
 
         if ( conn[ci].ssl_err != SSL_ERROR_WANT_READ && conn[ci].ssl_err != SSL_ERROR_WANT_WRITE )
         {
@@ -1468,9 +1473,9 @@ static void log_request(int ci)
     strftime(logtime, 64, "%d/%b/%Y:%H:%M:%S +0000", G_ptm);
 
     if ( G_logCombined )
-        INF("%s - - [%s] \"%s /%s %s\" %d %d \"%s\" \"%s\"  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].clen, conn[ci].referer, conn[ci].uagent, conn[ci].req, conn[ci].elapsed, REQ_BOT?"  [bot]":"");
+        INF("%s - - [%s] \"%s /%s %s\" %d %u \"%s\" \"%s\"  #%u  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].clen, conn[ci].referer, conn[ci].uagent, conn[ci].req, conn[ci].elapsed, REQ_BOT?"  [bot]":"");
     else
-        INF("%s - - [%s] \"%s /%s %s\" %d %d  #%ld  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].clen, conn[ci].req, conn[ci].elapsed, REQ_BOT?"  [bot]":"");
+        INF("%s - - [%s] \"%s /%s %s\" %d %u  #%u  %.3lf ms%s", conn[ci].ip, logtime, conn[ci].method, conn[ci].uri, conn[ci].proto, conn[ci].status, conn[ci].clen, conn[ci].req, conn[ci].elapsed, REQ_BOT?"  [bot]":"");
 }
 
 
@@ -2718,7 +2723,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
                 if ( NULL == (data_tmp=(char*)malloc(M_stat[i].len+1)) )
                 {
-                    ERR("Couldn't allocate %ld bytes for %s!", M_stat[i].len, M_stat[i].name);
+                    ERR("Couldn't allocate %u bytes for %s!", M_stat[i].len, M_stat[i].name);
                     fclose(fd);
                     closedir(dir);
                     return FALSE;
@@ -2726,7 +2731,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
                 if ( NULL == (data_tmp_min=(char*)malloc(M_stat[i].len+1)) )
                 {
-                    ERR("Couldn't allocate %ld bytes for %s!", M_stat[i].len, M_stat[i].name);
+                    ERR("Couldn't allocate %u bytes for %s!", M_stat[i].len, M_stat[i].name);
                     fclose(fd);
                     closedir(dir);
                     return FALSE;
@@ -2746,11 +2751,11 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 #ifdef SEND_ALL_AT_ONCE
             if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1+OUT_HEADER_BUFSIZE)) )
             {
-                ERR("Couldn't allocate %ld bytes for %s!", M_stat[i].len+1+OUT_HEADER_BUFSIZE, M_stat[i].name);
+                ERR("Couldn't allocate %u bytes for %s", M_stat[i].len+1+OUT_HEADER_BUFSIZE, M_stat[i].name);
 #else
             if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1)) )
             {
-                ERR("Couldn't allocate %ld bytes for %s!", M_stat[i].len+1, M_stat[i].name);
+                ERR("Couldn't allocate %u bytes for %s", M_stat[i].len+1, M_stat[i].name);
 #endif  /* SEND_ALL_AT_ONCE */
                 fclose(fd);
                 closedir(dir);
@@ -2799,7 +2804,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
                 G_ptm = gmtime(&M_stat[i].modified);
                 sprintf(mod_time, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
                 G_ptm = gmtime(&G_now);     /* set it back */
-                DBG("%s %s\t\t%ld bytes", lib_add_spaces(M_stat[i].name, 28), mod_time, M_stat[i].len);
+                DBG("%s %s\t\t%u bytes", lib_add_spaces(M_stat[i].name, 28), mod_time, M_stat[i].len);
             }
         }
 
@@ -3019,6 +3024,104 @@ static void process_req(int ci)
 
 
 /* --------------------------------------------------------------------------
+   Straight from Mark Adler!
+
+   Compress buf[0..len-1] in place into buf[0..*max-1].  *max must be greater
+   than or equal to len.  Return Z_OK on success, Z_BUF_ERROR if *max is not
+   enough output space, Z_MEM_ERROR if there is not enough memory, or
+   Z_STREAM_ERROR if *strm is corrupted (e.g. if it wasn't initialized or if it
+   was inadvertently written over).  If Z_OK is returned, *max is set to the
+   actual size of the output.  If Z_BUF_ERROR is returned, then *max is
+   unchanged and buf[] is filled with *max bytes of uncompressed data (which is
+   not all of it, but as much as would fit).
+
+   Incompressible data will require more output space than len, so max should
+   be sufficiently greater than len to handle that case in order to avoid a
+   Z_BUF_ERROR. To assure that there is enough output space, max should be
+   greater than or equal to the result of deflateBound(strm, len).
+
+   strm is a deflate stream structure that has already been successfully
+   initialized by deflateInit() or deflateInit2().  That structure can be
+   reused across multiple calls to deflate_inplace().  This avoids unnecessary
+   memory allocations and deallocations from the repeated use of deflateInit()
+   and deflateEnd().
+-------------------------------------------------------------------------- */
+#ifndef _WIN32
+static int deflate_inplace(z_stream *strm, unsigned char *buf, unsigned len, unsigned *max)
+{
+    int ret;                    /* return code from deflate functions */
+    unsigned have;              /* number of bytes in temp[] */
+    unsigned char *hold;        /* allocated buffer to hold input data */
+    unsigned char temp[11];     /* must be large enough to hold zlib or gzip
+                                   header (if any) and one more byte -- 11
+                                   works for the worst case here, but if gzip
+                                   encoding is used and a deflateSetHeader()
+                                   call is inserted in this code after the
+                                   deflateReset(), then the 11 needs to be
+                                   increased to accomodate the resulting gzip
+                                   header size plus one */
+
+    /* initialize deflate stream and point to the input data */
+    ret = deflateReset(strm);
+    if (ret != Z_OK)
+        return ret;
+    strm->next_in = buf;
+    strm->avail_in = len;
+
+    /* kick start the process with a temporary output buffer -- this allows
+       deflate to consume a large chunk of input data in order to make room for
+       output data there */
+    if (*max < len)
+        *max = len;
+    strm->next_out = temp;
+    strm->avail_out = sizeof(temp) > *max ? *max : sizeof(temp);
+    ret = deflate(strm, Z_FINISH);
+    if (ret == Z_STREAM_ERROR)
+        return ret;
+
+    /* if we can, copy the temporary output data to the consumed portion of the
+       input buffer, and then continue to write up to the start of the consumed
+       input for as long as possible */
+    have = strm->next_out - temp;
+    if (have <= (strm->avail_in ? len - strm->avail_in : *max)) {
+        memcpy(buf, temp, have);
+        strm->next_out = buf + have;
+        have = 0;
+        while (ret == Z_OK) {
+            strm->avail_out = strm->avail_in ? strm->next_in - strm->next_out :
+                                               (buf + *max) - strm->next_out;
+            ret = deflate(strm, Z_FINISH);
+        }
+        if (ret != Z_BUF_ERROR || strm->avail_in == 0) {
+            *max = strm->next_out - buf;
+            return ret == Z_STREAM_END ? Z_OK : ret;
+        }
+    }
+    /* the output caught up with the input due to insufficiently compressible
+       data -- copy the remaining input data into an allocated buffer and
+       complete the compression from there to the now empty input buffer (this
+       will only occur for long incompressible streams, more than ~20 MB for
+       the default deflate memLevel of 8, or when *max is too small and less
+       than the length of the header plus one byte) */
+    hold = (unsigned char*)strm->zalloc(strm->opaque, strm->avail_in, 1);
+    if (hold == Z_NULL)
+        return Z_MEM_ERROR;
+    memcpy(hold, strm->next_in, strm->avail_in);
+    strm->next_in = hold;
+    if (have) {
+        memcpy(buf, temp, have);
+        strm->next_out = buf + have;
+    }
+    strm->avail_out = (buf + *max) - strm->next_out;
+    ret = deflate(strm, Z_FINISH);
+    strm->zfree(strm->opaque, hold);
+    *max = strm->next_out - buf;
+    return ret == Z_OK ? Z_BUF_ERROR : (ret == Z_STREAM_END ? Z_OK : ret);
+}
+#endif  /* _WIN32 */
+
+
+/* --------------------------------------------------------------------------
    Generate HTTP response header
 -------------------------------------------------------------------------- */
 static void gen_response_header(int ci)
@@ -3125,7 +3228,6 @@ static void gen_response_header(int ci)
             else    /* static resource -- aggressive caching */
             {
                 PRINT_HTTP_LAST_MODIFIED(time_epoch2http(M_stat[conn[ci].static_res].modified));
-//                PRINT_HTTP_CACHE_PUBLIC;
                 PRINT_HTTP_EXPIRES_STATICS;
             }
         }
@@ -3138,6 +3240,58 @@ static void gen_response_header(int ci)
 #endif
         else
             conn[ci].clen = M_stat[conn[ci].static_res].len;
+
+        /* compress? ------------------------------------------------------------------ */
+
+#ifndef _WIN32  /* just too much headache */
+        if ( conn[ci].clen > COMPRESS_TRESHOLD && conn[ci].accept_deflate && (conn[ci].ctype==RES_HTML || conn[ci].ctype==RES_TEXT || conn[ci].ctype==RES_JSON || conn[ci].ctype==RES_BMP) )
+        {
+            INF("Compressing content");
+
+            int ret;
+static z_stream strm;
+static bool first=TRUE;
+
+            if ( first )
+            {
+                strm.zalloc = Z_NULL;
+                strm.zfree = Z_NULL;
+                strm.opaque = Z_NULL;
+
+                ret = deflateInit(&strm, COMPRESS_LEVEL);
+
+                if ( ret != Z_OK )
+                {
+                    ERR("deflateInit failed, ret = %d", ret);
+                    return;
+                }
+
+                first = FALSE;
+            }
+
+            unsigned max = conn[ci].clen;
+
+#ifdef SEND_ALL_AT_ONCE
+            ret = deflate_inplace(&strm, (unsigned char*)conn[ci].out_data+OUT_HEADER_BUFSIZE, conn[ci].clen, &max);
+#else
+            ret = deflate_inplace(&strm, (unsigned char*)conn[ci].out_data, conn[ci].clen, &max);
+#endif
+//            (void)deflateEnd(&strm);
+
+            if ( ret == Z_OK )
+            {
+                INF("Compression success, old len=%u, new len=%u", conn[ci].clen, max);
+                conn[ci].clen = max;
+                PRINT_HTTP_CONTENT_ENCODING_DEFLATE;
+            }
+            else
+            {
+                ERR("deflate_inplace failed, ret = %d", ret);
+            }
+        }
+#endif  /* _WIN32 */
+
+        /* ---------------------------------------------------------------------------- */
     }
 
     /* Date */
@@ -3230,7 +3384,7 @@ static void gen_response_header(int ci)
 #endif
 
 #ifdef DUMP
-    DBG("ci=%d, out_hlen = %d", ci, conn[ci].out_hlen);
+    DBG("ci=%d, out_hlen = %u", ci, conn[ci].out_hlen);
 #endif
 
     DBG("Response status: %d", conn[ci].status);
@@ -3510,6 +3664,7 @@ static void reset_conn(int ci, char new_state)
     conn[ci].expect100 = FALSE;
     conn[ci].dont_cache = FALSE;
     conn[ci].keep_content = FALSE;
+    conn[ci].accept_deflate = FALSE;
 
 #ifdef ASYNC
     conn[ci].service[0] = EOS;
@@ -3532,7 +3687,7 @@ static void reset_conn(int ci, char new_state)
    Parse HTTP request
    Return HTTP status code
 -------------------------------------------------------------------------- */
-static int parse_req(int ci, int len)
+static int parse_req(int ci, unsigned len)
 {
     int  ret=200;
 
@@ -3549,7 +3704,7 @@ static int parse_req(int ci, int len)
 
     conn[ci].req = ++G_cnts_today.req;    /* for reporting processing time at the end */
 
-    DBG("\n------------------------------------------------\n %s  Request %ld\n------------------------------------------------\n", G_dt, conn[ci].req);
+    DBG("\n------------------------------------------------\n %s  Request %u\n------------------------------------------------\n", G_dt, conn[ci].req);
 
 //  if ( conn[ci].conn_state != STATE_SENDING ) /* ignore Range requests for now */
 //      conn[ci].conn_state = STATE_RECEIVED;   /* by default */
@@ -3937,7 +4092,7 @@ static int parse_req(int ci, int len)
         len = conn[ci].in+len - p_hend;   /* remaining request length -- likely a content */
 
 #ifdef DUMP
-        DBG("Remaining request length (content) = %d", len);
+        DBG("Remaining request length (content) = %u", len);
 #endif
 
         if ( len > conn[ci].clen )
@@ -3947,7 +4102,7 @@ static int parse_req(int ci, int len)
 
         if ( NULL == (conn[ci].in_data=(char*)malloc(conn[ci].clen+1)) )
         {
-            ERR("Couldn't allocate %d bytes for POST data!!!", conn[ci].clen);
+            ERR("Couldn't allocate %u bytes for POST data", conn[ci].clen);
             return 500;     /* Internal Sever Error */
         }
 
@@ -3956,7 +4111,7 @@ static int parse_req(int ci, int len)
 
         if ( len < conn[ci].clen )      /* the whole content not received yet */
         {                               /* this is the only case when conn_state != received */
-            DBG("The whole content not received yet, len=%d", len);
+            DBG("The whole content not received yet, len=%u", len);
 #ifdef DUMP
             DBG("Changing state to CONN_STATE_READING_DATA");
 #endif
@@ -3984,12 +4139,12 @@ static int parse_req(int ci, int len)
 -------------------------------------------------------------------------- */
 static int set_http_req_val(int ci, const char *label, const char *value)
 {
-    int     len;
-    char    new_value[MAX_VALUE_LEN+1];
-    char    ulabel[MAX_LABEL_LEN+1];
-    char    uvalue[MAX_VALUE_LEN+1];
-    char    *p;
-    int     i;
+    unsigned len;
+    char     new_value[MAX_VALUE_LEN+1];
+    char     ulabel[MAX_LABEL_LEN+1];
+    char     uvalue[MAX_VALUE_LEN+1];
+    char     *p;
+    int      i;
 
     /* only for low-level tests ------------------------------------- */
 //  DBG("label: [%s], value: [%s]", label, value);
@@ -4121,13 +4276,20 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     }
     else if ( 0==strcmp(ulabel, "CONTENT-LENGTH") )
     {
-        conn[ci].clen = atol(value);
+        conn[ci].clen = atoi(value);
         if ( conn[ci].clen < 0 || (!conn[ci].post && conn[ci].clen >= IN_BUFSIZE) || (conn[ci].post && conn[ci].clen >= MAX_PAYLOAD_SIZE-1) )
         {
-            ERR("Request too long, clen = %d, sending 413", conn[ci].clen);
+            ERR("Request too long, clen = %u, sending 413", conn[ci].clen);
             return 413;
         }
-        DBG("conn[ci].clen = %d", conn[ci].clen);
+        DBG("conn[ci].clen = %u", conn[ci].clen);
+    }
+    else if ( 0==strcmp(ulabel, "ACCEPT-ENCODING") )    /* gzip, deflate, br */
+    {
+        strcpy(uvalue, upper(value));
+        if ( strstr(uvalue, "DEFLATE") )
+            conn[ci].accept_deflate = TRUE;
+        DBG("accept_deflate = %d", conn[ci].accept_deflate);
     }
     else if ( 0==strcmp(ulabel, "ACCEPT-LANGUAGE") )    /* en-US en-GB pl-PL */
     {
@@ -4247,14 +4409,14 @@ static void dump_counters()
 {
     ALWAYS("");
     ALWAYS("Counters:\n");
-    ALWAYS("            req: %ld", G_cnts_today.req);
-    ALWAYS("        req_dsk: %ld", G_cnts_today.req_dsk);
-    ALWAYS("        req_mob: %ld", G_cnts_today.req_mob);
-    ALWAYS("        req_bot: %ld", G_cnts_today.req_bot);
-    ALWAYS("         visits: %ld", G_cnts_today.visits);
-    ALWAYS("     visits_dsk: %ld", G_cnts_today.visits_dsk);
-    ALWAYS("     visits_mob: %ld", G_cnts_today.visits_mob);
-    ALWAYS("        blocked: %ld", G_cnts_today.blocked);
+    ALWAYS("            req: %u", G_cnts_today.req);
+    ALWAYS("        req_dsk: %u", G_cnts_today.req_dsk);
+    ALWAYS("        req_mob: %u", G_cnts_today.req_mob);
+    ALWAYS("        req_bot: %u", G_cnts_today.req_bot);
+    ALWAYS("         visits: %u", G_cnts_today.visits);
+    ALWAYS("     visits_dsk: %u", G_cnts_today.visits_dsk);
+    ALWAYS("     visits_mob: %u", G_cnts_today.visits_mob);
+    ALWAYS("        blocked: %u", G_cnts_today.blocked);
 //       DBG("        elapsed: %.3lf ms", G_cnts_today.elapsed);
     ALWAYS("        average: %.3lf ms", G_cnts_today.average);
     ALWAYS("connections HWM: %d", G_open_conn_hwm);
@@ -4764,7 +4926,7 @@ void silgy_add_to_static_res(const char *name, const char *src)
 
     if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1+OUT_HEADER_BUFSIZE)) )
     {
-        ERR("Couldn't allocate %ld bytes for %s!!!", M_stat[i].len+1+OUT_HEADER_BUFSIZE, M_stat[i].name);
+        ERR("Couldn't allocate %u bytes for %s", M_stat[i].len+1+OUT_HEADER_BUFSIZE, M_stat[i].name);
         return;
     }
 
@@ -4774,7 +4936,7 @@ void silgy_add_to_static_res(const char *name, const char *src)
 
     if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1)) )
     {
-        ERR("Couldn't allocate %ld bytes for %s!!!", M_stat[i].len+1, M_stat[i].name);
+        ERR("Couldn't allocate %u bytes for %s", M_stat[i].len+1, M_stat[i].name);
         return;
     }
 
@@ -4786,7 +4948,7 @@ void silgy_add_to_static_res(const char *name, const char *src)
     M_stat[i].modified = G_now;
     M_stat[i].source = STATIC_SOURCE_INTERNAL;
 
-    INF("%s (%ld bytes)", M_stat[i].name, M_stat[i].len);
+    INF("%s (%u bytes)", M_stat[i].name, M_stat[i].len);
 }
 
 
@@ -4873,18 +5035,18 @@ void eng_out_check_realloc(int ci, const char *str)
     }
     else    /* resize output buffer and try again */
     {
-        long used = conn[ci].p_content - conn[ci].out_data;
+        unsigned used = conn[ci].p_content - conn[ci].out_data;
         char *tmp = (char*)realloc(conn[ci].out_data_alloc, conn[ci].out_data_allocated*2);
         if ( !tmp )
         {
-            ERR("Couldn't reallocate output buffer for ci=%d, tried %d bytes", ci, conn[ci].out_data_allocated*2);
+            ERR("Couldn't reallocate output buffer for ci=%d, tried %u bytes", ci, conn[ci].out_data_allocated*2);
             return;
         }
         conn[ci].out_data_alloc = tmp;
         conn[ci].out_data = conn[ci].out_data_alloc;
         conn[ci].out_data_allocated = conn[ci].out_data_allocated * 2;
         conn[ci].p_content = conn[ci].out_data + used;
-        INF("Reallocated output buffer for ci=%d, new size = %d bytes", ci, conn[ci].out_data_allocated);
+        INF("Reallocated output buffer for ci=%d, new size = %u bytes", ci, conn[ci].out_data_allocated);
         eng_out_check_realloc(ci, str);     /* call itself! */
     }
 }
@@ -4902,18 +5064,18 @@ void eng_out_check_realloc_bin(int ci, const char *data, int len)
     }
     else    /* resize output buffer and try again */
     {
-        long used = conn[ci].p_content - conn[ci].out_data;
+        unsigned used = conn[ci].p_content - conn[ci].out_data;
         char *tmp = (char*)realloc(conn[ci].out_data_alloc, conn[ci].out_data_allocated*2);
         if ( !tmp )
         {
-            ERR("Couldn't reallocate output buffer for ci=%d, tried %d bytes", ci, conn[ci].out_data_allocated*2);
+            ERR("Couldn't reallocate output buffer for ci=%d, tried %u bytes", ci, conn[ci].out_data_allocated*2);
             return;
         }
         conn[ci].out_data_alloc = tmp;
         conn[ci].out_data = conn[ci].out_data_alloc;
         conn[ci].out_data_allocated = conn[ci].out_data_allocated * 2;
         conn[ci].p_content = conn[ci].out_data + used;
-        INF("Reallocated output buffer for ci=%d, new size = %d bytes", ci, conn[ci].out_data_allocated);
+        INF("Reallocated output buffer for ci=%d, new size = %u bytes", ci, conn[ci].out_data_allocated);
         eng_out_check_realloc_bin(ci, data, len);       /* call itself! */
     }
 }
@@ -5034,7 +5196,7 @@ async_req_t req;
 async_res_t res;
 #ifdef OUTCHECKREALLOC
 char        *out_data=NULL;
-int         out_data_allocated;
+unsigned    out_data_allocated;
 #endif
 char        *p_content=NULL;
 conn_t      conn[MAX_CONNECTIONS+1]={0}; /* request details */
@@ -5048,7 +5210,7 @@ counters_t  G_cnts_today={0};           /* today's counters */
 counters_t  G_cnts_yesterday={0};       /* yesterday's counters */
 counters_t  G_cnts_day_before={0};      /* day before's counters */
 
-int         G_days_up=0;                /* web server's days up */
+unsigned    G_days_up=0;                /* web server's days up */
 int         G_open_conn=0;              /* number of open connections */
 int         G_open_conn_hwm=0;          /* highest number of open connections (high water mark) */
 int         G_sessions=0;               /* number of active user sessions */
@@ -5337,12 +5499,12 @@ int main(int argc, char *argv[])
                         char *tmp = (char*)realloc(conn[0].in_data, req.hdr.clen+1);
                         if ( !tmp )
                         {
-                            ERR("Couldn't realloc in_data, tried %d bytes", req.hdr.clen+1);
+                            ERR("Couldn't realloc in_data, tried %u bytes", req.hdr.clen+1);
                             continue;
                         }
                         conn[0].in_data = tmp;
                         conn[0].in_data_allocated = req.hdr.clen+1;
-                        INF("Reallocated in_data, new size = %d bytes", req.hdr.clen+1);
+                        INF("Reallocated in_data, new size = %u bytes", req.hdr.clen+1);
                     }
 
                     if ( !M_async_shm )
@@ -5551,17 +5713,17 @@ void svc_out_check_realloc(const char *str)
     }
     else    /* resize output buffer and try again */
     {
-        int used = p_content - out_data;
+        unsigned used = p_content - out_data;
         char *tmp = (char*)realloc(out_data, out_data_allocated*2);
         if ( !tmp )
         {
-            ERR("Couldn't reallocate output buffer, tried %d bytes", out_data_allocated*2);
+            ERR("Couldn't reallocate output buffer, tried %u bytes", out_data_allocated*2);
             return;
         }
         out_data = tmp;
         out_data_allocated = out_data_allocated * 2;
         p_content = out_data + used;
-        INF("Reallocated output buffer, new size = %d bytes", out_data_allocated);
+        INF("Reallocated output buffer, new size = %u bytes", out_data_allocated);
         svc_out_check_realloc(str);     /* call itself! */
     }
 }
@@ -5579,17 +5741,17 @@ void svc_out_check_realloc_bin(const char *data, int len)
     }
     else    /* resize output buffer and try again */
     {
-        int used = p_content - out_data;
+        unsigned used = p_content - out_data;
         char *tmp = (char*)realloc(out_data, out_data_allocated*2);
         if ( !tmp )
         {
-            ERR("Couldn't reallocate output buffer, tried %d bytes", out_data_allocated*2);
+            ERR("Couldn't reallocate output buffer, tried %u bytes", out_data_allocated*2);
             return;
         }
         out_data = tmp;
         out_data_allocated = out_data_allocated * 2;
         p_content = out_data + used;
-        INF("Reallocated output buffer, new size = %d bytes", out_data_allocated);
+        INF("Reallocated output buffer, new size = %u bytes", out_data_allocated);
         svc_out_check_realloc_bin(data, len);       /* call itself! */
     }
 }

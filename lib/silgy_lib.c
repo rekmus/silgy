@@ -38,7 +38,7 @@ int         G_next_message=0;
 bool        G_ssl_lib_initialized=0;
 #endif
 
-int         G_rest_req=0;               /* REST calls counter */
+unsigned    G_rest_req=0;               /* REST calls counter */
 double      G_rest_elapsed=0;           /* REST calls elapsed for calculating average */
 double      G_rest_average=0;           /* REST calls average elapsed */
 int         G_rest_status;              /* last REST call response status */
@@ -1005,8 +1005,8 @@ bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
 -------------------------------------------------------------------------- */
 bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf)
 {
-    char    *p;
-    long    len;
+    char     *p;
+    unsigned len;
 
     p = get_qs_param_multipart(ci, fieldname, &len, NULL);
 
@@ -1027,15 +1027,15 @@ bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf)
    If retfname is not NULL then assume binary data and it must be the last
    data element
 -------------------------------------------------------------------------- */
-char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *retfname)
+char *get_qs_param_multipart(int ci, const char *fieldname, unsigned *retlen, char *retfname)
 {
-    int     blen;           /* boundary length */
-    char    *cp;            /* current pointer */
-    char    *p;             /* tmp pointer */
-    long    b;              /* tmp bytes count */
-    char    fn[MAX_LABEL_LEN+1];    /* field name */
-    char    *end;
-    long    len;
+    unsigned blen;           /* boundary length */
+    char     *cp;            /* current pointer */
+    char     *p;             /* tmp pointer */
+    unsigned b;              /* tmp bytes count */
+    char     fn[MAX_LABEL_LEN+1];    /* field name */
+    char     *end;
+    unsigned len;
 
     /* Couple of checks to make sure it's properly formatted multipart content */
 
@@ -1047,7 +1047,7 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
 
     if ( conn[ci].clen < 10 )
     {
-        WAR("Content length seems to be too small for multipart (%ld)", conn[ci].clen);
+        WAR("Content length seems to be too small for multipart (%u)", conn[ci].clen);
         return NULL;
     }
 
@@ -1065,12 +1065,12 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
 
         if ( b < 2 )
         {
-            WAR("Boundary appears to be too short (%ld)", b);
+            WAR("Boundary appears to be too short (%u)", b);
             return NULL;
         }
         else if ( b > 255 )
         {
-            WAR("Boundary appears to be too long (%ld)", b);
+            WAR("Boundary appears to be too long (%u)", b);
             return NULL;
         }
 
@@ -1130,7 +1130,7 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
 
         if ( b > MAX_LABEL_LEN )
         {
-            WAR("Field name too long (%ld)", b);
+            WAR("Field name too long (%u)", b);
             return NULL;
         }
 
@@ -1170,7 +1170,7 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
 
         if ( b > 255 )
         {
-            WAR("File name too long (%ld)", b);
+            WAR("File name too long (%u)", b);
             return NULL;
         }
 
@@ -1211,7 +1211,7 @@ char *get_qs_param_multipart(int ci, const char *fieldname, long *retlen, char *
 
     if ( len < 0 )
     {
-        WAR("Ooops, something went terribly wrong! Data length = %ld", len);
+        WAR("Ooops, something went terribly wrong! Data length = %u", len);
         return NULL;
     }
 
@@ -1579,7 +1579,7 @@ void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt, bool hea
 
     OUT("<h2>Memory</h2>");
 
-    long mem_used;
+    int  mem_used;
     char mem_used_kb[64];
     char mem_used_mb[64];
     char mem_used_gb[64];
@@ -2422,7 +2422,7 @@ static int chunked2content(char *res_content, const char *buffer, int src_len, i
 /* --------------------------------------------------------------------------
    REST call / parse response
 -------------------------------------------------------------------------- */
-bool lib_rest_res_parse(char *res_header, int bytes)
+bool lib_rest_res_parse(char *res_header, unsigned bytes)
 {
     /* HTTP/1.1 200 OK <== 15 chars */
 
@@ -2433,9 +2433,9 @@ bool lib_rest_res_parse(char *res_header, int bytes)
         res_header[bytes] = EOS;
 #ifdef DUMP
         DBG("");
-        DBG("Got %d bytes of response [%s]", bytes, res_header);
+        DBG("Got %u bytes of response [%s]", bytes, res_header);
 #else
-        DBG("Got %d bytes of response", bytes);
+        DBG("Got %u bytes of response", bytes);
 #endif  /* DUMP */
 
         /* Status */
@@ -2488,24 +2488,24 @@ bool lib_rest_res_parse(char *res_header, int bytes)
 -------------------------------------------------------------------------- */
 bool lib_rest_req(const void *req, void *res, const char *method, const char *url, bool json, bool keep)
 {
-    char    host[256];
-    char    port[8];
-    bool    secure=FALSE;
-static char prev_host[256];
-static char prev_port[8];
-static bool prev_secure=FALSE;
-    char    uri[MAX_URI_LEN+1];
-static bool connected=FALSE;
+    char     host[256];
+    char     port[8];
+    bool     secure=FALSE;
+static char  prev_host[256];
+static char  prev_port[8];
+static bool  prev_secure=FALSE;
+    char     uri[MAX_URI_LEN+1];
+static bool  connected=FALSE;
 static time_t connected_time=0;
-    char    res_header[REST_RES_HEADER_LEN+1];
-static char buffer[JSON_BUFSIZE];
-    long    bytes;
-    char    *body;
-    int     content_read=0, buffer_read=0;
-    int     len, i, j;
-    int     timeout_remain = G_RESTTimeout;
+    char     res_header[REST_RES_HEADER_LEN+1];
+static char  buffer[JSON_BUFSIZE];
+    int      bytes;
+    char     *body;
+    unsigned content_read=0, buffer_read=0;
+    unsigned len, i, j;
+    int      timeout_remain = G_RESTTimeout;
 #ifdef HTTPS
-    int     ssl_err;
+    int      ssl_err;
 #endif  /* HTTPS */
 
     DBG("lib_rest_req [%s] [%s]", method, url);
@@ -2617,7 +2617,7 @@ static char buffer[JSON_BUFSIZE];
     }
 
 #ifdef DUMP
-    DBG("Sent %ld bytes", bytes);
+    DBG("Sent %d bytes", bytes);
 #endif
 
     if ( bytes < 15 )
@@ -2656,7 +2656,7 @@ static char buffer[JSON_BUFSIZE];
         }
     }
 
-    DBG("Read %ld bytes", bytes);
+    DBG("Read %d bytes", bytes);
 
 #ifdef DUMP
     DBG("elapsed after first response read: %.3lf ms", lib_elapsed(&start));
@@ -3293,7 +3293,7 @@ void lib_log_memory()
 -------------------------------------------------------------------------- */
 static int mem_parse_line(const char* line)
 {
-    long    ret=0;
+    int     ret=0;
     int     i=0;
     char    strret[64];
     const char* p=line;
@@ -3307,7 +3307,7 @@ static int mem_parse_line(const char* line)
 /*  DBG("mem_parse_line: line [%s]", line);
     DBG("mem_parse_line: strret [%s]", strret);*/
 
-    ret = atol(strret);
+    ret = atoi(strret);
 
     return ret;
 }
@@ -3316,9 +3316,9 @@ static int mem_parse_line(const char* line)
 /* --------------------------------------------------------------------------
    Return currently used memory (high water mark) by current process in kB
 -------------------------------------------------------------------------- */
-long lib_get_memory()
+int lib_get_memory()
 {
-    long result=0;
+    int result=0;
 
 #ifdef __linux__
 
@@ -5860,11 +5860,11 @@ int silgy_minify(char *dest, const char *src)
 {
     char *temp;
 
-    int len = strlen(src);
+    unsigned len = strlen(src);
 
     if ( !(temp=(char*)malloc(len+1)) )
     {
-        ERR("Couldn't allocate %d bytes for silgy_minify", len);
+        ERR("Couldn't allocate %u bytes for silgy_minify", len);
         return 0;
     }
 
@@ -6085,7 +6085,7 @@ int date_cmp(const char *str1, const char *str2)
 -------------------------------------------------------------------------- */
 bool lib_read_conf(const char *file)
 {
-    FILE    *h_file=NULL;
+    FILE *h_file=NULL;
 
     /* open the conf file */
 
@@ -6098,12 +6098,12 @@ bool lib_read_conf(const char *file)
     /* read content into M_conf for silgy_read_param */
 
     fseek(h_file, 0, SEEK_END);     /* determine the file size */
-    long size = ftell(h_file);
+    unsigned size = ftell(h_file);
     rewind(h_file);
 
     if ( (M_conf=(char*)malloc(size+1)) == NULL )
     {
-        printf("ERROR: Couldn't get %ld bytes for M_conf\n", size+1);
+        printf("ERROR: Couldn't get %u bytes for M_conf\n", size+1);
         fclose(h_file);
         return FALSE;
     }
@@ -6416,7 +6416,7 @@ static char pidfilename[512];
 /* --------------------------------------------------------------------------
    Attach to shared memory segment
 -------------------------------------------------------------------------- */
-char *lib_shm_create(long bytes, int index)
+char *lib_shm_create(unsigned bytes, int index)
 {
     char *shm_segptr=NULL;
 
