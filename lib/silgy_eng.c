@@ -3244,7 +3244,7 @@ static void gen_response_header(int ci)
         /* compress? ------------------------------------------------------------------ */
 
 #ifndef _WIN32  /* just too much headache */
-        if ( conn[ci].clen > COMPRESS_TRESHOLD && conn[ci].accept_deflate && (conn[ci].ctype==RES_HTML || conn[ci].ctype==RES_TEXT || conn[ci].ctype==RES_JSON || conn[ci].ctype==RES_BMP) )
+        if ( conn[ci].static_res==NOT_STATIC && conn[ci].clen > COMPRESS_TRESHOLD && conn[ci].accept_deflate && (conn[ci].ctype==RES_HTML || conn[ci].ctype==RES_TEXT || conn[ci].ctype==RES_JSON || conn[ci].ctype==RES_BMP) )
         {
             INF("Compressing content");
 
