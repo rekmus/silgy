@@ -2723,7 +2723,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
                 if ( NULL == (data_tmp=(char*)malloc(M_stat[i].len+1)) )
                 {
-                    ERR("Couldn't allocate %u bytes for %s!", M_stat[i].len, M_stat[i].name);
+                    ERR("Couldn't allocate %u bytes for %s", M_stat[i].len, M_stat[i].name);
                     fclose(fd);
                     closedir(dir);
                     return FALSE;
@@ -2731,7 +2731,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
                 if ( NULL == (data_tmp_min=(char*)malloc(M_stat[i].len+1)) )
                 {
-                    ERR("Couldn't allocate %u bytes for %s!", M_stat[i].len, M_stat[i].name);
+                    ERR("Couldn't allocate %u bytes for %s", M_stat[i].len, M_stat[i].name);
                     fclose(fd);
                     closedir(dir);
                     return FALSE;
