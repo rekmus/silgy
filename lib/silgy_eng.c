@@ -199,7 +199,7 @@ static void close_old_conn(void);
 static void uses_close_timeouted(void);
 static void close_uses(int usi, int ci);
 static void reset_conn(int ci, char new_state);
-static int  parse_req(int ci, unsigned len);
+static int  parse_req(int ci, int len);
 static int  set_http_req_val(int ci, const char *label, const char *value);
 static bool check_block_ip(int ci, const char *rule, const char *value);
 static char *get_http_descr(int status_code);
@@ -3687,7 +3687,7 @@ static void reset_conn(int ci, char new_state)
    Parse HTTP request
    Return HTTP status code
 -------------------------------------------------------------------------- */
-static int parse_req(int ci, unsigned len)
+static int parse_req(int ci, int len)
 {
     int  ret=200;
 
@@ -4092,7 +4092,7 @@ static int parse_req(int ci, unsigned len)
         len = conn[ci].in+len - p_hend;   /* remaining request length -- likely a content */
 
 #ifdef DUMP
-        DBG("Remaining request length (content) = %u", len);
+        DBG("Remaining request length (content) = %d", len);
 #endif
 
         if ( len > conn[ci].clen )
@@ -4111,7 +4111,7 @@ static int parse_req(int ci, unsigned len)
 
         if ( len < conn[ci].clen )      /* the whole content not received yet */
         {                               /* this is the only case when conn_state != received */
-            DBG("The whole content not received yet, len=%u", len);
+            DBG("The whole content not received yet, len=%d", len);
 #ifdef DUMP
             DBG("Changing state to CONN_STATE_READING_DATA");
 #endif
@@ -4139,7 +4139,6 @@ static int parse_req(int ci, unsigned len)
 -------------------------------------------------------------------------- */
 static int set_http_req_val(int ci, const char *label, const char *value)
 {
-    unsigned len;
     char     new_value[MAX_VALUE_LEN+1];
     char     ulabel[MAX_LABEL_LEN+1];
     char     uvalue[MAX_VALUE_LEN+1];
@@ -4258,7 +4257,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
         /* it can be 'unknown' */
 
         char tmp[INET_ADDRSTRLEN+1];
-        len = strlen(value);
+        int len = strlen(value);
         i = 0;
 
         while ( i<len && (value[i]=='.' || isdigit(value[i])) && i<INET_ADDRSTRLEN )
@@ -4308,7 +4307,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     {
         strcpy(conn[ci].in_ctypestr, value);
 
-        len = strlen(value);
+        int len = strlen(value);
 
         if ( len > 32 && 0==strncmp(value, "application/x-www-form-urlencoded", 33) )
         {
