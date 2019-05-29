@@ -683,6 +683,9 @@ typedef char str64k[1024*64];
 #define SVC_NAME_LEN                    63      /* async service name length */
 
 
+//#define UA_IE                           (0==strcmp(conn[ci].uagent, "Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko") || 0==strcmp(conn[ci].uagent, "Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko"))
+#define UA_IE                           (0==strncmp(conn[ci].uagent, "Mozilla/5.0 (Windows NT ", 24) && strstr(conn[ci].uagent, "; WOW64; Trident/7.0; rv:11.0) like Gecko"))
+
 
 /* Date-Time */
 
