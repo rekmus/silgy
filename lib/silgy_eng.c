@@ -2943,7 +2943,7 @@ static void process_req(int ci)
     if ( conn[ci].required_auth_level==AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only && !LOGGED )    /* anonymous user session required */
 #else
     if ( conn[ci].required_auth_level==AUTH_LEVEL_ANONYMOUS && !REQ_BOT && !conn[ci].head_only )
-#endif
+#endif  /* USERS */
     {
         if ( !conn[ci].cookie_in_a[0] || !a_usession_ok(ci) )       /* valid anonymous sesid cookie not present */
         {
