@@ -50,14 +50,19 @@
 #define USER_STATUS_PASSWORD_CHANGE     3
 #define USER_STATUS_DELETED             9
 
-#ifdef APP_USER_ACTIVATION_HOURS                                /* activate user account within */
-#define USER_ACTIVATION_HOURS           APP_USER_ACTIVATION_HOURS
-#else
-#define USER_ACTIVATION_HOURS           24
-#endif
+
+/* configurable parameters */
 
 #ifndef DEF_USER_AUTH_LEVEL
 #define DEF_USER_AUTH_LEVEL             AUTH_LEVEL_USER         /* default user authorization level */
+#endif
+
+#ifndef USER_ACTIVATION_HOURS
+#define USER_ACTIVATION_HOURS           24                      /* activate user account within */
+#endif
+
+#ifndef USER_KEEP_LOGGED_DAYS
+#define USER_KEEP_LOGGED_DAYS           30                      /* ls cookie validity period */
 #endif
 
 

@@ -1093,7 +1093,7 @@ int silgy_usr_login(int ci)
     if ( QS_HTML_ESCAPE("keep", keep) && 0==strcmp(keep, "on") )
     {
         DBG("keep is ON");
-        time_t sometimeahead = G_now + 3600*24*30;  /* 30 days */
+        time_t sometimeahead = G_now + 3600*24*USER_KEEP_LOGGED_DAYS;
         G_ptm = gmtime(&sometimeahead);
         strftime(conn[ci].cookie_out_l_exp, 32, "%a, %d %b %Y %T GMT", G_ptm);
 //      DBG("conn[ci].cookie_out_l_exp: [%s]", conn[ci].cookie_out_l_exp);
