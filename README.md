@@ -2,7 +2,13 @@
 
 Simple and fast web application backend framework for C and C++ programmers.
 
-The latency between receiving HTTP request and application logic has been reduced to **single microseconds** by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic. It can act as a standalone web application or as a fast C++ servlet that makes up a building block of the more complex architecture.
+The latency between receiving HTTP request and application logic has been reduced to **single microseconds** by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
+
+It can act as:
+
+* a standalone, simple single-process web application
+* a standalone, multi-process web application, connected and load-balanced via standard POSIX queues
+* a fast C++ servlet/microservice that makes up a building block of the more complex architecture
 
 ## Why bother?
 
