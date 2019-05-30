@@ -414,7 +414,7 @@ typedef char str64k[1024*64];
 /* compression settings */
 
 #ifndef COMPRESS_TRESHOLD
-#define COMPRESS_TRESHOLD               250
+#define COMPRESS_TRESHOLD               500
 #endif
 
 #ifndef COMPRESS_LEVEL
