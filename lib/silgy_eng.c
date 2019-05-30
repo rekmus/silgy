@@ -3223,12 +3223,15 @@ static void gen_response_header(int ci)
                 else
                     PRINT_HTTP_LAST_MODIFIED(G_last_modified);
 
-                PRINT_HTTP_EXPIRES_GENERATED;
+                if ( EXPIRES_GENERATED > 0 )
+                    PRINT_HTTP_EXPIRES_GENERATED;
             }
             else    /* static resource -- aggressive caching */
             {
                 PRINT_HTTP_LAST_MODIFIED(time_epoch2http(M_stat[conn[ci].static_res].modified));
-                PRINT_HTTP_EXPIRES_STATICS;
+
+                if ( EXPIRES_STATICS > 0 )
+                    PRINT_HTTP_EXPIRES_STATICS;
             }
         }
 
