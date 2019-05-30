@@ -6,6 +6,7 @@ The latency between receiving HTTP request and application logic has been reduce
 
 It can act as:
 
+* a web server
 * a standalone, simple, single-process web application
 * a standalone, multi-process web application, connected and load-balanced via standard POSIX queues
 * a fast C++ servlet/microservice that makes up a building block of the more complex architecture
