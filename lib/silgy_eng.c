@@ -2303,7 +2303,7 @@ static void accept_https()
 
                 if ( conn[i].ssl_err != SSL_ERROR_WANT_READ && conn[i].ssl_err != SSL_ERROR_WANT_WRITE )
                 {
-                    ERR("SSL_accept failed, ssl_err = %d", conn[i].ssl_err);
+                    DBG("SSL_accept failed, ssl_err = %d", conn[i].ssl_err);
                     close_conn(i);
                     return;
                 }
@@ -3791,7 +3791,7 @@ static int parse_req(int ci, int len)
             }
             else
             {
-                ERR("Method [%s] not allowed, ignoring", conn[ci].method);
+                WAR("Method [%s] not allowed, ignoring", conn[ci].method);
                 return 405;
             }
 
@@ -3929,7 +3929,7 @@ static int parse_req(int ci, int len)
 
             if ( j == MAX_VALUE_LEN )   /* truncate here */
             {
-                WAR("Truncating %s's value", label);
+                DBG("Truncating %s's value", label);
                 value[j] = EOS;
 #ifdef DUMP
                 DBG("value: [%s]", value);
