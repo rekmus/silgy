@@ -544,18 +544,21 @@ typedef char str64k[1024*64];
 #define ASYNC_STATE_RECEIVED            '2'
 #define ASYNC_STATE_TIMEOUTED           '3'
 
-#ifndef ASYNC_MQ_MAXMSG                                         /* max messages in a message queue */
-#define ASYNC_MQ_MAXMSG                 10
+
+#ifndef ASYNC_MQ_MAXMSG
+#define ASYNC_MQ_MAXMSG                 10                      /* max messages in a message queue */
 #endif
 
-#define MAX_ASYNC                       ASYNC_MQ_MAXMSG*2       /* max queued async responses */
-
-#ifndef ASYNC_REQ_MSG_SIZE                                      /* request message size */
-#define ASYNC_REQ_MSG_SIZE              8192
+#ifndef MAX_ASYNC_REQS
+#define MAX_ASYNC_REQS                  MAX_SESSIONS            /* max simultaneous async requests */
 #endif
 
-#ifndef ASYNC_RES_MSG_SIZE                                      /* response message size */
-#define ASYNC_RES_MSG_SIZE              8192
+#ifndef ASYNC_REQ_MSG_SIZE
+#define ASYNC_REQ_MSG_SIZE              8192                    /* request message size */
+#endif
+
+#ifndef ASYNC_RES_MSG_SIZE
+#define ASYNC_RES_MSG_SIZE              8192                    /* response message size */
 #endif
 
 #define ASYNC_REQ_QUEUE                 "/silgy_req"            /* request queue name */
@@ -811,19 +814,25 @@ typedef struct {
     char            data[ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t)];
 } async_req_t;
 
-/* response */
+
+/* async requests stored on the silgy_app's side */
 
 typedef struct {
-    unsigned call_id;
     int      ci;
-    char     service[SVC_NAME_LEN+1];
-    int      ai;
     char     state;
     time_t   sent;
     int      timeout;
+} areq_t;
+
+
+/* response -- the first type */
+
+typedef struct {
+    int      ci;
+    int      ai;
+    int      chunk;
     int      err_code;
     int      status;
-    int      chunk;
     unsigned clen;
     char     ctype;
     char     ctypestr[256];
@@ -1087,10 +1096,6 @@ extern char     G_req_queue_name[256];
 extern char     G_res_queue_name[256];
 extern mqd_t    G_queue_req;                /* request queue */
 extern mqd_t    G_queue_res;                /* response queue */
-#ifdef ASYNC
-extern async_res_t ares[MAX_ASYNC];         /* async response array */
-extern unsigned G_last_call_id;             /* counter */
-#endif  /* ASYNC */
 #endif  /* _WIN32 */
 extern int      G_async_req_data_size;      /* how many bytes are left for data */
 extern int      G_async_res_data_size;      /* how many bytes are left for data */

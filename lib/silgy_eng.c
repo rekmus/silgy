@@ -63,10 +63,6 @@ char        G_req_queue_name[256]="";
 char        G_res_queue_name[256]="";
 mqd_t       G_queue_req={0};            /* request queue */
 mqd_t       G_queue_res={0};            /* response queue */
-#ifdef ASYNC
-async_res_t ares[MAX_ASYNC]={0};        /* async response array */
-unsigned    G_last_call_id=0;           /* counter */
-#endif  /* ASYNC */
 #endif  /* _WIN32 */
 int         G_async_req_data_size=ASYNC_REQ_MSG_SIZE-sizeof(async_req_hdr_t); /* how many bytes are left for data */
 int         G_async_res_data_size=ASYNC_RES_MSG_SIZE-sizeof(async_res_hdr_t); /* how many bytes are left for data */
@@ -168,8 +164,10 @@ static int          M_prev_day;
 static time_t       M_last_housekeeping=0;
 
 #ifdef ASYNC
+static areq_t       areqs[MAX_ASYNC_REQS]={0};  /* async requests */
+static unsigned     M_last_call_id=0;           /* counter */
 static char         *M_async_shm=NULL;
-#endif
+#endif  /* ASYNC */
 
 
 /* prototypes */
@@ -404,17 +402,17 @@ int main(int argc, char **argv)
 #endif  /* _WIN32 */
 
 #ifdef ASYNC
-        /* mark timeout-ed */
+        /* release timeout-ed */
 
-        for ( j=0; j<MAX_ASYNC; ++j )
+        for ( j=0; j<MAX_ASYNC_REQS; ++j )
         {
-            if ( ares[j].hdr.state==ASYNC_STATE_SENT && ares[j].hdr.sent < G_now-ares[j].hdr.timeout )
+            if ( areqs[j].state==ASYNC_STATE_SENT && areqs[j].sent < G_now-areqs[j].timeout )
             {
                 DBG("Async request %d timeout-ed", j);
-                conn[ares[j].hdr.ci].async_err_code = ERR_ASYNC_TIMEOUT;
-                conn[ares[j].hdr.ci].status = 500;
-                ares[j].hdr.state = ASYNC_STATE_FREE;
-                gen_response_header(ares[j].hdr.ci);
+                conn[areqs[j].ci].async_err_code = ERR_ASYNC_TIMEOUT;
+                conn[areqs[j].ci].status = 500;
+                areqs[j].state = ASYNC_STATE_FREE;
+                gen_response_header(areqs[j].ci);
             }
         }
 #endif
@@ -642,58 +640,6 @@ int main(int argc, char **argv)
                         }
 #endif  /* DUMP */
 
-
-/* ----------------------------------------------------------------------------------------------------------------------- */
-#ifdef ASYNC_USE_APP_CONTINUE   /* depreciated */
-                        /* async processing */
-#ifdef ASYNC
-                        if ( conn[i].conn_state == CONN_STATE_WAITING_FOR_ASYNC )
-                        {
-#ifdef DUMP
-                            if ( G_now != dbg_last_time4 )   /* only once in a second */
-                            {
-                                DBG("ci=%d, state == CONN_STATE_WAITING_FOR_ASYNC", i);
-                                dbg_last_time4 = G_now;
-                            }
-#endif  /* DUMP */
-                            if ( conn[i].ai != -1 )   /* we have a response from silgy_svc or async call timeouted */
-                            {
-                                if ( ares[conn[i].ai].hdr.state == ASYNC_STATE_RECEIVED )
-                                {
-                                    DBG("Async response in an array for ci=%d, processing", i);
-
-                                    strcpy(conn[i].service, ares[conn[i].ai].hdr.service);
-                                    conn[i].async_err_code = ares[conn[i].ai].hdr.err_code;
-                                    conn[i].status = ares[conn[i].ai].hdr.status;
-
-                                    if ( conn[i].usi )  /* update user session */
-                                    {
-                                        memcpy(&uses[conn[i].usi], &ares[conn[i].ai].hdr.uses, sizeof(usession_t));
-#ifndef ASYNC_EXCLUDE_AUSES
-                                        memcpy(&auses[conn[i].usi], &ares[conn[i].ai].hdr.auses, sizeof(ausession_t));
-#endif
-                                    }
-                                    silgy_app_continue(i, ares[conn[i].ai].data);
-                                }
-                                else if ( ares[conn[i].ai].hdr.state == ASYNC_STATE_TIMEOUTED )
-                                {
-                                    ERR("CALL_ASYNC call_id=%d timeouted", ares[conn[i].ai].hdr.call_id);
-                                    conn[i].async_err_code = ERR_ASYNC_TIMEOUT;
-                                    DBG("Async response continue as timeout-ed for ci=%d", i);
-                                    silgy_app_continue(i, NULL);
-                                }
-
-                                gen_response_header(i);
-
-                                ares[conn[i].ai].hdr.state = ASYNC_STATE_FREE;
-                                conn[i].ai = -1;
-                            }
-                        }
-#endif  /* ASYNC */
-#endif  /* ASYNC_USE_APP_CONTINUE */
-/* ----------------------------------------------------------------------------------------------------------------------- */
-
-
 #ifdef HTTPS
                         if ( conn[i].secure )   /* HTTPS */
                         {
@@ -868,9 +814,7 @@ int main(int argc, char **argv)
 
             DBG("res.hdr.chunk = %d", res.hdr.chunk);
 
-            DBG("res.hdr.call_id=%d", res.hdr.call_id);
             DBG("res.hdr.ci=%d", res.hdr.ci);
-            DBG("res.hdr.service [%s]", res.hdr.service);
             DBG("res.hdr.err_code = %d", res.hdr.err_code);
             DBG("res.hdr.status = %d", res.hdr.status);
 
@@ -926,7 +870,7 @@ int main(int argc, char **argv)
 
             if ( ASYNC_CHUNK_IS_LAST(res.hdr.chunk) )
             {
-                ares[res.hdr.ai].hdr.state = ASYNC_STATE_FREE;
+                areqs[res.hdr.ai].state = ASYNC_STATE_FREE;
                 gen_response_header(res.hdr.ci);
             }
         }
@@ -945,19 +889,7 @@ int main(int argc, char **argv)
         }
 #endif  /* DUMP */
 
-        /* free timeout-ed */
-
-        for ( j=0; j<MAX_ASYNC; ++j )
-        {
-            if ( ares[j].hdr.state==ASYNC_STATE_TIMEOUTED )     /* apparently closed browser connection */
-            {
-                ares[j].hdr.state = ASYNC_STATE_FREE;
-            }
-        }
-
 #endif  /* ASYNC */
-
-//        ++time_elapsed;
 
         /* under heavy load there might never be that sockets_ready==0 */
         /* make sure it runs at least every 10 seconds */
@@ -1995,10 +1927,10 @@ static bool init(int argc, char **argv)
 
     /* ------------------------------------------------------------------- */
 
-    for (i=0; i<MAX_ASYNC; ++i)
-        ares[i].hdr.state = ASYNC_STATE_FREE;
+    for (i=0; i<MAX_ASYNC_REQS; ++i)
+        areqs[i].state = ASYNC_STATE_FREE;
 
-    G_last_call_id = 0;
+    M_last_call_id = 0;
 
     INF("");
 
@@ -4741,9 +4673,9 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     async_req_t req;
 
-    if ( G_last_call_id >= 1000000000 ) G_last_call_id = 0;
+    if ( M_last_call_id >= 1000000000 ) M_last_call_id = 0;
 
-    req.hdr.call_id = ++G_last_call_id;
+    req.hdr.call_id = ++M_last_call_id;
     req.hdr.ci = ci;
 
     if ( service )
@@ -4867,23 +4799,21 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     if ( response )     /* we will wait */
     {
-        /* add to ares (async response array) */
+        /* add to areqs (async response array) */
 
         int j;
 
-        for ( j=0; j<MAX_ASYNC; ++j )
+        for ( j=0; j<MAX_ASYNC_REQS; ++j )
         {
-            if ( ares[j].hdr.state == ASYNC_STATE_FREE )    /* free slot */
+            if ( areqs[j].state == ASYNC_STATE_FREE )    /* free slot */
             {
-                DBG("free slot %d found in ares", j);
-                ares[j].hdr.call_id = req.hdr.call_id;
-                ares[j].hdr.ci = ci;
-                strcpy(ares[j].hdr.service, service);
-                ares[j].hdr.state = ASYNC_STATE_SENT;
-                ares[j].hdr.sent = G_now;
+                DBG("free slot %d found in areqs", j);
+                areqs[j].ci = ci;
+                areqs[j].state = ASYNC_STATE_SENT;
+                areqs[j].sent = G_now;
                 if ( timeout < 0 ) timeout = 0;
                 if ( timeout == 0 || timeout > ASYNC_MAX_TIMEOUT ) timeout = ASYNC_MAX_TIMEOUT;
-                ares[j].hdr.timeout = timeout;
+                areqs[j].timeout = timeout;
                 req.hdr.ai = j;
                 conn[ci].ai = j;
                 found = 1;
@@ -4905,7 +4835,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         }
         else
         {
-            ERR("ares is full");
+            ERR("areqs is full");
         }
     }
 
@@ -5477,9 +5407,7 @@ int main(int argc, char *argv[])
             else
                 INF_T("%s called (id=%d)", req.hdr.service, req.hdr.call_id);
 
-            res.hdr.call_id = req.hdr.call_id;
             res.hdr.ci = req.hdr.ci;
-            strcpy(res.hdr.service, req.hdr.service);
             res.hdr.ai = req.hdr.ai;
             strcpy(G_service, req.hdr.service);
 

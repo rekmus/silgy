@@ -1903,6 +1903,8 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
     p = stpcpy(p, host);
     p = stpcpy(p, "\r\n");
 
+    char jtmp[JSON_BUFSIZE];
+
     if ( 0 != strcmp(method, "GET") && req )
     {
         if ( json )     /* JSON -> string conversion */
@@ -1910,7 +1912,7 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
             if ( !rest_header_present("Content-Type") )
                 p = stpcpy(p, "Content-Type: application/json\r\n");
 
-            strcpy(G_tmp, lib_json_to_string((JSON*)req));
+            strcpy(jtmp, lib_json_to_string((JSON*)req));
         }
         else
         {
@@ -1918,7 +1920,7 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
                 p = stpcpy(p, "Content-Type: application/x-www-form-urlencoded\r\n");
         }
         char tmp[64];
-        sprintf(tmp, "Content-Length: %ld\r\n", (long)strlen(json?G_tmp:(char*)req));
+        sprintf(tmp, "Content-Length: %ld\r\n", (long)strlen(json?jtmp:(char*)req));
         p = stpcpy(p, tmp);
     }
 
@@ -1966,7 +1968,7 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
     /* body */
 
     if ( 0 != strcmp(method, "GET") && req )
-        p = stpcpy(p, json?G_tmp:(char*)req);
+        p = stpcpy(p, json?jtmp:(char*)req);
 
     *p = EOS;
 
@@ -6655,7 +6657,7 @@ void log_flush()
 void log_finish()
 {
     if ( G_logLevel > 0 )
-        ALWAYS("Closing log");
+        ALWAYS_T("Closing log");
 
     if ( M_log_fd != NULL && M_log_fd != stdout )
     {
