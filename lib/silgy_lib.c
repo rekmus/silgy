@@ -1368,10 +1368,10 @@ static void format_counters(counters_fmt_t *s, counters_t *n)
 static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
 {
 #ifdef DBMYSQL
-    char        sql_query[SQLBUF];
+    char        sql[SQLBUF];
     MYSQL_RES   *result;
-    MYSQL_ROW   sql_row;
-    long        sql_records;
+    MYSQL_ROW   row;
+    unsigned    records;
 
     char ai_sql[SQLBUF]="";
 
@@ -1386,11 +1386,11 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
         }
     }
 
-    sprintf(sql_query, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login, created DESC", ai_sql);
+    sprintf(sql, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login, created DESC", ai_sql);
 
-    DBG("sql_query: %s", sql_query);
+    DBG("sql: %s", sql);
 
-    mysql_query(G_dbconn, sql_query);
+    mysql_query(G_dbconn, sql);
 
     result = mysql_store_result(G_dbconn);
 
@@ -1404,16 +1404,16 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
 
     OUT("<h2>Users</h2>");
 
-    sql_records = mysql_num_rows(result);
+    records = mysql_num_rows(result);
 
-    DBG("admin: %ld record(s) found", sql_records);
+    DBG("admin: %u record(s) found", records);
 
-    int last_to_show = sql_records<rows?sql_records:rows;
+    int last_to_show = records<rows?records:rows;
 
     char formatted1[64];
     char formatted2[64];
 
-    amt(formatted1, sql_records);
+    amt(formatted1, records);
     amt(formatted2, last_to_show);
     OUT("<p>%s users, showing %s of last seen</p>", formatted1, formatted2);
 
@@ -1441,14 +1441,14 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
 
     OUT("</tr>");
 
-//    long    id;                     /* sql_row[0] */
-//    char    login[LOGIN_LEN+1];     /* sql_row[1] */
-//    char    email[EMAIL_LEN+1];     /* sql_row[2] */
-//    char    name[UNAME_LEN+1];      /* sql_row[3] */
-//    short   status;                 /* sql_row[4] */
-//    char    created[32];            /* sql_row[5] */
-//    char    last_login[32];         /* sql_row[6] */
-//    long    visits;                 /* sql_row[7] */
+//    long    id;                     /* row[0] */
+//    char    login[LOGIN_LEN+1];     /* row[1] */
+//    char    email[EMAIL_LEN+1];     /* row[2] */
+//    char    name[UNAME_LEN+1];      /* row[3] */
+//    short   status;                 /* row[4] */
+//    char    created[32];            /* row[5] */
+//    char    last_login[32];         /* row[6] */
+//    long    visits;                 /* row[7] */
 
     char fmt0[64];  /* id */
     char fmt7[64];  /* visits */
@@ -1462,12 +1462,12 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
 
     for ( i=0; i<last_to_show; ++i )
     {
-        sql_row = mysql_fetch_row(result);
+        row = mysql_fetch_row(result);
 
-        amt(fmt0, atol(sql_row[0]));    /* id */
-        amt(fmt7, atol(sql_row[7]));    /* visits */
+        amt(fmt0, atol(row[0]));    /* id */
+        amt(fmt7, atol(row[7]));    /* visits */
 
-        if ( atoi(sql_row[4]) != USER_STATUS_ACTIVE )
+        if ( atoi(row[4]) != USER_STATUS_ACTIVE )
             strcpy(trstyle, " class=g");
         else
             trstyle[0] = EOS;
@@ -1484,26 +1484,26 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
                 if ( 0==strcmp(ai[j].type, "int") )
                 {
                     strcat(ai_td, "<td class=r>");
-                    amt(ai_fmt, atoi(sql_row[j+8]));
+                    amt(ai_fmt, atoi(row[j+8]));
                     strcat(ai_td, ai_fmt);
                 }
                 else if ( 0==strcmp(ai[j].type, "long") )
                 {
                     strcat(ai_td, "<td class=r>");
-                    amt(ai_fmt, atol(sql_row[j+8]));
+                    amt(ai_fmt, atol(row[j+8]));
                     strcat(ai_td, ai_fmt);
                 }
                 else if ( 0==strcmp(ai[j].type, "float") || 0==strcmp(ai[j].type, "double") )
                 {
                     strcat(ai_td, "<td class=r>");
-                    sscanf(sql_row[j+8], "%f", &ai_double);
+                    sscanf(row[j+8], "%f", &ai_double);
                     amtd(ai_fmt, ai_double);
                     strcat(ai_td, ai_fmt);
                 }
                 else    /* string */
                 {
                     strcat(ai_td, "<td>");
-                    strcat(ai_td, sql_row[j+8]);
+                    strcat(ai_td, row[j+8]);
                 }
 
                 strcat(ai_td, "</td>");
@@ -1511,9 +1511,9 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
         }
 
         if ( REQ_DSK )
-            OUT("<td class=r>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td class=r>%s</td>%s", fmt0, sql_row[1], sql_row[2], sql_row[3], sql_row[5], sql_row[6], fmt7, ai_td);
+            OUT("<td class=r>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td class=r>%s</td>%s", fmt0, row[1], row[2], row[3], row[5], row[6], fmt7, ai_td);
         else
-            OUT("<td class=r>%s</td><td>%s</td><td>%s</td><td>%s</td><td class=r>%s</td>%s", fmt0, sql_row[1], sql_row[2], sql_row[6], fmt7, ai_td);
+            OUT("<td class=r>%s</td><td>%s</td><td>%s</td><td>%s</td><td class=r>%s</td>%s", fmt0, row[1], row[2], row[6], fmt7, ai_td);
 
         OUT("</tr>");
     }

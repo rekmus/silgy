@@ -797,13 +797,13 @@ typedef struct {
     counters_t cnts_today;
     counters_t cnts_yesterday;
     counters_t cnts_day_before;
-    int     days_up;
-    int     open_conn;
-    int     open_conn_hwm;
-    int     sessions;
-    int     sessions_hwm;
-    char    last_modified[32];
-    int     blacklist_cnt;
+    unsigned days_up;
+    int      open_conn;
+    int      open_conn_hwm;
+    int      sessions;
+    int      sessions_hwm;
+    char     last_modified[32];
+    int      blacklist_cnt;
 } async_req_hdr_t;
 
 typedef struct {
