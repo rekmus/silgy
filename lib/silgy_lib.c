@@ -2422,7 +2422,7 @@ static int chunked2content(char *res_content, const char *buffer, int src_len, i
 /* --------------------------------------------------------------------------
    REST call / parse response
 -------------------------------------------------------------------------- */
-bool lib_rest_res_parse(char *res_header, unsigned bytes)
+bool lib_rest_res_parse(char *res_header, int bytes)
 {
     /* HTTP/1.1 200 OK <== 15 chars */
 
@@ -2433,9 +2433,9 @@ bool lib_rest_res_parse(char *res_header, unsigned bytes)
         res_header[bytes] = EOS;
 #ifdef DUMP
         DBG("");
-        DBG("Got %u bytes of response [%s]", bytes, res_header);
+        DBG("Got %d bytes of response [%s]", bytes, res_header);
 #else
-        DBG("Got %u bytes of response", bytes);
+        DBG("Got %d bytes of response", bytes);
 #endif  /* DUMP */
 
         /* Status */
