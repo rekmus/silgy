@@ -825,15 +825,12 @@ typedef struct {
 } areq_t;
 
 
-/* response -- the first type */
+/* response -- the first chunk */
 
 typedef struct {
-    int      ci;
     int      ai;
-    int      chunk;
     int      err_code;
     int      status;
-    unsigned clen;
     char     ctype;
     char     ctypestr[256];
     char     cdisp[256];
@@ -854,9 +851,25 @@ typedef struct {
 } async_res_hdr_t;
 
 typedef struct {
+    int             chunk;
+    int             ci;
+    int             len;
+    int             padding;
     async_res_hdr_t hdr;
-    char            data[ASYNC_RES_MSG_SIZE-sizeof(async_res_hdr_t)];
+    char            data[ASYNC_RES_MSG_SIZE-sizeof(async_res_hdr_t)-sizeof(int)*4];
 } async_res_t;
+
+
+/* response -- the second type for the chunks > 1 */
+
+typedef struct {
+    int  chunk;
+    int  ci;
+    int  len;
+    int  padding;
+    char data[ASYNC_RES_MSG_SIZE-sizeof(int)*4];
+} async_res_data_t;
+
 
 
 /* connection */
