@@ -231,7 +231,7 @@ int libusr_luses_ok(int ci)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -337,7 +337,7 @@ int libusr_luses_ok(int ci)
 
         if ( mysql_query(G_dbconn, sql) )
         {
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
             return ERR_INT_SERVER_ERROR;
         }
 
@@ -366,7 +366,7 @@ int libusr_luses_ok(int ci)
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -464,7 +464,7 @@ static void downgrade_uses(int usi, int ci, bool usr_logout)
         sprintf(sql, "DELETE FROM users_logins WHERE sesid = BINARY '%s'", uses[usi].sesid);
         DBG("sql: %s", sql);
         if ( mysql_query(G_dbconn, sql) )
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
 
         if ( ci != NOT_CONNECTED )   /* still connected */
         {
@@ -501,7 +501,7 @@ static int user_exists(const char *login)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -539,7 +539,7 @@ static int email_exists(const char *email)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -586,7 +586,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
         result = mysql_store_result(G_dbconn);
         if ( !result )
         {
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
             return ERR_INT_SERVER_ERROR;
         }
 
@@ -645,7 +645,7 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -684,7 +684,7 @@ static int send_activation_link(int ci, const char *login, const char *email)
 
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -758,7 +758,7 @@ static int silgy_usr_verify_activation_key(int ci, char *linkkey, long *uid)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -886,7 +886,7 @@ int silgy_usr_login(int ci)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -947,7 +947,7 @@ int silgy_usr_login(int ci)
             sprintf(sql, "UPDATE users SET status=%d WHERE id=%ld", USER_STATUS_LOCKED, uid);
             DBG("sql: %s", sql);
             if ( mysql_query(G_dbconn, sql) )
-                ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+                ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
 
             if ( email[0] )   /* notify account owner */
             {
@@ -1021,7 +1021,7 @@ int silgy_usr_login(int ci)
         DBG("sql: %s", sql);
         if ( mysql_query(G_dbconn, sql) )
         {
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
             return ERR_INT_SERVER_ERROR;
         }
         return ERR_INVALID_LOGIN;   /* invalid user and/or password */
@@ -1048,7 +1048,7 @@ int silgy_usr_login(int ci)
         DBG("sql: %s", sql);
         if ( mysql_query(G_dbconn, sql) )
         {
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
             return ERR_INT_SERVER_ERROR;
         }
     }
@@ -1077,7 +1077,7 @@ int silgy_usr_login(int ci)
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         if ( mysql_errno(G_dbconn) != 1062 )    /* duplicate entry */
             return ERR_INT_SERVER_ERROR;
     }
@@ -1246,7 +1246,7 @@ static int create_account(int ci, short auth_level, short status, bool current_s
 
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -1404,7 +1404,7 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
 
         if ( mysql_query(G_dbconn, sql) )
         {
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
             return ERR_INT_SERVER_ERROR;
         }
 
@@ -1469,7 +1469,7 @@ static char sql[MAX_LONG_URI_VAL_LEN*2];
 
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -1602,7 +1602,7 @@ int silgy_usr_save_account(int ci)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -1640,7 +1640,7 @@ int silgy_usr_save_account(int ci)
             DBG("sql: %s", sql);
             if ( mysql_query(G_dbconn, sql) )
             {
-                ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+                ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
                 return ERR_INT_SERVER_ERROR;
             }
 
@@ -1659,7 +1659,7 @@ int silgy_usr_save_account(int ci)
 
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -1681,7 +1681,7 @@ int silgy_usr_save_account(int ci)
         DBG("sql: %s", sql);
         if ( mysql_query(G_dbconn, sql) )
         {
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
             return ERR_INT_SERVER_ERROR;
         }
 
@@ -1752,7 +1752,7 @@ static char dest[128];
         result = mysql_store_result(G_dbconn);
         if ( !result )
         {
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
             strcpy(dest, "User");
         }
         else    /* OK */
@@ -1834,7 +1834,7 @@ int silgy_usr_send_passwd_reset_email(int ci)
     result = mysql_store_result(G_dbconn);
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -1884,7 +1884,7 @@ int silgy_usr_send_passwd_reset_email(int ci)
 
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -1964,7 +1964,7 @@ int silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -2016,7 +2016,7 @@ int silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid)
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -2053,7 +2053,7 @@ int silgy_usr_activate(int ci)
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -2063,7 +2063,7 @@ int silgy_usr_activate(int ci)
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
 //        return ERR_INT_SERVER_ERROR;  ignore it
     }
 
@@ -2117,7 +2117,7 @@ int silgy_usr_change_password(int ci)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -2168,7 +2168,7 @@ int silgy_usr_change_password(int ci)
     DBG("sql: UPDATE users SET passwd1=...");
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -2236,7 +2236,7 @@ int silgy_usr_reset_password(int ci)
     result = mysql_store_result(G_dbconn);
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -2271,7 +2271,7 @@ int silgy_usr_reset_password(int ci)
     DBG("sql: UPDATE users SET passwd1=...");
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -2283,7 +2283,7 @@ int silgy_usr_reset_password(int ci)
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -2299,7 +2299,7 @@ int silgy_usr_reset_password(int ci)
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
 //        return ERR_INT_SERVER_ERROR;  ignore it
     }
 
@@ -2381,13 +2381,13 @@ int silgy_usr_set_str(int ci, const char *us_key, const char *us_val)
 
         if ( mysql_query(G_dbconn, sql) )
         {
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
             return ERR_INT_SERVER_ERROR;
         }
     }
     else if ( ret != OK )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
     else
@@ -2398,7 +2398,7 @@ int silgy_usr_set_str(int ci, const char *us_key, const char *us_val)
 
         if ( mysql_query(G_dbconn, sql) )
         {
-            ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
             return ERR_INT_SERVER_ERROR;
         }
     }
@@ -2427,7 +2427,7 @@ int silgy_usr_get_str(int ci, const char *us_key, char *us_val)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 
@@ -2504,7 +2504,7 @@ static long get_max(int ci, const char *table)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
 

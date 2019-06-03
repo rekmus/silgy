@@ -279,7 +279,7 @@ bool lib_open_db()
 
     if ( NULL == (G_dbconn=mysql_init(NULL)) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return FALSE;
     }
 
@@ -293,7 +293,7 @@ bool lib_open_db()
 
     if ( NULL == mysql_real_connect(G_dbconn, G_dbHost[0]?G_dbHost:NULL, G_dbUser, G_dbPassword, G_dbName, G_dbPort, NULL, 0) )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return FALSE;
     }
 #endif
@@ -1396,7 +1396,7 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
 
     if ( !result )
     {
-        ERR("Error %u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         OUT("<p>Error %u: %s</p>", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         RES_STATUS(500);
         return;
