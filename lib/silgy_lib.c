@@ -1386,7 +1386,7 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
         }
     }
 
-    sprintf(sql_query, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login DESC", ai_sql);
+    sprintf(sql_query, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login, created DESC", ai_sql);
 
     DBG("sql_query: %s", sql_query);
 
