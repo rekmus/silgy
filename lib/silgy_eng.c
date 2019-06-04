@@ -810,7 +810,15 @@ int main(int argc, char **argv)
         if ( mq_receive(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, NULL) != -1 )    /* there's a response in the queue */
 #endif  /* DUMP */
         {
-            DBG("ASYNC response received, chunk=%d", res.chunk);
+#ifdef DUMP
+            DBG("res.chunk=%d", res.chunk);
+            DBG("(unsigned short)res.chunk=%hd", (unsigned short)res.chunk);
+#endif  /* DUMP */
+
+            unsigned chunk_num = 0;
+            chunk_num |= (unsigned short)res.chunk;
+
+            DBG("ASYNC response received, chunk=%u", chunk_num);
 
             char *res_data;
             int res_len;
@@ -5558,13 +5566,13 @@ int main(int argc, char *argv[])
 #endif
                 /* data */
 
-                int data_len, chunk_num=0, data_sent=0;
+                unsigned data_len, chunk_num=0, data_sent=0;
 #ifdef OUTCHECKREALLOC
                 data_len = p_content - out_data;
 #else
                 data_len = p_content - res.data;
 #endif
-                DBG("data_len = %d", data_len);
+                DBG("data_len = %u", data_len);
 
                 res.chunk = ASYNC_CHUNK_FIRST;
 
@@ -5600,9 +5608,9 @@ int main(int argc, char *argv[])
 
                 while ( data_sent < data_len )
                 {
-                    DBG("Sending %d-th chunk...", ++chunk_num);
+                    resd.chunk = ++chunk_num;
 
-                    resd.chunk = chunk_num;
+                    DBG("Sending %u-th chunk...", chunk_num);
 
                     if ( data_len-data_sent < G_async_res_data_size )   /* last chunk */
                     {

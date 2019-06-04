@@ -572,8 +572,8 @@ typedef char str64k[1024*64];
 #define ASYNC_SHM_SIZE                  MAX_PAYLOAD_SIZE
 
 /* these are flags */
-#define ASYNC_CHUNK_FIRST               0x4000
-#define ASYNC_CHUNK_LAST                0x8000
+#define ASYNC_CHUNK_FIRST               0x040000
+#define ASYNC_CHUNK_LAST                0x080000
 #define ASYNC_CHUNK_IS_FIRST(n)         ((n & ASYNC_CHUNK_FIRST) == ASYNC_CHUNK_FIRST)
 #define ASYNC_CHUNK_IS_LAST(n)          ((n & ASYNC_CHUNK_LAST) == ASYNC_CHUNK_LAST)
 
