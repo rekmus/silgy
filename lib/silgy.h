@@ -773,9 +773,9 @@ typedef struct {
 
 typedef struct {
     unsigned call_id;
+    int      ai;
     int      ci;
     char     service[SVC_NAME_LEN+1];
-    int      ai;
     /* pass some request details over */
     char     ip[INET_ADDRSTRLEN];
     char     method[MAX_METHOD_LEN+1];
@@ -793,6 +793,7 @@ typedef struct {
     char     boundary[MAX_VALUE_LEN+1];
     char     response;
     int      status;
+    char     ctype;
     usession_t uses;
 #ifndef ASYNC_EXCLUDE_AUSES
     ausession_t auses;
@@ -807,6 +808,10 @@ typedef struct {
     int      sessions_hwm;
     char     last_modified[32];
     int      blacklist_cnt;
+    char     cookie_out_a[SESID_LEN+1];
+    char     cookie_out_a_exp[32];
+    char     cookie_out_l[SESID_LEN+1];
+    char     cookie_out_l_exp[32];
 } async_req_hdr_t;
 
 typedef struct {
@@ -828,7 +833,6 @@ typedef struct {
 /* response -- the first chunk */
 
 typedef struct {
-    int      ai;
     int      err_code;
     int      status;
     char     ctype;
@@ -851,10 +855,10 @@ typedef struct {
 } async_res_hdr_t;
 
 typedef struct {
+    int             ai;
     int             chunk;
     int             ci;
     int             len;
-    int             padding;
     async_res_hdr_t hdr;
     char            data[ASYNC_RES_MSG_SIZE-sizeof(async_res_hdr_t)-sizeof(int)*4];
 } async_res_t;
@@ -863,11 +867,11 @@ typedef struct {
 /* response -- the second type for the chunks > 1 */
 
 typedef struct {
-    int  chunk;
-    int  ci;
-    int  len;
-    int  padding;
-    char data[ASYNC_RES_MSG_SIZE-sizeof(int)*4];
+    int      ai;
+    int      chunk;
+    int      ci;
+    int      len;
+    char     data[ASYNC_RES_MSG_SIZE-sizeof(int)*4];
 } async_res_data_t;
 
 
@@ -996,7 +1000,7 @@ typedef struct {
 #ifdef ASYNC
     char     service[SVC_NAME_LEN+1];
     int      async_err_code;
-    int      ai;                             /* async responses array index */
+//    int      ai;                             /* async responses array index */
 #endif
 } conn_t;
 #endif  /* SILGY_SVC */

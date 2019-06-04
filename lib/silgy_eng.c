@@ -820,8 +820,10 @@ int main(int argc, char **argv)
 
             DBG("ASYNC response received, chunk=%u", chunk_num);
 
+            int  res_ai;
+            int  res_ci;
+            int  res_len;
             char *res_data;
-            int res_len;
 
             if ( ASYNC_CHUNK_IS_FIRST(res.chunk) )  /* get all the response's details */
             {
@@ -863,15 +865,21 @@ int main(int argc, char **argv)
                     G_rest_average = G_rest_elapsed / G_rest_req;
                 }
 
-                res_data = res.data;
+                res_ai = res.ai;
+                res_ci = res.ci;
                 res_len = res.len;
+                res_data = res.data;
             }
             else    /* 'data' chunk */
             {
                 DBG("'data' chunk");
+
                 async_res_data_t *resd = (async_res_data_t*)&res;
-                res_data = resd->data;
+
+                res_ai = resd->ai;
+                res_ci = resd->ci;
                 res_len = resd->len;
+                res_data = resd->data;
             }
 
             /* out data */
@@ -880,18 +888,18 @@ int main(int argc, char **argv)
             {
                 DBG("res_len = %d", res_len);
 #ifdef OUTCHECKREALLOC
-                eng_out_check_realloc_bin(res.ci, res_data, res_len);
+                eng_out_check_realloc_bin(res_ci, res_data, res_len);
 #else
                 unsigned checked_len = res_len > OUT_BUFSIZE-OUT_HEADER_BUFSIZE ? OUT_BUFSIZE-OUT_HEADER_BUFSIZE : res_len;
-                memcpy(conn[res.ci].p_content, res_data, checked_len);
-                conn[res.ci].p_content += checked_len;
+                memcpy(conn[res_ci].p_content, res_data, checked_len);
+                conn[res_ci].p_content += checked_len;
 #endif
             }
 
             if ( ASYNC_CHUNK_IS_LAST(res.chunk) )
             {
-                areqs[res.hdr.ai].state = ASYNC_STATE_FREE;
-                gen_response_header(res.ci);
+                areqs[res_ai].state = ASYNC_STATE_FREE;
+                gen_response_header(res_ci);
             }
         }
 #ifdef DUMP
@@ -3624,7 +3632,7 @@ static void reset_conn(int ci, char new_state)
 #ifdef ASYNC
     conn[ci].service[0] = EOS;
     conn[ci].async_err_code = OK;
-    conn[ci].ai = -1;
+//    conn[ci].ai = -1;
 #endif
 
     if ( new_state == CONN_STATE_CONNECTED )
@@ -4763,6 +4771,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     req.hdr.in_ctype = conn[ci].in_ctype;
     strcpy(req.hdr.boundary, conn[ci].boundary);
     req.hdr.status = conn[ci].status;
+    req.hdr.ctype = conn[ci].ctype;
 
     /* pass user session */
 
@@ -4797,22 +4806,12 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     /* other */
 
+    strcpy(req.hdr.cookie_out_a, conn[ci].cookie_out_a);
+    strcpy(req.hdr.cookie_out_a_exp, conn[ci].cookie_out_a_exp);
+    strcpy(req.hdr.cookie_out_l, conn[ci].cookie_out_l);
+    strcpy(req.hdr.cookie_out_l_exp, conn[ci].cookie_out_l_exp);
+
     strcpy(req.hdr.last_modified, G_last_modified);
-
-
-#ifdef ASYNC_USE_APP_CONTINUE   /* depreciated */
-    if ( data )
-    {
-        if ( size )     /* binary */
-            memcpy(req.data, data, size);
-        else    /* text */
-            strcpy(req.data, data);
-    }
-    else
-    {
-        req.data[0] = EOS;
-    }
-#endif  /* ASYNC_USE_APP_CONTINUE */
 
 
     bool found=0;
@@ -4835,7 +4834,6 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
                 if ( timeout == 0 || timeout > ASYNC_MAX_TIMEOUT ) timeout = ASYNC_MAX_TIMEOUT;
                 areqs[j].timeout = timeout;
                 req.hdr.ai = j;
-                conn[ci].ai = j;
                 found = 1;
                 break;
             }
@@ -4861,7 +4859,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     if ( found || !response )
     {
-        DBG("Sending a message on behalf of ci=%d, call_id=%d, service [%s]", ci, req.hdr.call_id, req.hdr.service);
+        DBG("Sending a message on behalf of ci=%d, call_id=%u, service [%s]", ci, req.hdr.call_id, req.hdr.service);
         if ( mq_send(G_queue_req, (char*)&req, ASYNC_REQ_MSG_SIZE, 0) != 0 )
             ERR("mq_send failed, errno = %d (%s)", errno, strerror(errno));
     }
@@ -5391,7 +5389,7 @@ int main(int argc, char *argv[])
 
     int prev_day = G_ptm->tm_mday;
 
-    INF("Waiting...\n");
+    INF("\nWaiting...\n");
 
     while (1)
     {
@@ -5423,12 +5421,12 @@ int main(int argc, char *argv[])
             DBG_T("Message received");
 
             if ( G_logLevel > LOG_INF )
-                DBG_T("ci=%d, service [%s], call_id=%d", req.hdr.ci, req.hdr.service, req.hdr.call_id);
+                DBG_T("ci=%d, service [%s], call_id=%u", req.hdr.ci, req.hdr.service, req.hdr.call_id);
             else
-                INF_T("%s called (id=%d)", req.hdr.service, req.hdr.call_id);
+                INF_T("%s called (call_id=%u)", req.hdr.service, req.hdr.call_id);
 
+            res.ai = req.hdr.ai;
             res.ci = req.hdr.ci;
-            res.hdr.ai = req.hdr.ai;
             strcpy(G_service, req.hdr.service);
 
             /* request details */
@@ -5488,6 +5486,7 @@ int main(int argc, char *argv[])
             conn[0].in_ctype = req.hdr.in_ctype;
             strcpy(conn[0].boundary, req.hdr.boundary);
             conn[0].status = req.hdr.status;
+            conn[0].ctype = req.hdr.ctype;
 
             /* ----------------------------------------------------------- */
 
@@ -5528,6 +5527,11 @@ int main(int argc, char *argv[])
 
             /* other */
 
+            strcpy(conn[0].cookie_out_a, req.hdr.cookie_out_a);
+            strcpy(conn[0].cookie_out_a_exp, req.hdr.cookie_out_a_exp);
+            strcpy(conn[0].cookie_out_l, req.hdr.cookie_out_l);
+            strcpy(conn[0].cookie_out_l_exp, req.hdr.cookie_out_l_exp);
+
             strcpy(G_last_modified, req.hdr.last_modified);
 
             /* ----------------------------------------------------------- */
@@ -5566,7 +5570,8 @@ int main(int argc, char *argv[])
 #endif
                 /* data */
 
-                unsigned data_len, chunk_num=0, data_sent=0;
+                async_res_data_t resd;   /* different struct for more data */
+                unsigned data_len, chunk_num=0, data_sent;
 #ifdef OUTCHECKREALLOC
                 data_len = p_content - out_data;
 #else
@@ -5578,42 +5583,50 @@ int main(int argc, char *argv[])
 
                 G_async_res_data_size = ASYNC_RES_MSG_SIZE-sizeof(async_res_hdr_t)-sizeof(int)*4;
 
-                if ( data_len < G_async_res_data_size )
+                if ( data_len <= G_async_res_data_size )
                 {
                     res.len = data_len;
 #ifdef OUTCHECKREALLOC
                     memcpy(res.data, out_data, res.len);
 #endif
                     res.chunk |= ASYNC_CHUNK_LAST;
-                    data_sent = data_len;
                 }
 #ifdef OUTCHECKREALLOC
                 else    /* we'll need more than one chunk */
                 {
+                    /* 0-th chunk */
+
                     res.len = G_async_res_data_size;
                     memcpy(res.data, out_data, res.len);
-                    data_sent = data_len - res.len;
+
+                    /* prepare the new struct for chunks > 0 */
+
+                    resd.ai = req.hdr.ai;
+                    resd.ci = req.hdr.ci;
+
+                    G_async_res_data_size = ASYNC_RES_MSG_SIZE-sizeof(int)*4;
                 }
 
-                /* send first chunk */
+                /* send first chunk (res) */
+
+                DBG("Sending 0-th chunk, chunk data length = %d", res.len);
 
                 if ( mq_send(G_queue_res, (char*)&res, ASYNC_RES_MSG_SIZE, 0) != 0 )
                     ERR("mq_send failed, errno = %d (%s)", errno, strerror(errno));
 
-                /* next chunks if required */
+                data_sent = res.len;
 
-                async_res_data_t resd;   /* different struct for more data */
-                resd.ci = req.hdr.ci;
-                G_async_res_data_size = ASYNC_RES_MSG_SIZE-sizeof(int)*4;
+                DBG("data_sent = %u", data_sent);
+
+                /* next chunks if required (resd) */
 
                 while ( data_sent < data_len )
                 {
                     resd.chunk = ++chunk_num;
 
-                    DBG("Sending %u-th chunk...", chunk_num);
-
-                    if ( data_len-data_sent < G_async_res_data_size )   /* last chunk */
+                    if ( data_len-data_sent <= G_async_res_data_size )   /* last chunk */
                     {
+                        DBG("data_len-data_sent = %d, last chunk...", data_len-data_sent);
                         resd.len = data_len - data_sent;
                         resd.chunk |= ASYNC_CHUNK_LAST;
                     }
@@ -5623,10 +5636,15 @@ int main(int argc, char *argv[])
                     }
 
                     memcpy(resd.data, out_data+data_sent, resd.len);
-                    data_sent += resd.len;
+
+                    DBG("Sending %u-th chunk, chunk data length = %d", chunk_num, resd.len);
 
                     if ( mq_send(G_queue_res, (char*)&resd, ASYNC_RES_MSG_SIZE, 0) != 0 )
                         ERR("mq_send failed, errno = %d (%s)", errno, strerror(errno));
+
+                    data_sent += resd.len;
+
+                    DBG("data_sent = %u", data_sent);
                 }
 
 #endif  /* OUTCHECKREALLOC */
