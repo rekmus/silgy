@@ -26,7 +26,7 @@ create table users (
 
 create index users_login on users (login_u);
 create index users_email on users (email_u);
-create index users_last_login on users (last_login, created);
+create index users_last_login on users (last_login);
 
 
 -- user settings

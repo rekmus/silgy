@@ -1250,7 +1250,7 @@ void lib_set_res_content_type(int ci, const char *str)
 -------------------------------------------------------------------------- */
 void lib_set_res_location(int ci, const char *str, ...)
 {
-    va_list     plist;
+    va_list plist;
 
     va_start(plist, str);
     vsprintf(conn[ci].location, str, plist);
@@ -1263,7 +1263,7 @@ void lib_set_res_location(int ci, const char *str, ...)
 -------------------------------------------------------------------------- */
 void lib_set_res_content_disposition(int ci, const char *str, ...)
 {
-    va_list     plist;
+    va_list plist;
 
     va_start(plist, str);
     vsprintf(conn[ci].cdisp, str, plist);
@@ -1277,8 +1277,8 @@ void lib_set_res_content_disposition(int ci, const char *str, ...)
 -------------------------------------------------------------------------- */
 void lib_send_msg_description(int ci, int code)
 {
-    char    cat[1024]=MSG_CAT_ERROR;
-    char    msg[1024]="";
+    char cat[256]=MSG_CAT_ERROR;
+    char msg[1024]="";
 
     if ( code == OK )
     {
@@ -1386,7 +1386,7 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
         }
     }
 
-    sprintf(sql, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login, created DESC", ai_sql);
+    sprintf(sql, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login DESC, created DESC", ai_sql);
 
     DBG("sql: %s", sql);
 
