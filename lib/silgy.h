@@ -391,9 +391,12 @@ typedef char str64k[1024*64];
 #define MONOTONIC_CLOCK_NAME            CLOCK_MONOTONIC
 #endif
 
+#ifndef MAX_BLACKLIST
 #define MAX_BLACKLIST                   10000
+#endif
+#ifndef MAX_WHITELIST
 #define MAX_WHITELIST                   10000
-
+#endif
 
 #ifndef APP_WEBSITE
 #define APP_WEBSITE                     "Silgy Web Application"
