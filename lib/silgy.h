@@ -392,6 +392,7 @@ typedef char str64k[1024*64];
 #endif
 
 #define MAX_BLACKLIST                   10000
+#define MAX_WHITELIST                   10000
 
 
 #ifndef APP_WEBSITE
@@ -1077,6 +1078,7 @@ extern char     G_dbUser[128];
 extern char     G_dbPassword[128];
 extern int      G_usersRequireAccountActivation;
 extern char     G_blockedIPList[256];
+extern char     G_whiteList[256];
 extern int      G_ASYNCId;
 extern int      G_ASYNCDefTimeout;
 extern int      G_RESTTimeout;
@@ -1134,6 +1136,9 @@ extern int      ci;
 
 extern char     G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
 extern int      G_blacklist_cnt;            /* G_blacklist length */
+
+extern char     G_whitelist[MAX_WHITELIST+1][INET_ADDRSTRLEN];
+extern int      G_whitelist_cnt;            /* G_whitelist length */
 /* counters */
 extern counters_t G_cnts_today;             /* today's counters */
 extern counters_t G_cnts_yesterday;         /* yesterday's counters */

@@ -40,6 +40,7 @@ char        G_dbUser[128]="";
 char        G_dbPassword[128]="";
 int         G_usersRequireAccountActivation=0;
 char        G_blockedIPList[256]="";
+char        G_whiteList[256]="";
 int         G_ASYNCId=0;
 int         G_ASYNCDefTimeout=ASYNC_DEF_TIMEOUT;
 /* end of config params */
@@ -71,6 +72,9 @@ bool        G_index_present=FALSE;      /* index.html present in res? */
 
 char        G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
 int         G_blacklist_cnt=0;          /* G_blacklist length */
+
+char        G_whitelist[MAX_WHITELIST+1][INET_ADDRSTRLEN];
+int         G_whitelist_cnt=0;          /* G_whitelist length */
 /* counters */
 counters_t  G_cnts_today={0};           /* today's counters */
 counters_t  G_cnts_yesterday={0};       /* yesterday's counters */
@@ -186,6 +190,8 @@ static void accept_http();
 static void accept_https();
 static void read_blocked_ips(void);
 static bool ip_blocked(const char *addr);
+static void read_allowed_ips(void);
+static bool ip_allowed(const char *addr);
 static int  first_free_stat(void);
 static bool read_files(bool minify, bool first_scan, const char *path);
 static int  is_static_res(int ci, const char *name);
@@ -1028,10 +1034,10 @@ static bool housekeeping()
             set_expiry_dates();
 
             if ( G_blockedIPList[0] )
-            {
-                /* update blacklist */
                 read_blocked_ips();
-            }
+
+            if ( G_whiteList[0] )
+                read_allowed_ips();
 
             /* copy & reset counters */
             memcpy(&G_cnts_day_before, &G_cnts_yesterday, sizeof(counters_t));
@@ -1325,6 +1331,7 @@ static void read_conf()
     G_dbPassword[0] = EOS;
     G_usersRequireAccountActivation = 0;
     G_blockedIPList[0] = EOS;
+    G_whiteList[0] = EOS;
     G_ASYNCId = -1;
     G_ASYNCDefTimeout = ASYNC_DEF_TIMEOUT;
     G_RESTTimeout = CALL_REST_DEFAULT_TIMEOUT;
@@ -1361,6 +1368,7 @@ static void read_conf()
         silgy_read_param_str("dbPassword", G_dbPassword);
         silgy_read_param_int("usersRequireAccountActivation", &G_usersRequireAccountActivation);
         silgy_read_param_str("blockedIPList", G_blockedIPList);
+        silgy_read_param_str("whiteList", G_whiteList);
         silgy_read_param_int("ASYNCId", &G_ASYNCId);
         silgy_read_param_int("ASYNCDefTimeout", &G_ASYNCDefTimeout);
         silgy_read_param_int("RESTTimeout", &G_RESTTimeout);
@@ -1896,6 +1904,12 @@ static bool init(int argc, char **argv)
 
     read_blocked_ips();
 
+    /* read allowed IPs list --------------------------------------------- */
+
+    read_allowed_ips();
+
+    /* ASYNC ------------------------------------------------------------- */
+
 #ifdef ASYNC
     ALWAYS("\nOpening message queues...\n");
 
@@ -2101,6 +2115,16 @@ static void accept_http()
         return;
     }
 
+    if ( G_whiteList[0] && !ip_allowed(remote_addr) )
+    {
+#ifdef _WIN32   /* Windows */
+        closesocket(connection);
+#else
+        close(connection);
+#endif  /* _WIN32 */
+        return;
+    }
+
     lib_setnonblocking(connection);
 
     /* find a free slot in conn */
@@ -2194,6 +2218,16 @@ static void accept_https()
     if ( G_blockedIPList[0] && ip_blocked(remote_addr) )
     {
         ++G_cnts_today.blocked;
+#ifdef _WIN32   /* Windows */
+        closesocket(connection);
+#else
+        close(connection);
+#endif  /* _WIN32 */
+        return;
+    }
+
+    if ( G_whiteList[0] && !ip_allowed(remote_addr) )
+    {
 #ifdef _WIN32   /* Windows */
         closesocket(connection);
 #else
@@ -2421,6 +2455,124 @@ static bool ip_blocked(const char *addr)
     for ( i=0; i<G_blacklist_cnt; ++i )
     {
         if ( 0==strcmp(G_blacklist[i], addr) )
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Read whitelist from the file
+-------------------------------------------------------------------------- */
+static void read_allowed_ips()
+{
+    char    fname[1024];
+    FILE    *h_file=NULL;
+    int     c=0;
+    int     i=0;
+    char    now_value=1;
+    char    now_comment=0;
+    char    value[64]="";
+
+    if ( G_whiteList[0] == EOS ) return;
+
+    INF("Updating whitelist");
+
+    /* open the file */
+
+    if ( G_whiteList[0] == '/' )    /* full path */
+        strcpy(fname, G_whiteList);
+    else if ( G_appdir[0] )
+        sprintf(fname, "%s/bin/%s", G_appdir, G_whiteList);
+    else
+        strcpy(fname, G_whiteList);
+
+    if ( NULL == (h_file=fopen(fname, "r")) )
+    {
+        WAR("Couldn't open %s\n", fname);
+        return;
+    }
+
+    G_whitelist_cnt = 0;
+
+    /* parse the file */
+
+    while ( EOF != (c=fgetc(h_file)) )
+    {
+        if ( c == ' ' || c == '\t' || c == '\r' ) continue;  /* omit whitespaces */
+
+        if ( c == '\n' )    /* end of value or end of comment or empty line */
+        {
+            if ( now_value && i )   /* end of value */
+            {
+                value[i] = EOS;
+                if ( !ip_blocked(value) )   /* avoid duplicates */
+                {
+                    strcpy(G_whitelist[G_whitelist_cnt++], value);
+                    if ( G_whitelist_cnt == MAX_WHITELIST )
+                    {
+                        WAR("Whitelist full! (%d IPs)", G_whitelist_cnt);
+                        now_value = 0;
+                        break;
+                    }
+                }
+                i = 0;
+            }
+            now_value = 1;
+            now_comment = 0;
+        }
+        else if ( now_comment )
+        {
+            continue;
+        }
+        else if ( c == '#' )    /* possible end of value */
+        {
+            if ( now_value && i )   /* end of value */
+            {
+                value[i] = EOS;
+                strcpy(G_whitelist[G_whitelist_cnt++], value);
+                if ( G_whitelist_cnt == MAX_WHITELIST )
+                {
+                    WAR("Whitelist full! (%d IPs)", G_whitelist_cnt);
+                    now_value = 0;
+                    break;
+                }
+                i = 0;
+            }
+            now_value = 0;
+            now_comment = 1;
+        }
+        else if ( now_value )   /* value */
+        {
+            if ( i < INET_ADDRSTRLEN-1 )
+                value[i++] = c;
+        }
+    }
+
+    if ( now_value && i )   /* end of value */
+    {
+        value[i] = EOS;
+        strcpy(G_whitelist[G_whitelist_cnt++], value);
+    }
+
+    if ( NULL != h_file )
+        fclose(h_file);
+
+    ALWAYS("%d IPs on whitelist", G_whitelist_cnt);
+}
+
+
+/* --------------------------------------------------------------------------
+   Return TRUE if addr is on whitelist
+-------------------------------------------------------------------------- */
+static bool ip_allowed(const char *addr)
+{
+    int i;
+
+    for ( i=0; i<G_whitelist_cnt; ++i )
+    {
+        if ( 0==strcmp(G_whitelist[i], addr) )
             return TRUE;
     }
 
