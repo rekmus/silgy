@@ -844,10 +844,37 @@ int main(int argc, char **argv)
 
                 /* update user session */
 
-                memcpy(&uses[conn[res.ci].usi], &res.hdr.uses, sizeof(usession_t));
+                if ( conn[res.ci].usi )
+                {
+                    memcpy(&uses[conn[res.ci].usi], &res.hdr.uses, sizeof(usession_t));
 #ifndef ASYNC_EXCLUDE_AUSES
-                memcpy(&auses[conn[res.ci].usi], &res.hdr.auses, sizeof(ausession_t));
+                    memcpy(&auses[conn[res.ci].usi], &res.hdr.auses, sizeof(ausession_t));
 #endif
+                }
+                else if ( res.hdr.uses.sesid[0] )   /* session has been started in silgy_svc */
+                {
+                    DBG("New session has been started in silgy_svc, adding to uses");
+
+                    if ( eng_uses_start(res.ci, res.hdr.uses.sesid) != OK )
+                    {
+                        ERR("Couldn't start a session after silgy_svc had started it. Your memory model may be too low.");
+                    }
+                    else
+                    {
+                        memcpy(&uses[conn[res.ci].usi], &res.hdr.uses, sizeof(usession_t));
+#ifndef ASYNC_EXCLUDE_AUSES
+                        memcpy(&auses[conn[res.ci].usi], &res.hdr.auses, sizeof(ausession_t));
+#endif
+                    }
+                }
+
+                /* password change or user deleted */
+
+                if ( res.hdr.invalidate_uid )
+                {
+                    eng_uses_downgrade_by_uid(res.hdr.invalidate_uid, res.hdr.invalidate_ci);
+                }
+
                 /* update connection details */
 
                 conn[res.ci].ctype = res.hdr.ctype;
@@ -4845,6 +4872,35 @@ int eng_uses_start(int ci, const char *sesid)
 
 
 /* --------------------------------------------------------------------------
+   Invalidate active user sessions belonging to user_id
+   Called after password change
+-------------------------------------------------------------------------- */
+void eng_uses_downgrade_by_uid(long uid, int ci)
+{
+#ifdef USERS
+    int i;
+
+    if ( ci > -1 )  /* keep the current session */
+    {
+        for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
+        {
+            if ( uses[i].sesid[0] && uses[i].logged && uses[i].uid==uid && 0!=strcmp(uses[i].sesid, US.sesid) )
+                libusr_luses_downgrade(i, NOT_CONNECTED, FALSE);
+        }
+    }
+    else    /* all sessions */
+    {
+        for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
+        {
+            if ( uses[i].sesid[0] && uses[i].logged && uses[i].uid==uid )
+                libusr_luses_downgrade(i, NOT_CONNECTED, FALSE);
+        }
+    }
+#endif  /* USERS */
+}
+
+
+/* --------------------------------------------------------------------------
    Send asynchronous request
 -------------------------------------------------------------------------- */
 void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size)
@@ -4874,7 +4930,19 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     strcpy(req.hdr.resource, conn[ci].resource);
     strcpy(req.hdr.uagent, conn[ci].uagent);
     req.hdr.mobile = conn[ci].mobile;
+    strcpy(req.hdr.referer, conn[ci].referer);
     req.hdr.clen = conn[ci].clen;
+    strcpy(req.hdr.host, conn[ci].host);
+    strcpy(req.hdr.website, conn[ci].website);
+    strcpy(req.hdr.lang, conn[ci].lang);
+    req.hdr.in_ctype = conn[ci].in_ctype;
+    strcpy(req.hdr.boundary, conn[ci].boundary);
+    req.hdr.status = conn[ci].status;
+    req.hdr.ctype = conn[ci].ctype;
+    strcpy(req.hdr.cookie_out_a, conn[ci].cookie_out_a);
+    strcpy(req.hdr.cookie_out_a_exp, conn[ci].cookie_out_a_exp);
+    strcpy(req.hdr.cookie_out_l, conn[ci].cookie_out_l);
+    strcpy(req.hdr.cookie_out_l_exp, conn[ci].cookie_out_l_exp);
 
     /* For POST, the payload can be in the data space of the message,
        or -- if it's bigger -- in the shared memory */
@@ -4917,14 +4985,6 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         }
     }
 
-    strcpy(req.hdr.host, conn[ci].host);
-    strcpy(req.hdr.website, conn[ci].website);
-    strcpy(req.hdr.lang, conn[ci].lang);
-    req.hdr.in_ctype = conn[ci].in_ctype;
-    strcpy(req.hdr.boundary, conn[ci].boundary);
-    req.hdr.status = conn[ci].status;
-    req.hdr.ctype = conn[ci].ctype;
-
     /* pass user session */
 
     if ( conn[ci].usi )
@@ -4934,7 +4994,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
         memcpy(&req.hdr.auses, &AUS, sizeof(ausession_t));
 #endif
     }
-    else
+    else    /* no session */
     {
         memset(&req.hdr.uses, 0, sizeof(usession_t));
 #ifndef ASYNC_EXCLUDE_AUSES
@@ -4942,7 +5002,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 #endif
     }
 
-    /* counters */
+    /* globals */
 
     memcpy(&req.hdr.cnts_today, &G_cnts_today, sizeof(counters_t));
     memcpy(&req.hdr.cnts_yesterday, &G_cnts_yesterday, sizeof(counters_t));
@@ -4955,13 +5015,6 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     req.hdr.sessions_hwm = G_sessions_hwm;
 
     req.hdr.blacklist_cnt = G_blacklist_cnt;
-
-    /* other */
-
-    strcpy(req.hdr.cookie_out_a, conn[ci].cookie_out_a);
-    strcpy(req.hdr.cookie_out_a_exp, conn[ci].cookie_out_a_exp);
-    strcpy(req.hdr.cookie_out_l, conn[ci].cookie_out_l);
-    strcpy(req.hdr.cookie_out_l_exp, conn[ci].cookie_out_l_exp);
 
     strcpy(req.hdr.last_modified, G_last_modified);
 
@@ -5577,6 +5630,8 @@ int main(int argc, char *argv[])
             else
                 INF_T("%s called (call_id=%u)", req.hdr.service, req.hdr.call_id);
 
+            memset(&res, 0, ASYNC_RES_MSG_SIZE);
+
             res.ai = req.hdr.ai;
             res.ci = req.hdr.ci;
             strcpy(G_service, req.hdr.service);
@@ -5590,7 +5645,19 @@ int main(int argc, char *argv[])
             strcpy(conn[0].resource, req.hdr.resource);
             strcpy(conn[0].uagent, req.hdr.uagent);
             conn[0].mobile = req.hdr.mobile;
+            strcpy(conn[0].referer, req.hdr.referer);
             conn[0].clen = req.hdr.clen;
+            strcpy(conn[0].host, req.hdr.host);
+            strcpy(conn[0].website, req.hdr.website);
+            strcpy(conn[0].lang, req.hdr.lang);
+            conn[0].in_ctype = req.hdr.in_ctype;
+            strcpy(conn[0].boundary, req.hdr.boundary);
+            conn[0].status = req.hdr.status;
+            conn[0].ctype = req.hdr.ctype;
+            strcpy(conn[0].cookie_out_a, req.hdr.cookie_out_a);
+            strcpy(conn[0].cookie_out_a_exp, req.hdr.cookie_out_a_exp);
+            strcpy(conn[0].cookie_out_l, req.hdr.cookie_out_l);
+            strcpy(conn[0].cookie_out_l_exp, req.hdr.cookie_out_l_exp);
 
             /* For POST, the payload can be in the data space of the message,
                or -- if it's bigger -- in the shared memory */
@@ -5632,26 +5699,6 @@ int main(int argc, char *argv[])
                 }
             }
 
-            strcpy(conn[0].host, req.hdr.host);
-            strcpy(conn[0].website, req.hdr.website);
-            strcpy(conn[0].lang, req.hdr.lang);
-            conn[0].in_ctype = req.hdr.in_ctype;
-            strcpy(conn[0].boundary, req.hdr.boundary);
-            conn[0].status = req.hdr.status;
-            conn[0].ctype = req.hdr.ctype;
-
-            /* ----------------------------------------------------------- */
-
-            DBG("Processing...");
-
-            /* response data */
-
-#ifdef OUTCHECKREALLOC
-            p_content = out_data;
-#else
-            p_content = res.data;
-#endif
-
             /* user session */
 
             memcpy(&uses[1], &req.hdr.uses, sizeof(usession_t));
@@ -5663,7 +5710,7 @@ int main(int argc, char *argv[])
             else
                 conn[0].usi = 0;    /* no session */
 
-            /* counters */
+            /* globals */
 
             memcpy(&G_cnts_today, &req.hdr.cnts_today, sizeof(counters_t));
             memcpy(&G_cnts_yesterday, &req.hdr.cnts_yesterday, sizeof(counters_t));
@@ -5677,15 +5724,22 @@ int main(int argc, char *argv[])
 
             G_blacklist_cnt = req.hdr.blacklist_cnt;
 
-            /* other */
-
-            strcpy(conn[0].cookie_out_a, req.hdr.cookie_out_a);
-            strcpy(conn[0].cookie_out_a_exp, req.hdr.cookie_out_a_exp);
-            strcpy(conn[0].cookie_out_l, req.hdr.cookie_out_l);
-            strcpy(conn[0].cookie_out_l_exp, req.hdr.cookie_out_l_exp);
-
             strcpy(G_last_modified, req.hdr.last_modified);
 
+            if ( conn[0].usi )
+                lib_set_datetime_formats(US.lang);
+
+            /* ----------------------------------------------------------- */
+
+            DBG("Processing...");
+
+            /* response data */
+
+#ifdef OUTCHECKREALLOC
+            p_content = out_data;
+#else
+            p_content = res.data;
+#endif
             /* ----------------------------------------------------------- */
 
             silgy_svc_main();
@@ -5817,6 +5871,67 @@ int main(int argc, char *argv[])
     clean_up();
 
     return EXIT_SUCCESS;
+}
+
+
+/* --------------------------------------------------------------------------
+   Start new anonymous user session
+
+   It's passed back to the gateway (silgy_app)
+   which really then starts a new session.
+
+   It is optimistically assumed here that in the meantime MAX_SESSIONS
+   won't be reached in any of the silgy_* processes.
+-------------------------------------------------------------------------- */
+int eng_uses_start(int ci, const char *sesid)
+{
+    char new_sesid[SESID_LEN+1];
+
+    DBG("eng_uses_start");
+
+    if ( G_sessions == MAX_SESSIONS )
+    {
+        WAR("User sessions exhausted");
+        return ERR_SERVER_TOOBUSY;
+    }
+
+    ++G_sessions;
+
+    conn[ci].usi = 1;
+
+    silgy_random(new_sesid, SESID_LEN);
+
+    INF("Starting new session, sesid [%s]", new_sesid);
+
+    strcpy(US.sesid, new_sesid);
+    strcpy(US.ip, conn[ci].ip);
+    strcpy(US.uagent, conn[ci].uagent);
+    strcpy(US.referer, conn[ci].referer);
+    strcpy(US.lang, conn[ci].lang);
+
+    lib_set_datetime_formats(US.lang);
+
+    /* set 'as' cookie */
+
+    strcpy(conn[ci].cookie_out_a, new_sesid);
+
+    DBG("%d user session(s)", G_sessions);
+
+    if ( G_sessions > G_sessions_hwm )
+        G_sessions_hwm = G_sessions;
+
+    return OK;
+}
+
+
+/* --------------------------------------------------------------------------
+   Invalidate active user sessions belonging to user_id
+   Called after password change
+-------------------------------------------------------------------------- */
+void eng_uses_downgrade_by_uid(long uid, int ci)
+{
+    res.hdr.invalidate_uid = uid;
+    res.hdr.invalidate_ci = ci;
 }
 
 

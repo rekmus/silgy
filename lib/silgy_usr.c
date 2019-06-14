@@ -19,7 +19,6 @@ long     G_new_user_id=0;
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
 static int  upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, short auth_level);
-static void downgrade_uses(int usi, int ci, bool usr_logout);
 static int  user_exists(const char *login);
 static int  email_exists(const char *email);
 static int  do_login(int ci, long uid, char *p_login, char *p_email, char *p_name, char *p_phone, char *p_about, short p_auth_level, long visits, short status);
@@ -150,7 +149,7 @@ static int upgrade_uses(int ci, long uid, const char *login, const char *email, 
 #ifndef SILGY_SVC
     if ( !silgy_app_user_login(ci) )
     {
-        downgrade_uses(conn[ci].usi, ci, FALSE);
+        libusr_luses_downgrade(conn[ci].usi, ci, FALSE);
         return ERR_INT_SERVER_ERROR;
     }
 #endif
@@ -264,12 +263,8 @@ int libusr_luses_ok(int ci)
                     || (failed_cnt[i].cnt > 100 && failed_cnt[i].when > G_now-3600) /* 100 failed attempts within an hour or */
                     || failed_cnt[i].cnt > 1000 )                                   /* 1000 failed attempts */
                 {
-#ifndef SILGY_SVC
                     WAR("Looks like brute-force cookie attack, blocking IP");
                     eng_block_ip(conn[ci].ip, TRUE);
-#else
-                    WAR("Looks like brute-force cookie attack");
-#endif  /* SILGY_SVC */
                 }
                 else
                 {
@@ -372,7 +367,6 @@ int libusr_luses_ok(int ci)
 
     return do_login(ci, uid, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 }
-#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
@@ -388,46 +382,20 @@ void libusr_luses_close_timeouted()
     for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
     {
         if ( uses[i].sesid[0] && uses[i].logged && uses[i].last_activity < last_allowed )
-            downgrade_uses(i, NOT_CONNECTED, FALSE);
+            libusr_luses_downgrade(i, NOT_CONNECTED, FALSE);
     }
 }
-
-
-/* --------------------------------------------------------------------------
-   Invalidate active user sessions belonging to user_id
-   Called after password change
--------------------------------------------------------------------------- */
-static void downgrade_uses_by_uid(long uid, int ci)
-{
-    int i;
-
-    if ( ci > -1 )  /* keep the current session */
-    {
-        for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
-        {
-            if ( uses[i].sesid[0] && uses[i].logged && uses[i].uid==uid && 0!=strcmp(uses[i].sesid, US.sesid) )
-                downgrade_uses(i, NOT_CONNECTED, FALSE);
-        }
-    }
-    else    /* all sessions */
-    {
-        for ( i=1; G_sessions>0 && i<=MAX_SESSIONS; ++i )
-        {
-            if ( uses[i].sesid[0] && uses[i].logged && uses[i].uid==uid )
-                downgrade_uses(i, NOT_CONNECTED, FALSE);
-        }
-    }
-}
+#endif  /* SILGY_SVC */
 
 
 /* --------------------------------------------------------------------------
    Downgrade logged in user session to anonymous
 -------------------------------------------------------------------------- */
-static void downgrade_uses(int usi, int ci, bool usr_logout)
+void libusr_luses_downgrade(int usi, int ci, bool usr_logout)
 {
     char sql[SQLBUF];
 
-    DBG("downgrade_uses");
+    DBG("libusr_luses_downgrade");
 
     DBG("Downgrading logged in session to anonymous, usi=%d, sesid [%s]", usi, uses[usi].sesid);
 
@@ -445,19 +413,17 @@ static void downgrade_uses(int usi, int ci, bool usr_logout)
     uses[usi].about_tmp[0] = EOS;
     uses[usi].auth_level = AUTH_LEVEL_ANONYMOUS;
 
+#ifndef SILGY_SVC
     if ( ci != NOT_CONNECTED )   /* still connected */
     {
-#ifndef SILGY_SVC
         silgy_app_user_logout(ci);
-#endif
     }
     else    /* trick to maintain consistency across silgy_app_xxx functions */
     {       /* that use ci for everything -- even to get user session data */
         conn[CLOSING_SESSION_CI].usi = usi;
-#ifndef SILGY_SVC
         silgy_app_user_logout(CLOSING_SESSION_CI);
-#endif
     }
+#endif  /* SILGY_SVC */
 
     if ( usr_logout )   /* explicit user logout */
     {
@@ -624,14 +590,6 @@ static int do_login(int ci, long uid, char *p_login, char *p_email, char *p_name
         strcpy(about, p_about);
         auth_level = p_auth_level;
     }
-
-    /* admin? */
-#ifdef USERSBYEMAIL
-#ifdef APP_ADMIN_EMAIL
-    if ( 0==strcmp(email, APP_ADMIN_EMAIL) )
-        strcpy(login, "admin");
-#endif
-#endif  /* USERSBYEMAIL */
 
     /* upgrade anonymous session to logged in */
 
@@ -848,12 +806,12 @@ int silgy_usr_login(int ci)
 
     DBG("silgy_usr_login");
 
-#ifdef SILGY_SVC
+//#ifdef SILGY_SVC
 
-    ERR("silgy_usr_login() is not currently supported in silgy_svc. Move this call do silgy_app.");
-    return ERR_INT_SERVER_ERROR;
+//    ERR("silgy_usr_login() is not currently supported in silgy_svc. Move this call do silgy_app.");
+//    return ERR_INT_SERVER_ERROR;
 
-#else
+//#else
 
 #ifdef USERSBYEMAIL
 
@@ -1096,7 +1054,6 @@ int silgy_usr_login(int ci)
         time_t sometimeahead = G_now + 3600*24*USER_KEEP_LOGGED_DAYS;
         G_ptm = gmtime(&sometimeahead);
         strftime(conn[ci].cookie_out_l_exp, 32, "%a, %d %b %Y %T GMT", G_ptm);
-//      DBG("conn[ci].cookie_out_l_exp: [%s]", conn[ci].cookie_out_l_exp);
         G_ptm = gmtime(&G_now);  /* make sure G_ptm is always up to date */
     }
 
@@ -1104,7 +1061,7 @@ int silgy_usr_login(int ci)
 
     return do_login(ci, uid, login, email, name, phone, about, auth_level, visits, status);
 
-#endif  /* SILGY_SVC */
+//#endif  /* SILGY_SVC */
 }
 
 
@@ -1644,7 +1601,7 @@ int silgy_usr_save_account(int ci)
                 return ERR_INT_SERVER_ERROR;
             }
 
-            downgrade_uses(conn[ci].usi, ci, TRUE);   /* log user out */
+            libusr_luses_downgrade(conn[ci].usi, ci, TRUE);   /* log user out */
 
             return MSG_ACCOUNT_DELETED;
         }
@@ -1688,7 +1645,7 @@ int silgy_usr_save_account(int ci)
         /* downgrade all currently active sessions belonging to this user */
         /* except of the current one */
 
-        downgrade_uses_by_uid(UID, ci);
+        eng_uses_downgrade_by_uid(UID, ci);
     }
 
     return OK;
@@ -2289,7 +2246,7 @@ int silgy_usr_reset_password(int ci)
 
     /* downgrade all currently active sessions belonging to this user */
 
-    downgrade_uses_by_uid(uid, -1);
+    eng_uses_downgrade_by_uid(uid, -1);
 
     /* remove all password reset keys */
 
@@ -2313,7 +2270,7 @@ int silgy_usr_reset_password(int ci)
 void silgy_usr_logout(int ci)
 {
     DBG("silgy_usr_logout");
-    downgrade_uses(conn[ci].usi, ci, TRUE);
+    libusr_luses_downgrade(conn[ci].usi, ci, TRUE);
 }
 
 

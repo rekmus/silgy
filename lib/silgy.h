@@ -789,6 +789,7 @@ typedef struct {
     char     resource[MAX_RESOURCE_LEN+1];
     char     uagent[MAX_VALUE_LEN+1];
     bool     mobile;
+    char     referer[MAX_VALUE_LEN+1];
     unsigned clen;
     char     host[MAX_VALUE_LEN+1];
     char     website[256];
@@ -856,6 +857,8 @@ typedef struct {
 #ifndef ASYNC_EXCLUDE_AUSES
     ausession_t auses;
 #endif
+    long     invalidate_uid;
+    int      invalidate_ci;
 } async_res_hdr_t;
 
 typedef struct {
@@ -891,6 +894,7 @@ typedef struct {                            /* request details for silgy_svc */
     char     resource[MAX_RESOURCE_LEN+1];
     char     uagent[MAX_VALUE_LEN+1];
     bool     mobile;
+    char     referer[MAX_VALUE_LEN+1];
     unsigned clen;
     char     *in_data;
     unsigned in_data_allocated;
@@ -1177,8 +1181,7 @@ extern "C" {
 
     void silgy_set_auth_level(const char *resource, short level);
     int  eng_uses_start(int ci, const char *sesid);
-    void eng_uses_close(int usi);
-    void eng_uses_reset(int usi);
+    void eng_uses_downgrade_by_uid(long uid, int ci);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size);
     void silgy_add_to_static_res(const char *name, const char *src);
     void eng_block_ip(const char *value, bool autoblocked);
