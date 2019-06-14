@@ -873,113 +873,89 @@ bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf)
 
 
 /* --------------------------------------------------------------------------
-   Get query string value. Return TRUE if found.
+   Get the query string value. Return TRUE if found.
 -------------------------------------------------------------------------- */
 bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 {
-    char *querystring, *end;
+    char *qs, *end;
 
 #ifdef DUMP
     DBG("get_qs_param_raw: fieldname [%s]", fieldname);
 #endif
 
-    int fnamelen = strlen(fieldname);
-
     if ( conn[ci].post )
     {
-        querystring = conn[ci].in_data;
-        end = querystring + conn[ci].clen;
+        if ( conn[ci].in_ctype != CONTENT_TYPE_URLENCODED )
+        {
+            WAR("Invalid Content-Type");
+            if ( retbuf ) retbuf[0] = EOS;
+            return FALSE;
+        }
+        qs = conn[ci].in_data;
+        end = qs + conn[ci].clen;
     }
     else
     {
-        querystring = strchr(conn[ci].uri, '?');
+        qs = strchr(conn[ci].uri, '?');
     }
 
-    if ( querystring == NULL )
+    if ( qs == NULL )
     {
         if ( retbuf ) retbuf[0] = EOS;
-        return FALSE;    /* no question mark => no values */
+        return FALSE;
     }
 
-    if ( !conn[ci].post )
+    if ( !conn[ci].post )   /* GET */
     {
-        ++querystring;      /* skip the question mark */
-        end = querystring + (strlen(conn[ci].uri) - (querystring-conn[ci].uri));
+        ++qs;      /* skip the question mark */
+        end = qs + (strlen(conn[ci].uri) - (qs-conn[ci].uri));
+#ifdef DUMP
+        DBG("get_qs_param_raw: qs len = %d", strlen(conn[ci].uri) - (qs-conn[ci].uri));
+#endif
     }
 
-#ifdef DUMP
-    DBG("get_qs_param_raw: before loop");
-#endif
+    int fnamelen = strlen(fieldname);
 
-    char *p, *equals, *ampersand;
-    int  len1;      /* fieldname len */
-    int  len2;      /* value len */
-    int  vallen;    /* returned value length */
+    char *val = qs;
 
-    for ( p=querystring; p<end; )
+    while ( val < end )
     {
-        equals = strchr(p, '=');    /* end of field name */
-        ampersand = strchr(p, '&');    /* end of value */
+        val = strstr(val, fieldname);
 
-        if ( ampersand )   /* more than one field */
+        if ( val == NULL )
         {
-            len2 = ampersand - p;
-        }
-        else    /* no ampersand ==> only one field */
-        {
-            if ( !equals )
-            {
-#ifdef DUMP
-                DBG("get_qs_param_raw: no ampersand, no equals, returning FALSE");
-#endif
-                return FALSE;
-            }
-            else
-                len2 = strlen(p);
+            if ( retbuf ) retbuf[0] = EOS;
+            return FALSE;
         }
 
-        if ( !equals || (ampersand && equals>ampersand) )
+        if ( val != qs && *(val-1) != '&' )
         {
-            /* no '=' present in this field, move to next */
-            ampersand += len2;
+            ++val;
             continue;
         }
 
-        len1 = equals - p;   /* field name length */
+        val += fnamelen;
 
-        if ( len1 == fnamelen && strncmp(fieldname, p, len1) == 0 )   /* found it */
-        {
-            if ( retbuf )
-            {
-                vallen = len2 - len1 - 1;
-                if ( vallen > maxlen )
-                    vallen = maxlen;
-
-                strncpy(retbuf, equals+1, vallen);
-                retbuf[vallen] = EOS;
-#ifdef DUMP
-                DBG("get_qs_param_raw: retbuf [%s]", retbuf);
-#endif
-            }
-
-            return TRUE;
-        }
-
-        /* try next value */
-
-        p += len2;      /* skip current value */
-        if ( *p == '&' ) ++p;   /* skip '&' */
+        if ( *val == '=' )   /* found */
+            break;
     }
 
-    /* not found */
+    ++val;  /* skip '=' */
 
-    if ( retbuf ) retbuf[0] = EOS;
+    /* copy the value */
+
+    int i=0;
+
+    while ( *val && *val != '&' && i<maxlen )
+        retbuf[i++] = *val++;
+
+    retbuf[i] = EOS;
 
 #ifdef DUMP
-    DBG("get_qs_param_raw: returning FALSE");
+    DBG("get_qs_param_raw: retbuf [%s]", retbuf);
 #endif
 
-    return FALSE;
+    return TRUE;
 }
 
 
@@ -1386,7 +1362,7 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
         }
     }
 
-    sprintf(sql, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login DESC", ai_sql);
+    sprintf(sql, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login DESC, created DESC", ai_sql);
 
     DBG("sql: %s", sql);
 
