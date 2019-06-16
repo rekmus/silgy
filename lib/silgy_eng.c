@@ -859,7 +859,7 @@ int main(int argc, char **argv)
                     {
                         ERR("Couldn't start a session after silgy_svc had started it. Your memory model may be too low.");
                     }
-                    else
+                    else    /* OK, copy the session details from the response */
                     {
                         memcpy(&uses[conn[res.ci].usi], &res.hdr.uses, sizeof(usession_t));
 #ifndef ASYNC_EXCLUDE_AUSES
@@ -1975,11 +1975,15 @@ static bool init(int argc, char **argv)
 
     attr.mq_msgsize = ASYNC_REQ_MSG_SIZE;
 
-    G_queue_req = mq_open(G_req_queue_name, O_WRONLY | O_CREAT | O_NONBLOCK, 0664, &attr);
+    G_queue_req = mq_open(G_req_queue_name, O_WRONLY | O_CREAT | O_NONBLOCK, 0600, &attr);
+
     if (G_queue_req < 0)
+    {
         ERR("mq_open for req failed, errno = %d (%s)", errno, strerror(errno));
-    else
-        INF("mq_open %s OK", G_req_queue_name);
+        return FALSE;
+    }
+
+    INF("mq_open of %s OK", G_req_queue_name);
 
     /* ------------------------------------------------------------------- */
 
@@ -1988,11 +1992,15 @@ static bool init(int argc, char **argv)
 
     attr.mq_msgsize = ASYNC_RES_MSG_SIZE;   /* larger buffer */
 
-    G_queue_res = mq_open(G_res_queue_name, O_RDONLY | O_CREAT | O_NONBLOCK, 0664, &attr);
+    G_queue_res = mq_open(G_res_queue_name, O_RDONLY | O_CREAT | O_NONBLOCK, 0600, &attr);
+
     if (G_queue_res < 0)
+    {
         ERR("mq_open for res failed, errno = %d (%s)", errno, strerror(errno));
-    else
-        INF("mq_open %s OK", G_res_queue_name);
+        return FALSE;
+    }
+
+    INF("mq_open of %s OK", G_res_queue_name);
 
     /* ------------------------------------------------------------------- */
 
@@ -5568,7 +5576,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    INF("mq_open %s OK", G_req_queue_name);
+    INF("mq_open of %s OK", G_req_queue_name);
 
     G_queue_res = mq_open(G_res_queue_name, O_WRONLY, NULL, NULL);
 
@@ -5579,7 +5587,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    INF("mq_open %s OK", G_res_queue_name);
+    INF("mq_open of %s OK", G_res_queue_name);
 
     /* ------------------------------------------------------------------- */
 
