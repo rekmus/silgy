@@ -885,7 +885,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 
     if ( conn[ci].post )
     {
-        if ( conn[ci].in_ctype != CONTENT_TYPE_URLENCODED )
+        if ( conn[ci].in_ctype != CONTENT_TYPE_URLENCODED && conn[ci].in_ctype != CONTENT_TYPE_UNSET )
         {
             WAR("Invalid Content-Type");
             if ( retbuf ) retbuf[0] = EOS;
