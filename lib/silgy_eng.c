@@ -933,6 +933,8 @@ int main(int argc, char **argv)
 
             if ( ASYNC_CHUNK_IS_LAST(res.chunk) )
             {
+                DBG("ASYNC_CHUNK_IS_LAST");
+
                 areqs[res_ai].state = ASYNC_STATE_FREE;
 
                 if ( conn[res_ci].location[0] )
