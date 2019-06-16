@@ -833,9 +833,11 @@ int main(int argc, char **argv)
 
             if ( ASYNC_CHUNK_IS_FIRST(res.chunk) )  /* get all the response's details */
             {
+                DBG("ASYNC_CHUNK_IS_FIRST");
                 DBG("res.ci=%d", res.ci);
                 DBG("res.hdr.err_code = %d", res.hdr.err_code);
                 DBG("res.hdr.status = %d", res.hdr.status);
+                DBG("res.len = %d", res.len);
 
                 /* error code & status */
 
@@ -844,7 +846,7 @@ int main(int argc, char **argv)
 
                 /* update user session */
 
-                if ( conn[res.ci].usi )
+                if ( conn[res.ci].usi )   /* session had existed before CALL_ASYNC */
                 {
                     memcpy(&uses[conn[res.ci].usi], &res.hdr.uses, sizeof(usession_t));
 #ifndef ASYNC_EXCLUDE_AUSES
@@ -932,6 +934,10 @@ int main(int argc, char **argv)
             if ( ASYNC_CHUNK_IS_LAST(res.chunk) )
             {
                 areqs[res_ai].state = ASYNC_STATE_FREE;
+
+                if ( conn[res_ci].location[0] )
+                    conn[res_ci].status = 303;
+
                 gen_response_header(res_ci);
             }
         }
