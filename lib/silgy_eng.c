@@ -149,7 +149,7 @@ static int          M_poll_ci[MAX_CONNECTIONS+LISTENING_FDS]={0};
 
 #endif  /* FD_MON_POLL */
 
-static stat_res_t   M_stat[MAX_STATICS];        /* static resources */
+static stat_res_t   M_stat[MAX_STATICS]={0};    /* static resources */
 static char         M_resp_date[32];            /* response header Date */
 static char         M_expires_stat[32];         /* response header for static resources */
 static char         M_expires_gen[32];          /* response header for generated resources */
@@ -196,6 +196,7 @@ static int  first_free_stat(void);
 static bool read_files(bool minify, bool first_scan, const char *path);
 static int  is_static_res(int ci, const char *name);
 static void process_req(int ci);
+static unsigned deflate_data(unsigned char *dest, const unsigned char *src, unsigned src_len);
 static void gen_response_header(int ci);
 static void print_content_type(int ci, char type);
 static bool a_usession_ok(int ci);
@@ -655,32 +656,22 @@ int main(int argc, char **argv)
                                 DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
                                 DBG("Trying SSL_write %u bytes to fd=%d (ci=%d)", conn[i].out_hlen, conn[i].fd, i);
 #endif  /* DUMP */
-#ifdef SEND_ALL_AT_ONCE
                                 bytes = SSL_write(conn[i].ssl, conn[i].out_start, conn[i].out_len);
 #ifdef DUMP
                                 DBG("ci=%d, changing state to CONN_STATE_READY_TO_SEND_BODY", i);
 #endif
                                 conn[i].conn_state = CONN_STATE_READY_TO_SEND_BODY;
-#else
-                                bytes = SSL_write(conn[i].ssl, conn[i].out_header, conn[i].out_hlen);
-#endif  /* SEND_ALL_AT_ONCE */
+
                                 set_state_sec(i, bytes);
                             }
                             else if ( conn[i].conn_state == CONN_STATE_READY_TO_SEND_BODY || conn[i].conn_state == CONN_STATE_SENDING_BODY)
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
-#ifdef SEND_ALL_AT_ONCE
                                 DBG("Trying SSL_write %u bytes to fd=%d (ci=%d)", conn[i].out_len, conn[i].fd, i);
-#else
-                                DBG("Trying SSL_write %u bytes to fd=%d (ci=%d)", conn[i].clen, conn[i].fd, i);
-#endif
 #endif  /* DUMP */
-#ifdef SEND_ALL_AT_ONCE
                                 bytes = SSL_write(conn[i].ssl, conn[i].out_start, conn[i].out_len);
-#else
-                                bytes = SSL_write(conn[i].ssl, conn[i].out_data, conn[i].clen);
-#endif
+
                                 set_state_sec(i, bytes);
                             }
                         }
@@ -691,21 +682,14 @@ int main(int argc, char **argv)
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == CONN_STATE_READY_TO_SEND_HEADER", i);
-#ifdef SEND_ALL_AT_ONCE
                                 DBG("Trying to write %u bytes to fd=%d (ci=%d)", conn[i].out_len, conn[i].fd, i);
-#else
-                                DBG("Trying to write %u bytes to fd=%d (ci=%d)", conn[i].out_hlen, conn[i].fd, i);
-#endif
 #endif  /* DUMP */
-#ifdef SEND_ALL_AT_ONCE
                                 bytes = send(conn[i].fd, conn[i].out_start, conn[i].out_len, 0);
 #ifdef DUMP
                                 DBG("ci=%d, changing state to CONN_STATE_READY_TO_SEND_BODY", i);
 #endif
                                 conn[i].conn_state = CONN_STATE_READY_TO_SEND_BODY;
-#else
-                                bytes = send(conn[i].fd, conn[i].out_header, conn[i].out_hlen, 0);
-#endif  /* SEND_ALL_AT_ONCE */
+
                                 set_state(i, bytes);    /* possibly:    CONN_STATE_DISCONNECTED (if error or closed by peer) */
                                                         /*              CONN_STATE_READY_TO_SEND_BODY */
                             }
@@ -713,17 +697,10 @@ int main(int argc, char **argv)
                             {
 #ifdef DUMP
                                 DBG("ci=%d, state == %s", i, conn[i].conn_state==CONN_STATE_READY_TO_SEND_BODY?"CONN_STATE_READY_TO_SEND_BODY":"CONN_STATE_SENDING_BODY");
-#ifdef SEND_ALL_AT_ONCE
                                 DBG("Trying to write %u bytes to fd=%d (ci=%d)", conn[i].out_len-conn[i].data_sent, conn[i].fd, i);
-#else
-                                DBG("Trying to write %u bytes to fd=%d (ci=%d)", conn[i].clen-conn[i].data_sent, conn[i].fd, i);
-#endif
 #endif  /* DUMP */
-#ifdef SEND_ALL_AT_ONCE
                                 bytes = send(conn[i].fd, conn[i].out_start+conn[i].data_sent, conn[i].out_len-conn[i].data_sent, 0);
-#else
-                                bytes = send(conn[i].fd, conn[i].out_data+conn[i].data_sent, conn[i].clen-conn[i].data_sent, 0);
-#endif
+
                                 set_state(i, bytes);    /* possibly:    CONN_STATE_DISCONNECTED (if error or closed by peer or !keep_alive) */
                                                         /*              CONN_STATE_SENDING_BODY (if data_sent < clen) */
                                                         /*              CONN_STATE_CONNECTED */
@@ -1172,11 +1149,7 @@ static void set_state(int ci, int bytes)
     {
         conn[ci].data_sent += bytes;
 
-#ifdef SEND_ALL_AT_ONCE
         if ( bytes < conn[ci].out_len )
-#else
-        if ( bytes < conn[ci].clen )
-#endif
         {
 #ifdef DUMP
             DBG("ci=%d, changing state to CONN_STATE_SENDING_BODY", ci);
@@ -1203,11 +1176,7 @@ static void set_state(int ci, int bytes)
     {
         conn[ci].data_sent += bytes;
 
-#ifdef SEND_ALL_AT_ONCE
         if ( conn[ci].data_sent < conn[ci].out_len )
-#else
-        if ( conn[ci].data_sent < conn[ci].clen )
-#endif
         {
             DBG("ci=%d, data_sent=%u, continue sending", ci, conn[ci].data_sent);
         }
@@ -1675,10 +1644,6 @@ static bool init(int argc, char **argv)
     ALWAYS("         FD monitoring = FD_MON_EPOLL");
 #endif
     ALWAYS("");
-#ifdef SEND_ALL_AT_ONCE
-    ALWAYS("    Response send mode = SEND_ALL_AT_ONCE");
-    ALWAYS("");
-#endif
     ALWAYS("          CONN_TIMEOUT = %d seconds", CONN_TIMEOUT);
     ALWAYS("          USES_TIMEOUT = %d seconds", USES_TIMEOUT);
 #ifdef USERS
@@ -2901,17 +2866,20 @@ static bool read_files(bool minify, bool first_scan, const char *path)
             /* allocate the final destination */
 
             if ( reread )
+            {
                 free(M_stat[i].data);
+                M_stat[i].data = NULL;
 
-#ifdef SEND_ALL_AT_ONCE
+                if ( M_stat[i].data_deflated )
+                {
+                    free(M_stat[i].data_deflated);
+                    M_stat[i].data_deflated = NULL;
+                }
+            }
+
             if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1+OUT_HEADER_BUFSIZE)) )
             {
                 ERR("Couldn't allocate %u bytes for %s", M_stat[i].len+1+OUT_HEADER_BUFSIZE, M_stat[i].name);
-#else
-            if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1)) )
-            {
-                ERR("Couldn't allocate %u bytes for %s", M_stat[i].len+1, M_stat[i].name);
-#endif  /* SEND_ALL_AT_ONCE */
                 fclose(fd);
                 closedir(dir);
                 return FALSE;
@@ -2919,11 +2887,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
             if ( minify )
             {
-#ifdef SEND_ALL_AT_ONCE
                 memcpy(M_stat[i].data+OUT_HEADER_BUFSIZE, data_tmp_min, M_stat[i].len+1);
-#else
-                memcpy(M_stat[i].data, data_tmp_min, M_stat[i].len+1);
-#endif
                 free(data_tmp);
                 free(data_tmp_min);
                 data_tmp = NULL;
@@ -2933,16 +2897,13 @@ static bool read_files(bool minify, bool first_scan, const char *path)
             }
             else
             {
-#ifdef SEND_ALL_AT_ONCE
                 fread(M_stat[i].data+OUT_HEADER_BUFSIZE, M_stat[i].len, 1, fd);
-#else
-                fread(M_stat[i].data, M_stat[i].len, 1, fd);
-#endif
-
                 M_stat[i].source = STATIC_SOURCE_RES;
             }
 
             fclose(fd);
+
+            /* get the file type ------------------------------- */
 
             if ( !reread )
             {
@@ -2952,7 +2913,56 @@ static bool read_files(bool minify, bool first_scan, const char *path)
                     G_index_present = TRUE;
             }
 
-            /* log file info */
+            /* compress ---------------------------------------- */
+
+#ifndef _WIN32
+
+            if ( SHOULD_BE_COMPRESSED(M_stat[i].len, M_stat[i].type) )
+            {
+                if ( NULL == (data_tmp=(char*)malloc(M_stat[i].len)) )
+                {
+                    ERR("Couldn't allocate %u bytes for %s", M_stat[i].len, M_stat[i].name);
+                    fclose(fd);
+                    closedir(dir);
+                    return FALSE;
+                }
+
+                unsigned deflated_len = deflate_data((unsigned char*)data_tmp, (unsigned char*)M_stat[i].data+OUT_HEADER_BUFSIZE, M_stat[i].len);
+
+                if ( deflated_len == -1 )
+                {
+                    WAR("Couldn't compress %s", M_stat[i].name);
+
+                    if ( M_stat[i].data_deflated )
+                    {
+                        free(M_stat[i].data_deflated);
+                        M_stat[i].data_deflated = NULL;
+                    }
+
+                    M_stat[i].len_deflated = 0;
+                }
+                else
+                {
+                    if ( NULL == (M_stat[i].data_deflated=(char*)malloc(deflated_len+OUT_HEADER_BUFSIZE)) )
+                    {
+                        ERR("Couldn't allocate %u bytes for deflated %s", deflated_len+OUT_HEADER_BUFSIZE, M_stat[i].name);
+                        fclose(fd);
+                        closedir(dir);
+                        free(data_tmp);
+                        return FALSE;
+                    }
+
+                    memcpy(M_stat[i].data_deflated+OUT_HEADER_BUFSIZE, data_tmp, deflated_len);
+                    M_stat[i].len_deflated = deflated_len;
+                }
+
+                free(data_tmp);
+                data_tmp = NULL;
+            }
+
+#endif  /* _WIN32 */
+
+            /* log file info ----------------------------------- */
 
             if ( G_logLevel > LOG_INF )
             {
@@ -3042,12 +3052,9 @@ static void process_req(int ci)
 #endif
 
     /* ------------------------------------------------------------------------ */
+    /* make room for a header */
 
-#ifdef SEND_ALL_AT_ONCE  /* make room for a header */
     conn[ci].p_content = conn[ci].out_data + OUT_HEADER_BUFSIZE;
-#else
-    conn[ci].p_content = conn[ci].out_data;
-#endif
 
     /* ------------------------------------------------------------------------ */
 
@@ -3149,11 +3156,8 @@ static void process_req(int ci)
 #endif
         if ( !conn[ci].keep_content )   /* reset out buffer pointer as it could have contained something already */
         {
-#ifdef SEND_ALL_AT_ONCE
             conn[ci].p_content = conn[ci].out_data + OUT_HEADER_BUFSIZE;
-#else
-            conn[ci].p_content = conn[ci].out_data;
-#endif
+
             if ( ret == OK )   /* RES_STATUS could be used, show the proper message */
             {
                 if ( conn[ci].status == 400 )
@@ -3175,6 +3179,63 @@ static void process_req(int ci)
 
         RES_DONT_CACHE;
     }
+}
+
+
+#ifndef _WIN32
+/* --------------------------------------------------------------------------
+   Compress src into dest, return dest length
+-------------------------------------------------------------------------- */
+static unsigned deflate_data(unsigned char *dest, const unsigned char *src, unsigned src_len)
+{
+    DBG("src_len = %u", src_len);
+
+    z_stream strm={0};
+
+    if ( deflateInit(&strm, Z_DEFAULT_COMPRESSION) != Z_OK )
+    {
+        ERR("deflateInit failed");
+        return -1;
+    }
+
+    strm.next_in = (unsigned char*)src;
+    strm.avail_in = src_len;
+    strm.next_out = dest;
+    strm.avail_out = src_len;
+
+    int ret=Z_OK;
+
+//    while ( ret == Z_OK )
+//    {
+//        strm.avail_out = strm.avail_in ? strm.next_in-strm.next_out : (dest+src_len) - strm.next_out;
+        ret = deflate(&strm, Z_FINISH);
+//    }
+
+    if ( ret != Z_STREAM_END )
+    {
+        ERR("ret != Z_STREAM_END");
+        return -1;
+    }
+
+    if ( strm.total_out > src_len )
+    {
+        ERR("strm.total_out > src_len");
+        return -1;
+    }
+
+    unsigned new_len = strm.total_out;
+
+    deflateEnd(&strm);
+
+    if ( ret != Z_STREAM_END )
+    {
+        ERR("ret != Z_STREAM_END");
+        return -1;
+    }
+
+    DBG("new_len = %u", new_len);
+
+    return new_len;
 }
 
 
@@ -3201,7 +3262,6 @@ static void process_req(int ci)
    memory allocations and deallocations from the repeated use of deflateInit()
    and deflateEnd().
 -------------------------------------------------------------------------- */
-#ifndef _WIN32
 static int deflate_inplace(z_stream *strm, unsigned char *buf, unsigned len, unsigned *max)
 {
     int ret;                    /* return code from deflate functions */
@@ -3283,12 +3343,8 @@ static void gen_response_header(int ci)
 {
     DBG("gen_response_header, ci=%d", ci);
 
-#ifdef SEND_ALL_AT_ONCE
     char out_header[OUT_HEADER_BUFSIZE];
     conn[ci].p_header = out_header;
-#else
-    conn[ci].p_header = conn[ci].out_header;
-#endif
 
     PRINT_HTTP_STATUS(conn[ci].status);
 
@@ -3390,61 +3446,69 @@ static void gen_response_header(int ci)
             }
         }
 
-        if ( conn[ci].static_res == NOT_STATIC )    /* determine the content length */
-#ifdef SEND_ALL_AT_ONCE
+        /* content length and type */
+
+        if ( conn[ci].static_res == NOT_STATIC )
+        {
             conn[ci].clen = conn[ci].p_content - conn[ci].out_data - OUT_HEADER_BUFSIZE;
-#else
-            conn[ci].clen = conn[ci].p_content - conn[ci].out_data;
-#endif
-        else
+        }
+        else    /* static resource */
+        {
             conn[ci].clen = M_stat[conn[ci].static_res].len;
+            conn[ci].ctype = M_stat[conn[ci].static_res].type;
+        }
 
         /* compress? ------------------------------------------------------------------ */
 
 #ifndef _WIN32  /* just too much headache */
-        if ( conn[ci].static_res==NOT_STATIC && conn[ci].clen > COMPRESS_TRESHOLD && conn[ci].accept_deflate && (conn[ci].ctype==RES_HTML || conn[ci].ctype==RES_TEXT || conn[ci].ctype==RES_JSON || conn[ci].ctype==RES_BMP) && !UA_IE )
+
+        if ( SHOULD_BE_COMPRESSED(conn[ci].clen, conn[ci].ctype) && conn[ci].accept_deflate && !UA_IE )
         {
-            DBG("Compressing content");
-
-            int ret;
-static z_stream strm;
-static bool first=TRUE;
-
-            if ( first )
+            if ( conn[ci].static_res==NOT_STATIC )
             {
-                strm.zalloc = Z_NULL;
-                strm.zfree = Z_NULL;
-                strm.opaque = Z_NULL;
+                DBG("Compressing content");
 
-                ret = deflateInit(&strm, COMPRESS_LEVEL);
+                int ret;
+static          z_stream strm;
+static          bool first=TRUE;
 
-                if ( ret != Z_OK )
+                if ( first )
                 {
-                    ERR("deflateInit failed, ret = %d", ret);
-                    return;
+                    strm.zalloc = Z_NULL;
+                    strm.zfree = Z_NULL;
+                    strm.opaque = Z_NULL;
+
+                    ret = deflateInit(&strm, COMPRESS_LEVEL);
+
+                    if ( ret != Z_OK )
+                    {
+                        ERR("deflateInit failed, ret = %d", ret);
+                        return;
+                    }
+
+                    first = FALSE;
                 }
 
-                first = FALSE;
+                unsigned max = conn[ci].clen;
+
+                ret = deflate_inplace(&strm, (unsigned char*)conn[ci].out_data+OUT_HEADER_BUFSIZE, conn[ci].clen, &max);
+
+                if ( ret == Z_OK )
+                {
+                    DBG("Compression success, old len=%u, new len=%u", conn[ci].clen, max);
+                    conn[ci].clen = max;
+                    PRINT_HTTP_CONTENT_ENCODING_DEFLATE;
+                }
+                else
+                {
+                    ERR("deflate_inplace failed, ret = %d", ret);
+                }
             }
-
-            unsigned max = conn[ci].clen;
-
-#ifdef SEND_ALL_AT_ONCE
-            ret = deflate_inplace(&strm, (unsigned char*)conn[ci].out_data+OUT_HEADER_BUFSIZE, conn[ci].clen, &max);
-#else
-            ret = deflate_inplace(&strm, (unsigned char*)conn[ci].out_data, conn[ci].clen, &max);
-#endif
-//            (void)deflateEnd(&strm);
-
-            if ( ret == Z_OK )
+            else if ( M_stat[conn[ci].static_res].len_deflated )   /* compressed static resource is available */
             {
-                DBG("Compression success, old len=%u, new len=%u", conn[ci].clen, max);
-                conn[ci].clen = max;
+                conn[ci].out_data = M_stat[conn[ci].static_res].data_deflated;
+                conn[ci].clen = M_stat[conn[ci].static_res].len_deflated;
                 PRINT_HTTP_CONTENT_ENCODING_DEFLATE;
-            }
-            else
-            {
-                ERR("deflate_inplace failed, ret = %d", ret);
             }
         }
 #endif  /* _WIN32 */
@@ -3498,10 +3562,10 @@ static bool first=TRUE;
     if ( conn[ci].clen == 0 )   /* don't set for these */
     {                   /* this covers 301, 303 and 304 */
     }
-    else if ( conn[ci].static_res != NOT_STATIC )   /* static resource */
-    {
-        print_content_type(ci, M_stat[conn[ci].static_res].type);
-    }
+//    else if ( conn[ci].static_res != NOT_STATIC )   /* static resource */
+//    {
+//        print_content_type(ci, M_stat[conn[ci].static_res].type);
+//    }
     else if ( conn[ci].ctype == CONTENT_TYPE_USER )
     {
         sprintf(G_tmp, "Content-Type: %s\r\n", conn[ci].ctypestr);
@@ -3535,11 +3599,7 @@ static bool first=TRUE;
 
     /* header length */
 
-#ifdef SEND_ALL_AT_ONCE
     conn[ci].out_hlen = conn[ci].p_header - out_header;
-#else
-    conn[ci].out_hlen = conn[ci].p_header - conn[ci].out_header;
-#endif
 
 #ifdef DUMP
     DBG("ci=%d, out_hlen = %u", ci, conn[ci].out_hlen);
@@ -3557,20 +3617,11 @@ static bool first=TRUE;
 #endif
 
 #if OUT_HEADER_BUFSIZE-1 <= MAX_LOG_STR_LEN
-#ifdef SEND_ALL_AT_ONCE
     DBG("\nResponse header:\n\n[%s]\n", out_header);
 #else
-    DBG("\nResponse header:\n\n[%s]\n", conn[ci].out_header);
-#endif
-#else
-#ifdef SEND_ALL_AT_ONCE
     log_long(out_header, conn[ci].out_hlen, "\nResponse header");
-#else
-    log_long(conn[ci].out_header, conn[ci].out_hlen, "\nResponse header");
-#endif
 #endif  /* OUT_HEADER_BUFSIZE-1 <= MAX_LOG_STR_LEN */
 
-#ifdef SEND_ALL_AT_ONCE
     /* ----------------------------------------------------------------- */
     /* try to send everything at once */
     /* copy response header just before the content */
@@ -3580,16 +3631,11 @@ static bool first=TRUE;
     conn[ci].out_len = conn[ci].out_hlen + conn[ci].clen;
 
     /* ----------------------------------------------------------------- */
-#endif
 
 #ifdef DUMP     /* low-level tests */
     if ( G_logLevel>=LOG_DBG && conn[ci].clen > 0 && !conn[ci].head_only && conn[ci].static_res == NOT_STATIC
             && (conn[ci].ctype==RES_TEXT || conn[ci].ctype==RES_JSON) )
-#ifdef SEND_ALL_AT_ONCE
         log_long(conn[ci].out_data+OUT_HEADER_BUFSIZE, conn[ci].clen, "Content to send");
-#else
-        log_long(conn[ci].out_data, conn[ci].clen, "Content to send");
-#endif
 #endif  /* DUMP */
 
     /* ----------------------------------------------------------------- */
@@ -5102,8 +5148,6 @@ void silgy_add_to_static_res(const char *name, const char *src)
 
     M_stat[i].len = strlen(src);   /* internal are text based */
 
-#ifdef SEND_ALL_AT_ONCE
-
     if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1+OUT_HEADER_BUFSIZE)) )
     {
         ERR("Couldn't allocate %u bytes for %s", M_stat[i].len+1+OUT_HEADER_BUFSIZE, M_stat[i].name);
@@ -5111,18 +5155,6 @@ void silgy_add_to_static_res(const char *name, const char *src)
     }
 
     strcpy(M_stat[i].data+OUT_HEADER_BUFSIZE, src);
-
-#else
-
-    if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1)) )
-    {
-        ERR("Couldn't allocate %u bytes for %s", M_stat[i].len+1, M_stat[i].name);
-        return;
-    }
-
-    strcpy(M_stat[i].data, src);
-
-#endif  /* SEND_ALL_AT_ONCE */
 
     M_stat[i].type = get_res_type(M_stat[i].name);
     M_stat[i].modified = G_now;

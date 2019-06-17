@@ -87,9 +87,6 @@ typedef char str32k[1024*32];
 typedef char str64k[1024*64];
 
 
-#define SEND_ALL_AT_ONCE    /* don't split response to two send-s */
-
-
 #include "silgy_app.h"
 
 
@@ -215,19 +212,11 @@ typedef char str64k[1024*64];
 
     #ifdef OUTFAST
         #define OUTSS(str)                  (conn[ci].p_content = stpcpy(conn[ci].p_content, str))
-#ifdef SEND_ALL_AT_ONCE
         #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE-OUT_HEADER_BUFSIZE?OUT_BUFSIZE-OUT_HEADER_BUFSIZE:len), memcpy(conn[ci].p_content, data, len), conn[ci].p_content += len)
-#else
-        #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_content, data, len), conn[ci].p_content += len)
-#endif
     #else
         #ifdef OUTCHECK
             #define OUTSS(str)                  eng_out_check(ci, str)
-#ifdef SEND_ALL_AT_ONCE
             #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE-OUT_HEADER_BUFSIZE?OUT_BUFSIZE-OUT_HEADER_BUFSIZE:len), memcpy(conn[ci].p_content, data, len), conn[ci].p_content += len)
-#else
-            #define OUT_BIN(data, len)          (len=(len>OUT_BUFSIZE?OUT_BUFSIZE:len), memcpy(conn[ci].p_content, data, len), conn[ci].p_content += len)
-#endif
         #else   /* OUTCHECKREALLOC */
             #define OUTSS(str)                  eng_out_check_realloc(ci, str)
             #define OUT_BIN(data, len)          eng_out_check_realloc_bin(ci, data, len)
@@ -424,6 +413,8 @@ typedef char str64k[1024*64];
 #ifndef COMPRESS_LEVEL
 #define COMPRESS_LEVEL                  Z_BEST_SPEED
 #endif
+
+#define SHOULD_BE_COMPRESSED(len, type) (len > COMPRESS_TRESHOLD && (type==RES_HTML || type==RES_TEXT || type==RES_JSON || type==RES_CSS || type==RES_JS || type==RES_SVG || type==RES_EXE || type==RES_BMP))
 
 
 /* UTF-8 */
@@ -959,12 +950,8 @@ typedef struct {
     bool     accept_deflate;
     /* what goes out */
     unsigned out_hlen;                       /* outgoing header length */
-#ifdef SEND_ALL_AT_ONCE
     unsigned out_len;                        /* outgoing length (all) */
     char     *out_start;
-#else
-    char     out_header[OUT_HEADER_BUFSIZE]; /* outgoing HTTP header */
-#endif
 #ifdef OUTCHECKREALLOC
     char     *out_data_alloc;                /* allocated space for rendered content */
 #else
@@ -1021,6 +1008,8 @@ typedef struct {
     char     type;
     char     *data;
     unsigned len;
+    char     *data_deflated;
+    unsigned len_deflated;
     time_t   modified;
     char     source;
 } stat_res_t;
