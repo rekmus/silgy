@@ -161,7 +161,7 @@ static void load_err_messages()
     silgy_add_message(ERR_UNAUTHORIZED,          "EN-US", "Unauthorized");
     silgy_add_message(ERR_FORBIDDEN,             "EN-US", "Forbidden");
     silgy_add_message(ERR_FILE_TOO_BIG,          "EN-US", "File too big");
-    silgy_add_message(ERR_REDIRECTION,           "EN-US", "Redirection error");
+    silgy_add_message(ERR_REDIRECTION,           "EN-US", "Redirection required");
     silgy_add_message(ERR_ASYNC_NO_SUCH_SERVICE, "EN-US", "No such service");
     silgy_add_message(ERR_ASYNC_TIMEOUT,         "EN-US", "Asynchronous service timeout");
     silgy_add_message(ERR_REMOTE_CALL,           "EN-US", "Couldn't call the remote service");
