@@ -3091,11 +3091,23 @@ static void process_req(int ci)
     else if ( !LOGGED && conn[ci].required_auth_level > AUTH_LEVEL_ANONYMOUS )  /* redirect to login page */
     {
         INF("auth_level > AUTH_LEVEL_ANONYMOUS required, redirecting to login");
+
         ret = ERR_REDIRECTION;
+
+#ifndef DONT_PASS_QS_ON_LOGIN_REDIRECTION
+        char *qs = strchr(conn[ci].uri, '?');
+
         if ( !strlen(APP_LOGIN_URI) )   /* login page = landing page */
-            sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host);
+            sprintf(conn[ci].location, "/%s", qs?qs:"");
+        else
+            sprintf(conn[ci].location, "%s%s", APP_LOGIN_URI, qs?qs:"");
+#else   /* don't pass the query string */
+        if ( !strlen(APP_LOGIN_URI) )   /* login page = landing page */
+            strcpy(conn[ci].location, "/");
         else
             strcpy(conn[ci].location, APP_LOGIN_URI);
+#endif  /* DONT_PASS_QS_ON_LOGIN_REDIRECTION */
+
     }
     else    /* login not required for this URI */
     {
@@ -4272,7 +4284,7 @@ static int parse_req(int ci, int len)
 
 #ifdef BLACKLISTAUTOUPDATE
         if ( check_block_ip(ci, "Resource", conn[ci].resource) )
-            return 403;     /* Forbidden */
+            return 404;     /* Forbidden */
 #endif
 
 #ifdef DOMAINONLY
@@ -4359,7 +4371,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     {
 #ifdef BLACKLISTAUTOUPDATE
         if ( check_block_ip(ci, "Host", value) )
-            return 403;     /* Forbidden */
+            return 404;     /* Forbidden */
 #endif
         strcpy(conn[ci].host, value);
     }
@@ -4367,7 +4379,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     {
 #ifdef BLACKLISTAUTOUPDATE
         if ( check_block_ip(ci, "User-Agent", value) )
-            return 403;     /* Forbidden */
+            return 404;     /* Forbidden */
 #endif
         strcpy(conn[ci].uagent, value);
         strcpy(uvalue, upper(value));
