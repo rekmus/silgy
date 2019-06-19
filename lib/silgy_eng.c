@@ -3574,11 +3574,7 @@ static          bool first=TRUE;
     if ( conn[ci].clen == 0 )   /* don't set for these */
     {                   /* this covers 301, 303 and 304 */
     }
-//    else if ( conn[ci].static_res != NOT_STATIC )   /* static resource */
-//    {
-//        print_content_type(ci, M_stat[conn[ci].static_res].type);
-//    }
-    else if ( conn[ci].ctype == CONTENT_TYPE_USER )
+    else if ( conn[ci].ctypestr[0] )    /* custom */
     {
         sprintf(G_tmp, "Content-Type: %s\r\n", conn[ci].ctypestr);
         HOUT(G_tmp);
@@ -3661,6 +3657,7 @@ static          bool first=TRUE;
 
 /* --------------------------------------------------------------------------
    Print Content-Type to response header
+   Mirrored lib_set_res_content_type
 -------------------------------------------------------------------------- */
 static void print_content_type(int ci, char type)
 {
@@ -3869,6 +3866,7 @@ static void reset_conn(int ci, char new_state)
 
     conn[ci].static_res = NOT_STATIC;
     conn[ci].ctype = RES_HTML;
+    conn[ci].ctypestr[0] = EOS;
     conn[ci].cdisp[0] = EOS;
     conn[ci].modified = 0;
     conn[ci].cookie_out_a[0] = EOS;
@@ -3885,7 +3883,6 @@ static void reset_conn(int ci, char new_state)
 #ifdef ASYNC
     conn[ci].service[0] = EOS;
     conn[ci].async_err_code = OK;
-//    conn[ci].ai = -1;
 #endif
 
     if ( new_state == CONN_STATE_CONNECTED )

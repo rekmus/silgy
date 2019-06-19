@@ -1213,11 +1213,53 @@ void lib_set_res_status(int ci, int status)
 
 /* --------------------------------------------------------------------------
    Set response content type
+   Mirrored print_content_type
 -------------------------------------------------------------------------- */
 void lib_set_res_content_type(int ci, const char *str)
 {
-    conn[ci].ctype = CONTENT_TYPE_USER;
-    strcpy(conn[ci].ctypestr, str);
+    if ( 0==strcmp(str, "text/html; charset=utf-8") )
+        conn[ci].ctype = RES_HTML;
+    else if ( 0==strcmp(str, "text/plain") )
+        conn[ci].ctype = RES_TEXT;
+    else if ( 0==strcmp(str, "text/css") )
+        conn[ci].ctype = RES_CSS;
+    else if ( 0==strcmp(str, "application/javascript") )
+        conn[ci].ctype = RES_JS;
+    else if ( 0==strcmp(str, "image/gif") )
+        conn[ci].ctype = RES_GIF;
+    else if ( 0==strcmp(str, "image/jpeg") )
+        conn[ci].ctype = RES_JPG;
+    else if ( 0==strcmp(str, "image/x-icon") )
+        conn[ci].ctype = RES_ICO;
+    else if ( 0==strcmp(str, "image/png") )
+        conn[ci].ctype = RES_PNG;
+    else if ( 0==strcmp(str, "image/bmp") )
+        conn[ci].ctype = RES_BMP;
+    else if ( 0==strcmp(str, "image/svg+xml") )
+        conn[ci].ctype = RES_SVG;
+    else if ( 0==strcmp(str, "application/json") )
+        conn[ci].ctype = RES_JSON;
+    else if ( 0==strcmp(str, "application/pdf") )
+        conn[ci].ctype = RES_PDF;
+    else if ( 0==strcmp(str, "audio/mpeg") )
+        conn[ci].ctype = RES_AMPEG;
+    else if ( 0==strcmp(str, "application/x-msdownload") )
+        conn[ci].ctype = RES_EXE;
+    else if ( 0==strcmp(str, "application/zip") )
+        conn[ci].ctype = RES_ZIP;
+    else    /* custom */
+    {
+        if ( 0==strncmp(str, "text/html", 9) )
+            conn[ci].ctype = RES_HTML;
+        else if ( 0==strncmp(str, "text/plain", 10) )
+            conn[ci].ctype = RES_TEXT;
+        else if ( !str[0] )
+            conn[ci].ctype = CONTENT_TYPE_UNSET;
+        else
+            conn[ci].ctype = CONTENT_TYPE_USER;
+
+        strcpy(conn[ci].ctypestr, str);
+    }
 }
 
 
