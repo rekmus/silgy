@@ -31,8 +31,10 @@ time_t      G_now=0;                    /* current time (GMT) */
 struct tm   *G_ptm={0};                 /* human readable current time */
 char        G_dt[20]="";                /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 char        G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
-messages_t  G_messages[MAX_MESSAGES]={0};
+message_t   G_messages[MAX_MESSAGES]={0};
 int         G_next_message=0;
+string_t    G_strings[MAX_STRINGS]={0};
+int         G_next_string=0;
 
 #ifdef HTTPS
 bool        G_ssl_lib_initialized=0;
@@ -80,6 +82,7 @@ static char M_random_initialized=0;
 
 
 static void load_err_messages(void);
+static void load_strings(void);
 static void seed_rand(void);
 static void minify_1(char *dest, const char *src, int len);
 static int  minify_2(char *dest, const char *src);
@@ -116,15 +119,9 @@ void silgy_lib_init()
 
     load_err_messages();
 
-#ifndef _WIN32
+    /* load strings */
 
-    /* SHM segments array */
-
-//    for ( i=0; i<MAX_SHM_SEGMENTS; ++i )
-//        M_shmid[i] = NULL;
-
-#endif  /* _WIN32 */
-
+    load_strings();
 }
 
 
@@ -153,6 +150,8 @@ void silgy_lib_done()
 -------------------------------------------------------------------------- */
 static void load_err_messages()
 {
+    DBG("load_err_messages");
+
     silgy_add_message(OK,                        "EN-US", "OK");
     silgy_add_message(ERR_INT_SERVER_ERROR,      "EN-US", "Apologies, this is our fault. Please try again later.");
     silgy_add_message(ERR_SERVER_TOOBUSY,        "EN-US", "Apologies, we are experiencing very high demand right now, please try again in a few minutes.");
@@ -171,6 +170,154 @@ static void load_err_messages()
 
 
 /* --------------------------------------------------------------------------
+   Parse and set strings from data
+-------------------------------------------------------------------------- */
+static void parse_and_set_strings(const char *lang, const char *data)
+{
+    DBG("parse_and_set_strings, lang [%s]", lang);
+
+    const char *p=data;
+    int i, j=0;
+    char string[MAX_STR_LEN+1];
+    char string_lang[MAX_STR_LEN+1];
+    bool now_key=1, now_val=0, now_com=0;
+
+    while ( *p )
+    {
+//        if ( *p=='\n' )   /* reset whatever it was */
+//        {
+//            now_key = 1;
+//            now_val = 0;
+//            now_com = 0;
+//            j = 0;
+//        }
+        if ( *p=='#' )   /* comment */
+        {
+            now_key = 0;
+            now_com = 1;
+
+            if ( now_val )
+            {
+                now_val = 0;
+                string_lang[j] = EOS;
+                silgy_add_string(lang, string, string_lang);
+            }
+        }
+        else if ( now_key && *p=='|' )   /* separator */
+        {
+            now_key = 0;
+            now_val = 1;
+            string[j] = EOS;
+            j = 0;
+        }
+        else if ( *p=='\r' || *p=='\n' )
+        {
+            if ( now_val )
+            {
+                now_val = 0;
+                string_lang[j] = EOS;
+                silgy_add_string(lang, string, string_lang);
+            }
+            else if ( now_com )
+            {
+                now_com = 0;
+            }
+
+            j = 0;
+
+            now_key = 1;
+        }
+        else if ( now_key && *p!='\n' )
+        {
+            string[j++] = *p;
+        }
+        else if ( now_val )
+        {
+            string_lang[j++] = *p;
+        }
+
+        ++p;
+    }
+
+    if ( now_val )
+    {
+        string_lang[j] = EOS;
+        silgy_add_string(lang, string, string_lang);
+    }
+}
+
+
+/* --------------------------------------------------------------------------
+   Load strings
+-------------------------------------------------------------------------- */
+static void load_strings()
+{
+    int     i, len;
+    char    bindir[STATIC_PATH_LEN];        /* full path to bin */
+    char    namewpath[STATIC_PATH_LEN];     /* full path including file name */
+    DIR     *dir;
+    struct dirent *dirent;
+    FILE    *fd;
+    char    *data=NULL;
+    char    lang[8];
+
+    DBG("load_strings");
+
+    if ( G_appdir[0] == EOS ) return;
+
+    sprintf(bindir, "%s/bin", G_appdir);
+
+    if ( (dir=opendir(bindir)) == NULL )
+    {
+        DBG("Couldn't open directory [%s]", bindir);
+        return;
+    }
+
+    while ( (dirent=readdir(dir)) )
+    {
+        if ( 0 != strncmp(dirent->d_name, "strings.", 8) )
+            continue;
+
+        sprintf(namewpath, "%s/%s", bindir, dirent->d_name);
+
+        DBG("namewpath [%s]", namewpath);
+
+#ifdef _WIN32   /* Windows */
+        if ( NULL == (fd=fopen(namewpath, "rb")) )
+#else
+        if ( NULL == (fd=fopen(namewpath, "r")) )
+#endif  /* _WIN32 */
+            ERR("Couldn't open %s", namewpath);
+        else
+        {
+            fseek(fd, 0, SEEK_END);     /* determine the file size */
+            len = ftell(fd);
+            rewind(fd);
+
+            if ( NULL == (data=(char*)malloc(len+1)) )
+            {
+                ERR("Couldn't allocate %d bytes for %s", len, dirent->d_name);
+                fclose(fd);
+                closedir(dir);
+                return;
+            }
+
+            fread(data, len, 1, fd);
+            fclose(fd);
+            *(data+len) = EOS;
+
+            parse_and_set_strings(get_file_ext(dirent->d_name), data);
+
+            free(data);
+            data = NULL;
+        }
+    }
+
+    closedir(dir);
+}
+
+
+/* --------------------------------------------------------------------------
    Add error message
 -------------------------------------------------------------------------- */
 void silgy_add_message(int code, const char *lang, const char *message, ...)
@@ -182,7 +329,7 @@ void silgy_add_message(int code, const char *lang, const char *message, ...)
     }
 
     va_list plist;
-    char    buffer[MAX_MSG_LEN+1];
+    char buffer[MAX_MSG_LEN+1];
 
     /* compile message with arguments into buffer */
 
@@ -196,6 +343,26 @@ void silgy_add_message(int code, const char *lang, const char *message, ...)
     strcpy(G_messages[G_next_message].message, buffer);
 
     ++G_next_message;
+}
+
+
+/* --------------------------------------------------------------------------
+   Add string
+-------------------------------------------------------------------------- */
+void silgy_add_string(const char *lang, const char *str, const char *str_lang)
+{
+    if ( G_next_string >= MAX_STRINGS )
+    {
+        ERR("MAX_STRINGS (%d) has been reached", MAX_STRINGS);
+        return;
+    }
+
+    strcpy(G_strings[G_next_string].lang, upper(lang));
+    strcpy(G_strings[G_next_string].string, str);
+    strcpy(G_strings[G_next_string].string_upper, upper(str));
+    strcpy(G_strings[G_next_string].string_lang, str_lang);
+
+    ++G_next_string;
 }
 
 
@@ -218,6 +385,7 @@ static char unknown[128];
 /* --------------------------------------------------------------------------
    Get error description for user
    Pick the user agent language if possible
+   TODO: binary search
 -------------------------------------------------------------------------- */
 char *silgy_message_lang(int ci, int code)
 {
@@ -231,6 +399,33 @@ char *silgy_message_lang(int ci, int code)
     /* fallback */
 
     return silgy_message(code);
+
+#endif  /* SILGY_WATCHER */
+}
+
+
+/* --------------------------------------------------------------------------
+   Get a string
+   Pick the user agent language if possible
+   If not, return given string
+   TODO: binary search
+-------------------------------------------------------------------------- */
+const char *lib_get_string(int ci, const char *str)
+{
+#ifndef SILGY_WATCHER
+
+    char str_upper[MAX_STR_LEN+1];
+
+    strcpy(str_upper, upper(str));
+
+    int i;
+    for ( i=0; i<G_next_string; ++i )
+        if ( 0==strcmp(G_strings[i].lang, conn[ci].lang) && 0==strcmp(G_strings[i].string_upper, str_upper) )
+            return G_strings[i].string_lang;
+
+    /* fallback */
+
+    return str;
 
 #endif  /* SILGY_WATCHER */
 }
@@ -3464,12 +3659,48 @@ static char ret[4096];
 
 
 /* --------------------------------------------------------------------------
+   Get the file extension
+-------------------------------------------------------------------------- */
+char *get_file_ext(const char *fname)
+{
+static char ext[256];
+    char *pext=NULL;
+
+#ifdef DUMP
+    DBG("name: [%s]", fname);
+#endif
+
+    if ( (pext=(char*)strrchr(fname, '.')) == NULL )     /* no dot */
+    {
+        ext[0] = EOS;
+        return ext;
+    }
+
+    if ( pext-fname == strlen(fname)-1 )        /* dot is the last char */
+    {
+        ext[0] = EOS;
+        return ext;
+    }
+
+    ++pext;
+
+    strcpy(ext, pext);
+
+#ifdef DUMP
+    DBG("ext: [%s]", ext);
+#endif
+
+    return ext;
+}
+
+
+/* --------------------------------------------------------------------------
    Determine resource type by its extension
 -------------------------------------------------------------------------- */
 char get_res_type(const char *fname)
 {
-    char    *ext=NULL;
-    char    uext[8]="";
+    char *ext=NULL;
+    char uext[8]="";
 
 #ifdef DUMP
 //  DBG("name: [%s]", fname);

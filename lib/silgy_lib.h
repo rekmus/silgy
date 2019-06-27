@@ -273,6 +273,8 @@ extern "C" {
     void silgy_add_message(int code, const char *lang, const char *message, ...);
     char *silgy_message(int code);
     char *silgy_message_lang(int ci, int code);
+    void silgy_add_string(const char *lang, const char *str, const char *str_lang);
+    const char *lib_get_string(int ci, const char *str);
     char *urlencode(const char *src);
     bool lib_open_db(void);
     void lib_close_db(void);
@@ -310,6 +312,7 @@ extern "C" {
     char *silgy_filter_strict(const char *src);
     char *lib_add_spaces(const char *src, int len);
     char *lib_add_lspaces(const char *src, int len);
+    char *get_file_ext(const char *fname);
     char get_res_type(const char *fname);
     void date_str2rec(const char *str, date_t *rec);
     void date_rec2str(char *str, date_t *rec);

@@ -1709,6 +1709,17 @@ static bool init(int argc, char **argv)
         ALWAYS("    DEF_RES_AUTH_LEVEL = AUTH_LEVEL_ADMIN");
     else if ( DEF_RES_AUTH_LEVEL == AUTH_LEVEL_ROOT )
         ALWAYS("    DEF_RES_AUTH_LEVEL = AUTH_LEVEL_ROOT");
+
+    ALWAYS("             SESID_LEN = %d", SESID_LEN);
+    ALWAYS("          MAX_MESSAGES = %d", MAX_MESSAGES);
+    ALWAYS("           MAX_STRINGS = %d", MAX_STRINGS);
+    ALWAYS("       EXPIRES_STATICS = %d days", EXPIRES_STATICS);
+    ALWAYS("     EXPIRES_GENERATED = %d days", EXPIRES_GENERATED);
+#ifndef _WIN32
+    ALWAYS("     COMPRESS_TRESHOLD = %d bytes", COMPRESS_TRESHOLD);
+    ALWAYS("        COMPRESS_LEVEL = %d", COMPRESS_LEVEL);
+#endif
+
 #ifdef APP_ADMIN_EMAIL
     ALWAYS("       APP_ADMIN_EMAIL = %s", APP_ADMIN_EMAIL);
 #endif
@@ -1796,36 +1807,6 @@ static bool init(int argc, char **argv)
 
     DBG("read_files(TRUE) OK");
 
-    /* special case statics -- check if present */
-
-/*    for ( i=0; M_stat[i].name[0] != '-'; ++i )
-    {
-        if ( 0==strcmp(M_stat[i].name, "favicon.ico") )
-        {
-            M_favicon_exists = TRUE;
-            break;
-        }
-    }
-
-    for ( i=0; M_stat[i].name[0] != '-'; ++i )
-    {
-        if ( 0==strcmp(M_stat[i].name, "apple-touch-icon.png") )
-        {
-            M_appleicon_exists = TRUE;
-            break;
-        }
-    }
-
-    for ( i=0; M_stat[i].name[0] != '-'; ++i )
-    {
-        if ( 0==strcmp(M_stat[i].name, "robots.txt") )
-        {
-            M_robots_exists = TRUE;
-            break;
-        }
-    }
-
-    DBG("Standard icons OK"); */
 
     /* libSHA1 test */
 

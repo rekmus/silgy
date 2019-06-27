@@ -380,6 +380,8 @@ typedef char str64k[1024*64];
 #define MONOTONIC_CLOCK_NAME            CLOCK_MONOTONIC
 #endif
 
+#define STR(str)                        lib_get_string(ci, str)
+
 #ifndef MAX_BLACKLIST
 #define MAX_BLACKLIST                   10000
 #endif
@@ -1042,13 +1044,32 @@ typedef struct {
 /* messages */
 
 #define MAX_MSG_LEN     255
+
+#ifndef MAX_MESSAGES
 #define MAX_MESSAGES    1000
+#endif
 
 typedef struct {
     int  code;
     char lang[8];
     char message[MAX_MSG_LEN+1];
-} messages_t;
+} message_t;
+
+
+/* strings */
+
+#define MAX_STR_LEN     255
+
+#ifndef MAX_STRINGS
+#define MAX_STRINGS     1000
+#endif
+
+typedef struct {
+    char lang[8];
+    char string[MAX_STR_LEN+1];
+    char string_upper[MAX_STR_LEN+1];
+    char string_lang[MAX_STR_LEN+1];
+} string_t;
 
 
 
@@ -1094,8 +1115,10 @@ extern int      G_sessions_hwm;             /* highest number of active user ses
 extern time_t   G_now;                      /* current time */
 extern struct tm *G_ptm;                    /* human readable current time */
 extern char     G_last_modified[32];        /* response header field with server's start time */
-extern messages_t G_messages[MAX_MESSAGES];
+extern message_t G_messages[MAX_MESSAGES];
 extern int      G_next_message;
+extern string_t G_strings[MAX_STRINGS];
+extern int      G_next_string;
 
 #ifdef HTTPS
 extern bool     G_ssl_lib_initialized;
