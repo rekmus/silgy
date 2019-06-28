@@ -377,7 +377,7 @@ static char unknown[128];
 
 /* --------------------------------------------------------------------------
    Get error description for user
-   Pick the user agent language if possible
+   Pick the user session language if possible
    TODO: binary search
 -------------------------------------------------------------------------- */
 char *silgy_message_lang(int ci, int code)
@@ -399,7 +399,7 @@ char *silgy_message_lang(int ci, int code)
 
 /* --------------------------------------------------------------------------
    Get a string
-   Pick the user agent language if possible
+   Pick the user session language if possible
    If not, return given string
    TODO: binary search
 -------------------------------------------------------------------------- */

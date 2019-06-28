@@ -4518,6 +4518,10 @@ static int set_http_req_val(int ci, const char *label, const char *value)
         conn[ci].lang[i] = EOS;
 
         DBG("conn[ci].lang: [%s]", conn[ci].lang);
+
+        /* for silgy_message_lang and lib_get_string if no session */
+
+        strcpy(uses[0].lang, conn[ci].lang);
     }
     else if ( 0==strcmp(ulabel, "CONTENT-TYPE") )
     {
@@ -5768,7 +5772,10 @@ int main(int argc, char *argv[])
             if ( uses[1].sesid[0] )
                 conn[0].usi = 1;    /* user session present */
             else
+            {
                 conn[0].usi = 0;    /* no session */
+                strcpy(uses[0].lang, conn[0].lang);  /* for silgy_message_lang and lib_get_string */
+            }
 
             /* globals */
 
@@ -5786,8 +5793,7 @@ int main(int argc, char *argv[])
 
             strcpy(G_last_modified, req.hdr.last_modified);
 
-            if ( conn[0].usi )
-                lib_set_datetime_formats(US.lang);
+            lib_set_datetime_formats(US.lang);
 
             /* ----------------------------------------------------------- */
 
