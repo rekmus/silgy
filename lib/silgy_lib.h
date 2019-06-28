@@ -108,6 +108,11 @@ typedef struct {
 #define CALL_REST_STATUS_OK                         CALL_HTTP_STATUS_OK
 
 
+#ifndef STRINGS_SEP
+#define STRINGS_SEP             '|'
+#endif
+
+
 /* JSON */
 
 #define JSON_STRING             0

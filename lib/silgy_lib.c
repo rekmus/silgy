@@ -184,13 +184,6 @@ static void parse_and_set_strings(const char *lang, const char *data)
 
     while ( *p )
     {
-//        if ( *p=='\n' )   /* reset whatever it was */
-//        {
-//            now_key = 1;
-//            now_val = 0;
-//            now_com = 0;
-//            j = 0;
-//        }
         if ( *p=='#' )   /* comment */
         {
             now_key = 0;
@@ -203,7 +196,7 @@ static void parse_and_set_strings(const char *lang, const char *data)
                 silgy_add_string(lang, string, string_lang);
             }
         }
-        else if ( now_key && *p=='|' )   /* separator */
+        else if ( now_key && *p==STRINGS_SEP )   /* separator */
         {
             now_key = 0;
             now_val = 1;
