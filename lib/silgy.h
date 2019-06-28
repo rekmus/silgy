@@ -1051,7 +1051,7 @@ typedef struct {
 
 typedef struct {
     int  code;
-    char lang[8];
+    char lang[LANG_LEN+1];
     char message[MAX_MSG_LEN+1];
 } message_t;
 
@@ -1065,7 +1065,7 @@ typedef struct {
 #endif
 
 typedef struct {
-    char lang[8];
+    char lang[LANG_LEN+1];
     char string[MAX_STR_LEN+1];
     char string_upper[MAX_STR_LEN+1];
     char string_lang[MAX_STR_LEN+1];

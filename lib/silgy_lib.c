@@ -3990,31 +3990,29 @@ static char str[32];
 ---------------------------------------------------------------------------*/
 void lib_set_datetime_formats(const char *lang)
 {
-    char ulang[8];
-
+#ifdef DUMP
     DBG("lib_set_datetime_formats, lang [%s]", lang);
+#endif
 
-    strcpy(ulang, upper(lang));
+    /* date format */
 
-    // date format
-
-    if ( 0==strcmp(ulang, "EN-US") )
+    if ( 0==strcmp(lang, "EN-US") )
         M_df = 1;
-    else if ( 0==strcmp(ulang, "EN-GB") || 0==strcmp(ulang, "EN-AU") || 0==strcmp(ulang, "FR-FR") || 0==strcmp(ulang, "EN-IE") || 0==strcmp(ulang, "ES-ES") || 0==strcmp(ulang, "IT-IT") || 0==strcmp(ulang, "PT-PT") || 0==strcmp(ulang, "PT-BR") || 0==strcmp(ulang, "ES-AR") )
+    else if ( 0==strcmp(lang, "EN-GB") || 0==strcmp(lang, "EN-AU") || 0==strcmp(lang, "FR-FR") || 0==strcmp(lang, "EN-IE") || 0==strcmp(lang, "ES-ES") || 0==strcmp(lang, "IT-IT") || 0==strcmp(lang, "PT-PT") || 0==strcmp(lang, "PT-BR") || 0==strcmp(lang, "ES-AR") )
         M_df = 2;
-    else if ( 0==strcmp(ulang, "PL-PL") || 0==strcmp(ulang, "RU-RU") || 0==strcmp(ulang, "DE-CH") || 0==strcmp(ulang, "FR-CH") )
+    else if ( 0==strcmp(lang, "PL-PL") || 0==strcmp(lang, "RU-RU") || 0==strcmp(lang, "DE-CH") || 0==strcmp(lang, "FR-CH") )
         M_df = 3;
     else
         M_df = 0;
 
-    // amount format
+    /* amount format */
 
-    if ( 0==strcmp(ulang, "EN-US") || 0==strcmp(ulang, "EN-GB") || 0==strcmp(ulang, "EN-AU") || 0==strcmp(ulang, "TH-TH") )
+    if ( 0==strcmp(lang, "EN-US") || 0==strcmp(lang, "EN-GB") || 0==strcmp(lang, "EN-AU") || 0==strcmp(lang, "TH-TH") )
     {
         M_tsep = ',';
         M_dsep = '.';
     }
-    else if ( 0==strcmp(ulang, "PL-PL") || 0==strcmp(ulang, "IT-IT") || 0==strcmp(ulang, "NB-NO") || 0==strcmp(ulang, "ES-ES") )
+    else if ( 0==strcmp(lang, "PL-PL") || 0==strcmp(lang, "IT-IT") || 0==strcmp(lang, "NB-NO") || 0==strcmp(lang, "ES-ES") )
     {
         M_tsep = '.';
         M_dsep = ',';

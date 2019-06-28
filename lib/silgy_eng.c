@@ -4522,6 +4522,8 @@ static int set_http_req_val(int ci, const char *label, const char *value)
         /* for silgy_message_lang and lib_get_string if no session */
 
         strcpy(uses[0].lang, conn[ci].lang);
+
+        lib_set_datetime_formats(conn[ci].lang);
     }
     else if ( 0==strcmp(ulabel, "CONTENT-TYPE") )
     {
