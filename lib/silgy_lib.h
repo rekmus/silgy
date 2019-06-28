@@ -47,6 +47,9 @@ typedef char                    QSVAL[QSBUF];
 //typedef struct QSVAL          { char x[QSBUF]; } QSVAL;
 
 
+#define MSG_STR(code)           silgy_message_lang(ci, code)
+
+
 #ifdef APP_EMAIL_FROM_USER
 #define EMAIL_FROM_USER         APP_EMAIL_FROM_USER
 #else
@@ -108,8 +111,14 @@ typedef struct {
 #define CALL_REST_STATUS_OK                         CALL_HTTP_STATUS_OK
 
 
+/* strings */
+
 #ifndef STRINGS_SEP
 #define STRINGS_SEP             '|'
+#endif
+
+#ifndef STRINGS_LANG
+#define STRINGS_LANG            "EN-US"
 #endif
 
 

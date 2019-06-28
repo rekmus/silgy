@@ -386,7 +386,7 @@ char *silgy_message_lang(int ci, int code)
 
     int i;
     for ( i=0; i<G_next_message; ++i )
-        if ( G_messages[i].code == code && 0==strcmp(G_messages[i].lang, conn[ci].lang) )
+        if ( G_messages[i].code == code && 0==strcmp(G_messages[i].lang, US.lang) )
             return G_messages[i].message;
 
     /* fallback */
@@ -407,13 +407,16 @@ const char *lib_get_string(int ci, const char *str)
 {
 #ifndef SILGY_WATCHER
 
+    if ( 0==strcmp(US.lang, STRINGS_LANG) )   /* no need to translate */
+        return str;
+
     char str_upper[MAX_STR_LEN+1];
 
     strcpy(str_upper, upper(str));
 
     int i;
     for ( i=0; i<G_next_string; ++i )
-        if ( 0==strcmp(G_strings[i].lang, conn[ci].lang) && 0==strcmp(G_strings[i].string_upper, str_upper) )
+        if ( 0==strcmp(G_strings[i].lang, US.lang) && 0==strcmp(G_strings[i].string_upper, str_upper) )
             return G_strings[i].string_lang;
 
     /* fallback */
