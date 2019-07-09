@@ -63,7 +63,60 @@ typedef char                    QSVAL[QSBUF];
 #define SHUTDOWN    3
 
 
-#define MAX_SHM_SEGMENTS                            100
+#define MAX_SHM_SEGMENTS        100
+
+
+
+/* languages */
+
+#define MAX_LANGUAGES           250
+
+typedef struct {
+    char lang[LANG_LEN+1];
+    int  first_string;
+    int  next_lang_string;
+} lang_t;
+
+
+/* messages */
+
+#define MAX_MSG_LEN             255
+
+#ifndef MAX_MESSAGES
+#define MAX_MESSAGES            1000
+#endif
+
+typedef struct {
+    int  code;
+    char lang[LANG_LEN+1];
+    char message[MAX_MSG_LEN+1];
+} message_t;
+
+
+/* strings */
+
+#ifndef STRINGS_SEP
+#define STRINGS_SEP             '|'
+#endif
+
+#ifndef STRINGS_LANG
+#define STRINGS_LANG            "EN-US"
+#endif
+
+#define MAX_STR_LEN             255
+
+#ifndef MAX_STRINGS
+#define MAX_STRINGS             1000
+#endif
+
+typedef struct {
+    char lang[LANG_LEN+1];
+    char string[MAX_STR_LEN+1];
+    char string_upper[MAX_STR_LEN+1];
+    char string_lang[MAX_STR_LEN+1];
+} string_t;
+
+
 
 
 /* REST calls */
@@ -109,17 +162,6 @@ typedef struct {
 #define CALL_REST_CONTENT_TYPE                      CALL_HTTP_CONTENT_TYPE
 #define CALL_HTTP_STATUS_OK                         (G_rest_status>=200 && G_rest_status<=204)
 #define CALL_REST_STATUS_OK                         CALL_HTTP_STATUS_OK
-
-
-/* strings */
-
-#ifndef STRINGS_SEP
-#define STRINGS_SEP             '|'
-#endif
-
-#ifndef STRINGS_LANG
-#define STRINGS_LANG            "EN-US"
-#endif
 
 
 /* JSON */

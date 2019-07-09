@@ -1041,35 +1041,12 @@ typedef struct {
 } counters_fmt_t;
 
 
-/* messages */
 
-#define MAX_MSG_LEN     255
+#include <silgy_lib.h>
 
-#ifndef MAX_MESSAGES
-#define MAX_MESSAGES    1000
+#ifdef USERS
+#include <silgy_usr.h>
 #endif
-
-typedef struct {
-    int  code;
-    char lang[LANG_LEN+1];
-    char message[MAX_MSG_LEN+1];
-} message_t;
-
-
-/* strings */
-
-#define MAX_STR_LEN     255
-
-#ifndef MAX_STRINGS
-#define MAX_STRINGS     1000
-#endif
-
-typedef struct {
-    char lang[LANG_LEN+1];
-    char string[MAX_STR_LEN+1];
-    char string_upper[MAX_STR_LEN+1];
-    char string_lang[MAX_STR_LEN+1];
-} string_t;
 
 
 
@@ -1119,6 +1096,8 @@ extern message_t G_messages[MAX_MESSAGES];
 extern int      G_next_message;
 extern string_t G_strings[MAX_STRINGS];
 extern int      G_next_string;
+extern lang_t   G_languages[MAX_LANGUAGES];
+extern int      G_next_language;
 
 #ifdef HTTPS
 extern bool     G_ssl_lib_initialized;
@@ -1174,12 +1153,6 @@ extern long     G_new_user_id;
 }   /* extern "C" */
 #endif
 
-
-#include <silgy_lib.h>
-
-#ifdef USERS
-#include <silgy_usr.h>
-#endif
 
 
 

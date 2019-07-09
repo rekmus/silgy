@@ -35,6 +35,8 @@ message_t   G_messages[MAX_MESSAGES]={0};
 int         G_next_message=0;
 string_t    G_strings[MAX_STRINGS]={0};
 int         G_next_string=0;
+lang_t      G_languages[MAX_LANGUAGES]={0};
+int         G_next_language=0;
 
 #ifdef HTTPS
 bool        G_ssl_lib_initialized=0;
@@ -182,6 +184,15 @@ static void parse_and_set_strings(const char *lang, const char *data)
     char string_lang[MAX_STR_LEN+1];
     bool now_key=1, now_val=0, now_com=0;
 
+    if ( G_next_language >= MAX_LANGUAGES )
+    {
+        ERR("MAX_LANGUAGES (%d) has been reached", MAX_LANGUAGES);
+        return;
+    }
+
+    strcpy(G_languages[G_next_language].lang, upper(lang));
+    G_languages[G_next_language].first_string = G_next_string;
+
     while ( *p )
     {
         if ( *p=='#' )   /* comment */
@@ -237,6 +248,9 @@ static void parse_and_set_strings(const char *lang, const char *data)
         string_lang[j] = EOS;
         silgy_add_string(lang, string, string_lang);
     }
+
+    G_languages[G_next_language].next_lang_string = G_next_string;
+    ++G_next_language;
 }
 
 
@@ -410,14 +424,24 @@ const char *lib_get_string(int ci, const char *str)
     if ( 0==strcmp(US.lang, STRINGS_LANG) )   /* no need to translate */
         return str;
 
+    if ( !US.lang[0] )   /* unknown client language */
+        return str;
+
     char str_upper[MAX_STR_LEN+1];
 
     strcpy(str_upper, upper(str));
 
-    int i;
-    for ( i=0; i<G_next_string; ++i )
-        if ( 0==strcmp(G_strings[i].lang, US.lang) && 0==strcmp(G_strings[i].string_upper, str_upper) )
-            return G_strings[i].string_lang;
+    int l, s;
+
+    for ( l=0; l<G_next_language; ++l )   /* jump to the right language */
+    {
+        if ( 0==strcmp(G_languages[l].lang, US.lang) )
+        {
+            for ( s=G_languages[l].first_string; s<G_languages[l].next_lang_string; ++s )
+                if ( 0==strcmp(G_strings[s].string_upper, str_upper) )
+                    return G_strings[s].string_lang;
+        }
+    }
 
     /* fallback */
 
