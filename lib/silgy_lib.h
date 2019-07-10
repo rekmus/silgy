@@ -74,7 +74,7 @@ typedef char                    QSVAL[QSBUF];
 typedef struct {
     char lang[LANG_LEN+1];
     int  first_string;
-    int  next_lang_string;
+    int  next_lang_index;
 } lang_t;
 
 

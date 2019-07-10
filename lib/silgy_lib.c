@@ -249,7 +249,7 @@ static void parse_and_set_strings(const char *lang, const char *data)
         silgy_add_string(lang, string, string_lang);
     }
 
-    G_languages[G_next_language].next_lang_string = G_next_string;
+    G_languages[G_next_language].next_lang_index = G_next_string;
     ++G_next_language;
 }
 
@@ -437,7 +437,22 @@ const char *lib_get_string(int ci, const char *str)
     {
         if ( 0==strcmp(G_languages[l].lang, US.lang) )
         {
-            for ( s=G_languages[l].first_string; s<G_languages[l].next_lang_string; ++s )
+            for ( s=G_languages[l].first_string; s<G_languages[l].next_lang_index; ++s )
+                if ( 0==strcmp(G_strings[s].string_upper, str_upper) )
+                    return G_strings[s].string_lang;
+
+            /* language found but not this string */
+            return str;
+        }
+    }
+
+    /* try only language (without country) code */
+
+    for ( l=0; l<G_next_language; ++l )
+    {
+        if ( 0==strncmp(G_languages[l].lang, US.lang, 2) )
+        {
+            for ( s=G_languages[l].first_string; s<G_languages[l].next_lang_index; ++s )
                 if ( 0==strcmp(G_strings[s].string_upper, str_upper) )
                     return G_strings[s].string_lang;
         }
