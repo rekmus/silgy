@@ -290,7 +290,7 @@ static char unknown[128];
    Pick the user session language if possible
    TODO: binary search
 -------------------------------------------------------------------------- */
-char *silgy_message(int ci, int code)
+char *lib_get_message(int ci, int code)
 {
 #ifndef SILGY_WATCHER
 
@@ -1669,7 +1669,7 @@ void lib_send_msg_description(int ci, int code)
         /* keep default category */
     }
 
-    strcpy(msg, silgy_message(ci, code));
+    strcpy(msg, silgy_message(code));
 
 #ifdef MSG_FORMAT_JSON
     OUT("{\"code\":%d,\"category\":\"%s\",\"message\":\"%s\"}", code, cat, msg);

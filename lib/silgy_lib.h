@@ -47,9 +47,6 @@ typedef char                    QSVAL[QSBUF];
 //typedef struct QSVAL          { char x[QSBUF]; } QSVAL;
 
 
-#define MSG_STR(code)           silgy_message(ci, code)
-
-
 #ifdef APP_EMAIL_FROM_USER
 #define EMAIL_FROM_USER         APP_EMAIL_FROM_USER
 #else
@@ -80,6 +77,7 @@ typedef struct {
 } lang_t;
 
 
+
 /* messages */
 
 #ifndef MAX_MSG_LEN
@@ -96,7 +94,10 @@ typedef struct {
     char message[MAX_MSG_LEN+1];
 } message_t;
 
-#define SORT_MESSAGES           qsort(&G_messages, G_next_msg, sizeof(message_t), compare_messages)
+
+#define silgy_message(code)     lib_get_message(ci, code)
+#define MSG(code)               lib_get_message(ci, code)
+
 
 
 /* strings */
@@ -337,7 +338,7 @@ extern "C" {
     void silgy_add_message(int code, const char *lang, const char *message, ...);
     int  compare_messages(const void *a, const void *b);
     void sort_messages(void);
-    char *silgy_message(int ci, int code);
+    char *lib_get_message(int ci, int code);
     void silgy_add_string(const char *lang, const char *str, const char *str_lang);
     const char *lib_get_string(int ci, const char *str);
     char *urlencode(const char *src);

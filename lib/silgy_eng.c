@@ -4748,7 +4748,7 @@ static void gen_page_msg(int ci, int code)
     if ( REQ_MOB )  // if mobile request
         OUT("<meta name=\"viewport\" content=\"width=device-width\">");
     OUT("</head>");
-    OUT("<body><p>%s</p></body>", silgy_message(ci, code));
+    OUT("<body><p>%s</p></body>", silgy_message(code));
     OUT("</html>");
 
 #endif  /* APP_ERROR_PAGE */
