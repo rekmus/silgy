@@ -31,12 +31,18 @@ time_t      G_now=0;                    /* current time (GMT) */
 struct tm   *G_ptm={0};                 /* human readable current time */
 char        G_dt[20]="";                /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 char        G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
+
+/* messages */
 message_t   G_messages[MAX_MESSAGES]={0};
-int         G_next_message=0;
+int         G_next_msg=0;
+lang_t      G_msg_lang[MAX_LANGUAGES]={0};
+int         G_next_msg_lang=0;
+
+/* strings */
 string_t    G_strings[MAX_STRINGS]={0};
-int         G_next_string=0;
-lang_t      G_languages[MAX_LANGUAGES]={0};
-int         G_next_language=0;
+int         G_next_str=0;
+lang_t      G_str_lang[MAX_LANGUAGES]={0};
+int         G_next_str_lang=0;
 
 #ifdef HTTPS
 bool        G_ssl_lib_initialized=0;
@@ -172,6 +178,161 @@ static void load_err_messages()
 
 
 /* --------------------------------------------------------------------------
+   Add error message
+-------------------------------------------------------------------------- */
+void silgy_add_message(int code, const char *lang, const char *message, ...)
+{
+    if ( G_next_msg >= MAX_MESSAGES )
+    {
+        ERR("MAX_MESSAGES (%d) has been reached", MAX_MESSAGES);
+        return;
+    }
+
+    va_list plist;
+    char buffer[MAX_MSG_LEN+1];
+
+    /* compile message with arguments into buffer */
+
+    va_start(plist, message);
+    vsprintf(buffer, message, plist);
+    va_end(plist);
+
+    G_messages[G_next_msg].code = code;
+    if ( lang )
+        strcpy(G_messages[G_next_msg].lang, upper(lang));
+    strcpy(G_messages[G_next_msg].message, buffer);
+
+    ++G_next_msg;
+
+    /* in case message was added after init */
+
+    if ( G_initialized )
+        sort_messages();
+}
+
+
+/* --------------------------------------------------------------------------
+   Comparing function for messages
+---------------------------------------------------------------------------*/
+int compare_messages(const void *a, const void *b)
+{
+    const message_t *p1 = (message_t*)a;
+    const message_t *p2 = (message_t*)b;
+
+    int res = strcmp(p1->lang, p2->lang);
+
+    if ( res > 0 )
+        return 1;
+    else if ( res < 0 )
+        return -1;
+
+    /* same language then */
+
+    if ( p1->code < p2->code )
+        return -1;
+    else if ( p1->code > p2->code )
+        return 1;
+    else
+        return 0;
+}
+
+
+/* --------------------------------------------------------------------------
+   Sort and index messages by languages
+-------------------------------------------------------------------------- */
+void sort_messages()
+{
+    qsort(&G_messages, G_next_msg, sizeof(message_t), compare_messages);
+
+    int i;
+
+    for ( i=0; i<G_next_msg; ++i )
+    {
+        if ( 0 != strcmp(G_messages[i].lang, G_msg_lang[G_next_msg_lang].lang) )
+        {
+            if ( G_next_msg_lang ) G_msg_lang[G_next_msg_lang-1].next_lang_index = i;
+
+            strcpy(G_msg_lang[G_next_msg_lang].lang, G_messages[i].lang);
+            G_msg_lang[G_next_msg_lang].first_index = i;
+            ++G_next_msg_lang;
+        }
+    }
+
+    G_msg_lang[G_next_msg_lang-1].next_lang_index = G_next_msg;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get error description for user in STRINGS_LANG
+-------------------------------------------------------------------------- */
+static char *silgy_message_fallback(int code)
+{
+    int l, m;
+
+    for ( l=0; l<G_next_msg_lang; ++l )   /* jump to the right language */
+    {
+        if ( 0==strcmp(G_msg_lang[l].lang, STRINGS_LANG) )
+        {
+            for ( m=G_msg_lang[l].first_index; m<G_msg_lang[l].next_lang_index; ++m )
+                if ( G_messages[m].code == code )
+                    return G_messages[m].message;
+        }
+    }
+
+static char unknown[128];
+    sprintf(unknown, "Unknown code: %d", code);
+    return unknown;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get error description for user
+   Pick the user session language if possible
+   TODO: binary search
+-------------------------------------------------------------------------- */
+char *silgy_message(int ci, int code)
+{
+#ifndef SILGY_WATCHER
+
+    if ( 0==strcmp(US.lang, STRINGS_LANG) )   /* no need to translate */
+        return silgy_message_fallback(code);
+
+    if ( !US.lang[0] )   /* unknown client language */
+        return silgy_message_fallback(code);
+
+    int l, m;
+
+    for ( l=0; l<G_next_msg_lang; ++l )   /* jump to the right language */
+    {
+        if ( 0==strcmp(G_msg_lang[l].lang, US.lang) )
+        {
+            for ( m=G_msg_lang[l].first_index; m<G_msg_lang[l].next_lang_index; ++m )
+                if ( G_messages[m].code == code )
+                    return G_messages[m].message;
+        }
+    }
+
+    /* if not found, ignore country code */
+
+    for ( l=0; l<G_next_msg_lang; ++l )
+    {
+        if ( 0==strncmp(G_msg_lang[l].lang, US.lang, 2) )
+        {
+            for ( m=G_msg_lang[l].first_index; m<G_msg_lang[l].next_lang_index; ++m )
+                if ( G_messages[m].code == code )
+                    return G_messages[m].message;
+        }
+    }
+
+    /* fallback */
+
+    return silgy_message_fallback(code);
+
+#endif  /* SILGY_WATCHER */
+}
+
+
+/* --------------------------------------------------------------------------
    Parse and set strings from data
 -------------------------------------------------------------------------- */
 static void parse_and_set_strings(const char *lang, const char *data)
@@ -180,18 +341,18 @@ static void parse_and_set_strings(const char *lang, const char *data)
 
     const char *p=data;
     int i, j=0;
-    char string[MAX_STR_LEN+1];
-    char string_lang[MAX_STR_LEN+1];
+    char string_orig[MAX_STR_LEN+1];
+    char string_in_lang[MAX_STR_LEN+1];
     bool now_key=1, now_val=0, now_com=0;
 
-    if ( G_next_language >= MAX_LANGUAGES )
+    if ( G_next_str_lang >= MAX_LANGUAGES )
     {
         ERR("MAX_LANGUAGES (%d) has been reached", MAX_LANGUAGES);
         return;
     }
 
-    strcpy(G_languages[G_next_language].lang, upper(lang));
-    G_languages[G_next_language].first_string = G_next_string;
+    strcpy(G_str_lang[G_next_str_lang].lang, upper(lang));
+    G_str_lang[G_next_str_lang].first_index = G_next_str;
 
     while ( *p )
     {
@@ -203,15 +364,15 @@ static void parse_and_set_strings(const char *lang, const char *data)
             if ( now_val )
             {
                 now_val = 0;
-                string_lang[j] = EOS;
-                silgy_add_string(lang, string, string_lang);
+                string_in_lang[j] = EOS;
+                silgy_add_string(lang, string_orig, string_in_lang);
             }
         }
         else if ( now_key && *p==STRINGS_SEP )   /* separator */
         {
             now_key = 0;
             now_val = 1;
-            string[j] = EOS;
+            string_orig[j] = EOS;
             j = 0;
         }
         else if ( *p=='\r' || *p=='\n' )
@@ -219,8 +380,8 @@ static void parse_and_set_strings(const char *lang, const char *data)
             if ( now_val )
             {
                 now_val = 0;
-                string_lang[j] = EOS;
-                silgy_add_string(lang, string, string_lang);
+                string_in_lang[j] = EOS;
+                silgy_add_string(lang, string_orig, string_in_lang);
             }
             else if ( now_com )
             {
@@ -233,11 +394,11 @@ static void parse_and_set_strings(const char *lang, const char *data)
         }
         else if ( now_key && *p!='\n' )
         {
-            string[j++] = *p;
+            string_orig[j++] = *p;
         }
         else if ( now_val )
         {
-            string_lang[j++] = *p;
+            string_in_lang[j++] = *p;
         }
 
         ++p;
@@ -245,12 +406,12 @@ static void parse_and_set_strings(const char *lang, const char *data)
 
     if ( now_val )
     {
-        string_lang[j] = EOS;
-        silgy_add_string(lang, string, string_lang);
+        string_in_lang[j] = EOS;
+        silgy_add_string(lang, string_orig, string_in_lang);
     }
 
-    G_languages[G_next_language].next_lang_index = G_next_string;
-    ++G_next_language;
+    G_str_lang[G_next_str_lang].next_lang_index = G_next_str;
+    ++G_next_str_lang;
 }
 
 
@@ -325,89 +486,22 @@ static void load_strings()
 
 
 /* --------------------------------------------------------------------------
-   Add error message
--------------------------------------------------------------------------- */
-void silgy_add_message(int code, const char *lang, const char *message, ...)
-{
-    if ( G_next_message >= MAX_MESSAGES )
-    {
-        ERR("MAX_MESSAGES (%d) has been reached", MAX_MESSAGES);
-        return;
-    }
-
-    va_list plist;
-    char buffer[MAX_MSG_LEN+1];
-
-    /* compile message with arguments into buffer */
-
-    va_start(plist, message);
-    vsprintf(buffer, message, plist);
-    va_end(plist);
-
-    G_messages[G_next_message].code = code;
-    if ( lang )
-        strcpy(G_messages[G_next_message].lang, upper(lang));
-    strcpy(G_messages[G_next_message].message, buffer);
-
-    ++G_next_message;
-}
-
-
-/* --------------------------------------------------------------------------
    Add string
 -------------------------------------------------------------------------- */
 void silgy_add_string(const char *lang, const char *str, const char *str_lang)
 {
-    if ( G_next_string >= MAX_STRINGS )
+    if ( G_next_str >= MAX_STRINGS )
     {
         ERR("MAX_STRINGS (%d) has been reached", MAX_STRINGS);
         return;
     }
 
-    strcpy(G_strings[G_next_string].lang, upper(lang));
-    strcpy(G_strings[G_next_string].string, str);
-    strcpy(G_strings[G_next_string].string_upper, upper(str));
-    strcpy(G_strings[G_next_string].string_lang, str_lang);
+    strcpy(G_strings[G_next_str].lang, upper(lang));
+//    strcpy(G_strings[G_next_str].string_orig, str);
+    strcpy(G_strings[G_next_str].string_upper, upper(str));
+    strcpy(G_strings[G_next_str].string_in_lang, str_lang);
 
-    ++G_next_string;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get error description for user
--------------------------------------------------------------------------- */
-char *silgy_message(int code)
-{
-    int i;
-    for ( i=0; i<G_next_message; ++i )
-        if ( G_messages[i].code == code )
-            return G_messages[i].message;
-
-static char unknown[128];
-    sprintf(unknown, "Unknown code: %d", code);
-    return unknown;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get error description for user
-   Pick the user session language if possible
-   TODO: binary search
--------------------------------------------------------------------------- */
-char *silgy_message_lang(int ci, int code)
-{
-#ifndef SILGY_WATCHER
-
-    int i;
-    for ( i=0; i<G_next_message; ++i )
-        if ( G_messages[i].code == code && 0==strcmp(G_messages[i].lang, US.lang) )
-            return G_messages[i].message;
-
-    /* fallback */
-
-    return silgy_message(code);
-
-#endif  /* SILGY_WATCHER */
+    ++G_next_str;
 }
 
 
@@ -433,28 +527,28 @@ const char *lib_get_string(int ci, const char *str)
 
     int l, s;
 
-    for ( l=0; l<G_next_language; ++l )   /* jump to the right language */
+    for ( l=0; l<G_next_str_lang; ++l )   /* jump to the right language */
     {
-        if ( 0==strcmp(G_languages[l].lang, US.lang) )
+        if ( 0==strcmp(G_str_lang[l].lang, US.lang) )
         {
-            for ( s=G_languages[l].first_string; s<G_languages[l].next_lang_index; ++s )
+            for ( s=G_str_lang[l].first_index; s<G_str_lang[l].next_lang_index; ++s )
                 if ( 0==strcmp(G_strings[s].string_upper, str_upper) )
-                    return G_strings[s].string_lang;
+                    return G_strings[s].string_in_lang;
 
             /* language found but not this string */
             return str;
         }
     }
 
-    /* try only language (without country) code */
+    /* if not found, ignore country code */
 
-    for ( l=0; l<G_next_language; ++l )
+    for ( l=0; l<G_next_str_lang; ++l )
     {
-        if ( 0==strncmp(G_languages[l].lang, US.lang, 2) )
+        if ( 0==strncmp(G_str_lang[l].lang, US.lang, 2) )
         {
-            for ( s=G_languages[l].first_string; s<G_languages[l].next_lang_index; ++s )
+            for ( s=G_str_lang[l].first_index; s<G_str_lang[l].next_lang_index; ++s )
                 if ( 0==strcmp(G_strings[s].string_upper, str_upper) )
-                    return G_strings[s].string_lang;
+                    return G_strings[s].string_in_lang;
         }
     }
 
@@ -1575,7 +1669,7 @@ void lib_send_msg_description(int ci, int code)
         /* keep default category */
     }
 
-    strcpy(msg, silgy_message_lang(ci, code));
+    strcpy(msg, silgy_message(ci, code));
 
 #ifdef MSG_FORMAT_JSON
     OUT("{\"code\":%d,\"category\":\"%s\",\"message\":\"%s\"}", code, cat, msg);

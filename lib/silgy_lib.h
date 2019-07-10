@@ -47,7 +47,7 @@ typedef char                    QSVAL[QSBUF];
 //typedef struct QSVAL          { char x[QSBUF]; } QSVAL;
 
 
-#define MSG_STR(code)           silgy_message_lang(ci, code)
+#define MSG_STR(code)           silgy_message(ci, code)
 
 
 #ifdef APP_EMAIL_FROM_USER
@@ -69,18 +69,22 @@ typedef char                    QSVAL[QSBUF];
 
 /* languages */
 
+#ifndef MAX_LANGUAGES
 #define MAX_LANGUAGES           250
+#endif
 
 typedef struct {
     char lang[LANG_LEN+1];
-    int  first_string;
+    int  first_index;
     int  next_lang_index;
 } lang_t;
 
 
 /* messages */
 
+#ifndef MAX_MSG_LEN
 #define MAX_MSG_LEN             255
+#endif
 
 #ifndef MAX_MESSAGES
 #define MAX_MESSAGES            1000
@@ -91,6 +95,8 @@ typedef struct {
     char lang[LANG_LEN+1];
     char message[MAX_MSG_LEN+1];
 } message_t;
+
+#define SORT_MESSAGES           qsort(&G_messages, G_next_msg, sizeof(message_t), compare_messages)
 
 
 /* strings */
@@ -103,7 +109,9 @@ typedef struct {
 #define STRINGS_LANG            "EN-US"
 #endif
 
+#ifndef MAX_STR_LEN
 #define MAX_STR_LEN             255
+#endif
 
 #ifndef MAX_STRINGS
 #define MAX_STRINGS             1000
@@ -111,9 +119,9 @@ typedef struct {
 
 typedef struct {
     char lang[LANG_LEN+1];
-    char string[MAX_STR_LEN+1];
+//    char string_orig[MAX_STR_LEN+1];
     char string_upper[MAX_STR_LEN+1];
-    char string_lang[MAX_STR_LEN+1];
+    char string_in_lang[MAX_STR_LEN+1];
 } string_t;
 
 
@@ -327,8 +335,9 @@ extern "C" {
     void silgy_lib_init(void);
     void silgy_lib_done(void);
     void silgy_add_message(int code, const char *lang, const char *message, ...);
-    char *silgy_message(int code);
-    char *silgy_message_lang(int ci, int code);
+    int  compare_messages(const void *a, const void *b);
+    void sort_messages(void);
+    char *silgy_message(int ci, int code);
     void silgy_add_string(const char *lang, const char *str, const char *str_lang);
     const char *lib_get_string(int ci, const char *str);
     char *urlencode(const char *src);

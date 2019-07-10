@@ -459,7 +459,7 @@ typedef char str64k[1024*64];
 #define SESID_LEN                       15
 #endif
 
-#define LANG_LEN                        7
+#define LANG_LEN                        5
 
 
 /* response caching */
@@ -1092,12 +1092,19 @@ extern int      G_sessions_hwm;             /* highest number of active user ses
 extern time_t   G_now;                      /* current time */
 extern struct tm *G_ptm;                    /* human readable current time */
 extern char     G_last_modified[32];        /* response header field with server's start time */
+extern bool     G_initialized;
+
+/* messages */
 extern message_t G_messages[MAX_MESSAGES];
-extern int      G_next_message;
+extern int      G_next_msg;
+extern lang_t   G_msg_lang[MAX_LANGUAGES];
+extern int      G_next_msg_lang;
+
+/* strings */
 extern string_t G_strings[MAX_STRINGS];
-extern int      G_next_string;
-extern lang_t   G_languages[MAX_LANGUAGES];
-extern int      G_next_language;
+extern int      G_next_str;
+extern lang_t   G_str_lang[MAX_LANGUAGES];
+extern int      G_next_str_lang;
 
 #ifdef HTTPS
 extern bool     G_ssl_lib_initialized;
