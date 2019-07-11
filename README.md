@@ -175,6 +175,7 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 * Executables, i.e. `silgy_app`, `silgy_svc`, `silgy_watcher`
 * Runtime scripts, i.e. `silgystart`, `silgystop`
 * Configuration: `silgy.conf`
+* Strings in additional languages: `strings.LL-CC`
 
 ### `res`
 
