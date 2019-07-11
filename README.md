@@ -27,7 +27,7 @@ As my wishes had come true, I decided to open my code and become famous. You're 
 
 ## What's in the box?
 
-As I am writing this in May 2019, Silgy lib contains everything that is necessary to build a complete, production-grade solution, including [session management](https://github.com/silgy/silgy/wiki/Sessions-in-Silgy), [users accounts](https://github.com/silgy/silgy/wiki/USERS-Module), [REST calls](https://github.com/silgy/silgy/wiki/RESTful-calls-from-Silgy) and multi-language support.
+As I am writing this in May 2019, Silgy lib contains everything that is necessary to build a complete, production-grade solution, including [session management](https://github.com/silgy/silgy/wiki/Sessions-in-Silgy), [users accounts](https://github.com/silgy/silgy/wiki/USERS-Module), [REST calls](https://github.com/silgy/silgy/wiki/RESTful-calls-from-Silgy) and [multi-language support](https://github.com/silgy/silgy/wiki/Silgy-multi-language-support).
 
 The only third-party dependencies are:
 
