@@ -127,9 +127,10 @@ void silgy_lib_init()
 
     load_err_messages();
 
+#ifndef SILGY_WATCHER
     /* load strings */
-
     load_strings();
+#endif
 }
 
 

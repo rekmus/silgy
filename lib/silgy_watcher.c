@@ -7,17 +7,19 @@
 #include "silgy.h"
 
 
-#define BUFSIZE         8196
+#define BUFSIZE             8196
 
-#define REASON_CONNECT  1
-#define REASON_WRITE    2
-#define REASON_READ     3
+#define REASON_CONNECT      1
+#define REASON_WRITE        2
+#define REASON_READ         3
 
-#define STOP_COMMAND    "sudo $SILGYDIR/bin/silgystop"
-#define START_COMMAND   "sudo $SILGYDIR/bin/silgystart"
+#define STOP_COMMAND        "sudo $SILGYDIR/bin/silgystop"
+#define START_COMMAND       "sudo $SILGYDIR/bin/silgystart"
 
 
 int         G_httpPort;
+bool        G_initialized=0;
+
 /* counters */
 counters_t  G_cnts_today;               /* today's counters */
 counters_t  G_cnts_yesterday;           /* yesterday's counters */
@@ -49,25 +51,14 @@ static struct sockaddr_in serv_addr;
 
     silgy_lib_init();
 
+    sort_messages();
+
+    G_initialized = 1;
+
     /* read the config file or set defaults ------------------------------ */
 
     char exec_name[256];
     lib_get_exec_name(exec_name, argv[0]);
-
-//    if ( G_appdir[0] )
-//    {
-//        sprintf(config, "%s/bin/%s.conf", G_appdir, exec_name);
-//        if ( !lib_read_conf(config) )   /* no config file there */
-//        {
-//            sprintf(config, "%s.conf", exec_name);
-//            lib_read_conf(config);
-//        }
-//    }
-//    else    /* no SILGYDIR -- try current dir */
-//    {
-//        sprintf(config, "%s.conf", exec_name);
-//        lib_read_conf(config);
-//    }
 
     if ( G_appdir[0] )
     {
