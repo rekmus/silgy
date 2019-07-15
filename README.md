@@ -23,6 +23,8 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 4. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
 
+5. **Simplicity**. Before writing my own web server, I tried a couple of libaries. They were either complicated, not intuitive, bloated or slow. Some look promising (Node.js), however database connections have proved to be too slow for my needs. There's also a tendency for using every new fireworks that's available in town, like i.e. functional programming. I just don't feel comfortable with this, so I wanted **straight, intuitive, procedural, single-threaded code**. All the complexity needs to be hidden in the library.
+
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
 
 ## What's in the box?
