@@ -266,9 +266,11 @@ void sort_messages()
 /* --------------------------------------------------------------------------
    Get error description for user in STRINGS_LANG
 -------------------------------------------------------------------------- */
-static char *silgy_message_fallback(int code)
+static char *lib_get_message_fallback(int code)
 {
     int l, m;
+
+    /* try in STRINGS_LANG */
 
     for ( l=0; l<G_next_msg_lang; ++l )   /* jump to the right language */
     {
@@ -279,6 +281,14 @@ static char *silgy_message_fallback(int code)
                     return G_messages[m].message;
         }
     }
+
+    /* try in any language */
+
+    for ( m=0; m<G_next_msg; ++m )
+        if ( G_messages[m].code == code )
+            return G_messages[m].message;
+
+    /* not found */
 
 static char unknown[128];
     sprintf(unknown, "Unknown code: %d", code);
@@ -296,10 +306,10 @@ char *lib_get_message(int ci, int code)
 #ifndef SILGY_WATCHER
 
     if ( 0==strcmp(US.lang, STRINGS_LANG) )   /* no need to translate */
-        return silgy_message_fallback(code);
+        return lib_get_message_fallback(code);
 
     if ( !US.lang[0] )   /* unknown client language */
-        return silgy_message_fallback(code);
+        return lib_get_message_fallback(code);
 
     int l, m;
 
@@ -327,7 +337,7 @@ char *lib_get_message(int ci, int code)
 
     /* fallback */
 
-    return silgy_message_fallback(code);
+    return lib_get_message_fallback(code);
 
 #endif  /* SILGY_WATCHER */
 }
