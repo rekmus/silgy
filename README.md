@@ -178,6 +178,8 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 * Runtime scripts, i.e. `silgystart`, `silgystop`
 * Configuration: `silgy.conf`
 * Strings in additional languages: `strings.LL-CC`
+* Blacklist, i.e. `blacklist.txt`
+* Whitelist, i.e. `whitelist.txt`
 
 ### `res`
 
