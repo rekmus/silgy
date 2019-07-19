@@ -631,9 +631,9 @@ typedef char str64k[1024*64];
 #define REQ1                            conn[ci].req1
 #define REQ2                            conn[ci].req2
 #define REQ3                            conn[ci].req3
-#define URI(uri_)                       (0==strcmp(conn[ci].uri, uri_))
+#define URI(uri)                        eng_is_uri(ci, uri)
 #define REQ(res)                        (0==strcmp(conn[ci].resource, res))
-#define ID(id)                          (0==strcmp(conn[ci].id, id))
+#define ID                              conn[ci].id
 #define US                              uses[conn[ci].usi]
 #define AUS                             auses[conn[ci].usi]
 #define HOST(str)                       eng_host(ci, str)
@@ -888,6 +888,7 @@ typedef struct {                            /* request details for silgy_svc */
     bool     post;
     char     uri[MAX_URI_LEN+1];
     char     resource[MAX_RESOURCE_LEN+1];
+    char     id[MAX_RESOURCE_LEN+1];
     char     uagent[MAX_VALUE_LEN+1];
     bool     mobile;
     char     referer[MAX_VALUE_LEN+1];
@@ -935,6 +936,7 @@ typedef struct {
     char     req1[MAX_RESOURCE_LEN+1];       /* from URI -- level 1 */
     char     req2[MAX_RESOURCE_LEN+1];       /* from URI -- level 2 */
     char     req3[MAX_RESOURCE_LEN+1];       /* from URI -- level 3 */
+    char     id[MAX_RESOURCE_LEN+1];         /* from URI -- last part */
     char     proto[16];                      /* HTTP request version */
     char     uagent[MAX_VALUE_LEN+1];        /* user agent string */
     bool     mobile;
@@ -1181,6 +1183,7 @@ extern "C" {
     void silgy_add_to_static_res(const char *name, const char *src);
     void eng_block_ip(const char *value, bool autoblocked);
     bool eng_host(int ci, const char *host);
+    bool eng_is_uri(int ci, const char *uri);
     void eng_out_check(int ci, const char *str);
     void eng_out_check_realloc(int ci, const char *str);
     void eng_out_check_realloc_bin(int ci, const char *data, int len);

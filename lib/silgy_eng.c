@@ -3849,6 +3849,7 @@ static void reset_conn(int ci, char new_state)
     conn[ci].req1[0] = EOS;
     conn[ci].req2[0] = EOS;
     conn[ci].req3[0] = EOS;
+    conn[ci].id[0] = EOS;
     conn[ci].uagent[0] = EOS;
     conn[ci].mobile = FALSE;
     conn[ci].referer[0] = EOS;
@@ -4193,6 +4194,7 @@ static int parse_req(int ci, int len)
 
         DBG("uri w/o qs [%s]", uri);
 
+        /* -------------------------------------------------------------- */
         /* tokenize */
 
         const char slash[]="/";
@@ -4233,10 +4235,33 @@ static int parse_req(int ci, int len)
             }
         }
 
+        /* -------------------------------------------------------------- */
+        /* ID for REST stuff */
+
+        char *last_slash = strrchr(conn[ci].uri, '/');
+
+        if ( last_slash )
+        {
+            ++last_slash;   /* skip '/' */
+
+            uri_i = 0;
+
+            while ( *last_slash && uri_i < MAX_RESOURCE_LEN-1 )
+                conn[ci].id[uri_i++] = *last_slash++;
+
+            conn[ci].id[uri_i] = EOS;
+        }
+
+        /* -------------------------------------------------------------- */
+
+#ifdef DUMP
         DBG("REQ0 [%s]", conn[ci].resource);
         DBG("REQ1 [%s]", conn[ci].req1);
         DBG("REQ2 [%s]", conn[ci].req2);
         DBG("REQ3 [%s]", conn[ci].req3);
+        DBG("  ID [%s]", conn[ci].id);
+#endif
+        /* -------------------------------------------------------------- */
 
         conn[ci].static_res = is_static_res(ci, conn[ci].uri);    /* statics --> set the flag!!! */
         /* now, it may have set conn[ci].status to 304 */
@@ -4245,6 +4270,7 @@ static int parse_req(int ci, int len)
             conn[ci].out_data = M_stat[conn[ci].static_res].data;
     }
 
+    /* -------------------------------------------------------------- */
     /* get the required authorization level for this resource */
 
     if ( conn[ci].static_res == NOT_STATIC )
@@ -5230,13 +5256,42 @@ void eng_block_ip(const char *value, bool autoblocked)
 -------------------------------------------------------------------------- */
 bool eng_host(int ci, const char *host)
 {
-    char uhost[64];
-    char conn_uhost[64];
+    char uhost[MAX_VALUE_LEN+1];
+    char conn_uhost[MAX_VALUE_LEN+1];
 
     strcpy(uhost, upper(host));
     strcpy(conn_uhost, upper(conn[ci].host));
 
     return (0==strcmp(conn_uhost, uhost));
+}
+
+
+/* --------------------------------------------------------------------------
+   Return true if URI matches
+-------------------------------------------------------------------------- */
+bool eng_is_uri(int ci, const char *uri)
+{
+    char uri_tmp[MAX_URI_LEN+1];
+
+    if ( uri[0] == '/' )
+        strcpy(uri_tmp, uri+1);
+    else
+        strcpy(uri_tmp, uri);
+
+    int len = strlen(uri_tmp);
+
+    if ( uri_tmp[len-1] == '*' )
+    {
+        len--;
+        uri_tmp[len] = EOS;
+    }
+    else if ( len > 4 && uri_tmp[len-4]=='{' && uri_tmp[len-3]=='i' && uri_tmp[len-2]=='d' && uri_tmp[len-1]=='}' )
+    {
+        len -= 4;
+        uri_tmp[len] = EOS;
+    }
+
+    return (0==strncmp(conn[ci].uri, uri_tmp, len));
 }
 
 
