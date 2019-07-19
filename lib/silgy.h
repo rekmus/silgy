@@ -63,7 +63,7 @@ typedef char                        bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "4.3.2"
+#define WEB_SERVER_VERSION          "4.3.3"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
@@ -286,9 +286,8 @@ typedef char str64k[1024*64];
 
 
 #define OUT_HEADER_BUFSIZE              4096            /* response header buffer length */
-#define TMP_BUFSIZE                     1048576         /* temporary string buffer size (1 MB) */
-#ifndef MAX_PAYLOAD_SIZE
-#define MAX_PAYLOAD_SIZE                16777216        /* max incoming POST data length (16 MB) */
+#ifndef MAX_PAYLOAD_SIZE                                /* max incoming POST data length (16 MB) */
+#define MAX_PAYLOAD_SIZE                16777216
 #endif
 #define MAX_LOG_STR_LEN                 4095            /* max log string length */
 #define MAX_METHOD_LEN                  7               /* method length */
@@ -335,6 +334,10 @@ typedef char str64k[1024*64];
 #define OUT_BUFSIZE                     131072          /* initial HTTP response buffer length (128 kB) */
 #define MAX_CONNECTIONS                 20              /* max TCP connections */
 #define MAX_SESSIONS                    10              /* max user sessions */
+#endif
+
+#ifndef TMP_BUFSIZE                                     /* temporary string buffer size */
+#define TMP_BUFSIZE                     OUT_BUFSIZE
 #endif
 
 #ifdef SILGY_SVC
