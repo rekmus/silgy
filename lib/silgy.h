@@ -627,12 +627,12 @@ typedef char str64k[1024*64];
 #define RES_ZIP                         'Z'
 
 
-#define REQ0                            conn[ci].resource
-#define REQ1                            conn[ci].req1
-#define REQ2                            conn[ci].req2
-#define REQ3                            conn[ci].req3
 #define URI(uri)                        eng_is_uri(ci, uri)
 #define REQ(res)                        (0==strcmp(conn[ci].resource, res))
+#define REQ0(res)                       (0==strcmp(conn[ci].resource, res))
+#define REQ1(res)                       (0==strcmp(conn[ci].req1, res))
+#define REQ2(res)                       (0==strcmp(conn[ci].req2, res))
+#define REQ3(res)                       (0==strcmp(conn[ci].req3, res))
 #define ID                              conn[ci].id
 #define US                              uses[conn[ci].usi]
 #define AUS                             auses[conn[ci].usi]

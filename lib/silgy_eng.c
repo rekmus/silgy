@@ -3170,9 +3170,9 @@ static void process_req(int ci)
     if ( ret==ERR_REDIRECTION || conn[ci].status==400 || conn[ci].status==401 || conn[ci].status==403 || conn[ci].status==404 || conn[ci].status==500 || conn[ci].status==503 )
     {
 #ifdef USERS
-        if ( conn[ci].usi && !LOGGED ) close_uses(conn[ci].usi, ci);
+//        if ( conn[ci].usi && !LOGGED ) close_uses(conn[ci].usi, ci);
 #else
-        if ( conn[ci].usi ) close_uses(conn[ci].usi, ci);
+//        if ( conn[ci].usi ) close_uses(conn[ci].usi, ci);
 #endif
         if ( !conn[ci].keep_content )   /* reset out buffer pointer as it could have contained something already */
         {
