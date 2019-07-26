@@ -3361,6 +3361,10 @@ static int deflate_inplace(z_stream *strm, unsigned char *buf, unsigned len, uns
 -------------------------------------------------------------------------- */
 static void gen_response_header(int ci)
 {
+#ifdef DUMP
+    bool compressed=FALSE;
+#endif
+
     DBG("gen_response_header, ci=%d", ci);
 
     char out_header[OUT_HEADER_BUFSIZE];
@@ -3518,6 +3522,9 @@ static          bool first=TRUE;
                     DBG("Compression success, old len=%u, new len=%u", conn[ci].clen, max);
                     conn[ci].clen = max;
                     PRINT_HTTP_CONTENT_ENCODING_DEFLATE;
+#ifdef DUMP
+                    compressed = TRUE;
+#endif
                 }
                 else
                 {
@@ -3529,6 +3536,9 @@ static          bool first=TRUE;
                 conn[ci].out_data = M_stat[conn[ci].static_res].data_deflated;
                 conn[ci].clen = M_stat[conn[ci].static_res].len_deflated;
                 PRINT_HTTP_CONTENT_ENCODING_DEFLATE;
+#ifdef DUMP
+                compressed = TRUE;
+#endif
             }
         }
 #endif  /* _WIN32 */
@@ -3649,7 +3659,11 @@ static          bool first=TRUE;
     /* ----------------------------------------------------------------- */
 
 #ifdef DUMP     /* low-level tests */
-    if ( G_logLevel>=LOG_DBG && conn[ci].clen > 0 && !conn[ci].head_only && conn[ci].static_res == NOT_STATIC
+    if ( G_logLevel>=LOG_DBG
+            && conn[ci].clen > 0
+            && !conn[ci].head_only
+            && conn[ci].static_res==NOT_STATIC
+            && !compressed
             && (conn[ci].ctype==RES_TEXT || conn[ci].ctype==RES_JSON) )
         log_long(conn[ci].out_data+OUT_HEADER_BUFSIZE, conn[ci].clen, "Content to send");
 #endif  /* DUMP */
@@ -4421,33 +4435,11 @@ static int set_http_req_val(int ci, const char *label, const char *value)
 
         DBG("mobile = %s", conn[ci].mobile?"TRUE":"FALSE");
 
-/*      if ( !REQ_BOT &&
-                (strstr(uvalue, "ADSBOT")
-                || strstr(uvalue, "BAIDU")
-                || strstr(uvalue, "UPTIMEBOT")
-                || strstr(uvalue, "SEMRUSHBOT")
-                || strstr(uvalue, "SEZNAMBOT")
-                || strstr(uvalue, "SCANBOT")
-                || strstr(uvalue, "SYSSCAN")
-                || strstr(uvalue, "DOMAINSONO")
-                || strstr(uvalue, "SURDOTLY")
-                || strstr(uvalue, "DOTBOT")
-                || strstr(uvalue, "ALPHABOT")
-                || strstr(uvalue, "AHREFSBOT")
-                || strstr(uvalue, "CRAWLER")
-                || 0==strncmp(uvalue, "MASSCAN", 7)
-                || 0==strncmp(uvalue, "CURL", 4)
-                || 0==strncmp(uvalue, "CCBOT", 5)
-                || 0==strcmp(uvalue, "TELESPHOREO")
-                || 0==strcmp(uvalue, "MAGIC BROWSER")) )
-        {
-            REQ_BOT = TRUE;
-        } */
-
         if ( !REQ_BOT &&
                 (strstr(uvalue, "BOT")
                 || strstr(uvalue, "SCAN")
                 || strstr(uvalue, "CRAWLER")
+                || strstr(uvalue, "SPIDER")
                 || strstr(uvalue, "SURDOTLY")
                 || strstr(uvalue, "BAIDU")
                 || strstr(uvalue, "ZGRAB")
