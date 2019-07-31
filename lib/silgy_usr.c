@@ -124,6 +124,18 @@ static bool valid_email(const char *email)
 
 
 /* --------------------------------------------------------------------------
+   Set ls cookie expiration time
+-------------------------------------------------------------------------- */
+static void set_ls_cookie_expiration(int ci, time_t from)
+{
+    time_t sometimeahead = from + 3600*24*USER_KEEP_LOGGED_DAYS;
+    G_ptm = gmtime(&sometimeahead);
+    strftime(conn[ci].cookie_out_l_exp, 32, "%a, %d %b %Y %T GMT", G_ptm);
+    G_ptm = gmtime(&G_now);  /* make sure G_ptm is always up to date */
+}
+
+
+/* --------------------------------------------------------------------------
    Upgrade anonymous user session to logged in
 -------------------------------------------------------------------------- */
 static int upgrade_uses(int ci, long uid, const char *login, const char *email, const char *name, const char *phone, const char *about, short auth_level)
@@ -350,20 +362,31 @@ int libusr_luses_ok(int ci)
 
     DBG("Logged in session found in database");
 
-    /* start a fresh session, keep the old sesid */
+    /* start a fresh session */
 
-    ret = eng_uses_start(ci, sanlscookie);
+    ret = eng_uses_start(ci, NULL);
 
     if ( ret != OK )
         return ret;
 
-    sprintf(sql, "UPDATE users_logins SET last_used='%s' WHERE sesid = BINARY '%s'", G_dt, US.sesid);
+    /* replace sesid */
+
+//    sprintf(sql, "UPDATE users_logins SET last_used='%s' WHERE sesid = BINARY '%s'", G_dt, US.sesid);
+    sprintf(sql, "UPDATE users_logins SET sesid='%s', last_used='%s' WHERE sesid = BINARY '%s'", US.sesid, G_dt, sanlscookie);
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
         ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
         return ERR_INT_SERVER_ERROR;
     }
+
+    /* set cookie */
+
+    strcpy(conn[ci].cookie_out_l, US.sesid);
+
+    set_ls_cookie_expiration(ci, created);
+
+    /* upgrade uses */
 
     return do_login(ci, uid, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 }
@@ -440,6 +463,9 @@ void libusr_luses_downgrade(int usi, int ci, bool usr_logout)
             strcpy(conn[ci].cookie_out_a, uses[usi].sesid);
         }
     }
+#ifndef DONT_RESET_AUSES_ON_LOGOUT
+    memset(&auses[usi], 0, sizeof(ausession_t));
+#endif
 }
 
 
@@ -806,13 +832,6 @@ int silgy_usr_login(int ci)
 
     DBG("silgy_usr_login");
 
-//#ifdef SILGY_SVC
-
-//    ERR("silgy_usr_login() is not currently supported in silgy_svc. Move this call do silgy_app.");
-//    return ERR_INT_SERVER_ERROR;
-
-//#else
-
 #ifdef USERSBYEMAIL
 
     if ( !QS_HTML_ESCAPE("email", email) || !QS_HTML_ESCAPE("passwd", passwd) )
@@ -1011,14 +1030,16 @@ int silgy_usr_login(int ci)
         }
     }
 
-    /* try to use anonymous sesid if present */
+    /* use anonymous session if present but refresh sesid  */
 
     if ( conn[ci].usi )
     {
-        DBG("Using current session usi=%d, sesid [%s]", conn[ci].usi, US.sesid);
+        silgy_random(US.sesid, SESID_LEN);
+        DBG("Using current session usi=%d, generated new sesid [%s]", conn[ci].usi, US.sesid);
     }
     else    /* no session --> start a new one */
     {
+        DBG("No session, starting new");
         ret = eng_uses_start(ci, NULL);
         if ( ret != OK )
             return ret;
@@ -1051,17 +1072,12 @@ int silgy_usr_login(int ci)
     if ( QS_HTML_ESCAPE("keep", keep) && 0==strcmp(keep, "on") )
     {
         DBG("keep is ON");
-        time_t sometimeahead = G_now + 3600*24*USER_KEEP_LOGGED_DAYS;
-        G_ptm = gmtime(&sometimeahead);
-        strftime(conn[ci].cookie_out_l_exp, 32, "%a, %d %b %Y %T GMT", G_ptm);
-        G_ptm = gmtime(&G_now);  /* make sure G_ptm is always up to date */
+        set_ls_cookie_expiration(ci, G_now);
     }
 
-    /* finish logging user in */
+    /* upgrade uses */
 
     return do_login(ci, uid, login, email, name, phone, about, auth_level, visits, status);
-
-//#endif  /* SILGY_SVC */
 }
 
 
