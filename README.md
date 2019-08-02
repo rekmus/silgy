@@ -53,6 +53,8 @@ In case of using Silgy under heavy load or with external API calls, there's the 
 
 ## [Full documentation](https://github.com/silgy/silgy/wiki)
 
+## [Generate RESTful API](https://silgy.org/restapigen) as Silgy project
+
 ## Hello Worlds
 
 ### Empty application = static web server
