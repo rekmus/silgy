@@ -155,9 +155,10 @@ static char         M_resp_date[32];            /* response header Date */
 static char         M_expires_stat[32];         /* response header for static resources */
 static char         M_expires_gen[32];          /* response header for generated resources */
 static int          M_max_static=-1;            /* highest static resource M_stat index */
-static bool         M_favicon_exists=FALSE;     /* special case statics */
-static bool         M_appleicon_exists=FALSE;   /* -''- */
-static bool         M_robots_exists=FALSE;      /* -''- */
+static bool         M_popular_favicon=FALSE;    /* popular statics -- don't create sessions for those */
+static bool         M_popular_appleicon=FALSE;  /* -''- */
+static bool         M_popular_robots=FALSE;     /* -''- */
+static bool         M_popular_sw=FALSE;         /* -''- */
 
 #ifdef _WIN32   /* Windows */
 WSADATA             wsa;
@@ -2685,11 +2686,13 @@ static bool read_files(bool minify, bool first_scan, const char *path)
                 if ( 0==strcmp(M_stat[i].name, "index.html") )
                     G_index_present = FALSE;
                 else if ( 0==strcmp(M_stat[i].name, "favicon.ico") )
-                    M_favicon_exists = FALSE;
+                    M_popular_favicon = FALSE;
                 else if ( 0==strcmp(M_stat[i].name, "apple-touch-icon.png") )
-                    M_appleicon_exists = FALSE;
+                    M_popular_appleicon = FALSE;
                 else if ( 0==strcmp(M_stat[i].name, "robots.txt") )
-                    M_robots_exists = FALSE;
+                    M_popular_robots = FALSE;
+                else if ( 0==strcmp(M_stat[i].name, "sw.js") )
+                    M_popular_sw = FALSE;
 
                 M_stat[i].name[0] = EOS;
 
@@ -2914,11 +2917,13 @@ static bool read_files(bool minify, bool first_scan, const char *path)
                 if ( 0==strcmp(M_stat[i].name, "index.html") )
                     G_index_present = TRUE;
                 else if ( 0==strcmp(M_stat[i].name, "favicon.ico") )
-                    M_favicon_exists = TRUE;
+                    M_popular_favicon = TRUE;
                 else if ( 0==strcmp(M_stat[i].name, "apple-touch-icon.png") )
-                    M_appleicon_exists = TRUE;
+                    M_popular_appleicon = TRUE;
                 else if ( 0==strcmp(M_stat[i].name, "robots.txt") )
-                    M_robots_exists = TRUE;
+                    M_popular_robots = TRUE;
+                else if ( 0==strcmp(M_stat[i].name, "sw.js") )
+                    M_popular_sw = TRUE;
             }
 
             /* compress ---------------------------------------- */
@@ -4189,9 +4194,10 @@ static int parse_req(int ci, int len)
 
     if ( conn[ci].uri[0] )  /* if not empty */
     {
-        if ( (0==strcmp(conn[ci].uri, "favicon.ico") && !M_favicon_exists)
-                || (0==strcmp(conn[ci].uri, "apple-touch-icon.png") && !M_appleicon_exists)
-                || (0==strcmp(conn[ci].uri, "robots.txt") && !M_robots_exists) )
+        if ( (0==strcmp(conn[ci].uri, "favicon.ico") && !M_popular_favicon)
+                || (0==strcmp(conn[ci].uri, "apple-touch-icon.png") && !M_popular_appleicon)
+                || (0==strcmp(conn[ci].uri, "robots.txt") && !M_popular_robots)
+                || (0==strcmp(conn[ci].uri, "sw.js") && !M_popular_sw) )
             return 404;     /* Not Found */
 
         /* cut query string off */
