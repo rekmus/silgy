@@ -5560,7 +5560,9 @@ static char tmp[JSON_BUFSIZE];
                 j = 0;
             }
         }
-        else if ( now_value && ((type==JSON_STRING && src[i]=='"' && src[i-1]!='\\') || src[i]==',' || src[i]=='}' || src[i]==']' || src[i]=='\r' || src[i]=='\n') )     /* end of value */
+        else if ( now_value
+                    && ((type==JSON_STRING && src[i]=='"' && src[i-1]!='\\')
+                            || (type!=JSON_STRING && (src[i]==',' || src[i]=='}' || src[i]==']' || src[i]=='\r' || src[i]=='\n'))) )     /* end of value */
         {
             value[j] = EOS;
 #ifdef DUMP

@@ -63,7 +63,7 @@ typedef char                        bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "4.3.3"
+#define WEB_SERVER_VERSION          "4.3.4"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
