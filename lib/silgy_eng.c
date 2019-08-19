@@ -4266,7 +4266,7 @@ static int parse_req(int ci, int len)
 
             uri_i = 0;
 
-            while ( *last_slash && uri_i < MAX_RESOURCE_LEN-1 )
+            while ( *last_slash && *last_slash != '?' && uri_i < MAX_RESOURCE_LEN-1 )
                 conn[ci].id[uri_i++] = *last_slash++;
 
             conn[ci].id[uri_i] = EOS;
