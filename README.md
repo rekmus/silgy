@@ -2,7 +2,7 @@
 
 Simple and fast web application backend framework for C and C++ programmers.
 
-The latency between receiving HTTP request and application logic has been reduced to **single microseconds** by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
+The latency between receiving HTTP request and application logic has been reduced to single microseconds by linking web engine and application into a single executable that becomes a very fast, single-threaded asynchronous web server with custom logic.
 
 It can act as:
 
