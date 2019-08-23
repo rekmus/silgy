@@ -44,7 +44,7 @@ char        G_whiteList[256]="";
 int         G_ASYNCId=0;
 int         G_ASYNCDefTimeout=ASYNC_DEF_TIMEOUT;
 /* end of config params */
-unsigned    G_days_up=0;                /* web server's days up */
+int         G_days_up=0;                /* web server's days up */
 conn_t      conn[MAX_CONNECTIONS+1]={0}; /* HTTP connections & requests -- by far the most important structure around */
 int         G_open_conn=0;              /* number of open connections */
 int         G_open_conn_hwm=0;          /* highest number of open connections (high water mark) */
@@ -110,8 +110,8 @@ http_status_t   M_http_status[]={
 /* authorization levels */
 
 static struct {
-    char    resource[MAX_RESOURCE_LEN+1];
-    short   level;
+    char resource[MAX_RESOURCE_LEN+1];
+    char level;
     } M_auth_levels[MAX_RESOURCES] = {
         {"-", EOS}
     };
@@ -3085,6 +3085,24 @@ static void process_req(int ci)
     /* authorization check / log in from cookies ------------------------------ */
 
 #ifdef USERS
+
+#ifdef ALLOW_BEARER_AUTH
+    /* copy bearer token to cookie_in_l */
+
+    if ( !conn[ci].cookie_in_l[0] && conn[ci].authorization[0] )
+    {
+        char type[8];
+        strncpy(type, upper(conn[ci].authorization), 7);
+        type[7] = EOS;
+
+        if ( 0==strcmp(type, "BEARER ") )
+        {
+            strncpy(conn[ci].cookie_in_l, conn[ci].authorization+7, SESID_LEN);
+            conn[ci].cookie_in_l[SESID_LEN] = EOS;
+        }
+    }
+#endif
+
     if ( conn[ci].cookie_in_l[0] )  /* logged in sesid cookie present */
     {
         ret = libusr_luses_ok(ci);     /* is it valid? */
@@ -4895,7 +4913,7 @@ static bool init_ssl()
 /* --------------------------------------------------------------------------
    Set required authorization level for the resource
 -------------------------------------------------------------------------- */
-void silgy_set_auth_level(const char *resource, short level)
+void silgy_set_auth_level(const char *resource, char level)
 {
 static int current=0;
 
@@ -4984,7 +5002,7 @@ int eng_uses_start(int ci, const char *sesid)
    Invalidate active user sessions belonging to user_id
    Called after password change
 -------------------------------------------------------------------------- */
-void eng_uses_downgrade_by_uid(long uid, int ci)
+void eng_uses_downgrade_by_uid(int uid, int ci)
 {
 #ifdef USERS
     int i;
@@ -5498,7 +5516,7 @@ counters_t  G_cnts_today={0};           /* today's counters */
 counters_t  G_cnts_yesterday={0};       /* yesterday's counters */
 counters_t  G_cnts_day_before={0};      /* day before's counters */
 
-unsigned    G_days_up=0;                /* web server's days up */
+int         G_days_up=0;                /* web server's days up */
 int         G_open_conn=0;              /* number of open connections */
 int         G_open_conn_hwm=0;          /* highest number of open connections (high water mark) */
 int         G_sessions=0;               /* number of active user sessions */
@@ -6059,7 +6077,7 @@ int eng_uses_start(int ci, const char *sesid)
    Invalidate active user sessions belonging to user_id
    Called after password change
 -------------------------------------------------------------------------- */
-void eng_uses_downgrade_by_uid(long uid, int ci)
+void eng_uses_downgrade_by_uid(int uid, int ci)
 {
     res.hdr.invalidate_uid = uid;
     res.hdr.invalidate_ci = ci;

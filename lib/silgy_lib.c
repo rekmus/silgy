@@ -1794,14 +1794,14 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
 
     OUT("</tr>");
 
-//    long    id;                     /* row[0] */
+//    int     id;                     /* row[0] */
 //    char    login[LOGIN_LEN+1];     /* row[1] */
 //    char    email[EMAIL_LEN+1];     /* row[2] */
 //    char    name[UNAME_LEN+1];      /* row[3] */
-//    short   status;                 /* row[4] */
+//    char    status;                 /* row[4] */
 //    char    created[32];            /* row[5] */
 //    char    last_login[32];         /* row[6] */
-//    long    visits;                 /* row[7] */
+//    int     visits;                 /* row[7] */
 
     char fmt0[64];  /* id */
     char fmt7[64];  /* visits */
@@ -1817,8 +1817,8 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
     {
         row = mysql_fetch_row(result);
 
-        amt(fmt0, atol(row[0]));    /* id */
-        amt(fmt7, atol(row[7]));    /* visits */
+        amt(fmt0, atoi(row[0]));    /* id */
+        amt(fmt7, atoi(row[7]));    /* visits */
 
         if ( atoi(row[4]) != USER_STATUS_ACTIVE )
             strcpy(trstyle, " class=g");
@@ -1837,7 +1837,7 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
                 if ( 0==strcmp(ai[j].type, "int") )
                 {
                     strcat(ai_td, "<td class=r>");
-                    amt(ai_fmt, atoi(row[j+8]));
+                    amt(ai_fmt, atol(row[j+8]));
                     strcat(ai_td, ai_fmt);
                 }
                 else if ( 0==strcmp(ai[j].type, "long") )
@@ -3626,7 +3626,7 @@ struct timespec end;
 -------------------------------------------------------------------------- */
 void lib_log_memory()
 {
-    long        mem_used;
+    int         mem_used;
     char        mem_used_kb[32];
     char        mem_used_mb[32];
     char        mem_used_gb[32];
@@ -5583,7 +5583,7 @@ static char tmp[JSON_BUFSIZE];
                 else if ( strchr(value, '.') )
                     lib_json_add(json, NULL, NULL, 0, atof(value), JSON_FLOAT, index);
                 else
-                    lib_json_add(json, NULL, NULL, atol(value), 0, JSON_INTEGER, index);
+                    lib_json_add(json, NULL, NULL, atoi(value), 0, JSON_INTEGER, index);
             }
             else
             {
@@ -5596,7 +5596,7 @@ static char tmp[JSON_BUFSIZE];
                 else if ( strchr(value, '.') )
                     lib_json_add(json, key, NULL, 0, atof(value), JSON_FLOAT, -1);
                 else
-                    lib_json_add(json, key, NULL, atol(value), 0, JSON_INTEGER, -1);
+                    lib_json_add(json, key, NULL, atoi(value), 0, JSON_INTEGER, -1);
             }
 
             now_value = 0;
@@ -5709,7 +5709,7 @@ void lib_json_log_inf(JSON *json, const char *name)
 /* --------------------------------------------------------------------------
    Add/set value to a JSON buffer
 -------------------------------------------------------------------------- */
-bool lib_json_add(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type, int i)
+bool lib_json_add(JSON *json, const char *name, const char *str_value, int int_value, double flo_value, char type, int i)
 {
 #ifdef AUTO_INIT_EXPERIMENT
     json_auto_init(json);
@@ -5750,7 +5750,7 @@ bool lib_json_add(JSON *json, const char *name, const char *str_value, long int_
     }
     else if ( type == JSON_INTEGER )
     {
-        sprintf(json->rec[i].value, "%ld", int_value);
+        sprintf(json->rec[i].value, "%d", int_value);
     }
     else    /* float */
     {
@@ -5862,7 +5862,7 @@ static char dst[JSON_VAL_LEN+1];
 /* --------------------------------------------------------------------------
    Get value from JSON buffer
 -------------------------------------------------------------------------- */
-long lib_json_get_int(JSON *json, const char *name, int i)
+int lib_json_get_int(JSON *json, const char *name, int i)
 {
     if ( !name )    /* array elem */
     {
@@ -5873,7 +5873,7 @@ long lib_json_get_int(JSON *json, const char *name, int i)
         }
 
         if ( json->rec[i].type == JSON_INTEGER )
-            return atol(json->rec[i].value);
+            return atoi(json->rec[i].value);
         else    /* types don't match */
             return 0;
     }
@@ -5884,7 +5884,7 @@ long lib_json_get_int(JSON *json, const char *name, int i)
         {
             if ( json->rec[i].type == JSON_INTEGER )
             {
-                return atol(json->rec[i].value);
+                return atoi(json->rec[i].value);
             }
 
             return 0;   /* types don't match or couldn't convert */
@@ -7009,7 +7009,7 @@ void log_write(int level, const char *message, ...)
    Write looong message to a log or --
    its first (MAX_LOG_STR_LEN-50) part if it's longer
 -------------------------------------------------------------------------- */
-void log_long(const char *message, long len, const char *desc)
+void log_long(const char *message, int len, const char *desc)
 {
     if ( G_logLevel < LOG_DBG ) return;
 

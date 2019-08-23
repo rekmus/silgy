@@ -63,7 +63,7 @@ typedef char                        bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "4.3.4"
+#define WEB_SERVER_VERSION          "4.4.0"
 /* alias */
 #define SILGY_VERSION               WEB_SERVER_VERSION
 
@@ -725,18 +725,16 @@ typedef struct {
     char    lang[LANG_LEN+1];
     bool    logged;
     /* users table record */
-    long    uid;
+    int     uid;
     char    login[LOGIN_LEN+1];
     char    email[EMAIL_LEN+1];
     char    name[UNAME_LEN+1];
     char    phone[PHONE_LEN+1];
+    char    tz[6];
     char    about[ABOUT_LEN+1];
-    char    login_tmp[LOGIN_LEN+1];     /* while My Profile isn't saved */
-    char    email_tmp[EMAIL_LEN+1];
-    char    name_tmp[UNAME_LEN+1];
-    char    phone_tmp[PHONE_LEN+1];
-    char    about_tmp[ABOUT_LEN+1];
-    short   auth_level;
+    int     group_id;
+//    char    group_name[UNAME_LEN+1];
+    char    auth_level;
     time_t  last_activity;
 } usession_t;
 
@@ -802,7 +800,7 @@ typedef struct {
     counters_t cnts_today;
     counters_t cnts_yesterday;
     counters_t cnts_day_before;
-    unsigned days_up;
+    int      days_up;
     int      open_conn;
     int      open_conn_hwm;
     int      sessions;
@@ -853,7 +851,7 @@ typedef struct {
 #ifndef ASYNC_EXCLUDE_AUSES
     ausession_t auses;
 #endif
-    long     invalidate_uid;
+    int      invalidate_uid;
     int      invalidate_ci;
 } async_res_hdr_t;
 
@@ -1085,7 +1083,7 @@ extern int      G_test;
 /* end of config params */
 extern int      G_pid;                      /* pid */
 extern char     G_appdir[256];              /* application root dir */
-extern unsigned G_days_up;                  /* web server's days up */
+extern int      G_days_up;                  /* web server's days up */
 extern conn_t   conn[MAX_CONNECTIONS+1];    /* HTTP connections & requests -- by far the most important structure around */
 extern int      G_open_conn;                /* number of open connections */
 extern int      G_open_conn_hwm;            /* highest number of open connections (high water mark) */
@@ -1159,7 +1157,7 @@ extern unsigned G_rest_req;                 /* REST calls counter */
 extern double   G_rest_elapsed;             /* REST calls elapsed for calculating average */
 extern double   G_rest_average;             /* REST calls average elapsed */
 extern char     G_rest_content_type[MAX_VALUE_LEN+1];
-extern long     G_new_user_id;
+extern int      G_new_user_id;
 
 #ifdef __cplusplus
 }   /* extern "C" */
@@ -1176,9 +1174,9 @@ extern "C" {
 
     /* public engine functions */
 
-    void silgy_set_auth_level(const char *resource, short level);
+    void silgy_set_auth_level(const char *resource, char level);
     int  eng_uses_start(int ci, const char *sesid);
-    void eng_uses_downgrade_by_uid(long uid, int ci);
+    void eng_uses_downgrade_by_uid(int uid, int ci);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size);
     void silgy_add_to_static_res(const char *name, const char *src);
     void eng_block_ip(const char *value, bool autoblocked);

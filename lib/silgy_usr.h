@@ -226,21 +226,21 @@ extern "C" {
 #endif
     int  silgy_usr_login(int ci);
     int  silgy_usr_create_account(int ci);
-    int  silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email, const char *name, const char *passwd, const char *phone, const char *about, short auth_level);
+    int  silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email, const char *name, const char *passwd, const char *phone, const char *lang, const char *tz, const char *about, char group_id, char auth_level);
     int  silgy_usr_send_message(int ci);
     int  silgy_usr_save_account(int ci);
     int  silgy_usr_email_registered(int ci);
-    char *silgy_usr_name(const char *login, const char *email, const char *name, long uid);
+    char *silgy_usr_name(const char *login, const char *email, const char *name, int uid);
     int  silgy_usr_send_passwd_reset_email(int ci);
-    int  silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, long *uid);
+    int  silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, int *uid);
     int  silgy_usr_activate(int ci);
     int  silgy_usr_change_password(int ci);
     int  silgy_usr_reset_password(int ci);
     void silgy_usr_logout(int ci);
     int  silgy_usr_set_str(int ci, const char *us_key, const char *us_val);
     int  silgy_usr_get_str(int ci, const char *us_key, char *us_val);
-    int  silgy_usr_set_int(int ci, const char *us_key, long us_val);
-    int  silgy_usr_get_int(int ci, const char *us_key, long *us_val);
+    int  silgy_usr_set_int(int ci, const char *us_key, int us_val);
+    int  silgy_usr_get_int(int ci, const char *us_key, int *us_val);
     /* for the engine */
     void libusr_init(void);
     int  libusr_luses_ok(int ci);

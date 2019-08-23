@@ -412,11 +412,11 @@ extern "C" {
     char *lib_json_to_string(JSON *json);
     char *lib_json_to_string_pretty(JSON *json);
     bool lib_json_from_string(JSON *json, const char *src, int len, int level);
-    bool lib_json_add(JSON *json, const char *name, const char *str_value, long int_value, double flo_value, char type, int i);
+    bool lib_json_add(JSON *json, const char *name, const char *str_value, int int_value, double flo_value, char type, int i);
     bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_array, int i);
-    bool lib_json_get(JSON *json, const char *name, char *str_value, long *num_value, char type);
+    bool lib_json_get(JSON *json, const char *name, char *str_value, int *num_value, char type);
     char *lib_json_get_str(JSON *json, const char *name, int i);
-    long lib_json_get_int(JSON *json, const char *name, int i);
+    int  lib_json_get_int(JSON *json, const char *name, int i);
     double lib_json_get_float(JSON *json, const char *name, int i);
     bool lib_json_get_bool(JSON *json, const char *name, int i);
     bool lib_json_get_record(JSON *json, const char *name, JSON *json_sub, int i);
@@ -437,7 +437,7 @@ extern "C" {
     bool log_start(const char *prefix, bool test);
     void log_write_time(int level, const char *message, ...);
     void log_write(int level, const char *message, ...);
-    void log_long(const char *str, long len, const char *desc);
+    void log_long(const char *str, int len, const char *desc);
     void log_flush(void);
     void log_finish(void);
 #ifdef ICONV
