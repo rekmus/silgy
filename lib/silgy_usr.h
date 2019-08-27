@@ -234,6 +234,8 @@ extern "C" {
     int  silgy_usr_send_passwd_reset_email(int ci);
     int  silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, int *uid);
     int  silgy_usr_activate(int ci);
+    int  silgy_usr_save_avatar(int ci, int uid);
+    int  silgy_usr_get_avatar(int ci, int uid);
     int  silgy_usr_change_password(int ci);
     int  silgy_usr_reset_password(int ci);
     void silgy_usr_logout(int ci);

@@ -11,12 +11,13 @@ create table users (
     email char(120),
     email_u char(120),              -- uppercase version
     name varchar(120),
-    phone char(30),
+    phone varchar(30),
     passwd1 char(30),               -- base64 of SHA1 hash
     passwd2 char(30),               -- base64 of SHA1 hash
     lang char(5),
     tz char(5),
     about varchar(250),
+    avatar blob,                    -- 64 kB
     group_id int,
     auth_level tinyint,             -- 10 = user, 20 = customer, 30 = staff, 40 = moderator, 50 = admin, 100 = root
     status tinyint,                 -- 0 = inactive, 1 = active, 2 = locked, 3 = requires password change, 9 = deleted

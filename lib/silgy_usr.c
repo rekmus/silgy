@@ -2138,6 +2138,26 @@ int silgy_usr_activate(int ci)
 
 
 /* --------------------------------------------------------------------------
+   Save user's avatar
+-------------------------------------------------------------------------- */
+int silgy_usr_save_avatar(int ci, int uid)
+{
+    int ret;
+    return OK;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get user's avatar
+-------------------------------------------------------------------------- */
+int silgy_usr_get_avatar(int ci, int uid)
+{
+    int ret;
+    return OK;
+}
+
+
+/* --------------------------------------------------------------------------
    Change logged in user password and change its status to USER_STATUS_ACTIVE
    Used in case user is forced to change their password
    (status == USER_STATUS_PASSWORD_CHANGE)
