@@ -2158,7 +2158,7 @@ static char sql[MAX_AVATAR_SIZE*2+1024];
         return ERR_INVALID_REQUEST;
     }
 
-    DBG("Image file size = %d", len);
+    DBG("Image file name [%s], size = %d", name, len);
 
     if ( len > MAX_AVATAR_SIZE )
     {
