@@ -229,7 +229,6 @@ int libusr_luses_ok(int ci)
     char        sql[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
-    unsigned    records;
     usession_t  us;
     time_t      created;
 
@@ -252,11 +251,9 @@ int libusr_luses_ok(int ci)
         return ERR_INT_SERVER_ERROR;
     }
 
-    records = mysql_num_rows(result);
+    row = mysql_fetch_row(result);
 
-    DBG("users_logins: %u record(s) found", records);
-
-    if ( 0 == records )     /* no such session in database */
+    if ( !row )     /* no such session in database */
     {
         mysql_free_result(result);
         WAR("No logged in session in database [%s]", sanlscookie);
@@ -316,10 +313,6 @@ int libusr_luses_ok(int ci)
         return ERR_SESSION_EXPIRED;
     }
 
-    /* we've got some user login cookie remembered */
-
-    row = mysql_fetch_row(result);
-
     /* verify uagent */
 
     if ( 0 != strcmp(sanuagent, row[0]) )
@@ -370,9 +363,7 @@ int libusr_luses_ok(int ci)
 
     /* start a fresh session */
 
-    ret = eng_uses_start(ci, NULL);
-
-    if ( ret != OK )
+    if ( (ret=eng_uses_start(ci, NULL)) != OK )
         return ret;
 
     /* replace sesid */
@@ -515,8 +506,6 @@ static int user_exists(const char *login)
 
     records = mysql_num_rows(result);
 
-    DBG("users: %u record(s) found", records);
-
     mysql_free_result(result);
 
     if ( 0 != records )
@@ -553,8 +542,6 @@ static int email_exists(const char *email)
 
     records = mysql_num_rows(result);
 
-    DBG("users: %u record(s) found", records);
-
     mysql_free_result(result);
 
     if ( 0 != records )
@@ -570,22 +557,10 @@ static int email_exists(const char *email)
 -------------------------------------------------------------------------- */
 static int do_login(int ci, usession_t *us, char status, int visits)
 {
-    int         ret=OK;
+    int         ret;
     char        sql[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
-    unsigned    records;
-
-/*    char        login[LOGIN_LEN+1];
-    char        email[EMAIL_LEN+1];
-    char        name[UNAME_LEN+1];
-    char        phone[PHONE_LEN+1];
-    char        lang[LANG_LEN+1];
-    char        tz[6];
-    char        about[ABOUT_LEN+1];
-    int         group_id;
-    char        group_name[UNAME_LEN+1];
-    char        auth_level; */
 
     DBG("do_login");
 
@@ -603,11 +578,9 @@ static int do_login(int ci, usession_t *us, char status, int visits)
             return ERR_INT_SERVER_ERROR;
         }
 
-        records = mysql_num_rows(result);
+        row = mysql_fetch_row(result);
 
-        DBG("users: %u record(s) found", records);
-
-        if ( 0 == records )
+        if ( !row )
         {
             mysql_free_result(result);
             WAR("Cookie sesid does not match user id");
@@ -615,8 +588,6 @@ static int do_login(int ci, usession_t *us, char status, int visits)
         }
 
         /* user found */
-
-        row = mysql_fetch_row(result);
 
         strcpy(us->login, row[0]?row[0]:"");
         strcpy(us->email, row[1]?row[1]:"");
@@ -644,13 +615,10 @@ static int do_login(int ci, usession_t *us, char status, int visits)
                 return ERR_INT_SERVER_ERROR;
             }
 
-            records = mysql_num_rows(result);
+            row = mysql_fetch_row(result);
 
-            DBG("users_groups: %u record(s) found", records);
-
-            if ( records )
+            if ( row )
             {
-                row = mysql_fetch_row(result);
 //                strcpy(us->group_name, row[0]?row[0]:"");
                 us->auth_level = row[2]?atoi(row[2]):DEF_USER_AUTH_LEVEL;
             }
@@ -662,20 +630,10 @@ static int do_login(int ci, usession_t *us, char status, int visits)
             mysql_free_result(result);
         }
     }
-/*    else
-    {
-        strcpy(login, p_login);
-        strcpy(email, p_email);
-        strcpy(name, p_name);
-        strcpy(phone, p_phone);
-        strcpy(about, p_about);
-        auth_level = p_auth_level;
-    } */
 
     /* upgrade anonymous session to logged in */
 
-    ret = upgrade_uses(ci, us);
-    if ( ret != OK )
+    if ( (ret=upgrade_uses(ci, us)) != OK )
         return ret;
 
     /* update user record */
@@ -702,7 +660,7 @@ static int do_login(int ci, usession_t *us, char status, int visits)
         return WAR_PASSWORD_CHANGE;
     }
 
-    return ret;
+    return OK;
 }
 
 
@@ -778,7 +736,6 @@ static int silgy_usr_verify_activation_key(int ci, char *linkkey, int *uid)
     char        sql[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
-    unsigned    records;
     QSVAL       esc_linkkey;
 
     DBG("silgy_usr_verify_activation_key");
@@ -801,17 +758,13 @@ static int silgy_usr_verify_activation_key(int ci, char *linkkey, int *uid)
         return ERR_INT_SERVER_ERROR;
     }
 
-    records = mysql_num_rows(result);
+    row = mysql_fetch_row(result);
 
-    DBG("users_activations: %u row(s) found", records);
-
-    if ( !records )     /* no records with this key in users_activations -- link broken? */
+    if ( !row )     /* no records with this key in users_activations -- link broken? */
     {
         mysql_free_result(result);
         return ERR_LINK_MAY_BE_EXPIRED;
     }
-
-    row = mysql_fetch_row(result);
 
     /* already activated? */
 
@@ -874,8 +827,6 @@ int silgy_usr_login(int ci)
     char        str1[32], str2[32];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
-    unsigned    records;
-//    int         uid;
     char        status;
     int         visits;
     int         ula_cnt;
@@ -921,19 +872,15 @@ int silgy_usr_login(int ci)
         return ERR_INT_SERVER_ERROR;
     }
 
-    records = mysql_num_rows(result);
+    row = mysql_fetch_row(result);
 
-    DBG("users: %u record(s) found", records);
-
-    if ( 0 == records )     /* no records */
+    if ( !row )     /* no records */
     {
         mysql_free_result(result);
         return ERR_INVALID_LOGIN;   /* invalid user and/or password */
     }
 
     /* user name found */
-
-    row = mysql_fetch_row(result);
 
     us.uid = atoi(row[0]);
     strcpy(us.login, row[1]?row[1]:"");
@@ -1098,8 +1045,8 @@ int silgy_usr_login(int ci)
     else    /* no session --> start a new one */
     {
         DBG("No session, starting new");
-        ret = eng_uses_start(ci, NULL);
-        if ( ret != OK )
+
+        if ( (ret=eng_uses_start(ci, NULL)) != OK )
             return ret;
     }
 
@@ -1558,7 +1505,6 @@ int silgy_usr_save_account(int ci)
     char        sql[SQLBUF];
     char        str1[32], str2[32];
     MYSQL_RES   *result;
-    unsigned    records;
     MYSQL_ROW   row;
 
     DBG("silgy_usr_save_account");
@@ -1670,16 +1616,14 @@ int silgy_usr_save_account(int ci)
         return ERR_INT_SERVER_ERROR;
     }
 
-    records = mysql_num_rows(result);
+    row = mysql_fetch_row(result);
 
-    if ( 0 == records )
+    if ( !row )
     {
         ERR("Weird: no such user");
         mysql_free_result(result);
         return ERR_INT_SERVER_ERROR;
     }
-
-    row = mysql_fetch_row(result);
 
     if ( 0 != strcmp(str1, row[0]) )
     {
@@ -1766,7 +1710,7 @@ int silgy_usr_save_account(int ci)
 -------------------------------------------------------------------------- */
 int silgy_usr_email_registered(int ci)
 {
-    QSVAL   email;
+    QSVAL email;
 
     DBG("silgy_usr_email_registered");
 
@@ -1809,7 +1753,6 @@ static char dest[128];
     {
         char            sql[SQLBUF];
         MYSQL_RES       *result;
-        unsigned        records;
         MYSQL_ROW       row;
 
         sprintf(sql, "SELECT login, email, name FROM users WHERE id=%d", uid);
@@ -1823,9 +1766,9 @@ static char dest[128];
         }
         else    /* OK */
         {
-            records = mysql_num_rows(result);
+            row = mysql_fetch_row(result);
 
-            if ( 0 == records )
+            if ( !row )
             {
                 mysql_free_result(result);
                 strcpy(dest, "User");
@@ -1835,8 +1778,6 @@ static char dest[128];
                 char db_login[128];
                 char db_email[128];
                 char db_name[128];
-
-                row = mysql_fetch_row(result);
 
                 strcpy(db_login, row[0]?row[0]:"");
                 strcpy(db_email, row[1]?row[1]:"");
@@ -1878,7 +1819,6 @@ int silgy_usr_send_passwd_reset_email(int ci)
     QSVAL       submit;
     char        sql[SQLBUF];
     MYSQL_RES   *result;
-    unsigned    records;
     MYSQL_ROW   row;
 
     DBG("silgy_usr_send_passwd_reset_email");
@@ -1904,11 +1844,9 @@ int silgy_usr_send_passwd_reset_email(int ci)
         return ERR_INT_SERVER_ERROR;
     }
 
-    records = mysql_num_rows(result);
+    row = mysql_fetch_row(result);
 
-    DBG("users: %u record(s) found", records);
-
-    if ( 0 == records )
+    if ( !row )
     {
         mysql_free_result(result);
         WAR("Password reset link requested for non-existent [%s]", email);
@@ -1916,8 +1854,6 @@ int silgy_usr_send_passwd_reset_email(int ci)
     }
 
     /* -------------------------------------------------------------------------- */
-
-    row = mysql_fetch_row(result);
 
     if ( atoi(row[3]) == USER_STATUS_DELETED )
     {
@@ -2010,7 +1946,6 @@ int silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, int *uid)
     char        sql[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
-    unsigned    records;
     char        esc_linkkey[256];
     int         tries;
 
@@ -2034,17 +1969,13 @@ int silgy_usr_verify_passwd_reset_key(int ci, char *linkkey, int *uid)
         return ERR_INT_SERVER_ERROR;
     }
 
-    records = mysql_num_rows(result);
+    row = mysql_fetch_row(result);
 
-    DBG("users_p_resets: %u row(s) found", records);
-
-    if ( !records )     /* no records with this key in users_p_resets -- link broken? */
+    if ( !row )     /* no records with this key in users_p_resets -- link broken? */
     {
         mysql_free_result(result);
         return ERR_LINK_MAY_BE_EXPIRED;
     }
-
-    row = mysql_fetch_row(result);
 
     /* validate expiry time */
 
@@ -2249,7 +2180,6 @@ int silgy_usr_change_password(int ci)
     char        str1[32], str2[32];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
-    unsigned    records;
 
     DBG("silgy_usr_change_password");
 
@@ -2282,16 +2212,14 @@ int silgy_usr_change_password(int ci)
         return ERR_INT_SERVER_ERROR;
     }
 
-    records = mysql_num_rows(result);
+    row = mysql_fetch_row(result);
 
-    if ( 0 == records )
+    if ( !row )
     {
         ERR("Weird: no such user");
         mysql_free_result(result);
         return ERR_INT_SERVER_ERROR;
     }
-
-    row = mysql_fetch_row(result);
 
     if ( 0 != strcmp(str1, row[0]) )
     {
@@ -2353,7 +2281,6 @@ int silgy_usr_reset_password(int ci)
     char        str1[32], str2[32];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
-    unsigned    records;
 
     DBG("silgy_usr_reset_password");
 
@@ -2367,11 +2294,6 @@ int silgy_usr_reset_password(int ci)
     }
 
     stp_right(email);
-
-    /* remember form fields */
-
-//    if ( conn[ci].usi )
-//        strcpy(US.email_tmp, email);
 
     /* general validation */
 
@@ -2401,17 +2323,13 @@ int silgy_usr_reset_password(int ci)
         return ERR_INT_SERVER_ERROR;
     }
 
-    records = mysql_num_rows(result);
+    row = mysql_fetch_row(result);
 
-    DBG("users: %u record(s) found", records);
-
-    if ( 0 == records )     /* password reset link expired or invalid email */
+    if ( !row )     /* password reset link expired or invalid email */
     {
         mysql_free_result(result);
         return ERR_LINK_EXPIRED;
     }
-
-    row = mysql_fetch_row(result);
 
     if ( 0 != strcmp(row[1], email) )   /* emails different */
     {
@@ -2529,7 +2447,7 @@ static void doit(char *result1, char *result2, const char *login, const char *em
 -------------------------------------------------------------------------- */
 int silgy_usr_set_str(int ci, const char *us_key, const char *us_val)
 {
-    int  ret=OK;
+    int  ret;
     char sql[SQLBUF];
 
     ret = silgy_usr_get_str(ci, us_key, NULL);
@@ -2576,7 +2494,6 @@ int silgy_usr_get_str(int ci, const char *us_key, char *us_val)
     char        sql[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
-    unsigned    records;
 
     sprintf(sql, "SELECT us_val FROM users_settings WHERE user_id=%d AND us_key='%s'", UID, us_key);
 
@@ -2592,17 +2509,13 @@ int silgy_usr_get_str(int ci, const char *us_key, char *us_val)
         return ERR_INT_SERVER_ERROR;
     }
 
-    records = mysql_num_rows(result);
+    row = mysql_fetch_row(result);
 
-    DBG("users_settings: %u record(s) found", records);
-
-    if ( 0 == records )
+    if ( !row )
     {
         mysql_free_result(result);
         return ERR_NOT_FOUND;
     }
-
-    row = mysql_fetch_row(result);
 
     if ( us_val )
         strcpy(us_val, row[0]);
@@ -2671,7 +2584,7 @@ static int get_max(int ci, const char *table)
 
     row = mysql_fetch_row(result);
 
-    if ( row[0] != NULL )
+    if ( row[0] )
         max = atoi(row[0]);
 
     mysql_free_result(result);
