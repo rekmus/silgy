@@ -187,6 +187,9 @@
 #endif
 
 
+#define MAX_AVATAR_SIZE                 65536   /* MySQL's BLOB size */
+
+
 #define SET_USER_STR(key, val)          silgy_usr_set_str(ci, key, val)
 #define GET_USER_STR(key, val)          silgy_usr_get_str(ci, key, val)
 #define SET_USER_INT(key, val)          silgy_usr_set_int(ci, key, val)

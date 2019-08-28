@@ -2142,7 +2142,44 @@ int silgy_usr_activate(int ci)
 -------------------------------------------------------------------------- */
 int silgy_usr_save_avatar(int ci, int uid)
 {
-    int ret;
+    QSVAL   name;
+    char    *img_raw;                       /* raw image data */
+static char img_esc[MAX_AVATAR_SIZE*2];     /* image data escaped */
+static char sql[MAX_AVATAR_SIZE*2+1024];
+    unsigned len;
+
+    DBG("silgy_usr_save_avatar");
+
+    img_raw = get_qs_param_multipart(ci, "data", &len, name);
+
+    if ( !img_raw || len < 1 )
+    {
+        WAR("data is required");
+        return ERR_INVALID_REQUEST;
+    }
+
+    DBG("Image file size = %d", len);
+
+    if ( len > MAX_AVATAR_SIZE )
+    {
+        WAR("This file is too big");
+        return ERR_FILE_TOO_BIG;
+    }
+    else
+    {
+        mysql_real_escape_string(G_dbconn, img_esc, img_raw, len);
+
+        sprintf(sql, "UPDATE users SET avatar_name='%s', avatar_data='%s' WHERE id=%d", name, img_esc, uid);
+
+        DBG("UPDATE users SET avatar_name='%s', avatar_data=<binary> WHERE id=%d", name, uid);
+
+        if ( mysql_query(G_dbconn, sql) )
+        {
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            return ERR_INT_SERVER_ERROR;
+        }
+    }
+
     return OK;
 }
 
@@ -2159,7 +2196,7 @@ int silgy_usr_get_avatar(int ci, int uid)
 
     DBG("silgy_usr_get_avatar");
 
-    sprintf(sql, "SELECT avatar_name, avatar_bin FROM users WHERE id=%d", uid);
+    sprintf(sql, "SELECT avatar_name, avatar_data FROM users WHERE id=%d", uid);
     DBG("sql: %s", sql);
     mysql_query(G_dbconn, sql);
     result = mysql_store_result(G_dbconn);

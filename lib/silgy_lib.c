@@ -1479,7 +1479,7 @@ char *get_qs_param_multipart(int ci, const char *fieldname, unsigned *retlen, ch
 
         b = p - cp;
 
-        if ( b > 255 )
+        if ( b > MAX_URI_VAL_LEN )
         {
             WAR("File name too long (%u)", b);
             return NULL;
