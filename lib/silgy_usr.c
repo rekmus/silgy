@@ -2152,7 +2152,42 @@ int silgy_usr_save_avatar(int ci, int uid)
 -------------------------------------------------------------------------- */
 int silgy_usr_get_avatar(int ci, int uid)
 {
-    int ret;
+    char        sql[SQLBUF];
+    MYSQL_RES   *result;
+    MYSQL_ROW   row;
+    unsigned long *lengths;
+
+    DBG("silgy_usr_get_avatar");
+
+    sprintf(sql, "SELECT avatar_name, avatar_bin FROM users WHERE id=%d", uid);
+    DBG("sql: %s", sql);
+    mysql_query(G_dbconn, sql);
+    result = mysql_store_result(G_dbconn);
+    if ( !result )
+    {
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    row = mysql_fetch_row(result);
+
+    if ( !row )
+    {
+        mysql_free_result(result);
+        WAR("User not found");
+        return ERR_NOT_FOUND;
+    }
+
+    lengths = mysql_fetch_lengths(result);
+
+    OUT_BIN(row[1], lengths[1]);
+
+    conn[ci].ctype = get_res_type(row[0]);
+
+    DBG("File: [%s], size = %ul", row[0], lengths[1]);
+
+    mysql_free_result(result);
+
     return OK;
 }
 

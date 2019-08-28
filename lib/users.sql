@@ -17,7 +17,8 @@ create table users (
     lang char(5),
     tz char(5),
     about varchar(250),
-    avatar blob,                    -- 64 kB
+    avatar_name varchar(60),
+    avatar_bin blob,                -- 64 kB
     group_id int,
     auth_level tinyint,             -- 10 = user, 20 = customer, 30 = staff, 40 = moderator, 50 = admin, 100 = root
     status tinyint,                 -- 0 = inactive, 1 = active, 2 = locked, 3 = requires password change, 9 = deleted
