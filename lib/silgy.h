@@ -57,22 +57,22 @@
 #include <cctype>
 #else   /* C */
 #include <ctype.h>
-typedef char                        bool;
-#define false                       ((char)0)
-#define true                        ((char)1)
+typedef char                            bool;
+#define false                           ((char)0)
+#define true                            ((char)1)
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION          "4.4.0"
+#define WEB_SERVER_VERSION              "4.4.0"
 /* alias */
-#define SILGY_VERSION               WEB_SERVER_VERSION
+#define SILGY_VERSION                   WEB_SERVER_VERSION
 
 
 #ifndef FALSE
-#define FALSE                       false
+#define FALSE                           false
 #endif
 #ifndef TRUE
-#define TRUE                        true
+#define TRUE                            true
 #endif
 
 
@@ -85,6 +85,64 @@ typedef char str8k[1024*8];
 typedef char str16k[1024*16];
 typedef char str32k[1024*32];
 typedef char str64k[1024*64];
+
+
+#define OK                              0
+#define SUCCEED                         OK
+#define FAIL                            -1
+
+#define EOS                             ((char)0)       /* End Of String */
+
+
+/* log levels */
+
+#define LOG_ALWAYS                      0               /* print always */
+#define LOG_ERR                         1               /* print errors only */
+#define LOG_WAR                         2               /* print errors and warnings */
+#define LOG_INF                         3               /* print errors and warnings and info */
+#define LOG_DBG                         4               /* for debug mode -- most detailed */
+
+
+#define LOGIN_LEN                       30
+#define EMAIL_LEN                       120
+#define UNAME_LEN                       120
+#define PHONE_LEN                       30
+#define ABOUT_LEN                       250
+
+
+#define VIEW_DEFAULT                    '0'
+#define VIEW_DESKTOP                    '1'
+#define VIEW_MOBILE                     '2'
+
+
+#define SQLBUF                          4096            /* SQL query buffer size */
+
+
+
+/* UTF-8 */
+
+#define CHAR_POUND                      "&#163;"
+#define CHAR_COPYRIGHT                  "&#169;"
+#define CHAR_N_ACUTE                    "&#324;"
+#define CHAR_DOWN_ARROWHEAD1            "&#709;"
+#define CHAR_LONG_DASH                  "&#8212;"
+#define CHAR_EURO                       "&#8364;"
+#define CHAR_UP                         "&#8593;"
+#define CHAR_DOWN                       "&#8595;"
+#define CHAR_MINUS                      "&#8722;"
+#define CHAR_VEL                        "&#8744;"
+#define CHAR_VERTICAL_ELLIPSIS          "&#8942;"
+#define CHAR_COUNTERSINK                "&#9013;"
+#define CHAR_DOUBLE_TRIANGLE_U          "&#9195;"
+#define CHAR_DOUBLE_TRIANGLE_D          "&#9196;"
+#define CHAR_DOWN_TRIANGLE_B            "&#9660;"
+#define CHAR_DOWN_TRIANGLE_W            "&#9661;"
+#define CHAR_CLOSE                      "&#10005;"
+#define CHAR_HEAVY_PLUS                 "&#10133;"
+#define CHAR_HEAVY_MINUS                "&#10134;"
+#define CHAR_DOWN_ARROWHEAD2            "&#65088;"
+#define CHAR_FULLW_PLUS                 "&#65291;"
+
 
 
 #include "silgy_app.h"
@@ -129,19 +187,6 @@ typedef char str64k[1024*64];
 #include <openssl/err.h>
 #endif
 
-
-#define OK                          0
-#define SUCCEED                     OK
-#define FAIL                        -1
-#define EOS                         ((char)0)       /* End Of String */
-
-/* log levels */
-
-#define LOG_ALWAYS                  0               /* print always */
-#define LOG_ERR                     1               /* print errors only */
-#define LOG_WAR                     2               /* print errors and warnings */
-#define LOG_INF                     3               /* print errors and warnings and info */
-#define LOG_DBG                     4               /* for debug mode -- most detailed */
 
 /* request macros */
 
@@ -286,9 +331,11 @@ typedef char str64k[1024*64];
 
 
 #define OUT_HEADER_BUFSIZE              4096            /* response header buffer length */
+
 #ifndef MAX_PAYLOAD_SIZE                                /* max incoming POST data length (16 MB) */
 #define MAX_PAYLOAD_SIZE                16777216
 #endif
+
 #define MAX_LOG_STR_LEN                 4095            /* max log string length */
 #define MAX_METHOD_LEN                  7               /* method length */
 #define MAX_URI_LEN                     2047            /* max request URI length */
@@ -406,9 +453,6 @@ typedef char str64k[1024*64];
 #endif
 
 
-#define SQLBUF                          4096            /* SQL query buffer size */
-
-
 /* compression settings */
 
 #ifndef COMPRESS_TRESHOLD
@@ -421,40 +465,6 @@ typedef char str64k[1024*64];
 
 #define SHOULD_BE_COMPRESSED(len, type) (len > COMPRESS_TRESHOLD && (type==RES_HTML || type==RES_TEXT || type==RES_JSON || type==RES_CSS || type==RES_JS || type==RES_SVG || type==RES_EXE || type==RES_BMP))
 
-
-/* UTF-8 */
-
-#define CHAR_POUND                      "&#163;"
-#define CHAR_COPYRIGHT                  "&#169;"
-#define CHAR_N_ACUTE                    "&#324;"
-#define CHAR_DOWN_ARROWHEAD1            "&#709;"
-#define CHAR_LONG_DASH                  "&#8212;"
-#define CHAR_EURO                       "&#8364;"
-#define CHAR_UP                         "&#8593;"
-#define CHAR_DOWN                       "&#8595;"
-#define CHAR_MINUS                      "&#8722;"
-#define CHAR_VEL                        "&#8744;"
-#define CHAR_VERTICAL_ELLIPSIS          "&#8942;"
-#define CHAR_COUNTERSINK                "&#9013;"
-#define CHAR_DOUBLE_TRIANGLE_U          "&#9195;"
-#define CHAR_DOUBLE_TRIANGLE_D          "&#9196;"
-#define CHAR_DOWN_TRIANGLE_B            "&#9660;"
-#define CHAR_DOWN_TRIANGLE_W            "&#9661;"
-#define CHAR_CLOSE                      "&#10005;"
-#define CHAR_HEAVY_PLUS                 "&#10133;"
-#define CHAR_HEAVY_MINUS                "&#10134;"
-#define CHAR_DOWN_ARROWHEAD2            "&#65088;"
-#define CHAR_FULLW_PLUS                 "&#65291;"
-
-#define LOGIN_LEN                       30
-#define EMAIL_LEN                       120
-#define UNAME_LEN                       120
-#define PHONE_LEN                       30
-#define ABOUT_LEN                       250
-
-#define VIEW_DEFAULT                    '0'
-#define VIEW_DESKTOP                    '1'
-#define VIEW_MOBILE                     '2'
 
 #ifdef APP_SESID_LEN
 #define SESID_LEN                       APP_SESID_LEN
