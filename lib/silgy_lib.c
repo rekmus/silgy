@@ -1162,7 +1162,19 @@ bool get_qs_param(int ci, const char *fieldname, char *retbuf)
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
     {
-        if ( retbuf ) uri_decode(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        if ( retbuf )
+        {
+            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED || conn[ci].in_ctype == CONTENT_TYPE_UNSET )
+            {
+                uri_decode(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+            }
+            else    /* JSON or multipart */
+            {
+                strncpy(retbuf, buf, MAX_URI_VAL_LEN);
+                retbuf[MAX_URI_VAL_LEN] = EOS;
+            }
+        }
+
         return TRUE;
     }
     else if ( retbuf ) retbuf[0] = EOS;
@@ -1180,7 +1192,18 @@ bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf)
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
     {
-        if ( retbuf ) uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        if ( retbuf )
+        {
+            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED || conn[ci].in_ctype == CONTENT_TYPE_UNSET )
+            {
+                uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+            }
+            else    /* JSON or multipart */
+            {
+                sanitize_html(retbuf, buf, MAX_URI_VAL_LEN);
+            }
+        }
+
         return TRUE;
     }
     else if ( retbuf ) retbuf[0] = EOS;
@@ -1198,12 +1221,56 @@ bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf)
 
     if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
     {
-        if ( retbuf ) uri_decode_sql_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+        if ( retbuf )
+        {
+            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED || conn[ci].in_ctype == CONTENT_TYPE_UNSET )
+            {
+                uri_decode_sql_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
+            }
+            else    /* JSON or multipart */
+            {
+                sanitize_sql(retbuf, buf, MAX_URI_VAL_LEN);
+            }
+        }
+
         return TRUE;
     }
     else if ( retbuf ) retbuf[0] = EOS;
 
     return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get the incoming param if Content-Type == JSON
+-------------------------------------------------------------------------- */
+static bool get_qs_param_json(int ci, const char *fieldname, char *retbuf, int maxlen)
+{
+static int prev_ci=-1;
+static unsigned prev_req;
+static JSON req={0};
+
+    /* parse JSON only once per request */
+
+    if ( ci != prev_ci || G_cnts_today.req != prev_req )
+    {
+        if ( !REQ_DATA )
+            return FALSE;
+
+        if ( !JSON_FROM_STRING(req, REQ_DATA) )
+            return FALSE;
+
+        prev_ci = ci;
+        prev_req = G_cnts_today.req;
+    }
+
+    if ( !JSON_PRESENT(req, fieldname) )
+        return FALSE;
+
+    strncpy(retbuf, JSON_GET_STR(req, fieldname), maxlen);
+    retbuf[maxlen] = EOS;
+
+    return TRUE;
 }
 
 
@@ -1220,7 +1287,15 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 
     if ( conn[ci].post )
     {
-        if ( conn[ci].in_ctype != CONTENT_TYPE_URLENCODED && conn[ci].in_ctype != CONTENT_TYPE_UNSET )
+        if ( conn[ci].in_ctype == CONTENT_TYPE_JSON )
+        {
+            return get_qs_param_json(ci, fieldname, retbuf, maxlen);
+        }
+        else if ( conn[ci].in_ctype == CONTENT_TYPE_MULTIPART )
+        {
+            return get_qs_param_multipart_txt(ci, fieldname, retbuf);
+        }
+        else if ( conn[ci].in_ctype != CONTENT_TYPE_URLENCODED && conn[ci].in_ctype != CONTENT_TYPE_UNSET )
         {
             WAR("Invalid Content-Type");
             if ( retbuf ) retbuf[0] = EOS;
@@ -1355,6 +1430,9 @@ char *get_qs_param_multipart(int ci, const char *fieldname, unsigned *retlen, ch
         WAR("This is not multipart/form-data");
         return NULL;
     }
+
+    if ( !conn[ci].in_data )
+        return NULL;
 
     if ( conn[ci].clen < 10 )
     {
@@ -4383,11 +4461,59 @@ static char date[16];
 char *silgy_sql_esc(const char *str)
 {
 static char dst[MAX_LONG_URI_VAL_LEN+1];
-    int     i=0, j=0;
+
+    sanitize_sql(dst, str, MAX_LONG_URI_VAL_LEN);
+
+    return dst;
+}
+
+
+/* --------------------------------------------------------------------------
+   HTML-escape string
+-------------------------------------------------------------------------- */
+char *silgy_html_esc(const char *str)
+{
+static char dst[MAX_LONG_URI_VAL_LEN+1];
+
+    sanitize_html(dst, str, MAX_LONG_URI_VAL_LEN);
+
+    return dst;
+}
+
+
+/* --------------------------------------------------------------------------
+   SQL-escape string respecting destination length (excluding '\0')
+-------------------------------------------------------------------------- */
+void sanitize_sql_old(char *dest, const char *str, int len)
+{
+    strncpy(dest, silgy_sql_esc(str), len);
+    dest[len] = EOS;
+
+    /* cut off orphaned single backslash */
+
+    int i=len-1;
+    int bs=0;
+    while ( dest[i]=='\\' && i>-1 )
+    {
+        ++bs;
+        i--;
+    }
+
+    if ( bs % 2 )   /* odd number of trailing backslashes -- cut one */
+        dest[len-1] = EOS;
+}
+
+
+/* --------------------------------------------------------------------------
+   SQL-escape string respecting destination length (excluding '\0')
+-------------------------------------------------------------------------- */
+void sanitize_sql(char *dst, const char *str, int len)
+{
+    int i=0, j=0;
 
     while ( str[i] )
     {
-        if ( j > MAX_LONG_URI_VAL_LEN-3 )
+        if ( j > len-3 )
             break;
         else if ( str[i] == '\'' )
         {
@@ -4410,22 +4536,19 @@ static char dst[MAX_LONG_URI_VAL_LEN+1];
     }
 
     dst[j] = EOS;
-
-    return dst;
 }
 
 
 /* --------------------------------------------------------------------------
-   HTML-escape string
+   HTML-escape string respecting destination length (excluding '\0')
 -------------------------------------------------------------------------- */
-char *silgy_html_esc(const char *str)
+void sanitize_html(char *dst, const char *str, int len)
 {
-static char dst[MAX_LONG_URI_VAL_LEN+1];
-    int     i=0, j=0;
+    int i=0, j=0;
 
     while ( str[i] )
     {
-        if ( j > MAX_LONG_URI_VAL_LEN-7 )
+        if ( j > len-7 )
             break;
         else if ( str[i] == '\'' )
         {
@@ -4485,31 +4608,6 @@ static char dst[MAX_LONG_URI_VAL_LEN+1];
     }
 
     dst[j] = EOS;
-
-    return dst;
-}
-
-
-/* --------------------------------------------------------------------------
-   SQL-escape string respecting destination length (excluding '\0')
--------------------------------------------------------------------------- */
-void sanitize_sql(char *dest, const char *str, int len)
-{
-    strncpy(dest, silgy_sql_esc(str), len);
-    dest[len] = EOS;
-
-    /* cut off orphaned single backslash */
-
-    int i=len-1;
-    int bs=0;
-    while ( dest[i]=='\\' && i>-1 )
-    {
-        ++bs;
-        i--;
-    }
-
-    if ( bs % 2 )   /* odd number of trailing backslashes -- cut one */
-        dest[len-1] = EOS;
 }
 
 
@@ -5808,6 +5906,23 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
     json->rec[i].type = is_array?JSON_ARRAY:JSON_RECORD;
 
     return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Check value presence in JSON buffer
+-------------------------------------------------------------------------- */
+bool lib_json_present(JSON *json, const char *name)
+{
+    int i;
+
+    for ( i=0; i<json->cnt; ++i )
+    {
+        if ( 0==strcmp(json->rec[i].name, name) )
+            return TRUE;
+    }
+
+    return FALSE;
 }
 
 

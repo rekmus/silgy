@@ -4576,13 +4576,19 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     {
         strcpy(conn[ci].in_ctypestr, value);
 
+        strcpy(uvalue, upper(value));
+
         int len = strlen(value);
 
-        if ( len > 32 && 0==strncmp(value, "application/x-www-form-urlencoded", 33) )
+        if ( len > 15 && 0==strncmp(uvalue, "APPLICATION/JSON", 16) )
+        {
+            conn[ci].in_ctype = CONTENT_TYPE_JSON;
+        }
+        else if ( len > 32 && 0==strncmp(uvalue, "APPLICATION/X-WWW-FORM-URLENCODED", 33) )
         {
             conn[ci].in_ctype = CONTENT_TYPE_URLENCODED;
         }
-        else if ( len > 18 && 0==strncmp(value, "multipart/form-data", 19) )
+        else if ( len > 18 && 0==strncmp(uvalue, "MULTIPART/FORM-DATA", 19) )
         {
             conn[ci].in_ctype = CONTENT_TYPE_MULTIPART;
 
@@ -4592,7 +4598,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
                 DBG("boundary: [%s]", conn[ci].boundary);
             }
         }
-        else if ( len > 23 && 0==strncmp(value, "application/octet-stream", 24) )
+        else if ( len > 23 && 0==strncmp(uvalue, "APPLICATION/OCTET-STREAM", 24) )
         {
             conn[ci].in_ctype = CONTENT_TYPE_OCTET_STREAM;
         }

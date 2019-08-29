@@ -256,6 +256,7 @@ typedef json_t JSON;
 #define JSON_ADD_ARRAY(json, name, val)     lib_json_add_record(json, name, val, TRUE, -1)
 #define JSON_ADD_ARRAY_A(json, i, val)      lib_json_add_record(json, NULL, val, TRUE, i)
 
+#define JSON_PRESENT(json, name)            lib_json_present(json, name)
 
 #define JSON_GET_STR(json, name)            lib_json_get_str(json, name, -1)
 #define JSON_GET_STR_A(json, i)             lib_json_get_str(json, NULL, i)
@@ -301,6 +302,7 @@ typedef json_t JSON;
 #define JSON_ADD_ARRAY(json, name, val)     lib_json_add_record(&json, name, &val, TRUE, -1)
 #define JSON_ADD_ARRAY_A(json, i, val)      lib_json_add_record(&json, NULL, &val, TRUE, i)
 
+#define JSON_PRESENT(json, name)            lib_json_present(&json, name)
 
 #define JSON_GET_STR(json, name)            lib_json_get_str(&json, name, -1)
 #define JSON_GET_STR_A(json, i)             lib_json_get_str(&json, NULL, i)
@@ -398,7 +400,8 @@ extern "C" {
     char *san_long(const char *str);
     char *silgy_sql_esc(const char *str);
     char *silgy_html_esc(const char *str);
-    void sanitize_sql(char *dest, const char *str, int len);
+    void sanitize_sql(char *dst, const char *str, int len);
+    void sanitize_html(char *dst, const char *str, int len);
     char *silgy_html_unesc(const char *str);
     char *uri_encode(const char *str);
     char *upper(const char *str);
@@ -415,6 +418,7 @@ extern "C" {
     bool lib_json_add(JSON *json, const char *name, const char *str_value, int int_value, double flo_value, char type, int i);
     bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_array, int i);
     bool lib_json_get(JSON *json, const char *name, char *str_value, int *num_value, char type);
+    bool lib_json_present(JSON *json, const char *name);
     char *lib_json_get_str(JSON *json, const char *name, int i);
     int  lib_json_get_int(JSON *json, const char *name, int i);
     double lib_json_get_float(JSON *json, const char *name, int i);

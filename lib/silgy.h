@@ -613,6 +613,7 @@ typedef char str64k[1024*64];
 /* incoming */
 
 #define CONTENT_TYPE_URLENCODED         'U'
+#define CONTENT_TYPE_JSON               'J'
 #define CONTENT_TYPE_MULTIPART          'M'
 #define CONTENT_TYPE_OCTET_STREAM       'O'
 
