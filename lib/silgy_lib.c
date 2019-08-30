@@ -4595,14 +4595,14 @@ void sanitize_html(char *dst, const char *str, int len)
             dst[j++] = 'p';
             dst[j++] = ';';
         }
-        else if ( str[i] == '\n' )
+/*        else if ( str[i] == '\n' )
         {
             dst[j++] = '<';
             dst[j++] = 'b';
             dst[j++] = 'r';
             dst[j++] = '>';
-        }
-        else if ( str[i] != '\r' )
+        } */
+        else // if ( str[i] != '\r' )
             dst[j++] = str[i];
         ++i;
     }
