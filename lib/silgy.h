@@ -103,6 +103,13 @@ typedef char str64k[1024*64];
 #define LOG_DBG                         4               /* for debug mode -- most detailed */
 
 
+#define MAX_URI_VAL_LEN                 255             /* max value length received in URI -- sufficient for 99% cases */
+#define MAX_LONG_URI_VAL_LEN            65535           /* max long value length received in URI -- 64 kB - 1 B */
+
+#define QSBUF                           MAX_URI_VAL_LEN+1
+#define QS_BUF                          QSBUF
+
+
 #define LOGIN_LEN                       30
 #define EMAIL_LEN                       120
 #define UNAME_LEN                       120
@@ -672,12 +679,6 @@ typedef char str64k[1024*64];
 #define OUT_HTML_FOOTER                 lib_out_html_footer(ci)
 #define APPEND_CSS(name, first)         lib_append_css(ci, name, first)
 #define APPEND_SCRIPT(name, first)      lib_append_script(ci, name, first)
-
-#define MAX_URI_VAL_LEN                 255             /* max value length received in URI -- sufficient for 99% cases */
-#define MAX_LONG_URI_VAL_LEN            65535           /* max long value length received in URI -- 64 kB - 1 B */
-
-#define QSBUF                           MAX_URI_VAL_LEN+1
-#define QS_BUF                          QSBUF
 
 #define QS_HTML_ESCAPE(param, val)      get_qs_param_html_esc(ci, param, val)
 #define QS_SQL_ESCAPE(param, val)       get_qs_param_sql_esc(ci, param, val)
