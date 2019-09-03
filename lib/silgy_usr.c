@@ -816,17 +816,17 @@ static int silgy_usr_verify_activation_key(int ci, char *linkkey, int *uid)
 int silgy_usr_login(int ci)
 {
     int         ret=OK;
+
     QSVAL       login;
     QSVAL       email;
-    char        ulogin[MAX_VALUE_LEN*2+1];
     QSVAL       passwd;
     QSVAL       keep;
 
     char        sql[SQLBUF];
-    char        p1[32], p2[32];
-    char        str1[32], str2[32];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
+    char        p1[32], p2[32];
+    char        str1[32], str2[32];
     char        status;
     int         visits;
     int         ula_cnt;
@@ -855,8 +855,9 @@ int silgy_usr_login(int ci)
         return ERR_INVALID_REQUEST;
     }
     stp_right(login);
+    QSVAL ulogin;
     strcpy(ulogin, upper(login));
-    sprintf(sql, "SELECT id,login,email,name,phone,passwd1,passwd2,lang,tz,about,group_id,auth_level,status,visits,ula_cnt,ula_time FROM users WHERE (login_u='%s' OR email_u='%s')", ulogin, ulogin);
+    sprintf(sql, "SELECT id,login,email,name,phone,passwd1,passwd2,lang,tz,about,group_id,auth_level,status,visits,ula_cnt,ula_time FROM users WHERE login_u='%s' OR email_u='%s'", ulogin, ulogin);
 
 #endif  /* USERSBYEMAIL */
 
@@ -991,13 +992,15 @@ int silgy_usr_login(int ci)
 
     /* now check username/email and password pairs as they should be */
 
-    get_hashes(str1, str2, login, email, passwd);
+    /* generate hashes using entered password */
 
-    /* are these as expected? */
+    get_hashes(str1, str2, us.login, us.email, passwd);
 
-    if ( 0 != strcmp(str1, p1) || (email[0] && 0 != strcmp(str2, p2)) )  /* passwd1, passwd2 */
+    /* compare them with stored ones */
+
+    if ( 0 != strcmp(str1, p1) || (us.email[0] && 0 != strcmp(str2, p2)) )   /* passwd1, passwd2 */
     {
-        DBG("Invalid password");
+        WAR("Invalid password");
         new_ula_cnt = ula_cnt + 1;
         sprintf(sql, "UPDATE users SET ula_cnt=%d, ula_time='%s' WHERE id=%d", new_ula_cnt, DT_NOW, us.uid);
         DBG("sql: %s", sql);
@@ -1662,7 +1665,7 @@ int silgy_usr_save_account(int ci)
 
     get_hashes(str1, str2, login, email, plen?passwd:opasswd);
 
-    sprintf(sql, "UPDATE users SET login='%s', email='%s', name='%s', phone='%s', passwd1='%s', passwd2='%s', lang='%s', tz='%s', about='%s' WHERE id=%d", login, email, name, phone, str1, str2, lang, tz, about, UID);
+    sprintf(sql, "UPDATE users SET login='%s', email='%s', email_u='%s', name='%s', phone='%s', passwd1='%s', passwd2='%s', lang='%s', tz='%s', about='%s' WHERE id=%d", login, email, upper(email), name, phone, str1, str2, lang, tz, about, UID);
     DBG("sql: UPDATE users SET login='%s', email='%s', name='%s', phone='%s',... WHERE id=%d", login, email, name, phone, UID);
 
     if ( mysql_query(G_dbconn, sql) )
