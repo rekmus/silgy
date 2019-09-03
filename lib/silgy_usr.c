@@ -676,7 +676,7 @@ static int send_activation_link(int ci, const char *login, const char *email)
 
     silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
 
-    sprintf(sql, "INSERT INTO users_activations (linkkey,user_id,created,activated) VALUES ('%s',%d,'%s','%s')", linkkey, UID, DT_NULL);
+    sprintf(sql, "INSERT INTO users_activations (linkkey,user_id,created,activated) VALUES ('%s',%d,'%s','%s')", linkkey, UID, DT_NOW, DT_NULL);
     DBG("sql: %s", sql);
 
     if ( mysql_query(G_dbconn, sql) )
