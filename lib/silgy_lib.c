@@ -6360,7 +6360,7 @@ bool silgy_email(const char *to, const char *subject, const char *message)
 #else   /* Windows */
 
     WAR("There's no email service for Windows");
-    return FALSE;
+    return TRUE;
 
 #endif  /* _WIN32 */
 }

@@ -3422,7 +3422,8 @@ static void gen_response_header(int ci)
         }
         else if ( conn[ci].location[0] )        /* (2) */
         {
-            sprintf(G_tmp, "Location: %s://%s/%s\r\n", PROTOCOL, conn[ci].host, conn[ci].location);
+//            sprintf(G_tmp, "Location: %s://%s/%s\r\n", PROTOCOL, conn[ci].host, conn[ci].location);
+            sprintf(G_tmp, "Location: %s\r\n", conn[ci].location);
         }
         else if ( conn[ci].uri[0] ) /* (3) URI */
         {
