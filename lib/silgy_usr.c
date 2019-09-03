@@ -236,7 +236,8 @@ int libusr_luses_ok(int ci)
     sanitize_sql(sanuagent, conn[ci].uagent, DB_UAGENT_LEN);
 
     char sanlscookie[SESID_LEN+1];
-    sanitize_sql(sanlscookie, conn[ci].cookie_in_l, SESID_LEN);
+//    sanitize_sql(sanlscookie, conn[ci].cookie_in_l, SESID_LEN);
+    strcpy(sanlscookie, silgy_filter_strict(conn[ci].cookie_in_l));
 
     sprintf(sql, "SELECT uagent, user_id, created FROM users_logins WHERE sesid = BINARY '%s'", sanlscookie);
     DBG("sql: %s", sql);
@@ -1141,7 +1142,8 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
     if ( !login[0] )    /* login empty */
     {
 #ifdef USERSBYEMAIL
-        strcpy(login, email);
+        strncpy(login, email, LOGIN_LEN);
+        login[LOGIN_LEN] = EOS;
 #else
         ERR("Invalid request (login missing)");
         return ERR_INVALID_REQUEST;
