@@ -1328,6 +1328,8 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 
     char *val = qs;
 
+    bool found=FALSE;
+
     while ( val < end )
     {
         val = strstr(val, fieldname);
@@ -1347,7 +1349,16 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
         val += fnamelen;
 
         if ( *val == '=' )   /* found */
+        {
+            found = TRUE;
             break;
+        }
+    }
+
+    if ( !found )
+    {
+        if ( retbuf ) retbuf[0] = EOS;
+        return FALSE;
     }
 
     ++val;  /* skip '=' */
