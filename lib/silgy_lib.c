@@ -1926,7 +1926,7 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
                 if ( 0==strcmp(ai[j].type, "int") )
                 {
                     strcat(ai_td, "<td class=r>");
-                    amt(ai_fmt, atol(row[j+8]));
+                    amt(ai_fmt, atoi(row[j+8]));
                     strcat(ai_td, ai_fmt);
                 }
                 else if ( 0==strcmp(ai[j].type, "long") )
@@ -2362,7 +2362,7 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
                 p = stpcpy(p, "Content-Type: application/x-www-form-urlencoded\r\n");
         }
         char tmp[64];
-        sprintf(tmp, "Content-Length: %ld\r\n", (long)strlen(json?jtmp:(char*)req));
+        sprintf(tmp, "Content-Length: %d\r\n", strlen(json?jtmp:(char*)req));
         p = stpcpy(p, tmp);
     }
 
@@ -5246,13 +5246,13 @@ static void json_to_string(char *dst, JSON *json, bool array)
         else if ( json->rec[i].type == JSON_RECORD )
         {
             char tmp[JSON_BUFSIZE];
-            json_to_string(tmp, (JSON*)atol(json->rec[i].value), FALSE);
+            json_to_string(tmp, (JSON*)(intptr_t)atoi(json->rec[i].value), FALSE);
             p = stpcpy(p, tmp);
         }
         else if ( json->rec[i].type == JSON_ARRAY )
         {
             char tmp[JSON_BUFSIZE];
-            json_to_string(tmp, (JSON*)atol(json->rec[i].value), TRUE);
+            json_to_string(tmp, (JSON*)(intptr_t)atoi(json->rec[i].value), TRUE);
             p = stpcpy(p, tmp);
         }
 
@@ -5329,7 +5329,7 @@ static void json_to_string_pretty(char *dst, JSON *json, bool array, int level)
                 p = stpcpy(p, json_indent(level));
             }
             char tmp[JSON_BUFSIZE];
-            json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), FALSE, level+1);
+            json_to_string_pretty(tmp, (JSON*)(intptr_t)atoi(json->rec[i].value), FALSE, level+1);
             p = stpcpy(p, tmp);
         }
         else if ( json->rec[i].type == JSON_ARRAY )
@@ -5340,7 +5340,7 @@ static void json_to_string_pretty(char *dst, JSON *json, bool array, int level)
                 p = stpcpy(p, json_indent(level));
             }
             char tmp[JSON_BUFSIZE];
-            json_to_string_pretty(tmp, (JSON*)atol(json->rec[i].value), TRUE, level+1);
+            json_to_string_pretty(tmp, (JSON*)(intptr_t)atoi(json->rec[i].value), TRUE, level+1);
             p = stpcpy(p, tmp);
         }
 
@@ -5912,7 +5912,7 @@ bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_a
 
     /* store sub-record address as a text in value */
 
-    sprintf(json->rec[i].value, "%ld", (long)json_sub);
+    sprintf(json->rec[i].value, "%d", (intptr_t)json_sub);
 
     json->rec[i].type = is_array?JSON_ARRAY:JSON_RECORD;
 
@@ -6138,7 +6138,7 @@ bool lib_json_get_record(JSON *json, const char *name, JSON *json_sub, int i)
 #endif
         if ( json->rec[i].type == JSON_RECORD || json->rec[i].type == JSON_ARRAY )
         {
-            memcpy(json_sub, (JSON*)atol(json->rec[i].value), sizeof(JSON));
+            memcpy(json_sub, (JSON*)(intptr_t)atoi(json->rec[i].value), sizeof(JSON));
             return TRUE;
         }
         else
@@ -6158,7 +6158,7 @@ bool lib_json_get_record(JSON *json, const char *name, JSON *json_sub, int i)
 //            DBG("lib_json_get_record, found [%s]", name);
             if ( json->rec[i].type == JSON_RECORD || json->rec[i].type == JSON_ARRAY )
             {
-                memcpy(json_sub, (JSON*)atol(json->rec[i].value), sizeof(JSON));
+                memcpy(json_sub, (JSON*)(intptr_t)atoi(json->rec[i].value), sizeof(JSON));
                 return TRUE;
             }
 
@@ -8115,7 +8115,7 @@ char *stpcpy(char *dest, const char *src)
 /* --------------------------------------------------------------------------
    Windows port of stpncpy
 -------------------------------------------------------------------------- */
-char *stpncpy(char *dest, const char *src, unsigned int len)
+char *stpncpy(char *dest, const char *src, size_t len)
 {
     register char *d=dest;
     register const char *s=src;

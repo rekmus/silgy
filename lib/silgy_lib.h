@@ -459,7 +459,7 @@ extern "C" {
     int getpid(void);
     int clock_gettime_win(struct timespec *spec);
     char *stpcpy(char *dest, const char *src);
-    char *stpncpy(char *dest, const char *src, unsigned int len);
+    char *stpncpy(char *dest, const char *src, size_t len);
 #endif  /* _WIN32 */
 
 #ifndef strnstr
