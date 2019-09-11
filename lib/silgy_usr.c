@@ -1264,9 +1264,9 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
     }
 
 #ifdef USERSBYEMAIL
-    INF("User [%s] created", email);
+    INF("User [%s] created from %s", email, US.ip);
 #else
-    INF("User [%s] created", login);
+    INF("User [%s] created from %s", login, US.ip);
 #endif
 
     return OK;
