@@ -159,7 +159,7 @@ typedef struct {
 #define CALL_REST(req, res, method, url)            CALL_REST_JSON(req, res, method, url, TRUE)
 
 
-#define CALL_REST_DEFAULT_TIMEOUT                   1000     /* in ms -- to avoid blocking forever */
+#define CALL_REST_DEFAULT_TIMEOUT                   10000     /* in ms -- to avoid blocking forever */
 
 #define REST_RES_HEADER_LEN                         4095
 #define REST_ADDRESSES_CACHE_SIZE                   100
@@ -182,8 +182,12 @@ typedef struct {
 #define JSON_RECORD             4
 #define JSON_ARRAY              5
 
+#ifndef JSON_KEY_LEN
 #define JSON_KEY_LEN            31
+#endif
+#ifndef JSON_VAL_LEN
 #define JSON_VAL_LEN            255
+#endif
 
 #ifdef APP_JSON_MAX_ELEMS       /* in one JSON struct */
 #define JSON_MAX_ELEMS          APP_JSON_MAX_ELEMS

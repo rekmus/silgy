@@ -1614,24 +1614,20 @@ static bool init(int argc, char **argv)
     ALWAYS("    WEB_SERVER_VERSION = %s", WEB_SERVER_VERSION);
 #ifdef MEM_TINY
     ALWAYS("          Memory model = MEM_TINY");
-#endif
-#ifdef MEM_SMALL
-    ALWAYS("          Memory model = MEM_SMALL");
-#endif
-#ifdef MEM_MEDIUM
+#elif defined MEM_MEDIUM
     ALWAYS("          Memory model = MEM_MEDIUM");
-#endif
-#ifdef MEM_LARGE
+#elif defined MEM_LARGE
     ALWAYS("          Memory model = MEM_LARGE");
-#endif
-#ifdef MEM_XLARGE
+#elif defined MEM_XLARGE
     ALWAYS("          Memory model = MEM_XLARGE");
-#endif
-#ifdef MEM_XXLARGE
+#elif defined MEM_XXLARGE
     ALWAYS("          Memory model = MEM_XXLARGE");
-#endif
-#ifdef MEM_XXXLARGE
+#elif defined MEM_XXXLARGE
     ALWAYS("          Memory model = MEM_XXXLARGE");
+#elif defined MEM_XXXXLARGE
+    ALWAYS("          Memory model = MEM_XXXXLARGE");
+#else   /* MEM_SMALL -- default */
+    ALWAYS("          Memory model = MEM_SMALL");
 #endif
     ALWAYS("       MAX_CONNECTIONS = %d", MAX_CONNECTIONS);
     ALWAYS("          MAX_SESSIONS = %d", MAX_SESSIONS);

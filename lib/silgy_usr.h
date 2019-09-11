@@ -213,6 +213,8 @@
 #define FAILED_LOGIN_CNT_SIZE           100000
 #elif defined MEM_XXXLARGE
 #define FAILED_LOGIN_CNT_SIZE           100000
+#elif defined MEM_XXXXLARGE
+#define FAILED_LOGIN_CNT_SIZE           100000
 #else   /* MEM_SMALL -- default */
 #define FAILED_LOGIN_CNT_SIZE           1000
 #endif

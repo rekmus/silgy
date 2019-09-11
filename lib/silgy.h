@@ -221,8 +221,10 @@ typedef char str64k[1024*64];
 #ifndef MEM_XLARGE
 #ifndef MEM_XXLARGE
 #ifndef MEM_XXXLARGE
+#ifndef MEM_XXXXLARGE
 #ifndef MEM_SMALL
 #define MEM_SMALL   /* default memory model */
+#endif
 #endif
 #endif
 #endif
@@ -383,6 +385,11 @@ typedef char str64k[1024*64];
 #define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
 #define MAX_CONNECTIONS                 20000           /* max TCP connections */
 #define MAX_SESSIONS                    10000           /* max user sessions */
+#elif defined MEM_XXXXLARGE
+#define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
+#define OUT_BUFSIZE                     262144          /* initial HTTP response buffer length (256 kB) */
+#define MAX_CONNECTIONS                 50000           /* max TCP connections */
+#define MAX_SESSIONS                    25000           /* max user sessions */
 #else   /* MEM_SMALL -- default */
 #define IN_BUFSIZE                      8192            /* incoming request buffer length (8 kB) */
 #define OUT_BUFSIZE                     131072          /* initial HTTP response buffer length (128 kB) */
