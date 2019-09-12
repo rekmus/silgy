@@ -191,9 +191,16 @@
 
 
 #define SET_USER_STR(key, val)          silgy_usr_set_str(ci, key, val)
+#define SET_USR_STR(key, val)           silgy_usr_set_str(ci, key, val)
+
 #define GET_USER_STR(key, val)          silgy_usr_get_str(ci, key, val)
+#define GET_USR_STR(key, val)           silgy_usr_get_str(ci, key, val)
+
 #define SET_USER_INT(key, val)          silgy_usr_set_int(ci, key, val)
+#define SET_USR_INT(key, val)           silgy_usr_set_int(ci, key, val)
+
 #define GET_USER_INT(key, val)          silgy_usr_get_int(ci, key, val)
+#define GET_USR_INT(key, val)           silgy_usr_get_int(ci, key, val)
 
 
 /*
