@@ -702,6 +702,11 @@ typedef char str64k[1024*64];
 #define QS(param, val)                  QS_DONT_ESCAPE(param, val)
 #endif
 
+#define QSI(param, val)                 lib_qsi(ci, param, val)
+#define QSF(param, val)                 lib_qsf(ci, param, val)
+#define QSD(param, val)                 lib_qsd(ci, param, val)
+
+
 #define SVC_NAME_LEN                    63      /* async service name length */
 
 

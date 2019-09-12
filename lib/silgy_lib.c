@@ -1627,6 +1627,57 @@ char *get_qs_param_multipart(int ci, const char *fieldname, unsigned *retlen, ch
 
 
 /* --------------------------------------------------------------------------
+   Get integer value from the query string
+-------------------------------------------------------------------------- */
+bool lib_qsi(int ci, const char *fieldname, int *retbuf)
+{
+    QSVAL s;
+
+    if ( get_qs_param_raw(ci, fieldname, s, MAX_URI_VAL_LEN) )
+    {
+        *retbuf = atoi(s);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get float value from the query string
+-------------------------------------------------------------------------- */
+bool lib_qsf(int ci, const char *fieldname, float *retbuf)
+{
+    QSVAL s;
+
+    if ( get_qs_param_raw(ci, fieldname, s, MAX_URI_VAL_LEN) )
+    {
+        sscanf(s, "%f", retbuf);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get double value from the query string
+-------------------------------------------------------------------------- */
+bool lib_qsd(int ci, const char *fieldname, double *retbuf)
+{
+    QSVAL s;
+
+    if ( get_qs_param_raw(ci, fieldname, s, MAX_URI_VAL_LEN) )
+    {
+        sscanf(s, "%lf", retbuf);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
    Set response status
 -------------------------------------------------------------------------- */
 void lib_set_res_status(int ci, int status)
