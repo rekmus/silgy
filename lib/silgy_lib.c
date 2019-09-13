@@ -297,6 +297,80 @@ static char unknown[128];
 
 
 /* --------------------------------------------------------------------------
+   Get message category
+-------------------------------------------------------------------------- */
+static char *get_msg_cat(int code)
+{
+static char cat[32];
+
+    if ( code == OK )
+    {
+        strcpy(cat, MSG_CAT_OK);
+    }
+    else if ( code < ERR_MAX_ENGINE_ERROR )
+    {
+        strcpy(cat, MSG_CAT_ERROR);
+    }
+#ifdef USERS
+    else if ( code < ERR_MAX_USR_LOGIN_ERROR )
+    {
+        strcpy(cat, MSG_CAT_USR_LOGIN);
+    }
+    else if ( code < ERR_MAX_USR_EMAIL_ERROR )
+    {
+        strcpy(cat, MSG_CAT_USR_EMAIL);
+    }
+    else if ( code < ERR_MAX_USR_PASSWORD_ERROR )
+    {
+        strcpy(cat, MSG_CAT_USR_PASSWORD);
+    }
+    else if ( code < ERR_MAX_USR_REPEAT_PASSWORD_ERROR )
+    {
+        strcpy(cat, MSG_CAT_USR_REPEAT_PASSWORD);
+    }
+    else if ( code < ERR_MAX_USR_OLD_PASSWORD_ERROR )
+    {
+        strcpy(cat, MSG_CAT_USR_OLD_PASSWORD);
+    }
+    else if ( code < ERR_MAX_USR_ERROR )
+    {
+        strcpy(cat, MSG_CAT_ERROR);
+    }
+    else if ( code < WAR_MAX_USR_WARNING )
+    {
+        strcpy(cat, MSG_CAT_WARNING);
+    }
+    else if ( code < MSG_MAX_USR_MESSAGE )
+    {
+        strcpy(cat, MSG_CAT_MESSAGE);
+    }
+#endif  /* USERS */
+    else    /* app error */
+    {
+        strcpy(cat, MSG_CAT_ERROR);
+    }
+
+    return cat;
+}
+
+
+/* --------------------------------------------------------------------------
+   Message category test
+-------------------------------------------------------------------------- */
+bool silgy_is_msg_cat(int code, const char *arg_cat)
+{
+    char cat[32];
+
+    strcpy(cat, get_msg_cat(code));
+
+    if ( 0==strcmp(cat, arg_cat) )
+        return TRUE;
+
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
    Get error description for user
    Pick the user session language if possible
    TODO: binary search
@@ -1770,56 +1844,10 @@ void lib_set_res_content_disposition(int ci, const char *str, ...)
 -------------------------------------------------------------------------- */
 void lib_send_msg_description(int ci, int code)
 {
-    char cat[256]=MSG_CAT_ERROR;
-    char msg[1024]="";
+    char cat[32];
+    char msg[1024];
 
-    if ( code == OK )
-    {
-        strcpy(cat, MSG_CAT_OK);
-    }
-    else if ( code < ERR_MAX_ENGINE_ERROR )
-    {
-        /* keep default category */
-    }
-#ifdef USERS
-    else if ( code < ERR_MAX_USR_LOGIN_ERROR )
-    {
-        strcpy(cat, MSG_CAT_USR_LOGIN);
-    }
-    else if ( code < ERR_MAX_USR_EMAIL_ERROR )
-    {
-        strcpy(cat, MSG_CAT_USR_EMAIL);
-    }
-    else if ( code < ERR_MAX_USR_PASSWORD_ERROR )
-    {
-        strcpy(cat, MSG_CAT_USR_PASSWORD);
-    }
-    else if ( code < ERR_MAX_USR_REPEAT_PASSWORD_ERROR )
-    {
-        strcpy(cat, MSG_CAT_USR_REPEAT_PASSWORD);
-    }
-    else if ( code < ERR_MAX_USR_OLD_PASSWORD_ERROR )
-    {
-        strcpy(cat, MSG_CAT_USR_OLD_PASSWORD);
-    }
-    else if ( code < ERR_MAX_USR_ERROR )
-    {
-        /* keep default category */
-    }
-    else if ( code < WAR_MAX_USR_WARNING )
-    {
-        strcpy(cat, MSG_CAT_WARNING);
-    }
-    else if ( code < MSG_MAX_USR_MESSAGE )
-    {
-        strcpy(cat, MSG_CAT_MESSAGE);
-    }
-#endif  /* USERS */
-    else    /* app error */
-    {
-        /* keep default category */
-    }
-
+    strcpy(cat, get_msg_cat(code));
     strcpy(msg, silgy_message(code));
 
 #ifdef MSG_FORMAT_JSON
