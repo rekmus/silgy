@@ -97,9 +97,9 @@ typedef struct {
 
 #define silgy_message(code)     lib_get_message(ci, code)
 #define MSG(code)               lib_get_message(ci, code)
-#define MSG_CAT_RED(code)       silgy_is_msg_cat(code, MSG_CAT_ERROR)
-#define MSG_CAT_YELLOW(code)    silgy_is_msg_cat(code, MSG_CAT_WARNING)
-#define MSG_CAT_GREEN(code)     silgy_is_msg_cat(code, MSG_CAT_MESSAGE)
+#define MSG_CAT_RED(code)       silgy_is_msg_main_cat(code, MSG_CAT_ERROR)
+#define MSG_CAT_YELLOW(code)    silgy_is_msg_main_cat(code, MSG_CAT_WARNING)
+#define MSG_CAT_GREEN(code)     silgy_is_msg_main_cat(code, MSG_CAT_MESSAGE)
 
 
 
@@ -348,7 +348,7 @@ extern "C" {
     int  compare_messages(const void *a, const void *b);
     void sort_messages(void);
     char *lib_get_message(int ci, int code);
-    bool silgy_is_msg_cat(int code, const char *cat);
+    bool silgy_is_msg_main_cat(int code, const char *cat);
     void silgy_add_string(const char *lang, const char *str, const char *str_lang);
     const char *lib_get_string(int ci, const char *str);
     char *urlencode(const char *src);

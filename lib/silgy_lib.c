@@ -356,8 +356,10 @@ static char cat[32];
 
 /* --------------------------------------------------------------------------
    Message category test
+   Only 3 main categories are recognized:
+   error (red), warning (yellow) and message (green)
 -------------------------------------------------------------------------- */
-bool silgy_is_msg_cat(int code, const char *arg_cat)
+bool silgy_is_msg_main_cat(int code, const char *arg_cat)
 {
     char cat[32];
 
@@ -365,6 +367,12 @@ bool silgy_is_msg_cat(int code, const char *arg_cat)
 
     if ( 0==strcmp(cat, arg_cat) )
         return TRUE;
+
+#ifdef USERS
+    if ( 0==strcmp(arg_cat, MSG_CAT_ERROR) &&
+            (0==strcmp(cat, MSG_CAT_USR_LOGIN) || 0==strcmp(cat, MSG_CAT_USR_EMAIL) || 0==strcmp(cat, MSG_CAT_USR_PASSWORD) || 0==strcmp(cat, MSG_CAT_USR_REPEAT_PASSWORD) || 0==strcmp(cat, MSG_CAT_USR_OLD_PASSWORD)) )
+        return TRUE;
+#endif
 
     return FALSE;
 }
