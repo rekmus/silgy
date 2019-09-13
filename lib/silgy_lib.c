@@ -5950,7 +5950,7 @@ bool lib_json_add(JSON *json, const char *name, const char *str_value, int int_v
     }
     else    /* float */
     {
-        snprintf(json->rec[i].value, 256, "%f", flo_value);
+        snprintf(json->rec[i].value, JSON_VAL_LEN, "%lf", flo_value);
     }
 
     json->rec[i].type = type;
