@@ -1,0 +1,36 @@
+// ----------------------------------------
+// wait animation
+.wt
+{
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    background: url(wait.gif) 50% 50% no-repeat;
+    background-size: 52px;
+}
+
+
+// ----------------------------------------
+// modal window
+.mw
+{
+    font-size: 12pt;
+    background-color: white;
+    padding: 3px 12px 13px 14px;
+    box-shadow: 4px 4px 16px 0px rgba(0,0,0,0.2);
+    border: 1px solid #bbbbbb;
+}
+
+
+// ----------------------------------------
+// yes/no buttons
+.ynb
+{
+    width: 80px;
+    height: 32px;
+    margin-top: 20px;
+}
