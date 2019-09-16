@@ -123,11 +123,15 @@ typedef struct {
 
 typedef struct {
     char lang[LANG_LEN+1];
-//    char string_orig[MAX_STR_LEN+1];
     char string_upper[MAX_STR_LEN+1];
     char string_in_lang[MAX_STR_LEN+1];
 } string_t;
 
+
+
+/* format amount */
+
+#define AMT(val)                silgy_amt(val)
 
 
 
@@ -399,6 +403,7 @@ extern "C" {
     time_t time_db2epoch(const char *str);
     char *time_epoch2http(time_t epoch);
     void lib_set_datetime_formats(const char *lang);
+    char *silgy_amt(double val);
     void amt(char *stramt, long long in_amt);
     void amtd(char *stramt, double in_amt);
     void lib_amt(char *stramt, long in_amt);
