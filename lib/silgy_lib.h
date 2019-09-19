@@ -461,7 +461,7 @@ extern "C" {
     void log_flush(void);
     void log_finish(void);
 #ifdef ICONV
-    char *silgy_convert(char *src, const char *cp_from, const char *cp_to);
+    char *silgy_convert(const char *src, const char *cp_from, const char *cp_to);
 #endif
 
     char *md5(const char* str);

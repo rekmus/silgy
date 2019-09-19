@@ -11,6 +11,7 @@
 
 #ifdef ICONV
 #include <iconv.h>
+#include <locale.h>
 #endif
 
 
@@ -130,6 +131,10 @@ void silgy_lib_init()
 #ifndef SILGY_WATCHER
     /* load strings */
     load_strings();
+#endif
+
+#ifdef ICONV
+    setlocale(LC_ALL, "");
 #endif
 }
 
@@ -7311,7 +7316,7 @@ void log_finish()
 /* --------------------------------------------------------------------------
    Convert string
 -------------------------------------------------------------------------- */
-char *silgy_convert(char *src, const char *cp_from, const char *cp_to)
+char *silgy_convert(const char *src, const char *cp_from, const char *cp_to)
 {
 static char dst[4096];
 
@@ -7323,7 +7328,7 @@ static char dst[4096];
         return dst;
     }
 
-    char *in_buf = src;
+    const char *in_buf = src;
     size_t in_left = strlen(src);
 
     char *out_buf = &dst[0];
@@ -7331,7 +7336,7 @@ static char dst[4096];
 
     do
     {
-        if ( iconv(cd, &in_buf, &in_left, &out_buf, &out_left) == (size_t)-1 )
+        if ( iconv(cd, (char**)&in_buf, &in_left, &out_buf, &out_left) == (size_t)-1 )
         {
             strcpy(dst, "iconv failed");
             return dst;
