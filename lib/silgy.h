@@ -287,6 +287,22 @@ typedef char str64k[1024*64];
     #define OUT(...)                        CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
 #endif  /* _MSC_VER */
 
+
+/* convenient & fast string building */
+
+#define OUTPS(str)                      (p = stpcpy(p, str))
+
+#ifdef _MSC_VER /* Microsoft compiler */
+    #define OUTP(...)                        (sprintf(G_tmp, EXPAND_VA(__VA_ARGS__)), OUTPS(G_tmp))
+#else   /* GCC */
+    #define OUTPM(str, ...)                  (sprintf(G_tmp, str, __VA_ARGS__), OUTPS(G_tmp))   /* OUTP with multiple args */
+    #define CHOOSE_OUTP(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME          /* single or multiple? */
+    #define OUTP(...)                        CHOOSE_OUTP(__VA_ARGS__, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPS)(__VA_ARGS__)
+#endif  /* _MSC_VER */
+
+
+
+
 /* HTTP header -- resets respbuf! */
 #define PRINT_HTTP_STATUS(val)          (sprintf(G_tmp, "HTTP/1.1 %d %s\r\n", val, get_http_descr(val)), HOUT(G_tmp))
 
