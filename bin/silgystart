@@ -1,13 +1,18 @@
 #!/bin/sh
 
+export SILGYDIR=/home/ec2-user/live
+
 export SILGY_SVC_PROCESSES=0
 
-echo "Starting Silgy..."
+echo "###############################"
+echo "### Starting live Silgy App ###"
+echo "###############################"
 
 # ---------------------------------------------------------------------
 # Main app
 
 nohup $SILGYDIR/bin/silgy_app &
+
 sleep 1
 
 # ---------------------------------------------------------------------

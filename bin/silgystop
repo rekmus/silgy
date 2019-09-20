@@ -1,6 +1,10 @@
 #!/bin/sh
 
-echo "Stopping Silgy..."
+export SILGYDIR=/home/ec2-user/live
+
+echo "###############################"
+echo "### Stopping live Silgy App ###"
+echo "###############################"
 
 # ---------------------------------------------------------------------
 # Services
