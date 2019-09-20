@@ -156,6 +156,10 @@ void silgy_app_main(int ci)
 }
 ```
 
+## Real world application
+
+[Silgy Home Page source code](https://github.com/silgy/silgy.org). You can try it live at [silgy.org](https://silgy.org).
+
 ## Directories
 
 Although not necessary, it's good to have $SILGYDIR set in the environment, pointing to the project directory. Silgy engine always first looks in `$SILGYDIR/<dir>` for the particular file, with `<dir>` being one of the below:
