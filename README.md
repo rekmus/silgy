@@ -156,7 +156,7 @@ void silgy_app_main(int ci)
 }
 ```
 
-## Real world application
+## Real world application example
 
 [Silgy Home Page source code](https://github.com/silgy/silgy.org). You can try it live at [silgy.org](https://silgy.org).
 
