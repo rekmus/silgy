@@ -1,0 +1,18 @@
+#!/bin/sh
+
+SILGYDEV=/home/ec2-user/dev
+SILGYLIVE=/home/ec2-user/live
+
+echo "###############################"
+echo "### Deploying new Silgy App ###"
+echo "###############################"
+
+cp -p $SILGYDEV/bin/silgy_app $SILGYLIVE/bin
+cp -p $SILGYDEV/bin/silgy_svc $SILGYLIVE/bin
+cp -p $SILGYDEV/bin/silgy_watcher $SILGYLIVE/bin
+cp -p $SILGYDEV/bin/silgydep $SILGYLIVE/bin
+cp -p $SILGYDEV/bin/silgystart $SILGYLIVE/bin
+cp -p $SILGYDEV/bin/silgystop $SILGYLIVE/bin
+
+cp -pr $SILGYDEV/res/* $SILGYLIVE/res
+cp -pr $SILGYDEV/resmin/* $SILGYLIVE/resmin
