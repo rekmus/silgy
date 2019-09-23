@@ -92,7 +92,6 @@ static char M_random_initialized=0;
 
 static void load_err_messages(void);
 static void load_strings(void);
-static void seed_rand(void);
 static void minify_1(char *dest, const char *src, int len);
 static int  minify_2(char *dest, const char *src);
 static void get_byteorder32(void);
@@ -4916,6 +4915,8 @@ char *nospaces(char *dst, const char *src)
 }
 
 
+
+#ifndef SILGY_WATCHER
 /* --------------------------------------------------------------------------
    Return a random 8-bit number from M_random_numbers
 -------------------------------------------------------------------------- */
@@ -5225,6 +5226,7 @@ static int  since_seed=0;
     DBG("silgy_random took %.3lf ms", lib_elapsed(&start));
 #endif
 }
+#endif  /* SILGY_WATCHER */
 
 
 /* --------------------------------------------------------------------------

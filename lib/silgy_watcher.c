@@ -7,17 +7,12 @@
 #include "silgy.h"
 
 
-#define STOP_COMMAND        "sudo $SILGYDIR/bin/silgystop"
-#define START_COMMAND       "sudo $SILGYDIR/bin/silgystart"
+#define STOP_COMMAND        "$SILGYDIR/bin/silgystop"
+#define START_COMMAND       "$SILGYDIR/bin/silgystart"
 
 
 int         G_httpPort;
 bool        G_initialized=0;
-
-/* counters */
-counters_t  G_cnts_today;               /* today's counters */
-counters_t  G_cnts_yesterday;           /* yesterday's counters */
-counters_t  G_cnts_day_before;          /* day before's counters */
 
 
 static char M_watcherStopCmd[256];
@@ -29,7 +24,7 @@ static int  M_watcherLogRestart;
 /* --------------------------------------------------------------------------
    Restart
 -------------------------------------------------------------------------- */
-void restart()
+static void restart()
 {
     if ( M_watcherLogRestart > 0 )
     {
@@ -100,7 +95,7 @@ int main(int argc, char *argv[])
     /* ------------------------------------------------------------------- */
 
     if ( !silgy_read_param_int("watcherLogLevel", &G_logLevel) )
-        G_logLevel = 0;  /* don't create log file */
+        G_logLevel = 0;   /* don't create log file */
 
     if ( !silgy_read_param_int("watcherLogToStdout", &G_logToStdout) )
         G_logToStdout = 0;
