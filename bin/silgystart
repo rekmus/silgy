@@ -4,14 +4,14 @@ export SILGYDIR=/home/ec2-user/live
 
 export SILGY_SVC_PROCESSES=0
 
-echo "###############################"
-echo "### Starting live Silgy App ###"
-echo "###############################"
+# ---------------------------------------------------------------------
+
+echo "Starting Silgy App..."
 
 # ---------------------------------------------------------------------
 # Main app
 
-nohup $SILGYDIR/bin/silgy_app &
+nohup $SILGYDIR/bin/silgy_app > /dev/null 2>&1 &
 
 sleep 1
 
@@ -20,7 +20,7 @@ sleep 1
 
 for i in `seq 1 $SILGY_SVC_PROCESSES`
 do
-    nohup $SILGYDIR/bin/silgy_svc &
+    nohup $SILGYDIR/bin/silgy_svc > /dev/null 2>&1 &
 done
 
 sleep 1  # return to prompt
