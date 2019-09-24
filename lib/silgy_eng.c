@@ -110,7 +110,7 @@ http_status_t   M_http_status[]={
 /* authorization levels */
 
 static struct {
-    char resource[MAX_RESOURCE_LEN+1];
+    char path[256];
     char level;
     } M_auth_levels[MAX_RESOURCES] = {
         {"-", EOS}
@@ -4311,9 +4311,10 @@ static int parse_req(int ci, int len)
     if ( conn[ci].static_res == NOT_STATIC )
     {
         i = 0;
-        while ( M_auth_levels[i].resource[0] != '-' )
+        while ( M_auth_levels[i].path[0] != '-' )
         {
-            if ( REQ(M_auth_levels[i].resource) )
+//            if ( REQ(M_auth_levels[i].resource) )
+            if ( URI(M_auth_levels[i].path) )
             {
                 conn[ci].required_auth_level = M_auth_levels[i].level;
                 break;
@@ -4916,17 +4917,18 @@ static bool init_ssl()
 /* --------------------------------------------------------------------------
    Set required authorization level for the resource
 -------------------------------------------------------------------------- */
-void silgy_set_auth_level(const char *resource, char level)
+void silgy_set_auth_level(const char *path, char level)
 {
 static int current=0;
 
     if ( current > MAX_RESOURCES-2 )
         return;
 
-    strcpy(M_auth_levels[current].resource, resource);
+    strncpy(M_auth_levels[current].path, path, 255);
+    M_auth_levels[current].path[255] = EOS;
     M_auth_levels[current].level = level;
 
-    strcpy(M_auth_levels[++current].resource, "-");
+    strcpy(M_auth_levels[++current].path, "-");
 }
 
 

@@ -1214,7 +1214,7 @@ extern "C" {
 
     /* public engine functions */
 
-    void silgy_set_auth_level(const char *resource, char level);
+    void silgy_set_auth_level(const char *path, char level);
     int  eng_uses_start(int ci, const char *sesid);
     void eng_uses_downgrade_by_uid(int uid, int ci);
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size);
