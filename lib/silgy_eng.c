@@ -4059,7 +4059,7 @@ static int parse_req(int ci, int len)
     i += 2;     /* skip " /" */
     int j=0;
 
-    for ( i; i<hlen; ++i )  /* URI */
+    for ( i; i<hlen; ++i )   /* URI */
     {
         if ( conn[ci].in[i] != ' ' && conn[ci].in[i] != '\t' )
         {
@@ -4067,8 +4067,8 @@ static int parse_req(int ci, int len)
                 conn[ci].uri[j++] = conn[ci].in[i];
             else
             {
-                ERR("URI too long, ignoring");
-                return 414; /* Request-URI Too Long */
+                WAR("URI too long, ignoring");
+                return 414;  /* Request-URI Too Long */
             }
         }
         else    /* end of URI */
@@ -4076,6 +4076,13 @@ static int parse_req(int ci, int len)
             conn[ci].uri[j] = EOS;
             break;
         }
+    }
+
+    /* strip the trailing slash off */
+
+    if ( j && conn[ci].uri[j-1] == '/' )
+    {
+        conn[ci].uri[j-1] = EOS;
     }
 
 #ifdef APP_ROOT_URI
@@ -5288,31 +5295,65 @@ bool eng_host(int ci, const char *host)
 
 
 /* --------------------------------------------------------------------------
-   Return true if URI matches
+   Return true if request URI matches uri
+
+    uri    | request     | result
+   --------+-------------+--------
+    log    | log         | T
+           | log?qs=1    | T
+           | logout      | F
+           | logout?qs=1 | F
+   --------+-------------+--------
+    logout | log         | F
+           | log?qs=1    | F
+           | logout      | T
+           | logout?qs=1 | T
+   --------+-------------+--------
+    log*   | log         | T
+           | log?qs=1    | T
+           | logout      | T
+           | logout?qs=1 | T
 -------------------------------------------------------------------------- */
 bool eng_is_uri(int ci, const char *uri)
 {
-    char uri_tmp[MAX_URI_LEN+1];
+    const char *u = uri;
 
     if ( uri[0] == '/' )
-        strcpy(uri_tmp, uri+1);
-    else
-        strcpy(uri_tmp, uri);
+        ++u;
 
-    int len = strlen(uri_tmp);
+    int len = strlen(u);
 
-    if ( uri_tmp[len-1] == '*' )
+    if ( *(u+len-1) == '*' )
     {
         len--;
-        uri_tmp[len] = EOS;
+        return (0==strncmp(conn[ci].uri, u, len));
     }
-    else if ( len > 4 && uri_tmp[len-4]=='{' && uri_tmp[len-3]=='i' && uri_tmp[len-2]=='d' && uri_tmp[len-1]=='}' )
+    else if ( len > 4
+                        && *(u+len-4)=='{'
+                        && (*(u+len-3)=='i' || *(u+len-3)=='I')
+                        && (*(u+len-2)=='d' || *(u+len-2)=='D')
+                        && *(u+len-1)=='}' )
     {
         len -= 4;
-        uri_tmp[len] = EOS;
+        return (0==strncmp(conn[ci].uri, u, len));
     }
 
-    return (0==strncmp(conn[ci].uri, uri_tmp, len));
+    /* ------------------------------------------------------------------- */
+    /* no wildcard ==> exact match is required, but excluding query string */
+
+    char *q = strchr(conn[ci].uri, '?');
+
+    if ( !q )
+        return (0==strcmp(conn[ci].uri, u));
+
+    /* there's a query string */
+
+    int req_len = q - conn[ci].uri;
+
+    if ( req_len != len )
+        return FALSE;
+
+    return (0==strncmp(conn[ci].uri, u, len));
 }
 
 
