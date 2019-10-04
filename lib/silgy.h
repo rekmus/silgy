@@ -540,7 +540,7 @@ typedef char str64k[1024*64];
 #define AUTH_LEVEL_MODERATOR            40
 #define AUTH_LEVEL_ADMIN                50
 #define AUTH_LEVEL_ROOT                 100
-#define AUTH_LEVEL_NOBODY               101     /* for resources' whitelisting */
+#define AUTH_LEVEL_NOBODY               125     /* for resources' whitelisting */
 
 #ifndef DEF_RES_AUTH_LEVEL
 #define DEF_RES_AUTH_LEVEL              AUTH_LEVEL_NONE     /* default resource authorization level */
