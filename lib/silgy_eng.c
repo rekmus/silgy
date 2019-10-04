@@ -4460,9 +4460,9 @@ static int parse_req(int ci, int len)
             DBG("Redirecting due to DOMAINONLY");
 #endif
             if ( conn[ci].uri[0] )
-                RES_LOCATION("%s/%s", APP_DOMAIN, conn[ci].uri);
+                RES_LOCATION("%s://%s/%s", PROTOCOL, APP_DOMAIN, conn[ci].uri);
             else
-                RES_LOCATION(APP_DOMAIN);
+                RES_LOCATION("%s://%s", PROTOCOL, APP_DOMAIN);
 
             return 301;
         }
@@ -4477,9 +4477,9 @@ static int parse_req(int ci, int len)
             DBG("Redirecting due to DOMAINONLY");
 #endif
             if ( conn[ci].uri[0] )
-                RES_LOCATION("%s/%s", APP_DOMAIN, conn[ci].uri);
+                RES_LOCATION("http://%s/%s", APP_DOMAIN, conn[ci].uri);
             else
-                RES_LOCATION(APP_DOMAIN);
+                RES_LOCATION("http://%s", APP_DOMAIN);
 
             return 301;
         }
