@@ -718,12 +718,12 @@ int main(int argc, char **argv)
                     if ( conn[i].conn_state == CONN_STATE_READY_FOR_PARSE )
                     {
                         conn[i].status = parse_req(i, bytes);
-#ifdef HTTPS
-#ifdef DOMAINONLY       /* redirect to final domain first */
-                        if ( !conn[i].secure && conn[i].upgrade2https && 0!=strcmp(conn[i].host, APP_DOMAIN) )
-                            conn[i].upgrade2https = FALSE;
-#endif
-#endif  /* HTTPS */
+//#ifdef HTTPS
+//#ifdef DOMAINONLY       /* redirect to final domain first */
+//                        if ( !conn[i].secure && conn[i].upgrade2https && 0!=strcmp(conn[i].host, APP_DOMAIN) )
+//                            conn[i].upgrade2https = FALSE;
+//#endif
+//#endif  /* HTTPS */
                         if ( conn[i].conn_state != CONN_STATE_READING_DATA )
                         {
 #ifdef DUMP
@@ -747,10 +747,10 @@ int main(int argc, char **argv)
 #else
                         clock_gettime(MONOTONIC_CLOCK_NAME, &conn[i].proc_start);
 #endif
-#ifdef HTTPS
-                        if ( conn[i].upgrade2https && conn[i].status==200 )
-                            conn[i].status = 301;
-#endif
+//#ifdef HTTPS
+//                        if ( conn[i].upgrade2https && conn[i].status==200 )
+//                            conn[i].status = 301;
+//#endif
                         /* update visits counter */
                         if ( !conn[i].resource[0] && conn[i].status==200 && !conn[i].bot && !conn[i].head_only && 0==strcmp(conn[i].host, APP_DOMAIN) )
                         {
@@ -761,7 +761,7 @@ int main(int argc, char **argv)
                                 ++G_cnts_today.visits_dsk;
                         }
 
-                        if ( conn[i].static_res == NOT_STATIC )   /* process request */
+                        if ( !conn[i].location[0] && conn[i].static_res == NOT_STATIC )   /* process request */
                             process_req(i);
 #ifdef ASYNC
                         if ( conn[i].conn_state != CONN_STATE_WAITING_FOR_ASYNC )
@@ -3067,7 +3067,7 @@ static void process_req(int ci)
 
     /* ------------------------------------------------------------------------ */
 
-    conn[ci].location[COLON_POSITION] = '-';    /* no protocol here yet */
+//    conn[ci].location[COLON_POSITION] = '-';    /* no protocol here yet */
 
     /* ------------------------------------------------------------------------ */
 
@@ -3158,7 +3158,7 @@ static void process_req(int ci)
     if ( ret == OK )
     {
         if ( !conn[ci].location[0] )
-            silgy_app_main(ci);  /* main application called here */
+            silgy_app_main(ci);         /* main application called here */
     }
 
     /* ------------------------------------------------------------------------ */
@@ -3393,51 +3393,18 @@ static void gen_response_header(int ci)
 
     if ( conn[ci].status == 301 || conn[ci].status == 303 )     /* redirection */
     {
+#ifdef DUMP
         DBG("Redirecting");
-
-        /*
-           1 - upgrade 2 https, keep URI (301)
-           2 - app new page version, ignore URI, use location (303)
-           3 - redirect to final domain, keep URI (301)
-        */
+#endif
 #ifdef HTTPS
-        if ( conn[ci].upgrade2https )   /* (1) */
-        {
-            PRINT_HTTP_VARY_UIR;    /* Upgrade-Insecure-Requests */
-            sprintf(G_tmp, "Location: https://%s/%s\r\n", conn[ci].host, conn[ci].uri);
-        }
-        else if ( conn[ci].location[0] == 'h'        /* (2) full address already present */
-#else
-             if ( conn[ci].location[0] == 'h'        /* (2) full address already present */
-#endif  /* HTTPS */
-                    && conn[ci].location[1] == 't'
-                    && conn[ci].location[2] == 't'
-                    && conn[ci].location[3] == 'p' )
+        if ( conn[ci].upgrade2https )   /* Upgrade-Insecure-Requests */
+            PRINT_HTTP_VARY_UIR;
+#endif
+        if ( conn[ci].location[0] )
         {
             sprintf(G_tmp, "Location: %s\r\n", conn[ci].location);
+            HOUT(G_tmp);
         }
-        else if ( conn[ci].location[0] )        /* (2) */
-        {
-//            sprintf(G_tmp, "Location: %s://%s/%s\r\n", PROTOCOL, conn[ci].host, conn[ci].location);
-            sprintf(G_tmp, "Location: %s\r\n", conn[ci].location);
-        }
-        else if ( conn[ci].uri[0] ) /* (3) URI */
-        {
-#ifdef DOMAINONLY
-            sprintf(G_tmp, "Location: %s://%s/%s\r\n", PROTOCOL, G_test?conn[ci].host:APP_DOMAIN, conn[ci].uri);
-#else
-            sprintf(G_tmp, "Location: %s://%s/%s\r\n", PROTOCOL, conn[ci].host, conn[ci].uri);
-#endif
-        }
-        else    /* (3) No URI */
-        {
-#ifdef DOMAINONLY
-            sprintf(G_tmp, "Location: %s://%s\r\n", PROTOCOL, G_test?conn[ci].host:APP_DOMAIN);
-#else
-            sprintf(G_tmp, "Location: %s://%s\r\n", PROTOCOL, conn[ci].host);
-#endif
-        }
-        HOUT(G_tmp);
 
         conn[ci].clen = 0;
     }
@@ -3630,7 +3597,7 @@ static          bool first=TRUE;
 
 #ifdef HTTPS
 #ifndef NO_HSTS
-    if ( !G_test && !conn[ci].secure )
+    if ( conn[ci].secure )
         PRINT_HTTP_HSTS;
 #endif
 #endif  /* HTTPS */
@@ -4361,10 +4328,166 @@ static int parse_req(int ci, int len)
             return 404;     /* Forbidden */
 #endif
 
-#ifdef DOMAINONLY
-        if ( !G_test && 0!=strcmp(conn[ci].host, APP_DOMAIN) )
-            return 301;     /* Moved permanently */
+    /* Redirection? ------------------------------------------------------------- */
+    /*
+
+    Test Cases (for HTTPS enabled)
+
+    +------------+------+----------------------------+------------------------+
+    | DOMAINONLY | HSTS | request                    | result                 |
+    +            +      +------------------+---------+------+-----------------+
+    |            |      | url              | U2HTTPS | code | location        |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | F    | http://domain    | F       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | F    | http://domain    | T       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | F    | http://1.2.3.4   | F       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | F    | http://1.2.3.4   | T       | 301  | https://1.2.3.4 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | F    | https://domain   | F       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | F    | https://domain   | T       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | F    | https://1.2.3.4  | F       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | F    | https://1.2.3.4  | T       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | T    | http://domain    | F       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | T    | http://domain    | T       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | T    | http://1.2.3.4   | F       | 200  | https://1.2.3.4 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | T    | http://1.2.3.4   | T       | 200  | https://1.2.3.4 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | T    | https://domain   | F       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | T    | https://domain   | T       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | T    | https://1.2.3.4  | F       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | F          | T    | https://1.2.3.4  | T       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+
+    (DOMAINONLY enabled)
+
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | F    | http://domain    | F       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | F    | http://domain    | T       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | F    | http://1.2.3.4   | F       | 301  | http://domain   |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | F    | http://1.2.3.4   | T       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | F    | https://domain   | F       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | F    | https://domain   | T       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | F    | https://1.2.3.4  | F       | 301  | http://domain   |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | F    | https://1.2.3.4  | T       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | T    | http://domain    | F       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | T    | http://domain    | T       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | T    | http://1.2.3.4   | F       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | T    | http://1.2.3.4   | T       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | T    | https://domain   | F       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | T    | https://domain   | T       | 200  |                 |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | T    | https://1.2.3.4  | F       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    | T          | T    | https://1.2.3.4  | T       | 301  | https://domain  |
+    +------------+------+------------------+---------+------+-----------------+
+    */
+
+    if ( !G_test )   /* don't redirect if test */
+    {
+
+#ifdef HTTPS
+
+#ifdef HSTS_ON
+        if ( !conn[ci].secure )
+        {
+#ifdef DUMP
+            DBG("Redirecting due to HSTS");
 #endif
+#ifdef DOMAINONLY
+            if ( conn[ci].uri[0] )
+                RES_LOCATION("https://%s/%s", APP_DOMAIN, conn[ci].uri);
+            else
+                RES_LOCATION("https://%s", APP_DOMAIN);
+#else
+            if ( conn[ci].uri[0] )
+                RES_LOCATION("https://%s/%s", conn[ci].host, conn[ci].uri);
+            else
+                RES_LOCATION("https://%s", conn[ci].host);
+#endif
+            return 301;
+        }
+#endif  /* HSTS_ON */
+
+        if ( !conn[ci].secure && conn[ci].upgrade2https )
+        {
+#ifdef DUMP
+            DBG("Redirecting due to upgrade2https");
+#endif
+#ifdef DOMAINONLY
+            if ( conn[ci].uri[0] )
+                RES_LOCATION("https://%s/%s", APP_DOMAIN, conn[ci].uri);
+            else
+                RES_LOCATION("https://%s", APP_DOMAIN);
+#else
+            if ( conn[ci].uri[0] )
+                RES_LOCATION("https://%s/%s", conn[ci].host, conn[ci].uri);
+            else
+                RES_LOCATION("https://%s", conn[ci].host);
+#endif
+            return 301;
+        }
+
+#ifdef DOMAINONLY
+        if ( 0 != strcmp(conn[ci].host, APP_DOMAIN) )
+        {
+#ifdef DUMP
+            DBG("Redirecting due to DOMAINONLY");
+#endif
+            if ( conn[ci].uri[0] )
+                RES_LOCATION("%s/%s", APP_DOMAIN, conn[ci].uri);
+            else
+                RES_LOCATION(APP_DOMAIN);
+
+            return 301;
+        }
+#endif  /* DOMAINONLY */
+
+#else   /* not HTTPS */
+
+#ifdef DOMAINONLY
+        if ( 0 != strcmp(conn[ci].host, APP_DOMAIN) )
+        {
+#ifdef DUMP
+            DBG("Redirecting due to DOMAINONLY");
+#endif
+            if ( conn[ci].uri[0] )
+                RES_LOCATION("%s/%s", APP_DOMAIN, conn[ci].uri);
+            else
+                RES_LOCATION(APP_DOMAIN);
+
+            return 301;
+        }
+#endif  /* DOMAINONLY */
+
+#endif  /* HTTPS */
+
+    }
 
     /* handle the POST content -------------------------------------------------- */
 
