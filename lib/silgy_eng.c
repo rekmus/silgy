@@ -368,8 +368,6 @@ int main(int argc, char **argv)
 
 #endif  /* HTTPS */
 
-//    addr_len = sizeof(cli_addr);
-
     /* log currently used memory */
 
     lib_log_memory();
@@ -3601,6 +3599,14 @@ static          bool first=TRUE;
         PRINT_HTTP_HSTS;
 #endif
 #endif  /* HTTPS */
+
+#ifndef NO_SAMEORIGIN
+    PRINT_HTTP_SAMEORIGIN;
+#endif
+
+#ifndef NO_NOSNIFF
+    PRINT_HTTP_NOSNIFF;
+#endif
 
 #ifndef NO_IDENTITY
     PRINT_HTTP_SERVER;

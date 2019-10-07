@@ -327,9 +327,6 @@ typedef char str64k[1024*64];
 /* content language */
 #define PRINT_HTTP_LANGUAGE             HOUT("Content-Language: en-us\r\n")
 
-/* framing */
-#define PRINT_HTTP_FRAME_OPTIONS        HOUT("X-Frame-Options: SAMEORIGIN\r\n")
-
 /* cookie */
 #define PRINT_HTTP_COOKIE_A(ci)         (sprintf(G_tmp, "Set-Cookie: as=%s; HttpOnly\r\n", conn[ci].cookie_out_a), HOUT(G_tmp))
 #define PRINT_HTTP_COOKIE_L(ci)         (sprintf(G_tmp, "Set-Cookie: ls=%s; HttpOnly\r\n", conn[ci].cookie_out_l), HOUT(G_tmp))
@@ -341,6 +338,14 @@ typedef char str64k[1024*64];
 
 /* content encoding */
 #define PRINT_HTTP_CONTENT_ENCODING_DEFLATE HOUT("Content-Encoding: deflate\r\n")
+
+/* Security ------------------------------------------------------------------ */
+
+/* framing */
+#define PRINT_HTTP_SAMEORIGIN           HOUT("X-Frame-Options: SAMEORIGIN\r\n")
+
+/* content type guessing */
+#define PRINT_HTTP_NOSNIFF              HOUT("X-Content-Type-Options: nosniff\r\n")
 
 /* HSTS */
 #ifndef HSTS_MAX_AGE
@@ -511,7 +516,7 @@ typedef char str64k[1024*64];
 #ifdef APP_SESID_LEN
 #define SESID_LEN                       APP_SESID_LEN
 #else
-#define SESID_LEN                       15
+#define SESID_LEN                       15      /* ~ 89 bits of entropy */
 #endif
 
 #define LANG_LEN                        5

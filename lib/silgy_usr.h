@@ -11,7 +11,7 @@
 
 
 #define DB_UAGENT_LEN                   250                     /* User-Agent length stored in ulogins table */
-#define PASSWD_RESET_KEY_LEN            30                      /* password reset key length */
+#define PASSWD_RESET_KEY_LEN            20                      /* password reset key length */
 
 #ifdef APP_MIN_USERNAME_LEN                                     /* minimum user name length */
 #define MIN_USERNAME_LEN                APP_MIN_USERNAME_LEN

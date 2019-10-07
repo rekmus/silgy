@@ -81,7 +81,7 @@ create table users_activations (
 -- password resets
 
 create table users_p_resets (
-    linkkey char(30) primary key,
+    linkkey char(20) primary key,
     user_id int,
     created datetime,
     tries smallint
