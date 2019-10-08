@@ -3533,11 +3533,11 @@ static          bool first=TRUE;
         if ( conn[ci].clen > 0 )
         {
 #ifndef NO_SAMEORIGIN
-        PRINT_HTTP_SAMEORIGIN;
+            PRINT_HTTP_SAMEORIGIN;
 #endif
 
 #ifndef NO_NOSNIFF
-        PRINT_HTTP_NOSNIFF;
+            PRINT_HTTP_NOSNIFF;
 #endif
         }
     }
