@@ -3387,7 +3387,13 @@ static void gen_response_header(int ci)
     char out_header[OUT_HEADER_BUFSIZE];
     conn[ci].p_header = out_header;
 
+    /* Status */
+
     PRINT_HTTP_STATUS(conn[ci].status);
+
+    /* Date */
+
+    PRINT_HTTP_DATE;
 
     if ( conn[ci].status == 301 || conn[ci].status == 303 )     /* redirection */
     {
@@ -3469,7 +3475,7 @@ static void gen_response_header(int ci)
 
         /* compress? ------------------------------------------------------------------ */
 
-#ifndef _WIN32  /* just too much headache */
+#ifndef _WIN32  /* in Windows it's just too much headache */
 
         if ( SHOULD_BE_COMPRESSED(conn[ci].clen, conn[ci].ctype) && conn[ci].accept_deflate && !UA_IE )
         {
@@ -3529,30 +3535,49 @@ static          bool first=TRUE;
 #endif  /* _WIN32 */
 
         /* ---------------------------------------------------------------------------- */
-
-        if ( conn[ci].clen > 0 )
-        {
-#ifndef NO_SAMEORIGIN
-            PRINT_HTTP_SAMEORIGIN;
-#endif
-
-#ifndef NO_NOSNIFF
-            PRINT_HTTP_NOSNIFF;
-#endif
-        }
     }
 
-    /* Date */
+    /* Content-Type */
 
-    PRINT_HTTP_DATE;
+    if ( conn[ci].clen == 0 )   /* don't set for these */
+    {                   /* this covers 301, 303 and 304 */
+    }
+    else if ( conn[ci].ctypestr[0] )    /* custom */
+    {
+        sprintf(G_tmp, "Content-Type: %s\r\n", conn[ci].ctypestr);
+        HOUT(G_tmp);
+    }
+    else if ( conn[ci].ctype != CONTENT_TYPE_UNSET )
+    {
+        print_content_type(ci, conn[ci].ctype);
+    }
 
-    /* Connection */
-
-    PRINT_HTTP_CONNECTION(ci);
+    if ( conn[ci].cdisp[0] )
+    {
+        sprintf(G_tmp, "Content-Disposition: %s\r\n", conn[ci].cdisp);
+        HOUT(G_tmp);
+    }
 
     /* Content-Length */
 
     PRINT_HTTP_CONTENT_LEN(conn[ci].clen);
+
+    /* Security */
+
+    if ( conn[ci].clen > 0 )
+    {
+#ifndef NO_SAMEORIGIN
+        PRINT_HTTP_SAMEORIGIN;
+#endif
+
+#ifndef NO_NOSNIFF
+        PRINT_HTTP_NOSNIFF;
+#endif
+    }
+
+    /* Connection */
+
+    PRINT_HTTP_CONNECTION(ci);
 
     /* Cookie */
 
@@ -3581,27 +3606,6 @@ static          bool first=TRUE;
                 PRINT_HTTP_COOKIE_A(ci);
             }
         }
-    }
-
-    /* Content-Type */
-
-    if ( conn[ci].clen == 0 )   /* don't set for these */
-    {                   /* this covers 301, 303 and 304 */
-    }
-    else if ( conn[ci].ctypestr[0] )    /* custom */
-    {
-        sprintf(G_tmp, "Content-Type: %s\r\n", conn[ci].ctypestr);
-        HOUT(G_tmp);
-    }
-    else if ( conn[ci].ctype != CONTENT_TYPE_UNSET )
-    {
-        print_content_type(ci, conn[ci].ctype);
-    }
-
-    if ( conn[ci].cdisp[0] )
-    {
-        sprintf(G_tmp, "Content-Disposition: %s\r\n", conn[ci].cdisp);
-        HOUT(G_tmp);
     }
 
 #ifdef HTTPS
