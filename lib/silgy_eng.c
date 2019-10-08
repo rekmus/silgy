@@ -3530,6 +3530,8 @@ static          bool first=TRUE;
 
         /* ---------------------------------------------------------------------------- */
 
+        if ( conn[ci].clen > 0 )
+        {
 #ifndef NO_SAMEORIGIN
         PRINT_HTTP_SAMEORIGIN;
 #endif
@@ -3537,6 +3539,7 @@ static          bool first=TRUE;
 #ifndef NO_NOSNIFF
         PRINT_HTTP_NOSNIFF;
 #endif
+        }
     }
 
     /* Date */
