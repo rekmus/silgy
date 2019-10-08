@@ -3529,6 +3529,14 @@ static          bool first=TRUE;
 #endif  /* _WIN32 */
 
         /* ---------------------------------------------------------------------------- */
+
+#ifndef NO_SAMEORIGIN
+        PRINT_HTTP_SAMEORIGIN;
+#endif
+
+#ifndef NO_NOSNIFF
+        PRINT_HTTP_NOSNIFF;
+#endif
     }
 
     /* Date */
@@ -3599,14 +3607,6 @@ static          bool first=TRUE;
         PRINT_HTTP_HSTS;
 #endif
 #endif  /* HTTPS */
-
-#ifndef NO_SAMEORIGIN
-    PRINT_HTTP_SAMEORIGIN;
-#endif
-
-#ifndef NO_NOSNIFF
-    PRINT_HTTP_NOSNIFF;
-#endif
 
 #ifndef NO_IDENTITY
     PRINT_HTTP_SERVER;
