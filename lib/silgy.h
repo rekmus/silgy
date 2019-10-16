@@ -283,8 +283,8 @@ typedef char str64k[1024*64];
     #define OUT(...)                        (sprintf(G_tmp, EXPAND_VA(__VA_ARGS__)), OUTSS(G_tmp))
 #else   /* GCC */
     #define OUTM(str, ...)                  (sprintf(G_tmp, str, __VA_ARGS__), OUTSS(G_tmp))   /* OUT with multiple args */
-    #define CHOOSE_OUT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME          /* single or multiple? */
-    #define OUT(...)                        CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
+    #define CHOOSE_OUT(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, NAME, ...) NAME          /* single or multiple? */
+    #define OUT(...)                        CHOOSE_OUT(__VA_ARGS__, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTM, OUTSS)(__VA_ARGS__)
 #endif  /* _MSC_VER */
 
 
@@ -296,8 +296,8 @@ typedef char str64k[1024*64];
     #define OUTP(...)                        (sprintf(G_tmp, EXPAND_VA(__VA_ARGS__)), OUTPS(G_tmp))
 #else   /* GCC */
     #define OUTPM(str, ...)                  (sprintf(G_tmp, str, __VA_ARGS__), OUTPS(G_tmp))   /* OUTP with multiple args */
-    #define CHOOSE_OUTP(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, NAME, ...) NAME          /* single or multiple? */
-    #define OUTP(...)                        CHOOSE_OUTP(__VA_ARGS__, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPS)(__VA_ARGS__)
+    #define CHOOSE_OUTP(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, NAME, ...) NAME          /* single or multiple? */
+    #define OUTP(...)                        CHOOSE_OUTP(__VA_ARGS__, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPS)(__VA_ARGS__)
 #endif  /* _MSC_VER */
 
 
