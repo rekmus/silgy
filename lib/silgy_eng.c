@@ -5125,6 +5125,10 @@ int eng_uses_start(int ci, const char *sesid)
 
     lib_set_datetime_formats(US.lang);
 
+    /* generate CSRF token */
+
+    silgy_random(US.csrft, SESID_LEN);
+
     /* custom session init */
 
     if ( !silgy_app_session_init(ci) )

@@ -159,6 +159,21 @@ void silgy_lib_done()
 
 
 /* --------------------------------------------------------------------------
+   Verify CSRF token
+-------------------------------------------------------------------------- */
+bool lib_csrft_ok(int ci)
+{
+    QSVAL csrft;
+
+    if ( !QS("csrft", csrft) ) return FALSE;
+
+    if ( 0 != strcmp(csrft, US.csrft) ) return FALSE;
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
    Load error messages
 -------------------------------------------------------------------------- */
 static void load_err_messages()

@@ -63,7 +63,7 @@ typedef char                            bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION              "4.4.2"
+#define WEB_SERVER_VERSION              "4.4.3"
 /* alias */
 #define SILGY_VERSION                   WEB_SERVER_VERSION
 
@@ -775,6 +775,7 @@ typedef struct {
 /* user session */
 
 typedef struct {
+    /* id */
     char    sesid[SESID_LEN+1];
     /* connection data */
     char    ip[INET_ADDRSTRLEN];
@@ -791,8 +792,10 @@ typedef struct {
     char    tz[6];
     char    about[ABOUT_LEN+1];
     int     group_id;
-//    char    group_name[UNAME_LEN+1];
     char    auth_level;
+    /* CSRF token */
+    char    csrft[SESID_LEN+1];
+    /* internal */
     time_t  last_activity;
 } usession_t;
 
@@ -805,6 +808,13 @@ typedef struct {
 
 #define LOGGED                          US.logged
 #define UID                             US.uid
+
+
+#define CSRFT_REFRESH                   silgy_random(US.csrft, SESID_LEN)
+#define CSRFT_OUT_INPUT                 OUT("<input type=\"hidden\" name=\"csrft\" value=\"%s\">", US.csrft)
+#define OUT_CSRFT                       CSRFT_OUT_INPUT
+#define CSRFT_OK                        lib_csrft_ok(ci)
+
 
 
 /* counters */
