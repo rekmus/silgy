@@ -163,11 +163,15 @@ void silgy_lib_done()
 -------------------------------------------------------------------------- */
 bool lib_csrft_ok(int ci)
 {
+#ifndef SILGY_WATCHER
+
     QSVAL csrft;
 
     if ( !QS("csrft", csrft) ) return FALSE;
 
     if ( 0 != strcmp(csrft, US.csrft) ) return FALSE;
+
+#endif  /* SILGY_WATCHER */
 
     return TRUE;
 }
