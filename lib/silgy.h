@@ -327,12 +327,6 @@ typedef char str64k[1024*64];
 /* content language */
 #define PRINT_HTTP_LANGUAGE             HOUT("Content-Language: en-us\r\n")
 
-/* cookie */
-#define PRINT_HTTP_COOKIE_A(ci)         (sprintf(G_tmp, "Set-Cookie: as=%s; HttpOnly\r\n", conn[ci].cookie_out_a), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_L(ci)         (sprintf(G_tmp, "Set-Cookie: ls=%s; HttpOnly\r\n", conn[ci].cookie_out_l), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_A_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: as=%s; Expires=%s; HttpOnly\r\n", conn[ci].cookie_out_a, conn[ci].cookie_out_a_exp), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_L_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: ls=%s; Expires=%s; HttpOnly\r\n", conn[ci].cookie_out_l, conn[ci].cookie_out_l_exp), HOUT(G_tmp))
-
 /* content length */
 #define PRINT_HTTP_CONTENT_LEN(len)     (sprintf(G_tmp, "Content-Length: %u\r\n", len), HOUT(G_tmp))
 
@@ -340,12 +334,6 @@ typedef char str64k[1024*64];
 #define PRINT_HTTP_CONTENT_ENCODING_DEFLATE HOUT("Content-Encoding: deflate\r\n")
 
 /* Security ------------------------------------------------------------------ */
-
-/* framing */
-#define PRINT_HTTP_SAMEORIGIN           HOUT("X-Frame-Options: SAMEORIGIN\r\n")
-
-/* content type guessing */
-#define PRINT_HTTP_NOSNIFF              HOUT("X-Content-Type-Options: nosniff\r\n")
 
 /* HSTS */
 #ifndef HSTS_MAX_AGE
@@ -364,6 +352,25 @@ typedef char str64k[1024*64];
 #endif
 #endif
 #endif
+
+/* cookie */
+#ifdef HSTS_ON
+#define PRINT_HTTP_COOKIE_A(ci)         (sprintf(G_tmp, "Set-Cookie: as=%s; %sHttpOnly\r\n", conn[ci].cookie_out_a, G_test?"":"secure; "), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_L(ci)         (sprintf(G_tmp, "Set-Cookie: ls=%s; %sHttpOnly\r\n", conn[ci].cookie_out_l, G_test?"":"secure; "), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_A_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: as=%s; expires=%s; %sHttpOnly\r\n", conn[ci].cookie_out_a, conn[ci].cookie_out_a_exp, G_test?"":"secure; "), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_L_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: ls=%s; expires=%s; %sHttpOnly\r\n", conn[ci].cookie_out_l, conn[ci].cookie_out_l_exp, G_test?"":"secure; "), HOUT(G_tmp))
+#else
+#define PRINT_HTTP_COOKIE_A(ci)         (sprintf(G_tmp, "Set-Cookie: as=%s; HttpOnly\r\n", conn[ci].cookie_out_a), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_L(ci)         (sprintf(G_tmp, "Set-Cookie: ls=%s; HttpOnly\r\n", conn[ci].cookie_out_l), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_A_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: as=%s; expires=%s; HttpOnly\r\n", conn[ci].cookie_out_a, conn[ci].cookie_out_a_exp), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_L_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: ls=%s; expires=%s; HttpOnly\r\n", conn[ci].cookie_out_l, conn[ci].cookie_out_l_exp), HOUT(G_tmp))
+#endif
+
+/* framing */
+#define PRINT_HTTP_SAMEORIGIN           HOUT("X-Frame-Options: SAMEORIGIN\r\n")
+
+/* content type guessing */
+#define PRINT_HTTP_NOSNIFF              HOUT("X-Content-Type-Options: nosniff\r\n")
 
 /* identity */
 #define PRINT_HTTP_SERVER               HOUT("Server: Silgy\r\n")
