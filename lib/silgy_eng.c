@@ -5156,7 +5156,7 @@ int eng_uses_start(int ci, const char *sesid)
 
     /* generate CSRF token */
 
-    silgy_random(US.csrft, SESID_LEN);
+    silgy_random(US.csrft, CSRFT_LEN);
 
     /* custom session init */
 

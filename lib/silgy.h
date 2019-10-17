@@ -526,6 +526,10 @@ typedef char str64k[1024*64];
 #define SESID_LEN                       15      /* ~ 89 bits of entropy */
 #endif
 
+#ifndef CSRFT_LEN
+#define CSRFT_LEN                       7
+#endif
+
 #define LANG_LEN                        5
 
 
@@ -803,7 +807,7 @@ typedef struct {
     int     group_id;
     char    auth_level;
     /* CSRF token */
-    char    csrft[SESID_LEN+1];
+    char    csrft[CSRFT_LEN+1];
     /* internal */
     time_t  last_activity;
 } usession_t;
@@ -819,7 +823,7 @@ typedef struct {
 #define UID                             US.uid
 
 
-#define CSRFT_REFRESH                   silgy_random(US.csrft, SESID_LEN)
+#define CSRFT_REFRESH                   silgy_random(US.csrft, CSRFT_LEN)
 #define CSRFT_OUT_INPUT                 OUT("<input type=\"hidden\" name=\"csrft\" value=\"%s\">", US.csrft)
 #define OUT_CSRFT                       CSRFT_OUT_INPUT
 #define CSRFT_OK                        lib_csrft_ok(ci)
