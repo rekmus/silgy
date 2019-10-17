@@ -600,6 +600,11 @@ typedef char str64k[1024*64];
 #define STATIC_SOURCE_INTERNAL          0
 #define STATIC_SOURCE_RES               1
 #define STATIC_SOURCE_RESMIN            2
+#define STATIC_SOURCE_SNIPPET           3
+
+#ifndef MAX_SNIPPETS
+#define MAX_SNIPPETS                    1000
+#endif
 
 
 /* asynchronous calls */
@@ -722,9 +727,6 @@ typedef char str64k[1024*64];
 
 #define REDIRECT_TO_LANDING             sprintf(conn[ci].location, "%s://%s", PROTOCOL, conn[ci].host)
 
-#define OUT_MSG_DESCRIPTION(code)       lib_send_msg_description(ci, code)
-#define OUT_HTML_HEADER                 lib_out_html_header(ci)
-#define OUT_HTML_FOOTER                 lib_out_html_footer(ci)
 #define APPEND_CSS(name, first)         lib_append_css(ci, name, first)
 #define APPEND_SCRIPT(name, first)      lib_append_script(ci, name, first)
 
@@ -1134,105 +1136,111 @@ extern "C" {
 
 /* read from the config file */
 
-extern int      G_logLevel;
-extern int      G_logToStdout;
-extern int      G_logCombined;
-extern int      G_httpPort;
-extern int      G_httpsPort;
-extern char     G_cipherList[1024];
-extern char     G_certFile[256];
-extern char     G_certChainFile[256];
-extern char     G_keyFile[256];
-extern char     G_dbHost[128];
-extern int      G_dbPort;
-extern char     G_dbName[128];
-extern char     G_dbUser[128];
-extern char     G_dbPassword[128];
-extern int      G_usersRequireAccountActivation;
-extern char     G_blockedIPList[256];
-extern char     G_whiteList[256];
-extern int      G_ASYNCId;
-extern int      G_ASYNCDefTimeout;
-extern int      G_RESTTimeout;
-extern int      G_test;
+extern int          G_logLevel;
+extern int          G_logToStdout;
+extern int          G_logCombined;
+extern int          G_httpPort;
+extern int          G_httpsPort;
+extern char         G_cipherList[1024];
+extern char         G_certFile[256];
+extern char         G_certChainFile[256];
+extern char         G_keyFile[256];
+extern char         G_dbHost[128];
+extern int          G_dbPort;
+extern char         G_dbName[128];
+extern char         G_dbUser[128];
+extern char         G_dbPassword[128];
+extern int          G_usersRequireAccountActivation;
+extern char         G_blockedIPList[256];
+extern char         G_whiteList[256];
+extern int          G_ASYNCId;
+extern int          G_ASYNCDefTimeout;
+extern int          G_RESTTimeout;
+extern int          G_test;
+
 /* end of config params */
-extern int      G_pid;                      /* pid */
-extern char     G_appdir[256];              /* application root dir */
-extern int      G_days_up;                  /* web server's days up */
-extern conn_t   conn[MAX_CONNECTIONS+1];    /* HTTP connections & requests -- by far the most important structure around */
-extern int      G_open_conn;                /* number of open connections */
-extern int      G_open_conn_hwm;            /* highest number of open connections (high water mark) */
-extern char     G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
-extern usession_t uses[MAX_SESSIONS+1];     /* engine user sessions -- they start from 1 */
-extern ausession_t auses[MAX_SESSIONS+1];   /* app user sessions, using the same index (usi) */
-extern int      G_sessions;                 /* number of active user sessions */
-extern int      G_sessions_hwm;             /* highest number of active user sessions (high water mark) */
-extern time_t   G_now;                      /* current time */
-extern struct tm *G_ptm;                    /* human readable current time */
-extern char     G_last_modified[32];        /* response header field with server's start time */
-extern bool     G_initialized;
+
+extern int          G_pid;                      /* pid */
+extern char         G_appdir[256];              /* application root dir */
+extern int          G_days_up;                  /* web server's days up */
+extern conn_t       conn[MAX_CONNECTIONS+1];    /* HTTP connections & requests -- by far the most important structure around */
+extern int          G_open_conn;                /* number of open connections */
+extern int          G_open_conn_hwm;            /* highest number of open connections (high water mark) */
+extern char         G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
+extern usession_t   uses[MAX_SESSIONS+1];       /* engine user sessions -- they start from 1 */
+extern ausession_t  auses[MAX_SESSIONS+1];      /* app user sessions, using the same index (usi) */
+extern int          G_sessions;                 /* number of active user sessions */
+extern int          G_sessions_hwm;             /* highest number of active user sessions (high water mark) */
+extern time_t       G_now;                      /* current time */
+extern struct tm    *G_ptm;                     /* human readable current time */
+extern char         G_last_modified[32];        /* response header field with server's start time */
+extern bool         G_initialized;
 
 /* messages */
-extern message_t G_messages[MAX_MESSAGES];
-extern int      G_next_msg;
-extern lang_t   G_msg_lang[MAX_LANGUAGES];
-extern int      G_next_msg_lang;
+extern message_t    G_messages[MAX_MESSAGES];
+extern int          G_next_msg;
+extern lang_t       G_msg_lang[MAX_LANGUAGES];
+extern int          G_next_msg_lang;
 
 /* strings */
-extern string_t G_strings[MAX_STRINGS];
-extern int      G_next_str;
-extern lang_t   G_str_lang[MAX_LANGUAGES];
-extern int      G_next_str_lang;
+extern string_t     G_strings[MAX_STRINGS];
+extern int          G_next_str;
+extern lang_t       G_str_lang[MAX_LANGUAGES];
+extern int          G_next_str_lang;
+
+/* snippets */
+extern stat_res_t   G_snippets[MAX_SNIPPETS];
+extern int          G_snippets_cnt;
 
 #ifdef HTTPS
-extern bool     G_ssl_lib_initialized;
+extern bool         G_ssl_lib_initialized;
 #endif
 
 #ifdef DBMYSQL
-extern MYSQL    *G_dbconn;                  /* database connection */
+extern MYSQL        *G_dbconn;                  /* database connection */
 #endif
 
 /* asynchorous processing */
 #ifndef _WIN32
-extern char     G_req_queue_name[256];
-extern char     G_res_queue_name[256];
-extern mqd_t    G_queue_req;                /* request queue */
-extern mqd_t    G_queue_res;                /* response queue */
+extern char         G_req_queue_name[256];
+extern char         G_res_queue_name[256];
+extern mqd_t        G_queue_req;                /* request queue */
+extern mqd_t        G_queue_res;                /* response queue */
 #endif  /* _WIN32 */
-extern int      G_async_req_data_size;      /* how many bytes are left for data */
-extern int      G_async_res_data_size;      /* how many bytes are left for data */
+extern int          G_async_req_data_size;      /* how many bytes are left for data */
+extern int          G_async_res_data_size;      /* how many bytes are left for data */
 
-extern char     G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
-extern bool     G_index_present;            /* index.html present in res? */
+extern char         G_dt[20];                   /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
+extern bool         G_index_present;            /* index.html present in res? */
 
 #ifdef SILGY_SVC
-extern async_req_t req;
-extern async_res_t res;
+extern async_req_t  req;
+extern async_res_t  res;
 #ifdef OUTCHECKREALLOC
-extern char     *out_data;
+extern char         *out_data;
 #endif
-extern char     *p_content;
-extern char     G_service[SVC_NAME_LEN+1];
-extern int      G_error_code;
-extern int      ci;
+extern char         *p_content;
+extern char         G_service[SVC_NAME_LEN+1];
+extern int          G_error_code;
+extern int          ci;
 #endif  /* SILGY_SVC */
 
-extern char     G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
-extern int      G_blacklist_cnt;            /* G_blacklist length */
+extern char         G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
+extern int          G_blacklist_cnt;            /* G_blacklist length */
 
-extern char     G_whitelist[MAX_WHITELIST+1][INET_ADDRSTRLEN];
-extern int      G_whitelist_cnt;            /* G_whitelist length */
+extern char         G_whitelist[MAX_WHITELIST+1][INET_ADDRSTRLEN];
+extern int          G_whitelist_cnt;            /* G_whitelist length */
 /* counters */
-extern counters_t G_cnts_today;             /* today's counters */
-extern counters_t G_cnts_yesterday;         /* yesterday's counters */
-extern counters_t G_cnts_day_before;        /* day before's counters */
+extern counters_t   G_cnts_today;               /* today's counters */
+extern counters_t   G_cnts_yesterday;           /* yesterday's counters */
+extern counters_t   G_cnts_day_before;          /* day before's counters */
 /* REST */
-extern int      G_rest_status;              /* last REST call response status */
-extern unsigned G_rest_req;                 /* REST calls counter */
-extern double   G_rest_elapsed;             /* REST calls elapsed for calculating average */
-extern double   G_rest_average;             /* REST calls average elapsed */
-extern char     G_rest_content_type[MAX_VALUE_LEN+1];
-extern int      G_new_user_id;
+extern int          G_rest_status;              /* last REST call response status */
+extern unsigned     G_rest_req;                 /* REST calls counter */
+extern double       G_rest_elapsed;             /* REST calls elapsed for calculating average */
+extern double       G_rest_average;             /* REST calls average elapsed */
+extern char         G_rest_content_type[MAX_VALUE_LEN+1];
+extern int          G_new_user_id;
 
 #ifdef __cplusplus
 }   /* extern "C" */

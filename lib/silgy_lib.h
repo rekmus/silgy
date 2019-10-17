@@ -95,12 +95,17 @@ typedef struct {
 } message_t;
 
 
-#define silgy_message(code)     lib_get_message(ci, code)
-#define MSG(code)               lib_get_message(ci, code)
-#define MSG_CAT_GREEN(code)     silgy_is_msg_main_cat(code, MSG_CAT_MESSAGE)
-#define MSG_CAT_ORANGE(code)    silgy_is_msg_main_cat(code, MSG_CAT_WARNING)
-#define MSG_CAT_RED(code)       silgy_is_msg_main_cat(code, MSG_CAT_ERROR)
+#define silgy_message(code)         lib_get_message(ci, code)
+#define MSG(code)                   lib_get_message(ci, code)
+#define MSG_CAT_GREEN(code)         silgy_is_msg_main_cat(code, MSG_CAT_MESSAGE)
+#define MSG_CAT_ORANGE(code)        silgy_is_msg_main_cat(code, MSG_CAT_WARNING)
+#define MSG_CAT_RED(code)           silgy_is_msg_main_cat(code, MSG_CAT_ERROR)
 
+#define OUT_MSG_DESCRIPTION(code)   lib_send_msg_description(ci, code)
+
+#define OUT_HTML_HEADER             lib_out_html_header(ci)
+#define OUT_HTML_FOOTER             lib_out_html_footer(ci)
+#define OUT_SNIPPET(name)           lib_out_snippet(ci, name)
 
 
 /* strings */
@@ -362,6 +367,8 @@ extern "C" {
     bool lib_file_exists(const char *fname);
     void lib_get_exec_name(char *dst, const char *path);
     void lib_update_time_globals(void);
+    bool read_snippets(bool first_scan, const char *path);
+    void lib_out_snippet(int ci, const char *name);
     void lib_setnonblocking(int sock);
     void lib_out_html_header(int ci);
     void lib_out_html_footer(int ci);

@@ -45,6 +45,9 @@ int         G_next_str=0;
 lang_t      G_str_lang[MAX_LANGUAGES]={0};
 int         G_next_str_lang=0;
 
+stat_res_t  G_snippets[MAX_SNIPPETS]={0};
+int         G_snippets_cnt=0;
+
 #ifdef HTTPS
 bool        G_ssl_lib_initialized=0;
 #endif
@@ -130,6 +133,9 @@ void silgy_lib_init()
 #ifndef SILGY_WATCHER
     /* load strings */
     load_strings();
+
+    for ( i=0; i<MAX_SNIPPETS; ++i )
+        strcpy(G_snippets[i].name, "-");
 #endif
 
 #ifdef ICONV
@@ -809,6 +815,316 @@ void lib_update_time_globals()
     G_now = time(NULL);
     G_ptm = gmtime(&G_now);
     sprintf(G_dt, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
+}
+
+
+/* --------------------------------------------------------------------------
+   Find first free slot in G_snippets
+-------------------------------------------------------------------------- */
+static int first_free_snippet()
+{
+    int i=0;
+
+    for ( i=0; i<MAX_SNIPPETS; ++i )
+    {
+        if ( G_snippets[i].name[0]=='-' || G_snippets[i].name[0]==EOS )
+        {
+            if ( i > G_snippets_cnt ) G_snippets_cnt = i;
+            return i;
+        }
+    }
+
+    ERR("MAX_SNIPPETS reached (%d)! You can set/increase MAX_SNIPPETS in silgy_app.h.", MAX_SNIPPETS);
+
+    return -1;   /* nothing's free, we ran out of snippets! */
+}
+
+
+/* --------------------------------------------------------------------------
+   Read snippets from disk
+-------------------------------------------------------------------------- */
+bool read_snippets(bool first_scan, const char *path)
+{
+    int     i;
+    char    resdir[STATIC_PATH_LEN];        /* full path to res */
+    char    ressubdir[STATIC_PATH_LEN];     /* full path to res/subdir */
+    char    namewpath[STATIC_PATH_LEN];     /* full path including file name */
+    char    resname[STATIC_PATH_LEN];       /* relative path including file name */
+    DIR     *dir;
+    struct dirent *dirent;
+    FILE    *fd;
+    char    *data_tmp=NULL;
+    struct stat fstat;
+    char    mod_time[32];
+
+#ifndef _WIN32
+    if ( G_appdir[0] == EOS ) return TRUE;
+#endif
+
+    if ( first_scan && !path ) DBG("");
+
+#ifdef DUMP
+    DBG("read_snippets");
+#endif
+
+#ifdef _WIN32   /* be more forgiving */
+
+    if ( G_appdir[0] )
+    {
+        sprintf(resdir, "%s/snippets", G_appdir);
+    }
+    else    /* no SILGYDIR */
+    {
+        sprintf(resdir, "../snippets");
+    }
+
+#else   /* Linux -- don't fool around */
+
+    sprintf(resdir, "%s/snippets", G_appdir);
+
+#endif  /* _WIN32 */
+
+#ifdef DUMP
+    DBG("resdir [%s]", resdir);
+#endif
+
+    if ( !path )   /* highest level */
+    {
+        strcpy(ressubdir, resdir);
+    }
+    else    /* recursive call */
+    {
+        sprintf(ressubdir, "%s/%s", resdir, path);
+    }
+
+#ifdef DUMP
+    DBG("ressubdir [%s]", ressubdir);
+#endif
+
+    if ( (dir=opendir(ressubdir)) == NULL )
+    {
+        if ( first_scan )
+            DBG("Couldn't open directory [%s]", ressubdir);
+        return TRUE;    /* don't panic, just no snippets will be used */
+    }
+
+    /* ------------------------------------------------------------------- */
+    /* check removed files */
+
+    if ( !first_scan && !path )   /* on the highest level only */
+    {
+#ifdef DUMP
+//        DBG("Checking removed files...");
+#endif
+        for ( i=0; i<=G_snippets_cnt; ++i )
+        {
+            if ( G_snippets[i].name[0]==EOS ) continue;   /* already removed */
+#ifdef DUMP
+//            DBG("Checking %s...", G_snippets[i].name);
+#endif
+            char fullpath[STATIC_PATH_LEN];
+            sprintf(fullpath, "%s/%s", resdir, G_snippets[i].name);
+
+            if ( !lib_file_exists(fullpath) )
+            {
+                INF("Removing %s from snippets", G_snippets[i].name);
+
+                G_snippets[i].name[0] = EOS;
+
+                free(G_snippets[i].data);
+                G_snippets[i].data = NULL;
+                G_snippets[i].len = 0;
+            }
+        }
+    }
+
+    /* ------------------------------------------------------------------- */
+#ifdef DUMP
+//    DBG("Reading %sfiles", first_scan?"":"new ");
+#endif
+    /* read the files into the memory */
+
+    while ( (dirent=readdir(dir)) )
+    {
+        if ( dirent->d_name[0] == '.' )   /* skip ".", ".." and hidden files */
+            continue;
+
+        /* ------------------------------------------------------------------- */
+        /* resource name */
+
+        if ( !path )
+            strcpy(resname, dirent->d_name);
+        else
+            sprintf(resname, "%s/%s", path, dirent->d_name);
+
+#ifdef DUMP
+//        if ( first_scan )
+//            DBG("resname [%s]", resname);
+#endif
+
+        /* ------------------------------------------------------------------- */
+        /* additional file info */
+
+        sprintf(namewpath, "%s/%s", resdir, resname);
+
+#ifdef DUMP
+//        if ( first_scan )
+//            DBG("namewpath [%s]", namewpath);
+#endif
+
+        if ( stat(namewpath, &fstat) != 0 )
+        {
+            ERR("stat for [%s] failed, errno = %d (%s)", namewpath, errno, strerror(errno));
+            closedir(dir);
+            return FALSE;
+        }
+
+        /* ------------------------------------------------------------------- */
+
+        if ( S_ISDIR(fstat.st_mode) )   /* directory */
+        {
+#ifdef DUMP
+//            if ( first_scan )
+//                DBG("Reading subdirectory [%s]...", dirent->d_name);
+#endif
+            read_snippets(first_scan, resname);
+            continue;
+        }
+        else if ( !S_ISREG(fstat.st_mode) )    /* skip if not a regular file nor directory */
+        {
+#ifdef DUMP
+            if ( first_scan )
+                DBG("[%s] is not a regular file", resname);
+#endif
+            continue;
+        }
+
+        /* ------------------------------------------------------------------- */
+        /* already read? */
+
+        bool reread = FALSE;
+
+        if ( !first_scan )
+        {
+            bool exists_not_changed = FALSE;
+
+            for ( i=0; i<=G_snippets_cnt; ++i )
+            {
+                if ( G_snippets[i].name[0]==EOS ) continue;   /* removed */
+
+                /* ------------------------------------------------------------------- */
+
+                if ( 0==strcmp(G_snippets[i].name, resname) )
+                {
+#ifdef DUMP
+//                    DBG("%s already read", resname);
+#endif
+                    if ( G_snippets[i].modified == fstat.st_mtime )
+                    {
+#ifdef DUMP
+//                        DBG("Not modified");
+#endif
+                        exists_not_changed = TRUE;
+                    }
+                    else
+                    {
+                        INF("%s has been modified", resname);
+                        reread = TRUE;
+                    }
+
+                    break;
+                }
+            }
+
+            if ( exists_not_changed ) continue;   /* not modified */
+        }
+
+        /* find the first unused slot in G_snippets array */
+
+        if ( !reread )
+        {
+            i = first_free_snippet();
+            /* file name */
+            strcpy(G_snippets[i].name, resname);
+        }
+
+        /* last modified */
+
+        G_snippets[i].modified = fstat.st_mtime;
+
+        /* size and content */
+
+#ifdef _WIN32   /* Windows */
+        if ( NULL == (fd=fopen(namewpath, "rb")) )
+#else
+        if ( NULL == (fd=fopen(namewpath, "r")) )
+#endif  /* _WIN32 */
+            ERR("Couldn't open %s", namewpath);
+        else
+        {
+            fseek(fd, 0, SEEK_END);     /* determine the file size */
+            G_snippets[i].len = ftell(fd);
+            rewind(fd);
+
+            /* allocate the final destination */
+
+            if ( reread )
+            {
+                free(G_snippets[i].data);
+                G_snippets[i].data = NULL;
+            }
+
+            G_snippets[i].data = (char*)malloc(G_snippets[i].len+1);
+
+            if ( NULL == G_snippets[i].data )
+            {
+                ERR("Couldn't allocate %u bytes for %s", G_snippets[i].len+1, G_snippets[i].name);
+                fclose(fd);
+                closedir(dir);
+                return FALSE;
+            }
+
+            fread(G_snippets[i].data, G_snippets[i].len, 1, fd);
+
+            fclose(fd);
+
+            /* log file info ----------------------------------- */
+
+            if ( G_logLevel > LOG_INF )
+            {
+                G_ptm = gmtime(&G_snippets[i].modified);
+                sprintf(mod_time, "%d-%02d-%02d %02d:%02d:%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday, G_ptm->tm_hour, G_ptm->tm_min, G_ptm->tm_sec);
+                G_ptm = gmtime(&G_now);     /* set it back */
+                DBG("%s %s\t\t%u bytes", lib_add_spaces(G_snippets[i].name, 28), mod_time, G_snippets[i].len);
+            }
+        }
+    }
+
+    closedir(dir);
+
+    if ( first_scan && !path ) DBG("");
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   OUT snippet
+-------------------------------------------------------------------------- */
+void lib_out_snippet(int ci, const char *name)
+{
+#ifndef SILGY_WATCHER
+    int i;
+
+    for ( i=0; G_snippets[i].name[0] != '-'; ++i )
+    {
+        if ( 0==strcmp(G_snippets[i].name, name) )
+        {
+            OUT_BIN(G_snippets[i].data, G_snippets[i].len);
+            break;
+        }
+    }
+#endif  /* SILGY_WATCHER */
 }
 
 

@@ -195,7 +195,8 @@ static bool ip_blocked(const char *addr);
 static void read_allowed_ips(void);
 static bool ip_allowed(const char *addr);
 static int  first_free_stat(void);
-static bool read_files(bool minify, bool first_scan, const char *path);
+//static bool read_files(bool minify, bool first_scan, const char *path);
+static bool read_resources(bool first_scan);
 static int  is_static_res(int ci, const char *name);
 static void process_req(int ci);
 static unsigned deflate_data(unsigned char *dest, const unsigned char *src, unsigned src_len);
@@ -1003,8 +1004,7 @@ static bool housekeeping()
 #ifndef DONT_RESCAN_RES
     if ( G_test )   /* kind of developer mode */
     {
-        read_files(FALSE, FALSE, NULL);
-        read_files(TRUE, FALSE, NULL);
+        read_resources(FALSE);
     }
 #endif  /* DONT_RESCAN_RES */
 #endif  /* DUMP */
@@ -1024,9 +1024,8 @@ static bool housekeeping()
         log_flush();
 
 #ifndef DONT_RESCAN_RES    /* refresh static resources */
-        read_files(FALSE, FALSE, NULL);
-        read_files(TRUE, FALSE, NULL);
-#endif  /* DONT_RESCAN_RES */
+        read_resources(FALSE);
+#endif
 
         /* start new log file every day */
 
@@ -1787,21 +1786,13 @@ static bool init(int argc, char **argv)
 
     /* read static resources */
 
-    if ( !read_files(FALSE, TRUE, NULL) )   /* normal */
+    if ( !read_resources(TRUE) )
     {
-        ERR("read_files() failed");
+        ERR("read_resources() failed");
         return FALSE;
     }
 
-    DBG("read_files(FALSE) OK");
-
-    if ( !read_files(TRUE, TRUE, NULL) )    /* minified */
-    {
-        ERR("read_files() for minified failed");
-        return FALSE;
-    }
-
-    DBG("read_files(TRUE) OK");
+    DBG("read_resources() OK");
 
 
     /* libSHA1 test */
@@ -2574,8 +2565,9 @@ static bool ip_allowed(const char *addr)
    Read all the files from G_appdir/res or resmin directory
    path is a relative path uder `res` or `resmin`
 -------------------------------------------------------------------------- */
-static bool read_files(bool minify, bool first_scan, const char *path)
+static bool read_files(const char *directory, bool first_scan, const char *path)
 {
+    bool    minify=FALSE;
     int     i;
     char    resdir[STATIC_PATH_LEN];        /* full path to res */
     char    ressubdir[STATIC_PATH_LEN];     /* full path to res/subdir */
@@ -2595,42 +2587,36 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
     if ( first_scan && !path ) DBG("");
 
+//    if ( 0==strcmp(directory, "resmin") )
+//        minify = TRUE;
+
 #ifdef DUMP
-//    DBG_LINE_LONG;
-//    DBG("read_files, minify = %s", minify?"TRUE":"FALSE");
+    DBG_LINE_LONG;
+    DBG("read_files, directory [%s]", directory);
 #endif
 
 #ifdef _WIN32   /* be more forgiving */
 
     if ( G_appdir[0] )
     {
-        if ( minify )
-            sprintf(resdir, "%s/resmin", G_appdir);
-        else
-            sprintf(resdir, "%s/res", G_appdir);
+        sprintf(resdir, "%s/%s", G_appdir, directory);
     }
     else    /* no SILGYDIR */
     {
-        if ( minify )
-            strcpy(resdir, "../resmin");
-        else
-            strcpy(resdir, "../res");
+        sprintf(resdir, "../%s", directory);
     }
 
-#else /* Linux -- don't fool around */
+#else   /* Linux -- don't fool around */
 
-    if ( minify )
-        sprintf(resdir, "%s/resmin", G_appdir);
-    else
-        sprintf(resdir, "%s/res", G_appdir);
+    sprintf(resdir, "%s/%s", G_appdir, directory);
 
 #endif  /* _WIN32 */
 
 #ifdef DUMP
-//    DBG("resdir [%s]", resdir);
+    DBG("resdir [%s]", resdir);
 #endif
 
-    if ( !path )     /* highest level */
+    if ( !path )   /* highest level */
     {
         strcpy(ressubdir, resdir);
     }
@@ -2640,15 +2626,13 @@ static bool read_files(bool minify, bool first_scan, const char *path)
     }
 
 #ifdef DUMP
-//    DBG("ressubdir [%s]", ressubdir);
+    DBG("ressubdir [%s]", ressubdir);
 #endif
 
     if ( (dir=opendir(ressubdir)) == NULL )
     {
-//#ifdef DUMP
         if ( first_scan )
             DBG("Couldn't open directory [%s]", ressubdir);
-//#endif
         return TRUE;    /* don't panic, just no external resources will be used */
     }
 
@@ -2662,11 +2646,11 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 #endif
         for ( i=0; i<=M_max_static; ++i )
         {
-            if ( M_stat[i].name[0]==EOS ) continue;  /* already removed */
+            if ( M_stat[i].name[0]==EOS ) continue;   /* already removed */
 
-            if ( minify && M_stat[i].source != STATIC_SOURCE_RESMIN ) continue;
-
-            if ( !minify && M_stat[i].source != STATIC_SOURCE_RES ) continue;
+            if ( 0==strcmp(directory, "res") && M_stat[i].source != STATIC_SOURCE_RES ) continue;
+            if ( 0==strcmp(directory, "resmin") && M_stat[i].source != STATIC_SOURCE_RESMIN ) continue;
+            if ( 0==strcmp(directory, "snippets") && M_stat[i].source != STATIC_SOURCE_SNIPPET ) continue;
 #ifdef DUMP
 //            DBG("Checking %s...", M_stat[i].name);
 #endif
@@ -2712,7 +2696,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
     while ( (dirent=readdir(dir)) )
     {
-        if ( dirent->d_name[0] == '.' )  /* skip ".", ".." and hidden files */
+        if ( dirent->d_name[0] == '.' )   /* skip ".", ".." and hidden files */
             continue;
 
         /* ------------------------------------------------------------------- */
@@ -2753,7 +2737,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 //            if ( first_scan )
 //                DBG("Reading subdirectory [%s]...", dirent->d_name);
 #endif
-            read_files(minify, first_scan, resname);
+            read_files(directory, first_scan, resname);
             continue;
         }
         else if ( !S_ISREG(fstat.st_mode) )    /* skip if not a regular file nor directory */
@@ -2772,20 +2756,19 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
         if ( !first_scan )
         {
-            bool exists = FALSE;
+            bool exists_not_changed = FALSE;
 
             for ( i=0; i<=M_max_static; ++i )
             {
-                if ( M_stat[i].name[0]==EOS ) continue;  /* removed */
-
-                if ( minify && M_stat[i].source != STATIC_SOURCE_RESMIN ) continue;
-
-                if ( !minify && M_stat[i].source != STATIC_SOURCE_RES ) continue;
+                if ( M_stat[i].name[0]==EOS ) continue;   /* removed */
 
                 /* ------------------------------------------------------------------- */
 
                 if ( 0==strcmp(M_stat[i].name, resname) )
                 {
+                    if ( 0==strcmp(directory, "res") && M_stat[i].source != STATIC_SOURCE_RES ) continue;
+                    if ( 0==strcmp(directory, "resmin") && M_stat[i].source != STATIC_SOURCE_RESMIN ) continue;
+                    if ( 0==strcmp(directory, "snippets") && M_stat[i].source != STATIC_SOURCE_SNIPPET ) continue;
 #ifdef DUMP
 //                    DBG("%s already read", resname);
 #endif
@@ -2794,7 +2777,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 #ifdef DUMP
 //                        DBG("Not modified");
 #endif
-                        exists = TRUE;
+                        exists_not_changed = TRUE;
                     }
                     else
                     {
@@ -2806,7 +2789,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
                 }
             }
 
-            if ( exists ) continue;  /* not modified */
+            if ( exists_not_changed ) continue;   /* not modified */
         }
 
         /* find the first unused slot in M_stat array */
@@ -2817,6 +2800,18 @@ static bool read_files(bool minify, bool first_scan, const char *path)
             /* file name */
             strcpy(M_stat[i].name, resname);
         }
+
+        /* source */
+
+        if ( 0==strcmp(directory, "res") )
+            M_stat[i].source = STATIC_SOURCE_RES;
+        else if ( 0==strcmp(directory, "resmin") )
+        {
+            M_stat[i].source = STATIC_SOURCE_RESMIN;
+            minify = TRUE;
+        }
+        else
+            M_stat[i].source = STATIC_SOURCE_SNIPPET;
 
         /* last modified */
 
@@ -2876,7 +2871,12 @@ static bool read_files(bool minify, bool first_scan, const char *path)
                 }
             }
 
-            if ( NULL == (M_stat[i].data=(char*)malloc(M_stat[i].len+1+OUT_HEADER_BUFSIZE)) )
+            if ( M_stat[i].source == STATIC_SOURCE_SNIPPET )
+                M_stat[i].data = (char*)malloc(M_stat[i].len+1);
+            else
+                M_stat[i].data = (char*)malloc(M_stat[i].len+1+OUT_HEADER_BUFSIZE);
+
+            if ( NULL == M_stat[i].data )
             {
                 ERR("Couldn't allocate %u bytes for %s", M_stat[i].len+1+OUT_HEADER_BUFSIZE, M_stat[i].name);
                 fclose(fd);
@@ -2891,20 +2891,21 @@ static bool read_files(bool minify, bool first_scan, const char *path)
                 free(data_tmp_min);
                 data_tmp = NULL;
                 data_tmp_min = NULL;
-
-                M_stat[i].source = STATIC_SOURCE_RESMIN;
             }
-            else
+            else if ( M_stat[i].source == STATIC_SOURCE_RES )
             {
                 fread(M_stat[i].data+OUT_HEADER_BUFSIZE, M_stat[i].len, 1, fd);
-                M_stat[i].source = STATIC_SOURCE_RES;
+            }
+            else    /* snippet */
+            {
+                fread(M_stat[i].data, M_stat[i].len, 1, fd);
             }
 
             fclose(fd);
 
             /* get the file type ------------------------------- */
 
-            if ( !reread )
+            if ( !reread && M_stat[i].source != STATIC_SOURCE_SNIPPET )
             {
                 M_stat[i].type = get_res_type(M_stat[i].name);
 
@@ -2924,7 +2925,7 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
 #ifndef _WIN32
 
-            if ( SHOULD_BE_COMPRESSED(M_stat[i].len, M_stat[i].type) )
+            if ( SHOULD_BE_COMPRESSED(M_stat[i].len, M_stat[i].type) && M_stat[i].source != STATIC_SOURCE_SNIPPET )
             {
                 if ( NULL == (data_tmp=(char*)malloc(M_stat[i].len)) )
                 {
@@ -2995,6 +2996,33 @@ static bool read_files(bool minify, bool first_scan, const char *path)
 
 
 /* --------------------------------------------------------------------------
+   Read all static resources from disk
+-------------------------------------------------------------------------- */
+static bool read_resources(bool first_scan)
+{
+    if ( !read_files("res", first_scan, NULL) )
+    {
+        ERR("reading res failed");
+        return FALSE;
+    }
+
+    if ( !read_files("resmin", first_scan, NULL) )
+    {
+        ERR("reading resmin failed");
+        return FALSE;
+    }
+
+    if ( !read_snippets(first_scan, NULL) )
+    {
+        ERR("reading snippets failed");
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
    Find first free slot in M_stat
 -------------------------------------------------------------------------- */
 static int first_free_stat()
@@ -3025,7 +3053,7 @@ static int is_static_res(int ci, const char *name)
 
     for ( i=0; M_stat[i].name[0] != '-'; ++i )
     {
-        if ( 0==strcmp(M_stat[i].name, name) )
+        if ( 0==strcmp(M_stat[i].name, name) && M_stat[i].source != STATIC_SOURCE_SNIPPET )
         {
 //          DBG("It is static");
             if ( conn[ci].if_mod_since >= M_stat[i].modified )
@@ -3033,6 +3061,7 @@ static int is_static_res(int ci, const char *name)
 //              DBG("Not Modified");
                 conn[ci].status = 304;  /* Not Modified */
             }
+
             return i;
         }
     }
@@ -5844,6 +5873,14 @@ int main(int argc, char *argv[])
 
 #endif  /* OUTCHECKREALLOC */
 
+    /* load snippets ----------------------------------------------------- */
+
+    if ( !read_snippets(TRUE, NULL) )
+    {
+        ERR("read_snippets() failed");
+        return EXIT_FAILURE;
+    }
+
     /* open database ----------------------------------------------------- */
 
 #ifdef DBMYSQL
@@ -5954,6 +5991,13 @@ int main(int argc, char *argv[])
                 prev_day = G_ptm->tm_mday;
 
                 init_random_numbers();
+
+                if ( !read_snippets(FALSE, NULL) )
+                {
+                    ERR("read_snippets() failed");
+                    clean_up();
+                    return EXIT_FAILURE;
+                }
             }
 
             DBG_T("Message received");
