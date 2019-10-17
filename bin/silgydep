@@ -19,3 +19,4 @@ cp -p $SILGYDEV/bin/strings.* $SILGYLIVE/bin 2>/dev/null
 
 cp -pr $SILGYDEV/res/* $SILGYLIVE/res 2>/dev/null
 cp -pr $SILGYDEV/resmin/* $SILGYLIVE/resmin 2>/dev/null
+cp -pr $SILGYDEV/snippets/* $SILGYLIVE/snippets 2>/dev/null
