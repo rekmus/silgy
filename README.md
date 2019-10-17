@@ -204,6 +204,10 @@ Static resources to be minified. The whole tree under `resmin` is publicly avail
 * CSS
 * JS
 
+### `snippets`
+
+Static parts of rendered content, i.e. HTML snippets.
+
 ### `logs`
 
 * Log files
