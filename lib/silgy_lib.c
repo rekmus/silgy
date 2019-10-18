@@ -864,7 +864,11 @@ bool read_snippets(bool first_scan, const char *path)
     if ( first_scan && !path ) DBG("");
 
 #ifdef DUMP
-    DBG("read_snippets");
+    if ( first_scan )
+    {
+        if ( !path ) DBG_LINE_LONG;
+        DBG("read_snippets");
+    }
 #endif
 
 #ifdef _WIN32   /* be more forgiving */
@@ -885,7 +889,8 @@ bool read_snippets(bool first_scan, const char *path)
 #endif  /* _WIN32 */
 
 #ifdef DUMP
-    DBG("resdir [%s]", resdir);
+    if ( first_scan )
+        DBG("resdir [%s]", resdir);
 #endif
 
     if ( !path )   /* highest level */
@@ -898,7 +903,8 @@ bool read_snippets(bool first_scan, const char *path)
     }
 
 #ifdef DUMP
-    DBG("ressubdir [%s]", ressubdir);
+    if ( first_scan )
+        DBG("ressubdir [%s]", ressubdir);
 #endif
 
     if ( (dir=opendir(ressubdir)) == NULL )
@@ -958,8 +964,8 @@ bool read_snippets(bool first_scan, const char *path)
             sprintf(resname, "%s/%s", path, dirent->d_name);
 
 #ifdef DUMP
-//        if ( first_scan )
-//            DBG("resname [%s]", resname);
+        if ( first_scan )
+            DBG("resname [%s]", resname);
 #endif
 
         /* ------------------------------------------------------------------- */
@@ -968,8 +974,8 @@ bool read_snippets(bool first_scan, const char *path)
         sprintf(namewpath, "%s/%s", resdir, resname);
 
 #ifdef DUMP
-//        if ( first_scan )
-//            DBG("namewpath [%s]", namewpath);
+        if ( first_scan )
+            DBG("namewpath [%s]", namewpath);
 #endif
 
         if ( stat(namewpath, &fstat) != 0 )
@@ -984,8 +990,8 @@ bool read_snippets(bool first_scan, const char *path)
         if ( S_ISDIR(fstat.st_mode) )   /* directory */
         {
 #ifdef DUMP
-//            if ( first_scan )
-//                DBG("Reading subdirectory [%s]...", dirent->d_name);
+            if ( first_scan )
+                DBG("Reading subdirectory [%s]...", dirent->d_name);
 #endif
             read_snippets(first_scan, resname);
             continue;

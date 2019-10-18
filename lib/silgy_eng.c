@@ -195,7 +195,6 @@ static bool ip_blocked(const char *addr);
 static void read_allowed_ips(void);
 static bool ip_allowed(const char *addr);
 static int  first_free_stat(void);
-//static bool read_files(bool minify, bool first_scan, const char *path);
 static bool read_resources(bool first_scan);
 static int  is_static_res(int ci, const char *name);
 static void process_req(int ci);
@@ -2587,12 +2586,12 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
 
     if ( first_scan && !path ) DBG("");
 
-//    if ( 0==strcmp(directory, "resmin") )
-//        minify = TRUE;
-
 #ifdef DUMP
-    DBG_LINE_LONG;
-    DBG("read_files, directory [%s]", directory);
+    if ( first_scan )
+    {
+        if ( !path ) DBG_LINE_LONG;
+        DBG("read_files, directory [%s]", directory);
+    }
 #endif
 
 #ifdef _WIN32   /* be more forgiving */
@@ -2613,7 +2612,8 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
 #endif  /* _WIN32 */
 
 #ifdef DUMP
-    DBG("resdir [%s]", resdir);
+    if ( first_scan )
+        DBG("resdir [%s]", resdir);
 #endif
 
     if ( !path )   /* highest level */
@@ -2626,7 +2626,8 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
     }
 
 #ifdef DUMP
-    DBG("ressubdir [%s]", ressubdir);
+    if ( first_scan )
+        DBG("ressubdir [%s]", ressubdir);
 #endif
 
     if ( (dir=opendir(ressubdir)) == NULL )
@@ -2708,8 +2709,8 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
             sprintf(resname, "%s/%s", path, dirent->d_name);
 
 #ifdef DUMP
-//        if ( first_scan )
-//            DBG("resname [%s]", resname);
+        if ( first_scan )
+            DBG("resname [%s]", resname);
 #endif
 
         /* ------------------------------------------------------------------- */
@@ -2718,8 +2719,8 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
         sprintf(namewpath, "%s/%s", resdir, resname);
 
 #ifdef DUMP
-//        if ( first_scan )
-//            DBG("namewpath [%s]", namewpath);
+        if ( first_scan )
+            DBG("namewpath [%s]", namewpath);
 #endif
 
         if ( stat(namewpath, &fstat) != 0 )
@@ -2734,8 +2735,8 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
         if ( S_ISDIR(fstat.st_mode) )   /* directory */
         {
 #ifdef DUMP
-//            if ( first_scan )
-//                DBG("Reading subdirectory [%s]...", dirent->d_name);
+            if ( first_scan )
+                DBG("Reading subdirectory [%s]...", dirent->d_name);
 #endif
             read_files(directory, first_scan, resname);
             continue;
