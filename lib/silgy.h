@@ -290,9 +290,9 @@ typedef char str64k[1024*64];
 
 /* convenient & fast string building */
 
-#define OUTP_BEGIN(buf)                 char *p=buf
+#define OUTP_BEGIN(buf)                 char *p4outp=buf
 
-#define OUTPS(str)                      (p = stpcpy(p, str))
+#define OUTPS(str)                      (p4outp = stpcpy(p4outp, str))
 
 #ifdef _MSC_VER /* Microsoft compiler */
     #define OUTP(...)                        (sprintf(G_tmp, EXPAND_VA(__VA_ARGS__)), OUTPS(G_tmp))
@@ -302,7 +302,7 @@ typedef char str64k[1024*64];
     #define OUTP(...)                        CHOOSE_OUTP(__VA_ARGS__, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPM, OUTPS)(__VA_ARGS__)
 #endif  /* _MSC_VER */
 
-#define OUTP_END                        *p = EOS
+#define OUTP_END                        *p4outp = EOS
 
 
 
