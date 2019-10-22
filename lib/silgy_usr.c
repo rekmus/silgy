@@ -690,35 +690,28 @@ static int send_activation_link(int ci, const char *login, const char *email)
 
     char subject[256];
     char message[4096];
-    char tmp[1024];
-    char *p=message;
 
-    sprintf(tmp, "Dear %s,\n\n", silgy_usr_name(NULL, NULL, NULL, UID));
-    p = stpcpy(p, tmp);
-    sprintf(tmp, "Welcome to %s! Your account requires activation. Please visit this URL to activate your account:\n\n", conn[ci].website);
-    p = stpcpy(p, tmp);
+    OUTP_BEGIN(message);
 
+    OUTP("Dear %s,\n\n", silgy_usr_name(NULL, NULL, NULL, UID));
+    OUTP("Welcome to %s! Your account requires activation. Please visit this URL to activate your account:\n\n", conn[ci].website);
 #ifdef HTTPS
     if ( G_test )
-        sprintf(tmp, "http://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
+        OUTP("http://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
     else
-        sprintf(tmp, "https://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
+        OUTP("https://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
 #else
-    sprintf(tmp, "http://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
+    OUTP("http://%s/activate_acc?k=%s\n\n", conn[ci].host, linkkey);
 #endif  /* HTTPS */
-    p = stpcpy(p, tmp);
-
-    sprintf(tmp, "Please keep in mind that this link will only be valid for the next %d hours.\n\n", USER_ACTIVATION_HOURS);
-    p = stpcpy(p, tmp);
-    p = stpcpy(p, "If you did this by mistake or it wasn't you, you can safely ignore this email.\n\n");
+    OUTP("Please keep in mind that this link will only be valid for the next %d hours.\n\n", USER_ACTIVATION_HOURS);
+    OUTP("If you did this by mistake or it wasn't you, you can safely ignore this email.\n\n");
 #ifdef APP_CONTACT_EMAIL
-    sprintf(tmp, "In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
-    p = stpcpy(p, tmp);
+    OUTP("In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
 #endif
-    p = stpcpy(p, "Kind Regards\n");
+    OUTP("Kind Regards\n");
+    OUTP("%s\n", conn[ci].website);
 
-    sprintf(tmp, "%s\n", conn[ci].website);
-    p = stpcpy(p, tmp);
+    OUTP_END;
 
     sprintf(subject, "%s Account Activation", conn[ci].website);
 
@@ -937,21 +930,18 @@ int silgy_usr_login(int ci)
             {
                 char subject[256];
                 char message[4096];
-                char tmp[1024];
-                char *p=message;
 
-                sprintf(tmp, "Dear %s,\n\n", silgy_usr_name(us.login, us.email, us.name, 0));
-                p = stpcpy(p, tmp);
-                sprintf(tmp, "Someone has tried to log in to your %s account unsuccessfully more than %d times. To protect it from brute-force attack your account has been locked.\n\n", conn[ci].website, MAX_ULA_BEFORE_LOCK);
-                p = stpcpy(p, tmp);
+                OUTP_BEGIN(message);
+
+                OUTP("Dear %s,\n\n", silgy_usr_name(us.login, us.email, us.name, 0));
+                OUTP("Someone has tried to log in to your %s account unsuccessfully more than %d times. To protect it from brute-force attack your account has been locked.\n\n", conn[ci].website, MAX_ULA_BEFORE_LOCK);
 #ifdef APP_CONTACT_EMAIL
-                sprintf(tmp, "Please contact us at %s.\n\n", APP_CONTACT_EMAIL);
-                p = stpcpy(p, tmp);
+                OUTP("Please contact us at %s.\n\n", APP_CONTACT_EMAIL);
 #endif
-                p = stpcpy(p, "Kind Regards\n");
+                OUTP("Kind Regards\n");
+                OUTP("%s\n", conn[ci].website);
 
-                sprintf(tmp, "%s\n", conn[ci].website);
-                p = stpcpy(p, tmp);
+                OUTP_END;
 
                 sprintf(subject, "%s account locked", conn[ci].website);
 
@@ -1299,34 +1289,28 @@ static int new_account_notification(int ci, const char *login, const char *email
 {
     char subject[256];
     char message[4096];
-    char tmp[1024];
-    char *p=message;
 
-    sprintf(tmp, "Dear %s,\n\n", silgy_usr_name(login, email, name, 0));
-    p = stpcpy(p, tmp);
-    sprintf(tmp, "An account has been created for you at %s.\n\n", conn[ci].website);
-    p = stpcpy(p, tmp);
+    OUTP_BEGIN(message);
 
-    p = stpcpy(p, "Please visit this address to log in:\n\n");
-
+    OUTP("Dear %s,\n\n", silgy_usr_name(login, email, name, 0));
+    OUTP("An account has been created for you at %s.\n\n", conn[ci].website);
+    OUTP("Please visit this address to log in:\n\n");
 #ifdef HTTPS
-    sprintf(tmp, "https://%s/%s\n\n", conn[ci].host, APP_LOGIN_URI);
+    if ( G_test )
+        OUTP("http://%s/%s\n\n", conn[ci].host, APP_LOGIN_URI);
+    else
+        OUTP("https://%s/%s\n\n", conn[ci].host, APP_LOGIN_URI);
 #else
-    sprintf(tmp, "http://%s/%s\n\n", conn[ci].host, APP_LOGIN_URI);
+    OUTP("http://%s/%s\n\n", conn[ci].host, APP_LOGIN_URI);
 #endif
-    p = stpcpy(p, tmp);
-
-    sprintf(tmp, "Your password is %s and you will have to change it on your first login.\n\n", passwd[0]?passwd:"empty");
-    p = stpcpy(p, tmp);
-
+    OUTP("Your password is %s and you will have to change it on your first login.\n\n", passwd[0]?passwd:"empty");
 #ifdef APP_CONTACT_EMAIL
-    sprintf(tmp, "In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
-    p = stpcpy(p, tmp);
+    OUTP("In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
 #endif
-    p = stpcpy(p, "Kind Regards\n");
+    OUTP("Kind Regards\n");
+    OUTP("%s\n", conn[ci].website);
 
-    sprintf(tmp, "%s\n", conn[ci].website);
-    p = stpcpy(p, tmp);
+    OUTP_END;
 
     sprintf(subject, "Welcome to %s", conn[ci].website);
 
@@ -1900,35 +1884,28 @@ int silgy_usr_send_passwd_reset_email(int ci)
 
     char subject[256];
     char message[4096];
-    char tmp[1024];
-    char *p=message;
 
-    sprintf(tmp, "Dear %s,\n\n", silgy_usr_name(login, email, name, 0));
-    p = stpcpy(p, tmp);
-    sprintf(tmp, "You have requested to have your password reset for your account at %s. Please visit this URL to reset your password:\n\n", conn[ci].website);
-    p = stpcpy(p, tmp);
+    OUTP_BEGIN(message);
 
+    OUTP("Dear %s,\n\n", silgy_usr_name(login, email, name, 0));
+    OUTP("You have requested to have your password reset for your account at %s. Please visit this URL to reset your password:\n\n", conn[ci].website);
 #ifdef HTTPS
     if ( G_test )
-        sprintf(tmp, "http://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
+        OUTP("http://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
     else
-        sprintf(tmp, "https://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
+        OUTP("https://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
 #else
-    sprintf(tmp, "http://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
+    OUTP("http://%s/preset?k=%s\n\n", conn[ci].host, linkkey);
 #endif  /* HTTPS */
-
-    p = stpcpy(p, tmp);
-
-    p = stpcpy(p, "Please keep in mind that this link will only be valid for the next 24 hours.\n\n");
-    p = stpcpy(p, "If you did this by mistake or it wasn't you, you can safely ignore this email.\n\n");
+    OUTP("Please keep in mind that this link will only be valid for the next 24 hours.\n\n");
+    OUTP("If you did this by mistake or it wasn't you, you can safely ignore this email.\n\n");
 #ifdef APP_CONTACT_EMAIL
-    sprintf(tmp, "In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
-    p = stpcpy(p, tmp);
+    OUTP("In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
 #endif
-    p = stpcpy(p, "Kind Regards\n");
+    OUTP("Kind Regards\n");
+    OUTP("%s\n", conn[ci].website);
 
-    sprintf(tmp, "%s\n", conn[ci].website);
-    p = stpcpy(p, tmp);
+    OUTP_END;
 
     sprintf(subject, "%s Password Reset", conn[ci].website);
 
