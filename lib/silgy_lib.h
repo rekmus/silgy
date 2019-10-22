@@ -453,6 +453,7 @@ extern "C" {
     void get_byteorder(void);
     time_t db2epoch(const char *str);
     bool silgy_email(const char *to, const char *subject, const char *message);
+    bool silgy_email_attach(const char *to, const char *subject, const char *message, const char *att_name, const char *att_data, int att_data_len);
     int  silgy_minify(char *dest, const char *src);
     void date_inc(char *str, int days, int *dow);
     int  date_cmp(const char *str1, const char *str2);

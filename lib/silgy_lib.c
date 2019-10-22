@@ -6806,7 +6806,7 @@ bool silgy_email(const char *to, const char *subject, const char *message)
 //    }
 //#else
     sprintf(sender, "%s <%s@%s>", APP_WEBSITE, EMAIL_FROM_USER, APP_DOMAIN);
-//#endif
+//#endif  /* SILGY_SVC */
 
     sprintf(comm, "/usr/lib/sendmail -t -f \"%s\"", sender);
 
@@ -6825,6 +6825,172 @@ bool silgy_email(const char *to, const char *subject, const char *message)
         fprintf(mailpipe, "Content-Type: text/plain; charset=\"utf-8\"\n\n");
         fwrite(message, 1, strlen(message), mailpipe);
         fwrite("\n.\n", 1, 3, mailpipe);
+        pclose(mailpipe);
+    }
+
+    return TRUE;
+
+#else   /* Windows */
+
+    WAR("There's no email service for Windows");
+    return TRUE;
+
+#endif  /* _WIN32 */
+}
+
+
+/* --------------------------------------------------------------------------
+   Convert string to quoted-printable
+-------------------------------------------------------------------------- */
+/*void qp(char *dst, const char *asrc)
+{
+    char *src=(char*)asrc;
+    int curr_line_length = 0;
+    bool first=TRUE;
+
+    while ( *src )
+    {
+        if ( curr_line_length > 72 )
+        {
+            // insert '=' if prev char exists and is not a space
+            if ( !first )
+            {
+                if (*(src-1) != 0x20)
+                    *dst++ = '=';
+            }
+            *dst++ = '\n';
+            curr_line_length = 0;
+        }
+
+        if ( *src == 0x20 )
+        {
+            *dst++ = *src;
+        }
+        else if ( *src >= 33 && *src <= 126 && *src != 61 )
+        {
+            *dst++ = *src;
+            // double escape newline periods
+            // http://tools.ietf.org/html/rfc5321#section-4.5.2
+            if ( curr_line_length == 0 && *src == 46 )
+            {
+                *dst++ = '.';
+            }
+        }
+        else
+        {
+            *dst++ = '=';
+            char hex[8];
+            sprintf(hex, "%x", (*src >> 4) & 0x0F);
+            dst = stpcpy(dst, hex);
+            sprintf(hex, "%x", *src & 0x0F);
+            dst = stpcpy(dst, hex);
+            // 2 more chars bc hex and equals
+            curr_line_length += 2;
+        }
+
+        ++curr_line_length;
+        first = FALSE;
+        ++src;
+    }
+
+    *dst = EOS;
+}*/
+
+
+/* --------------------------------------------------------------------------
+   Send an email with attachement
+-------------------------------------------------------------------------- */
+bool silgy_email_attach(const char *to, const char *subject, const char *message, const char *att_name, const char *att_data, int att_data_len)
+{
+    DBG("Sending email to [%s], subject [%s], with attachement [%s]", to, subject, att_name);
+
+#define BOUNDARY "silgybndGq7ehJxt"
+
+#ifndef _WIN32
+    char    sender[512];
+    char    comm[512];
+
+    sprintf(sender, "%s <%s@%s>", APP_WEBSITE, EMAIL_FROM_USER, APP_DOMAIN);
+
+    sprintf(comm, "/usr/lib/sendmail -t -f \"%s\"", sender);
+
+    FILE *mailpipe = popen(comm, "w");
+
+    if ( mailpipe == NULL )
+    {
+        ERR("Failed to invoke sendmail");
+        return FALSE;
+    }
+    else
+    {
+        fprintf(mailpipe, "From: %s\n", sender);
+        fprintf(mailpipe, "To: %s\n", to);
+        fprintf(mailpipe, "Subject: %s\n", subject);
+        fprintf(mailpipe, "Content-Type: multipart/mixed; boundary=%s\n", BOUNDARY);
+        fprintf(mailpipe, "\n");
+
+        /* message */
+
+        fprintf(mailpipe, "--%s\n", BOUNDARY);
+
+        fprintf(mailpipe, "Content-Type: text/plain; charset=\"utf-8\"\n");
+//        fprintf(mailpipe, "Content-Transfer-Encoding: quoted-printable\n");
+        fprintf(mailpipe, "Content-Disposition: inline\n");
+        fprintf(mailpipe, "\n");
+
+
+/*        char *qpm;
+        int qpm_len = strlen(message) * 4;
+
+        if ( !(qpm=(char*)malloc(qpm_len)) )
+        {
+            ERR("Couldn't allocate %d bytes for qpm", qpm_len);
+            return FALSE;
+        }
+
+        qp(qpm, message);
+
+        DBG("qpm [%s]", qpm); */
+
+        fwrite(message, 1, strlen(message), mailpipe);
+//        fwrite(qpm, 1, strlen(qpm), mailpipe);
+//        free(qpm);
+        fprintf(mailpipe, "\n\n");
+
+
+        /* attachement */
+
+        fprintf(mailpipe, "--%s\n", BOUNDARY);
+
+        fprintf(mailpipe, "Content-Type: application\n");
+        fprintf(mailpipe, "Content-Transfer-Encoding: base64\n");
+        fprintf(mailpipe, "Content-Disposition: attachment; filename=\"%s\"\n", att_name);
+        fprintf(mailpipe, "\n");
+
+        char *b64data;
+        int b64data_len = ((4 * att_data_len / 3) + 3) & ~3;
+
+        DBG("Predicted b64data_len = %d", b64data_len);
+
+        if ( !(b64data=(char*)malloc(b64data_len+16)) )   /* just in case, to be verified */
+        {
+            ERR("Couldn't allocate %d bytes for b64data", b64data_len+16);
+            return FALSE;
+        }
+
+        Base64encode(b64data, att_data, att_data_len);
+        b64data_len = strlen(b64data);
+
+        DBG("     Real b64data_len = %d", b64data_len);
+
+        fwrite(b64data, 1, b64data_len, mailpipe);
+
+        free(b64data);
+
+        /* finish */
+
+        fprintf(mailpipe, "\n\n--%s--\n", BOUNDARY);
+
         pclose(mailpipe);
     }
 
