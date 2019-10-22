@@ -5143,7 +5143,7 @@ int eng_uses_start(int ci, const char *sesid)
         silgy_random(new_sesid, SESID_LEN);
     }
 
-    INF("Starting new session, usi=%d, sesid [%s]", conn[ci].usi, new_sesid);
+    INF("Starting new session for ci=%d, usi=%d, sesid [%s]", ci, conn[ci].usi, new_sesid);
 
     /* add record to uses */
 
@@ -5158,6 +5158,8 @@ int eng_uses_start(int ci, const char *sesid)
     /* generate CSRF token */
 
     silgy_random(US.csrft, CSRFT_LEN);
+
+    DBG("New csrft generated [%s]", US.csrft);
 
     /* custom session init */
 
