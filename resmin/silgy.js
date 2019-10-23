@@ -98,7 +98,6 @@ function center(d)
     d.style.left = "50%";
     d.style.marginTop = -d.offsetTop/2 + "px";
     d.style.marginLeft = -d.offsetWidth/2 + "px";
-    d.zIndex = 100;
 }
 
 
@@ -134,6 +133,8 @@ function mw(l1, l2, w)
         s2.innerHTML = l2;
         d.appendChild(s2);
     }
+
+    d.style.zIndex = "1000";
 
     document.body.appendChild(d);
     center(d);
