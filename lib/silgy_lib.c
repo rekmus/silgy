@@ -4416,7 +4416,7 @@ char get_res_type(const char *fname)
 
 
 /* --------------------------------------------------------------------------
-  convert URI (YYYY-MM-DD) date to tm struct
+   Convert URI (YYYY-MM-DD) date to tm struct
 -------------------------------------------------------------------------- */
 void date_str2rec(const char *str, date_t *rec)
 {
@@ -4439,23 +4439,28 @@ void date_str2rec(const char *str, date_t *rec)
         return;
     }
 
-    for (i=0; i<len; ++i)
+    for ( i=0; i<len; ++i )
     {
         if ( str[i] != '-' )
+        {
+//            DBG("str[i] = %c", str[i]);
             strtmp[j++] = str[i];
+        }
         else    /* end of part */
         {
             strtmp[j] = EOS;
+
             if ( part == 'Y' )  /* year */
             {
                 rec->year = atoi(strtmp);
                 part = 'M';
             }
-            else if ( part == 'M' ) /* month */
+            else if ( part == 'M' )  /* month */
             {
                 rec->month = atoi(strtmp);
                 part = 'D';
             }
+
             j = 0;
         }
     }
@@ -4473,6 +4478,55 @@ void date_str2rec(const char *str, date_t *rec)
 void date_rec2str(char *str, date_t *rec)
 {
     sprintf(str, "%d-%02d-%02d", rec->year, rec->month, rec->day);
+}
+
+
+/* --------------------------------------------------------------------------
+   Is year leap?
+-------------------------------------------------------------------------- */
+static bool leap(short year)
+{
+    year += 1900;
+    
+    if ( year % 4 == 0 && ((year % 100) != 0 || (year % 400) == 0) )
+        return TRUE;
+    
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Convert database datetime to epoch time
+-------------------------------------------------------------------------- */
+static time_t win_timegm(struct tm *t)
+{
+    time_t epoch;
+
+    static int days[2][12]={
+        {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
+        {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+    };
+
+    int i;
+
+    for ( i=70; i<t->tm_year; ++i )
+        epoch += leap(i)?366:365;
+
+    for ( i=0; i<t->tm_mon; ++i )
+        epoch += days[leap(t->tm_year)][i];
+
+    epoch += t->tm_mday - 1;
+    epoch *= 24;
+
+    epoch += t->tm_hour;
+    epoch *= 60;
+
+    epoch += t->tm_min;
+    epoch *= 60;
+
+    epoch += t->tm_sec;
+
+    return epoch;
 }
 
 
@@ -4558,7 +4612,7 @@ struct tm   tm;
 #ifdef __linux__
     epoch = timegm(&tm);
 #else
-    epoch = mktime(&tm);
+    epoch = win_timegm(&tm);
 #endif
 
     // temporarily
@@ -4621,7 +4675,7 @@ struct tm   tm;
 #ifdef __linux__
     epoch = timegm(&tm);
 #else
-    epoch = mktime(&tm);
+    epoch = win_timegm(&tm);
 #endif
 
     return epoch;
@@ -6726,11 +6780,11 @@ static void get_byteorder64()
 -------------------------------------------------------------------------- */
 time_t db2epoch(const char *str)
 {
-
+    time_t  epoch;
     int     i;
     int     j=0;
     char    part='Y';
-    char    strtmp[8];
+    char    tmp[8];
 struct tm   t={0};
 
 /*  DBG("db2epoch: str: [%s]", str); */
@@ -6738,45 +6792,55 @@ struct tm   t={0};
     for ( i=0; str[i]; ++i )
     {
         if ( isdigit(str[i]) )
-            strtmp[j++] = str[i];
+        {
+            tmp[j++] = str[i];
+        }
         else    /* end of part */
         {
-            strtmp[j] = EOS;
+            tmp[j] = EOS;
+
             if ( part == 'Y' )  /* year */
             {
-                t.tm_year = atoi(strtmp) - 1900;
+                t.tm_year = atoi(tmp) - 1900;
                 part = 'M';
             }
-            else if ( part == 'M' ) /* month */
+            else if ( part == 'M' )  /* month */
             {
-                t.tm_mon = atoi(strtmp) - 1;
+                t.tm_mon = atoi(tmp) - 1;
                 part = 'D';
             }
-            else if ( part == 'D' ) /* day */
+            else if ( part == 'D' )  /* day */
             {
-                t.tm_mday = atoi(strtmp);
+                t.tm_mday = atoi(tmp);
                 part = 'H';
             }
-            else if ( part == 'H' ) /* hour */
+            else if ( part == 'H' )  /* hour */
             {
-                t.tm_hour = atoi(strtmp);
+                t.tm_hour = atoi(tmp);
                 part = 'm';
             }
-            else if ( part == 'm' ) /* minutes */
+            else if ( part == 'm' )  /* minutes */
             {
-                t.tm_min = atoi(strtmp);
+                t.tm_min = atoi(tmp);
                 part = 's';
             }
+
             j = 0;
         }
     }
 
     /* seconds */
 
-    strtmp[j] = EOS;
-    t.tm_sec = atoi(strtmp);
+    tmp[j] = EOS;
+    t.tm_sec = atoi(tmp);
 
-    return mktime(&t);
+#ifdef __linux__
+    epoch = timegm(&t);
+#else
+    epoch = win_timegm(&t);
+#endif
+
+    return epoch;
 }
 
 
@@ -7194,8 +7258,8 @@ static int minify_2(char *dest, const char *src)
 
 
 /* --------------------------------------------------------------------------
-  increment date by 'days' days. Return day of week as well.
-  Format: YYYY-MM-DD
+   Increment date by 'days' days. Return day of week as well.
+   Format: YYYY-MM-DD
 -------------------------------------------------------------------------- */
 void date_inc(char *str, int days, int *dow)
 {
@@ -7212,14 +7276,14 @@ void date_inc(char *str, int days, int *dow)
     sprintf(str, "%d-%02d-%02d", G_ptm->tm_year+1900, G_ptm->tm_mon+1, G_ptm->tm_mday);
     *dow = G_ptm->tm_wday;
 
-    G_ptm = gmtime(&G_now);  /* set it back */
+    G_ptm = gmtime(&G_now);   /* set it back */
 
 }
 
 
 /* --------------------------------------------------------------------------
-  compare the dates
-  Format: YYYY-MM-DD
+   Compare dates
+   Format: YYYY-MM-DD
 -------------------------------------------------------------------------- */
 int date_cmp(const char *str1, const char *str2)
 {

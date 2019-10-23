@@ -93,7 +93,7 @@ function cookies()
 // --------------------------------------------------------------------------
 function center(d)
 {
-    d.style.position = "absolute";
+    d.style.position = "relative";
     d.style.top = "50%";
     d.style.left = "50%";
     d.style.marginTop = -d.offsetTop/2 + "px";
