@@ -114,15 +114,16 @@ function mw(l1, l2, w)
     if ( w )
         d.style.width = w + "em";
     else
-        d.style.width = "32em";
-    d.id = "mw";
+        d.style.width = "20em";
+
     d.className = "mw";
+    d.id = "mw";
 
     let s1 = document.createElement("span");
 
     s1.innerHTML = "<div style=\"display:flex;\">"
-        + "<span style=\"width:90%;margin-top:6px;\">" + l1 + "</span>"
-        + "<div style=\"width:10%;text-align:right;\"><span style=\"font-size:1.5em;cursor:pointer;\" onClick=\"mw_off();\">&#10005;</span></div>"
+        + "<span style=\"width:92%;margin-top:6px;\">" + l1 + "</span>"
+        + "<div style=\"width:8%;text-align:right;\"><span style=\"font-size:1.5em;cursor:pointer;\" onClick=\"mw_off();\">&#10005;</span></div>"
         + "</div><br>";
 
     d.appendChild(s1);
