@@ -582,6 +582,7 @@ typedef char str64k[1024*64];
 #define ERR_REMOTE_CALL                 11
 #define ERR_REMOTE_CALL_STATUS          12
 #define ERR_REMOTE_CALL_DATA            13
+#define ERR_CSRFT                       14
 /* ------------------------------------- */
 #define ERR_MAX_ENGINE_ERROR            99
 /* ------------------------------------- */

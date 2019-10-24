@@ -204,6 +204,7 @@ static void load_err_messages()
     silgy_add_message(ERR_REMOTE_CALL,           "EN-US", "Couldn't call the remote service");
     silgy_add_message(ERR_REMOTE_CALL_STATUS,    "EN-US", "Remote service call returned unsuccessful status");
     silgy_add_message(ERR_REMOTE_CALL_DATA,      "EN-US", "Data returned from the remote service is invalid");
+    silgy_add_message(ERR_CSRFT,                 "EN-US", "Your previous session has expired. Please refresh this page before trying again.");
 }
 
 
