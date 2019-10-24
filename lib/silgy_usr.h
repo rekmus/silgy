@@ -259,6 +259,7 @@ extern "C" {
     void libusr_init(void);
     int  libusr_luses_ok(int ci);
     void libusr_luses_close_timeouted(void);
+    void libusr_luses_save_csrft(void);
     void libusr_luses_downgrade(int usi, int ci, bool usr_logout);
 #ifdef __cplusplus
 }   // extern "C"

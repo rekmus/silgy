@@ -4907,12 +4907,17 @@ static void clean_up()
     }
 
 #ifdef DBMYSQL
-    lib_close_db();
+#ifdef USERS
+    libusr_luses_save_csrft();
 #endif
+    lib_close_db();
+#endif  /* DBMYSQL */
+
 #ifdef HTTPS
     SSL_CTX_free(M_ssl_ctx);
     EVP_cleanup();
 #endif
+
 #ifdef ASYNC
     if (G_queue_req)
     {
@@ -4924,7 +4929,7 @@ static void clean_up()
         mq_close(G_queue_res);
         mq_unlink(G_res_queue_name);
     }
-#endif
+#endif  /* ASYNC */
 
 #ifdef _WIN32   /* Windows */
     WSACleanup();

@@ -236,10 +236,9 @@ int libusr_luses_ok(int ci)
     sanitize_sql(sanuagent, conn[ci].uagent, DB_UAGENT_LEN);
 
     char sanlscookie[SESID_LEN+1];
-//    sanitize_sql(sanlscookie, conn[ci].cookie_in_l, SESID_LEN);
     strcpy(sanlscookie, silgy_filter_strict(conn[ci].cookie_in_l));
 
-    sprintf(sql, "SELECT uagent, user_id, created FROM users_logins WHERE sesid = BINARY '%s'", sanlscookie);
+    sprintf(sql, "SELECT uagent, user_id, created, csrft FROM users_logins WHERE sesid = BINARY '%s'", sanlscookie);
     DBG("sql: %s", sql);
 
     mysql_query(G_dbconn, sql);
@@ -325,10 +324,9 @@ int libusr_luses_ok(int ci)
         return ERR_SESSION_EXPIRED;
     }
 
-    /* -------------------------------------- */
+    DBG("ci=%d, sesid [%s] uagent OK", ci, sanlscookie);
 
-    us.uid = atoi(row[1]);
-
+    /* -------------------------------------------------- */
     /* Verify time. If created more than USER_KEEP_LOGGED_DAYS ago -- refuse */
 
     created = db2epoch(row[2]);
@@ -356,21 +354,45 @@ int libusr_luses_ok(int ci)
         return ERR_SESSION_EXPIRED;
     }
 
-    mysql_free_result(result);
+    DBG("ci=%d, sesid [%s] created not too long ago => OK", ci, sanlscookie);
 
+    /* -------------------------------------------------- */
     /* cookie has not expired -- log user in */
 
-    DBG("Logged in session found in database");
+    us.uid = atoi(row[1]);
 
-    /* start a fresh session */
+    char csrft[CSRFT_LEN+1];
+
+    if ( row[3] && row[3][0] )
+    {
+        DBG("Using previous CSRFT [%s]", row[3]);
+        strcpy(csrft, row[3]);
+    }
+    else
+    {
+        DBG("Fresh CSRFT will be used");
+        csrft[0] = EOS;
+    }
+
+    mysql_free_result(result);
+
+    DBG("Logged in session found in database and OK");
+
+    /* -------------------------------------------------- */
+    /* start a fresh anonymous session */
 
     if ( (ret=eng_uses_start(ci, NULL)) != OK )
         return ret;
 
+    if ( csrft[0] )   /* using previous CSRFT */
+        strcpy(US.csrft, csrft);
+
     /* replace sesid */
 
-//    sprintf(sql, "UPDATE users_logins SET last_used='%s' WHERE sesid = BINARY '%s'", DT_NOW, US.sesid);
-    sprintf(sql, "UPDATE users_logins SET sesid='%s', last_used='%s' WHERE sesid = BINARY '%s'", US.sesid, DT_NOW, sanlscookie);
+    if ( csrft[0] )
+        sprintf(sql, "UPDATE users_logins SET sesid='%s', last_used='%s' WHERE sesid = BINARY '%s'", US.sesid, DT_NOW, sanlscookie);
+    else
+        sprintf(sql, "UPDATE users_logins SET sesid='%s', csrft='%s', last_used='%s' WHERE sesid = BINARY '%s'", US.sesid, US.csrft, DT_NOW, sanlscookie);
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
@@ -406,6 +428,33 @@ void libusr_luses_close_timeouted()
             libusr_luses_downgrade(i, NOT_CONNECTED, FALSE);
     }
 }
+
+
+/* --------------------------------------------------------------------------
+   Save open, logged in sessions' CSRF tokens
+-------------------------------------------------------------------------- */
+void libusr_luses_save_csrft()
+{
+    int  i;
+    char sql[SQLBUF];
+
+    DBG("libusr_luses_save_csrft");
+
+    int sessions = G_sessions;
+
+    for ( i=1; sessions>0 && i<=MAX_SESSIONS; ++i )
+    {
+        if ( uses[i].sesid[0] && uses[i].logged )
+        {
+            sprintf(sql, "UPDATE users_logins SET csrft='%s' WHERE sesid = BINARY '%s'", uses[i].csrft, uses[i].sesid);
+            DBG("sql: %s", sql);
+            if ( mysql_query(G_dbconn, sql) )
+                ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+
+            sessions--;
+        }
+    }
+}
 #endif  /* SILGY_SVC */
 
 
@@ -434,13 +483,6 @@ void libusr_luses_downgrade(int usi, int ci, bool usr_logout)
 
     uses[usi].tz[0] = EOS;
     uses[usi].about[0] = EOS;
-
-/*    uses[usi].login_tmp[0] = EOS;
-    uses[usi].email_tmp[0] = EOS;
-    uses[usi].name_tmp[0] = EOS;
-    uses[usi].phone_tmp[0] = EOS;
-    uses[usi].about_tmp[0] = EOS; */
-
     uses[usi].group_id = 0;
     uses[usi].auth_level = AUTH_LEVEL_ANONYMOUS;
 
@@ -470,6 +512,13 @@ void libusr_luses_downgrade(int usi, int ci, bool usr_logout)
 
             strcpy(conn[ci].cookie_out_a, uses[usi].sesid);
         }
+    }
+    else    /* timeout */
+    {
+        sprintf(sql, "UPDATE users_logins SET csrft='%s' WHERE sesid = BINARY '%s'", uses[usi].csrft, uses[usi].sesid);
+        DBG("sql: %s", sql);
+        if ( mysql_query(G_dbconn, sql) )
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
     }
 #ifndef DONT_RESET_AUSES_ON_LOGOUT
     memset(&auses[usi], 0, sizeof(ausession_t));
@@ -1051,7 +1100,7 @@ int silgy_usr_login(int ci)
     char sanuagent[DB_UAGENT_LEN+1];
     sanitize_sql(sanuagent, conn[ci].uagent, DB_UAGENT_LEN);
 
-    sprintf(sql, "INSERT INTO users_logins (sesid,uagent,ip,user_id,created,last_used) VALUES ('%s','%s','%s',%d,'%s','%s')", US.sesid, sanuagent, conn[ci].ip, us.uid, DT_NOW, DT_NOW);
+    sprintf(sql, "INSERT INTO users_logins (sesid,uagent,ip,user_id,csrft,created,last_used) VALUES ('%s','%s','%s',%d,'%s','%s','%s')", US.sesid, sanuagent, conn[ci].ip, us.uid, US.csrft, DT_NOW, DT_NOW);
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {

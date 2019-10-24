@@ -61,6 +61,7 @@ create table users_logins (
     uagent varchar(250),
     ip char(15),
     user_id int,
+    csrft char(7),
     created datetime,
     last_used datetime
 );
