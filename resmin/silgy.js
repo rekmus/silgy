@@ -135,8 +135,6 @@ function mw(l1, l2, w)
         d.appendChild(s2);
     }
 
-    d.style.zIndex = "1000";
-
     document.body.appendChild(d);
     center(d);
 

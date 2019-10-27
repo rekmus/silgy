@@ -8,7 +8,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 1000;
+    z-index: 900;
     background: url(wait.gif) 50% 50% no-repeat;
     background-size: 52px;
 }
@@ -23,6 +23,7 @@
     padding: 3px 12px 13px 14px;
     box-shadow: 4px 4px 16px 0px rgba(0,0,0,0.2);
     border: 1px solid #bbbbbb;
+    z-index: 1000;
 }
 
 
