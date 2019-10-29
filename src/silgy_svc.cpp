@@ -18,7 +18,7 @@
 /* --------------------------------------------------------------------------
    Service
 -------------------------------------------------------------------------- */
-void getCustomer()
+void getCustomer(int ci)
 {
     OUT_HTML_HEADER;
     OUT("<h1>%s</h1>", APP_WEBSITE);
@@ -30,7 +30,7 @@ void getCustomer()
 /* --------------------------------------------------------------------------
    Service
 -------------------------------------------------------------------------- */
-void getAccounts()
+void getAccounts(int ci)
 {
     OUT_HTML_HEADER;
     OUT("<h1>%s</h1>", APP_WEBSITE);
@@ -48,12 +48,12 @@ void getAccounts()
 /* --------------------------------------------------------------------------
    Entry point
 -------------------------------------------------------------------------- */
-void silgy_svc_main()
+void silgy_svc_main(int ci)
 {
     if ( SVC("getCustomer") )
-        getCustomer();
+        getCustomer(ci);
     else if ( SVC("getAccounts") )
-        getAccounts();
+        getAccounts(ci);
 }
 
 

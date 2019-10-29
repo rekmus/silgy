@@ -5729,7 +5729,7 @@ unsigned    out_data_allocated;
 #endif
 char        *p_content=NULL;
 conn_t      conn[MAX_CONNECTIONS+1]={0}; /* request details */
-int         ci=0;
+//int         ci=0;
 usession_t  uses[MAX_SESSIONS+1]={0};   /* user sessions -- they start from 1 */
 ausession_t auses[MAX_SESSIONS+1]={0};  /* app user sessions, using the same index (usi) */
 
@@ -6114,7 +6114,7 @@ int main(int argc, char *argv[])
 
             strcpy(G_last_modified, req.hdr.last_modified);
 
-            lib_set_datetime_formats(US.lang);
+            lib_set_datetime_formats(uses[conn[0].usi].lang);
 
             /* ----------------------------------------------------------- */
 
@@ -6129,7 +6129,7 @@ int main(int argc, char *argv[])
 #endif
             /* ----------------------------------------------------------- */
 
-            silgy_svc_main();
+            silgy_svc_main(0);
 
             /* ----------------------------------------------------------- */
 

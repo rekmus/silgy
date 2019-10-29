@@ -1230,7 +1230,7 @@ extern char         *out_data;
 extern char         *p_content;
 extern char         G_service[SVC_NAME_LEN+1];
 extern int          G_error_code;
-extern int          ci;
+//extern int          ci;
 #endif  /* SILGY_SVC */
 
 extern char         G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
@@ -1286,9 +1286,9 @@ extern "C" {
     void svc_out_check_realloc(const char *str);
     void svc_out_check_realloc_bin(const char *data, int len);
     bool silgy_svc_init(void);
-    void silgy_svc_main(void);
+    void silgy_svc_main(int ci);
     void silgy_svc_done(void);
-#else /* not SILGY_SVC */
+#else   /* not SILGY_SVC */
     bool silgy_app_init(int argc, char *argv[]);
     void silgy_app_done(void);
     void silgy_app_main(int ci);
