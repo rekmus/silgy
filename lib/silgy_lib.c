@@ -171,23 +171,28 @@ void silgy_lib_done()
 -------------------------------------------------------------------------- */
 void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
 {
+#ifdef DUMP
     DBG("silgy_safe_copy [%s], dst_len = %d", src, dst_len);
-
+#endif
     strncpy(dst, src, dst_len+1);
 
     if ( dst[dst_len] == EOS )
     {
+#ifdef DUMP
         DBG("not truncated");
-        return;  /* not truncated */
+#endif
+        return;   /* not truncated */
     }
 
     /* ------------------------- */
     /* string has been truncated */
 
-    if ( ((unsigned char)dst[dst_len] & 0xC0) != 0x80 )
+    if ( !UTF8_ANY(dst[dst_len]) )
     {
         dst[dst_len] = EOS;
-        DBG("truncated string won't break UTF-8 sequence [%s]", dst);
+#ifdef DUMP
+        DBG("truncated string won't break the UTF-8 sequence");
+#endif
         return;
     }
 
@@ -196,12 +201,21 @@ void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
 
     /* cut until beginning of the sequence found */
 
-    while ( ((unsigned char)dst[--dst_len] & 0xC0) != 0x80 )
+    while ( !UTF8_START(dst[dst_len]) )
     {
-        DBG("UTF-8 middle of sequence byte (%x), truncating", dst[dst_len]);
-        dst[dst_len] = EOS;
-        if ( dst_len == 0 || ((unsigned char)dst[dst_len-1] & 0xC0) != 0x80 ) return;
+#ifdef DUMP
+        DBG("UTF-8 sequence byte (%x)", dst[dst_len]);
+#endif
+        if ( dst_len == 0 )
+        {
+            dst[0] = EOS;
+            return;
+        }
+
+        dst_len--;
     }
+
+    dst[dst_len] = EOS;
 }
 
 

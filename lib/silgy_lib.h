@@ -40,6 +40,9 @@
 
 #define PARAM(param)            (0==strcmp(label, param))
 
+#define UTF8_ANY(c)             (((unsigned char)c & 0x80) == 0x80)
+#define UTF8_START(c)           (UTF8_ANY(c) && ((unsigned char)c & 0x40) == 0x40)
+
 #define COPY(dst, src, dst_len) silgy_safe_copy(dst, src, dst_len)
 
 
