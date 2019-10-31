@@ -165,6 +165,47 @@ void silgy_lib_done()
 
 
 /* --------------------------------------------------------------------------
+   Copy 0-terminated UTF-8 string safely
+   dst_len is in bytes and excludes terminating 0
+   dst_len must be > 0
+-------------------------------------------------------------------------- */
+void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
+{
+    DBG("silgy_safe_copy [%s], dst_len = %d", src, dst_len);
+
+    strncpy(dst, src, dst_len+1);
+
+    if ( dst[dst_len] == EOS )
+    {
+        DBG("not truncated");
+        return;  /* not truncated */
+    }
+
+    /* ------------------------- */
+    /* string has been truncated */
+
+    if ( ((unsigned char)dst[dst_len] & 0xC0) != 0x80 )
+    {
+        dst[dst_len] = EOS;
+        DBG("truncated string won't break UTF-8 sequence [%s]", dst);
+        return;
+    }
+
+    /* ------------------------------- */
+    /* string ends with UTF-8 sequence */
+
+    /* cut until beginning of the sequence found */
+
+    while ( ((unsigned char)dst[--dst_len] & 0xC0) != 0x80 )
+    {
+        DBG("UTF-8 middle of sequence byte (%x), truncating", dst[dst_len]);
+        dst[dst_len] = EOS;
+        if ( dst_len == 0 || ((unsigned char)dst[dst_len-1] & 0xC0) != 0x80 ) return;
+    }
+}
+
+
+/* --------------------------------------------------------------------------
    Verify CSRF token
 -------------------------------------------------------------------------- */
 bool lib_csrft_ok(int ci)

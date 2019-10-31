@@ -40,6 +40,8 @@
 
 #define PARAM(param)            (0==strcmp(label, param))
 
+#define COPY(dst, src, dst_len) silgy_safe_copy(dst, src, dst_len)
+
 
 /* Query String Value */
 
@@ -353,6 +355,7 @@ extern "C" {
 #endif
     void silgy_lib_init(void);
     void silgy_lib_done(void);
+    void silgy_safe_copy(char *dst, const char *src, size_t dst_len);
     bool lib_csrft_ok(int ci);
     void silgy_add_message(int code, const char *lang, const char *message, ...);
     int  compare_messages(const void *a, const void *b);
