@@ -7224,19 +7224,26 @@ static int minify_2(char *dest, const char *src)
     bool    skip_ws=FALSE;      /* skip white spaces */
     char    word[256]="";
     int     wi=0;               /* word index */
+    int     backslashes=0;
 
     len = strlen(src);
 
     for ( i=0; i<len; ++i )
     {
-        if ( !opensq && src[i]=='"' && (i==0 || (i>0 && src[i-1]!='\\')) )
+        /* 'foo - TRUE */
+        /* \'foo - FALSE */
+        /* \\'foo - TRUE */
+
+        /* odd number of backslashes invalidates the quote */
+
+        if ( !opensq && src[i]=='"' && backslashes%2==0 )
         {
             if ( !opendq )
                 opendq = TRUE;
             else
                 opendq = FALSE;
         }
-        else if ( !opendq && src[i]=='\'' )
+        else if ( !opendq && src[i]=='\'' && backslashes%2==0 )
         {
             if ( !opensq )
                 opensq = TRUE;
@@ -7271,7 +7278,7 @@ static int minify_2(char *dest, const char *src)
             wi = 0;
             skip_ws = TRUE;
         }
-        else if ( !opensq && !opendq && !opencc && !openwo && (isalpha(src[i]) || src[i]=='|' || src[i]=='&') ) /* word is starting */
+        else if ( !opensq && !opendq && !opencc && !openwo && (isalpha(src[i]) || src[i]=='|' || src[i]=='&') )  /* word is starting */
         {
             openwo = TRUE;
         }
@@ -7299,6 +7306,11 @@ static int minify_2(char *dest, const char *src)
 
         if ( openwo )
             word[wi++] = src[i];
+
+        if ( src[i]=='\\' )
+            ++backslashes;
+        else
+            backslashes = 0;
 
         if ( skip_ws )
         {
