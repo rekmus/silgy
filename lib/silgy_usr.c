@@ -86,7 +86,7 @@ static bool valid_username(const char *login)
 
     for ( i=0; login[i] != EOS; ++i )
     {
-        if ( !isalnum(login[i]) && login[i] != '.' && login[i] != '_' && login[i] != '-' && login[i] != '\'' )
+        if ( !isalnum(login[i]) && login[i] != '.' && login[i] != '_' && login[i] != '-' && login[i] != '\'' && login[i] != '@' )
             return FALSE;
     }
 
@@ -1135,18 +1135,19 @@ int silgy_usr_login(int ci)
 static int create_account(int ci, char auth_level, char status, bool current_session)
 {
     int     ret=OK;
-    QSVAL   login="";
-    QSVAL   login_u;
-    QSVAL   email="";
-    QSVAL   email_u;
-    QSVAL   name="";
-    QSVAL   phone="";
-    QSVAL   lang="";
-    QSVAL   tz="";
-    QSVAL   about="";
+    QSVAL   tmp;
+    char    login[LOGIN_LEN+1];
+    char    login_u[LOGIN_LEN+1];
+    char    email[EMAIL_LEN+1];
+    char    email_u[EMAIL_LEN+1];
+    char    name[UNAME_LEN+1];
+    char    phone[PHONE_LEN+1];
+    QSVAL   lang;
+    QSVAL   tz;
+    char    about[ABOUT_LEN+1];
     QSVAL   passwd;
     QSVAL   rpasswd;
-    QSVAL   message="";
+    QSVAL   message;
     char    sql[SQLBUF];
     char    str1[32], str2[32];
 
@@ -1154,19 +1155,23 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
 
     /* get the basics */
 
-    if ( QS_HTML_ESCAPE("login", login) )
+    if ( QS_HTML_ESCAPE("login", tmp) )
     {
-        login[LOGIN_LEN] = EOS;
+        COPY(login, tmp, LOGIN_LEN);
         stp_right(login);
         if ( current_session && conn[ci].usi ) strcpy(US.login, login);
     }
+    else
+        login[0] = EOS;
 
-    if ( QS_HTML_ESCAPE("email", email) )
+    if ( QS_HTML_ESCAPE("email", tmp) )
     {
-        email[EMAIL_LEN] = EOS;
+        COPY(email, tmp, EMAIL_LEN);
         stp_right(email);
         if ( current_session && conn[ci].usi ) strcpy(US.email, email);
     }
+    else
+        email[0] = EOS;
 
     /* basic verification */
 
@@ -1181,11 +1186,15 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
     if ( !login[0] )    /* login empty */
     {
 #ifdef USERSBYEMAIL
-        strncpy(login, email, LOGIN_LEN);
-        login[LOGIN_LEN] = EOS;
+        COPY(login, email, LOGIN_LEN);
 #else
-        ERR("Invalid request (login missing)");
-        return ERR_INVALID_REQUEST;
+        if ( email[0] )
+            COPY(login, email, LOGIN_LEN);
+        else
+        {
+            ERR("Invalid request (login missing)");
+            return ERR_INVALID_REQUEST;
+        }
 #endif
     }
 
@@ -1206,25 +1215,31 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
 
     /* optional */
 
-    if ( QS_HTML_ESCAPE("name", name) )
+    if ( QS_HTML_ESCAPE("name", tmp) )
     {
-        name[UNAME_LEN] = EOS;
+        COPY(name, tmp, UNAME_LEN);
         stp_right(name);
         if ( current_session && conn[ci].usi ) strcpy(US.name, name);
     }
+    else
+        name[0] = EOS;
 
-    if ( QS_HTML_ESCAPE("phone", phone) )
+    if ( QS_HTML_ESCAPE("phone", tmp) )
     {
-        phone[PHONE_LEN] = EOS;
+        COPY(phone, tmp, PHONE_LEN);
         stp_right(phone);
         if ( current_session && conn[ci].usi ) strcpy(US.phone, phone);
     }
+    else
+        phone[0] = EOS;
 
     if ( QS_HTML_ESCAPE("lang", lang) )
     {
         lang[LANG_LEN] = EOS;
         stp_right(lang);
     }
+    else
+        lang[0] = EOS;
 
     if ( !lang[0] ) strcpy(lang, conn[ci].lang);    /* use current request lang if empty */
 
@@ -1236,13 +1251,17 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
         stp_right(tz);
         if ( current_session && conn[ci].usi ) strcpy(US.tz, tz);
     }
+    else
+        tz[0] = EOS;
 
-    if ( QS_HTML_ESCAPE("about", about) )
+    if ( QS_HTML_ESCAPE("about", tmp) )
     {
-        about[ABOUT_LEN] = EOS;
+        COPY(about, tmp, ABOUT_LEN);
         stp_right(about);
         if ( current_session && conn[ci].usi ) strcpy(US.about, about);
     }
+    else
+        about[0] = EOS;
 
     /* ----------------------------------------------------------------- */
 
@@ -1524,13 +1543,14 @@ static char sql[MAX_LONG_URI_VAL_LEN*2];
 int silgy_usr_save_account(int ci)
 {
     int         ret=OK;
-    QSVAL       login;
-    QSVAL       email;
-    QSVAL       name;
-    QSVAL       phone;
+    QSVAL       tmp;
+    char        login[LOGIN_LEN+1];
+    char        email[EMAIL_LEN+1];
+    char        name[UNAME_LEN+1];
+    char        phone[PHONE_LEN+1];
     QSVAL       lang;
     QSVAL       tz;
-    QSVAL       about;
+    char        about[ABOUT_LEN+1];
     QSVAL       passwd;
     QSVAL       rpasswd;
     QSVAL       opasswd;
@@ -1547,56 +1567,93 @@ int silgy_usr_save_account(int ci)
 
     DBG("silgy_usr_save_account");
 
-    if ( !QS_HTML_ESCAPE("opasswd", opasswd)
-#ifndef USERSBYEMAIL
-            || !QS_HTML_ESCAPE("login", login)
-#endif
-            || !QS_HTML_ESCAPE("email", email)
-            || !QS_HTML_ESCAPE("passwd", passwd)
-            || !QS_HTML_ESCAPE("rpasswd", rpasswd) )
+    if ( !QS_HTML_ESCAPE("opasswd", opasswd) )
     {
-        WAR("Invalid request (URI val missing?)");
+        WAR("Invalid request (opasswd missing)");
         return ERR_INVALID_REQUEST;
     }
 
-#ifdef USERSBYEMAIL
-    if ( QS_HTML_ESCAPE("login", login) )     /* try to get login anyway */
+    if ( QS_HTML_ESCAPE("login", tmp) )
+    {
+        COPY(login, tmp, LOGIN_LEN);
         stp_right(login);
-#endif
+    }
+    else
+        login[0] = EOS;
 
-    stp_right(email);   /* always present but can be empty */
+    if ( QS_HTML_ESCAPE("email", tmp) )
+    {
+        COPY(email, tmp, EMAIL_LEN);
+        stp_right(email);
+    }
+    else
+        email[0] = EOS;
 
-    if ( QS_HTML_ESCAPE("name", name) )     /* optional */
+#ifdef USERSBYEMAIL
+    if ( !email[0] )    /* email empty */
+    {
+        ERR("Invalid request (email missing)");
+        return ERR_EMAIL_EMPTY;
+    }
+#else
+    if ( !login[0] )    /* login empty */
+    {
+        ERR("Invalid request (login missing)");
+        return ERR_INVALID_REQUEST;
+    }
+#endif  /* USERSBYEMAIL */
+
+    /* optional */
+
+    if ( !QS_HTML_ESCAPE("passwd", passwd) )
+        passwd[0] = EOS;
+
+    if ( !QS_HTML_ESCAPE("rpasswd", rpasswd) )
+        rpasswd[0] = EOS;
+
+    if ( QS_HTML_ESCAPE("name", tmp) )
+    {
+        COPY(name, tmp, UNAME_LEN);
         stp_right(name);
+    }
+    else
+        name[0] = EOS;
 
-    if ( QS_HTML_ESCAPE("phone", phone) )   /* optional */
+    if ( QS_HTML_ESCAPE("phone", tmp) )
+    {
+        COPY(phone, tmp, PHONE_LEN);
         stp_right(phone);
+    }
+    else
+        phone[0] = EOS;
 
-    if ( QS_HTML_ESCAPE("lang", lang) )     /* optional */
+    if ( QS_HTML_ESCAPE("lang", lang) )
         stp_right(lang);
+    else
+        lang[0] = EOS;
 
-    if ( QS_HTML_ESCAPE("tz", tz) )         /* optional */
+    if ( QS_HTML_ESCAPE("tz", tz) )
         stp_right(tz);
+    else
+        tz[0] = EOS;
 
-    if ( QS_HTML_ESCAPE("about", about) )   /* optional */
+    if ( QS_HTML_ESCAPE("about", tmp) )
+    {
+        COPY(about, tmp, ABOUT_LEN);
         stp_right(about);
+    }
+    else
+        about[0] = EOS;
 
     /* remember form fields */
     /* US.email contains old email */
 
     usession_t us_new;
 
-    strncpy(us_new.login, login, LOGIN_LEN);
-    us_new.login[LOGIN_LEN] = EOS;
-
-    strncpy(us_new.email, email, EMAIL_LEN);
-    us_new.email[EMAIL_LEN] = EOS;
-
-    strncpy(us_new.name, name, UNAME_LEN);
-    us_new.name[UNAME_LEN] = EOS;
-
-    strncpy(us_new.phone, phone, PHONE_LEN);
-    us_new.phone[PHONE_LEN] = EOS;
+    strcpy(us_new.login, login);
+    strcpy(us_new.email, email);
+    strcpy(us_new.name, name);
+    strcpy(us_new.phone, phone);
 
     strncpy(us_new.lang, lang, LANG_LEN);
     us_new.lang[LANG_LEN] = EOS;
@@ -1604,8 +1661,7 @@ int silgy_usr_save_account(int ci)
     strncpy(us_new.tz, tz, 5);
     us_new.tz[5] = EOS;
 
-    strncpy(us_new.about, about, ABOUT_LEN);
-    us_new.about[ABOUT_LEN] = EOS;
+    strcpy(us_new.about, about);
 
     /* basic validation */
 
