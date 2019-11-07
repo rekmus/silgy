@@ -3447,13 +3447,19 @@ static void gen_response_header(int ci)
 #ifdef DUMP
         DBG("Not Modified");
 #endif
-        if ( conn[ci].static_res == NOT_STATIC )
+        if ( conn[ci].static_res == NOT_STATIC )    /* generated */
         {
             PRINT_HTTP_LAST_MODIFIED(G_last_modified);
+
+            if ( EXPIRES_GENERATED > 0 )
+                PRINT_HTTP_EXPIRES_GENERATED;
         }
-        else    /* static res */
+        else    /* static resource */
         {
             PRINT_HTTP_LAST_MODIFIED(time_epoch2http(M_stat[conn[ci].static_res].modified));
+
+            if ( EXPIRES_STATICS > 0 )
+                PRINT_HTTP_EXPIRES_STATICS;
         }
 
         conn[ci].clen = 0;
