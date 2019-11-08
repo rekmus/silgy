@@ -353,6 +353,12 @@ typedef json_t JSON;
 #define silgy_read_param(param, val)        silgy_read_param_str(param, val)
 
 
+#define AI_USERS_ALL                        0       /* all users */
+#define AI_USERS_YAU                        1       /* yearly active */
+#define AI_USERS_MAU                        2       /* monthly active */
+#define AI_USERS_DAU                        3       /* daily active */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

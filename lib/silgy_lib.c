@@ -2295,13 +2295,12 @@ static void format_counters(counters_fmt_t *s, counters_t *n)
 /* --------------------------------------------------------------------------
    Users info
 -------------------------------------------------------------------------- */
-static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
+static void users_info(int ci, char activity, int rows, admin_info_t ai[], int ai_cnt)
 {
 #ifdef DBMYSQL
     char        sql[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
-    unsigned    records;
 
     char ai_sql[SQLBUF]="";
 
@@ -2316,7 +2315,47 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
         }
     }
 
-    sprintf(sql, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login DESC, created DESC", ai_sql);
+//    sprintf(sql, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users ORDER BY last_login DESC, created DESC", ai_sql);
+    sprintf(sql, "SELECT id, login, email, name, status, created, last_login, visits%s FROM users", ai_sql);
+
+    char activity_desc[64];
+    int days;
+
+    if ( activity == AI_USERS_YAU )
+    {
+        strcpy(activity_desc, "yearly active");
+        days = 366;
+    }
+    else if ( activity == AI_USERS_MAU )
+    {
+        strcpy(activity_desc, "monthly active");
+        days = 31;
+    }
+    else if ( activity == AI_USERS_DAU )
+    {
+        strcpy(activity_desc, "daily active");
+        days = 2;
+    }
+    else    /* all */
+    {
+        strcpy(activity_desc, "all");
+        days = 0;
+    }
+        
+    char tmp[256];
+
+    if ( days==366 || days==31 )
+    {
+        sprintf(tmp, " WHERE status=%d AND visits>0 AND DATEDIFF('%s', last_login)<%d", USER_STATUS_ACTIVE, DT_NOW, days);
+        strcat(sql, tmp);
+    }
+    else if ( days==2 )   /* last 24 hours */
+    {
+        sprintf(tmp, " WHERE status=%d AND visits>0 AND TIME_TO_SEC(TIMEDIFF('%s', last_login))<86401", USER_STATUS_ACTIVE, DT_NOW);
+        strcat(sql, tmp);
+    }
+
+    strcat(sql, " ORDER BY last_login DESC, created DESC");
 
     DBG("sql: %s", sql);
 
@@ -2332,11 +2371,9 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
         return;
     }
 
-    OUT("<h2>Users</h2>");
+    int records = mysql_num_rows(result);
 
-    records = mysql_num_rows(result);
-
-    DBG("admin: %u record(s) found", records);
+    INF("admin_info: %d %s user(s)", records, activity_desc);
 
     int last_to_show = records<rows?records:rows;
 
@@ -2345,7 +2382,7 @@ static void users_info(int ci, int rows, admin_info_t ai[], int ai_cnt)
 
     amt(formatted1, records);
     amt(formatted2, last_to_show);
-    OUT("<p>%s users, showing %s of last seen</p>", formatted1, formatted2);
+    OUT("<p>%s %s users, showing %s of last seen</p>", formatted1, activity_desc, formatted2);
 
     OUT("<table cellpadding=4 border=1>");
 
@@ -2472,6 +2509,10 @@ void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt, bool hea
 
     /* ------------------------------------------------------------------- */
 
+    INF("admin_info: --------------------");
+//    INF("admin_info: 2019-11-08 10:56:19"
+    INF("admin_info: %s", DT_NOW);
+
     if ( header_n_footer )
     {
         OUT_HTML_HEADER;
@@ -2588,7 +2629,13 @@ void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt, bool hea
     /* Users */
 #ifdef USERS
     if ( users > 0 )
-        users_info(ci, users, ai, ai_cnt);
+    {
+        OUT("<h2>Users</h2>");
+        users_info(ci, AI_USERS_ALL, users, ai, ai_cnt);
+        users_info(ci, AI_USERS_YAU, users, ai, ai_cnt);
+        users_info(ci, AI_USERS_MAU, users, ai, ai_cnt);
+        users_info(ci, AI_USERS_DAU, users, ai, ai_cnt);
+    }
 #endif
 
     if ( header_n_footer )
