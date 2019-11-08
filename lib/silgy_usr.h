@@ -66,6 +66,19 @@
 #endif
 
 
+#ifndef REFUSE_10_COMMON_PASSWORDS
+#ifndef REFUSE_100_COMMON_PASSWORDS
+#ifndef REFUSE_1000_COMMON_PASSWORDS
+#ifndef REFUSE_10000_COMMON_PASSWORDS
+#ifndef DONT_REFUSE_COMMON_PASSWORDS
+#define DONT_REFUSE_COMMON_PASSWORDS
+#endif
+#endif
+#endif
+#endif
+#endif
+
+
 /* Silgy engine errors are 0 ... 99 */
 
 /* ------------------------------------- */
@@ -90,6 +103,10 @@
 /* password */
 #define ERR_INVALID_PASSWORD            121
 #define ERR_PASSWORD_TOO_SHORT          122
+#define ERR_IN_10_COMMON_PASSWORDS      123
+#define ERR_IN_100_COMMON_PASSWORDS     124
+#define ERR_IN_1000_COMMON_PASSWORDS    125
+#define ERR_IN_10000_COMMON_PASSWORDS   126
 /* ------------------------------------- */
 #define ERR_MAX_USR_PASSWORD_ERROR      130
 /* ------------------------------------- */

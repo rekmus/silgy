@@ -2323,11 +2323,11 @@ static void read_blocked_ips()
 {
     char    fname[1024];
     FILE    *h_file=NULL;
-    int     c=0;
+    char    c;
     int     i=0;
     char    now_value=1;
     char    now_comment=0;
-    char    value[64]="";
+    char    value[INET_ADDRSTRLEN];
 
     if ( G_blockedIPList[0] == EOS ) return;
 
@@ -2361,6 +2361,7 @@ static void read_blocked_ips()
             if ( now_value && i )   /* end of value */
             {
                 value[i] = EOS;
+                i = 0;
                 if ( !ip_blocked(value) )   /* avoid duplicates */
                 {
                     strcpy(G_blacklist[G_blacklist_cnt++], value);
@@ -2371,7 +2372,6 @@ static void read_blocked_ips()
                         break;
                     }
                 }
-                i = 0;
             }
             now_value = 1;
             now_comment = 0;
@@ -2385,6 +2385,7 @@ static void read_blocked_ips()
             if ( now_value && i )   /* end of value */
             {
                 value[i] = EOS;
+                i = 0;
                 strcpy(G_blacklist[G_blacklist_cnt++], value);
                 if ( G_blacklist_cnt == MAX_BLACKLIST )
                 {
@@ -2392,7 +2393,6 @@ static void read_blocked_ips()
                     now_value = 0;
                     break;
                 }
-                i = 0;
             }
             now_value = 0;
             now_comment = 1;

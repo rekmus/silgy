@@ -16,6 +16,22 @@
 int G_new_user_id=0;
 
 
+#ifdef REFUSE_10_COMMON_PASSWORDS
+    #define MAX_COMMON  10
+#elif defined REFUSE_100_COMMON_PASSWORDS
+    #define MAX_COMMON  100
+#elif defined REFUSE_1000_COMMON_PASSWORDS
+    #define MAX_COMMON  1000
+#elif defined REFUSE_10000_COMMON_PASSWORDS
+    #define MAX_COMMON  10000
+#else   /* DONT_REFUSE_COMMON_PASSWORDS */
+    #define MAX_COMMON  1
+#endif
+
+char M_common[MAX_COMMON][16]={0};
+int  M_common_cnt=0;
+
+
 static bool valid_username(const char *login);
 static bool valid_email(const char *email);
 static int  upgrade_uses(int ci, usession_t *us);
@@ -25,6 +41,7 @@ static int  do_login(int ci, usession_t *us, char status, int visits);
 static void get_hashes(char *result1, char *result2, const char *login, const char *email, const char *passwd);
 static void doit(char *result1, char *result2, const char *usr, const char *email, const char *src);
 static int  get_max(int ci, const char *table);
+static bool load_common_passwd(void);
 
 
 /* --------------------------------------------------------------------------
@@ -44,6 +61,10 @@ void libusr_init()
     silgy_add_message(ERR_EMAIL_TAKEN,              "EN-US", "This email address has already been registered");
     silgy_add_message(ERR_INVALID_PASSWORD,         "EN-US", "Please enter your existing password");
     silgy_add_message(ERR_PASSWORD_TOO_SHORT,       "EN-US", "Password must be at least %d characters long", MIN_PASSWORD_LEN);
+    silgy_add_message(ERR_IN_10_COMMON_PASSWORDS,   "EN-US", "Your password is in 10 most common passwords, which makes it too easy to guess");
+    silgy_add_message(ERR_IN_100_COMMON_PASSWORDS,  "EN-US", "Your password is in 100 most common passwords, which makes it too easy to guess");
+    silgy_add_message(ERR_IN_1000_COMMON_PASSWORDS, "EN-US", "Your password is in 1,000 most common passwords, which makes it too easy to guess");
+    silgy_add_message(ERR_IN_10000_COMMON_PASSWORDS,"EN-US", "Your password is in 10,000 most common passwords, which makes it too easy to guess");
     silgy_add_message(ERR_PASSWORD_DIFFERENT,       "EN-US", "Please retype password exactly like in the previous field");
     silgy_add_message(ERR_OLD_PASSWORD,             "EN-US", "Please enter your existing password");
     silgy_add_message(ERR_SESSION_EXPIRED,          "EN-US", "Your session has expired. Please log in to continue:");
@@ -74,6 +95,10 @@ void libusr_init()
     silgy_add_message(MSG_FEEDBACK_SENT,            "EN-US", "Thank you for your feedback!");
     silgy_add_message(MSG_USER_ALREADY_ACTIVATED,   "EN-US", "Your account has already been activated");
     silgy_add_message(MSG_ACCOUNT_DELETED,          "EN-US", "Your user account has been deleted. Thank you for trying %s!", APP_WEBSITE);
+
+#ifndef DONT_REFUSE_COMMON_PASSWORDS
+    load_common_passwd();
+#endif
 }
 
 
@@ -1130,6 +1155,115 @@ int silgy_usr_login(int ci)
 
 
 /* --------------------------------------------------------------------------
+   Load common passwords list from a file
+   Initial list obtained from:
+   https://github.com/danielmiessler/SecLists/blob/master/Passwords/Common-Credentials/10k-most-common.txt
+-------------------------------------------------------------------------- */
+static bool load_common_passwd()
+{
+    char    fname[1024];
+    FILE    *h_file=NULL;
+    char    c;
+    int     i=0;
+    char    value[16];
+
+    INF("Loading common passwords list");
+
+    /* open the file */
+
+    if ( G_appdir[0] )
+        sprintf(fname, "%s/bin/common_passwd.txt", G_appdir);
+    else
+        strcpy(fname, "common_passwd.txt");
+
+    if ( NULL == (h_file=fopen(fname, "r")) )
+    {
+        WAR("Couldn't open %s\n", fname);
+        return FALSE;
+    }
+
+    M_common_cnt = 0;
+
+    /* parse the file */
+
+    while ( EOF != (c=fgetc(h_file)) )
+    {
+        if ( c == ' ' || c == '\t' || c == '\r' ) continue;   /* omit whitespaces */
+
+        if ( c == '\n' )    /* end of value */
+        {
+            if ( i )   /* non-empty value */
+            {
+                value[i] = EOS;
+                i = 0;
+                strcpy(M_common[M_common_cnt++], value);
+                if ( M_common_cnt == MAX_COMMON ) break;
+            }
+        }
+        else
+        {
+            if ( i < 15 )
+                value[i++] = c;
+        }
+    }
+
+    if ( i )   /* end of value */
+    {
+        value[i] = EOS;
+        strcpy(M_common[M_common_cnt++], value);
+    }
+
+    if ( NULL != h_file )
+        fclose(h_file);
+
+    ALWAYS("%d common passwords", M_common_cnt);
+
+    /* show the list */
+
+    DBG("");
+    for ( i=0; i<M_common_cnt; ++i )
+        DBG("[%s]", M_common[i]);
+    DBG("");
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Assess password quality
+-------------------------------------------------------------------------- */
+static int passwd_quality(const char *passwd)
+{
+    int len = strlen(passwd);
+
+    if ( len < MIN_PASSWORD_LEN )
+        return ERR_PASSWORD_TOO_SHORT;
+
+#ifndef DONT_REFUSE_COMMON_PASSWORDS
+
+    int i;
+
+    for ( i=0; i<M_common_cnt; ++i )
+    {
+        if ( 0==strcmp(M_common[i], passwd) )
+#ifdef REFUSE_100_COMMON_PASSWORDS
+            return ERR_IN_100_COMMON_PASSWORDS;
+#elif defined REFUSE_1000_COMMON_PASSWORDS
+            return ERR_IN_1000_COMMON_PASSWORDS;
+#elif defined REFUSE_10000_COMMON_PASSWORDS
+            return ERR_IN_10000_COMMON_PASSWORDS;
+#else
+            return ERR_IN_10_COMMON_PASSWORDS;
+#endif
+    }
+
+#endif  /* DONT_REFUSE_COMMON_PASSWORDS */
+
+    return OK;
+}
+
+
+/* --------------------------------------------------------------------------
    Create user account using query string values
 -------------------------------------------------------------------------- */
 static int create_account(int ci, char auth_level, char status, bool current_session)
@@ -1288,8 +1422,8 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
 
     if ( email[0] && OK != (ret=email_exists(email)) )  /* email in use */
         return ret;
-    else if ( plen < MIN_PASSWORD_LEN )                 /* password too short */
-        return ERR_PASSWORD_TOO_SHORT;
+    else if ( (ret=passwd_quality(passwd)) != OK )
+        return ret;
     else if ( 0 != strcmp(passwd, rpasswd) )            /* passwords differ */
         return ERR_PASSWORD_DIFFERENT;
 
@@ -1676,8 +1810,8 @@ int silgy_usr_save_account(int ci)
     if ( email[0] && !valid_email(email) )
         return ERR_EMAIL_FORMAT_OR_EMPTY;
 #endif  /* USERSBYEMAIL */
-    else if ( plen && plen < MIN_PASSWORD_LEN )
-        return ERR_PASSWORD_TOO_SHORT;
+    else if ( plen && (ret=passwd_quality(passwd)) != OK )
+        return ret;
     else if ( plen && 0 != strcmp(passwd, rpasswd) )
         return ERR_PASSWORD_DIFFERENT;
 
@@ -2325,8 +2459,8 @@ int silgy_usr_change_password(int ci)
 
     int plen = strlen(passwd);
 
-    if ( plen < MIN_PASSWORD_LEN )       /* password too short */
-        return ERR_PASSWORD_TOO_SHORT;
+    if ( (ret=passwd_quality(passwd)) != OK )
+        return ret;
     else if ( 0 != strcmp(passwd, rpasswd) )   /* passwords differ */
         return ERR_PASSWORD_DIFFERENT;
 
@@ -2388,8 +2522,8 @@ int silgy_usr_reset_password(int ci)
 
     if ( !valid_email(email) )
         return ERR_EMAIL_FORMAT;
-    else if ( plen < MIN_PASSWORD_LEN )       /* password too short */
-        return ERR_PASSWORD_TOO_SHORT;
+    else if ( (ret=passwd_quality(passwd)) != OK )
+        return ret;
     else if ( 0 != strcmp(passwd, rpasswd) )    /* passwords differ */
         return ERR_PASSWORD_DIFFERENT;
 
