@@ -16,6 +16,7 @@ cp -p $SILGYDEV/bin/silgydep $SILGYLIVE/bin
 cp -p $SILGYDEV/bin/silgystart $SILGYLIVE/bin
 cp -p $SILGYDEV/bin/silgystop $SILGYLIVE/bin
 cp -p $SILGYDEV/bin/strings.* $SILGYLIVE/bin 2>/dev/null
+cp -p $SILGYDEV/bin/passwords.* $SILGYLIVE/bin 2>/dev/null
 
 cp -pr $SILGYDEV/res/* $SILGYLIVE/res 2>/dev/null
 cp -pr $SILGYDEV/resmin/* $SILGYLIVE/resmin 2>/dev/null
