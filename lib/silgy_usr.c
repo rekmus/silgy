@@ -1172,9 +1172,9 @@ static bool load_common_passwd()
     /* open the file */
 
     if ( G_appdir[0] )
-        sprintf(fname, "%s/bin/common_passwd.txt", G_appdir);
+        sprintf(fname, "%s/bin/%s", G_appdir, COMMON_PASSWORDS_FILE);
     else
-        strcpy(fname, "common_passwd.txt");
+        strcpy(fname, COMMON_PASSWORDS_FILE);
 
     if ( NULL == (h_file=fopen(fname, "r")) )
     {
@@ -1220,10 +1220,12 @@ static bool load_common_passwd()
 
     /* show the list */
 
+#ifdef DUMP
     DBG("");
     for ( i=0; i<M_common_cnt; ++i )
         DBG("[%s]", M_common[i]);
     DBG("");
+#endif
 
     return TRUE;
 }

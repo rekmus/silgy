@@ -66,6 +66,9 @@
 #endif
 
 
+#define COMMON_PASSWORDS_FILE           "passwords.txt"
+
+
 #ifndef REFUSE_10_COMMON_PASSWORDS
 #ifndef REFUSE_100_COMMON_PASSWORDS
 #ifndef REFUSE_1000_COMMON_PASSWORDS
