@@ -1521,10 +1521,6 @@ static bool init(int argc, char **argv)
 
     silgy_lib_init();
 
-#ifdef USERS
-    libusr_init();
-#endif
-
     /* read the config file or set defaults */
 
     read_conf();
@@ -1739,6 +1735,11 @@ static bool init(int argc, char **argv)
     ALWAYS("");
 #endif  /* DUMP */
 
+    /* USERS library init */
+
+#ifdef USERS
+    libusr_init();
+#endif
 
     /* ensure the message sizes are sufficient */
 
@@ -5784,10 +5785,6 @@ int main(int argc, char *argv[])
 
     silgy_lib_init();
 
-#ifdef USERS
-    libusr_init();
-#endif
-
     /* read the config file or set defaults ------------------------------ */
 
     char exec_name[256];
@@ -5860,6 +5857,12 @@ int main(int argc, char *argv[])
     signal(SIGTSTP, sigdisp);   /* Ctrl-Z */
 
     signal(SIGPIPE, SIG_IGN);   /* ignore SIGPIPE */
+#endif
+
+    /* USERS library init ------------------------------------------------ */
+
+#ifdef USERS
+    libusr_init();
 #endif
 
     /* init dummy conn structure ----------------------------------------- */
