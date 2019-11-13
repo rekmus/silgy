@@ -745,19 +745,20 @@ char *urlencode(const char *src)
 {
 static char     dest[4096];
     int         i, j=0;
-    const char  *hex="0123456789ABCDEF";
+    const char  hex[]="0123456789ABCDEF";
 
     for ( i=0; src[i] && j<4092; ++i )
     {
-        if ( isalnum(src[i]) )
+        if ( (48 <= src[i] && src[i] <= 57) || (65 <= src[i] && src[i] <= 90) || (97 <= src[i] && src[i] <= 122)
+                || src[i]=='-' || src[i]=='_' || src[i]=='.' || src[i]=='~' )
         {
             dest[j++] = src[i];
         }
         else
         {
             dest[j++] = '%';
-            dest[j++] = hex[src[i] >> 4];
-            dest[j++] = hex[src[i] & 15];
+            dest[j++] = hex[(unsigned char)(src[i]) >> 4];
+            dest[j++] = hex[(unsigned char)(src[i]) & 15];
         }
     }
 
