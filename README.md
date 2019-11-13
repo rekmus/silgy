@@ -19,7 +19,7 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 2. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~500 users application and use ~1% of the server's resources.
 
-3. **Safety**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll have bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it.
+3. **Safety**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it.
 
 4. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
 
@@ -128,7 +128,7 @@ void silgy_app_main(int ci)
         else  /* REQ_MOB */
             OUT("<p>You're on the phone.</p>");
 
-        OUT("<p>Click <a href=\"welcome\">here</a> to try my welcoming bot.</p>");
+        OUT("<p>Click <a href=\"/welcome\">here</a> to try my welcoming bot.</p>");
 
         OUT_HTML_FOOTER;
     }
@@ -186,6 +186,7 @@ Although not necessary, it's good to have $SILGYDIR set in the environment, poin
 * Strings in additional languages: `strings.LL-CC`
 * Blacklist, i.e. `blacklist.txt`
 * Whitelist, i.e. `whitelist.txt`
+* 10,000 most common passwords: `passwords.txt`
 
 ### `res`
 
