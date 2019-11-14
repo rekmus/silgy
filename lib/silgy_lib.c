@@ -2888,14 +2888,14 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
         if ( json )     /* JSON -> string conversion */
         {
             if ( !rest_header_present("Content-Type") )
-                p = stpcpy(p, "Content-Type: application/json\r\n");
+                p = stpcpy(p, "Content-Type: application/json; charset=utf-8\r\n");
 
             strcpy(jtmp, lib_json_to_string((JSON*)req));
         }
         else
         {
             if ( !rest_header_present("Content-Type") )
-                p = stpcpy(p, "Content-Type: application/x-www-form-urlencoded\r\n");
+                p = stpcpy(p, "Content-Type: application/x-www-form-urlencoded; charset=utf-8\r\n");
         }
         char tmp[64];
         sprintf(tmp, "Content-Length: %d\r\n", strlen(json?jtmp:(char*)req));
@@ -2904,13 +2904,6 @@ static int rest_render_req(char *buffer, const char *method, const char *host, c
 
     if ( json && !rest_header_present("Accept") )
         p = stpcpy(p, "Accept: application/json\r\n");
-
-/*    if ( !rest_header_present("Accept-Encoding") )
-        p = stpcpy(p, "Accept-Encoding: gzip, deflate, br\r\n");
-
-    p = stpcpy(p, "Pragma: no-cache\r\n");
-    p = stpcpy(p, "Cache-Control: no-cache\r\n");
-    p = stpcpy(p, "Accept-Language: en-GB,en;q=0.9\r\n"); */
 
     int i;
 
