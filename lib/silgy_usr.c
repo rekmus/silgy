@@ -2472,8 +2472,6 @@ int silgy_usr_change_password(int ci)
 
     get_hashes(str1, str2, US.login, US.email, passwd);
 
-    mysql_free_result(result);
-
     DBG("Updating users...");
 
     sprintf(sql, "UPDATE users SET passwd1='%s', passwd2='%s', status=%d WHERE id=%d", str1, str2, USER_STATUS_ACTIVE, UID);
