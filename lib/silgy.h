@@ -384,6 +384,11 @@ typedef char str64k[1024*64];
 
 #define OUT_HEADER_BUFSIZE              4096            /* response header buffer length */
 
+
+#ifndef MAX_HOSTS                                       /* M_hosts size */
+#define MAX_HOSTS                       10
+#endif
+
 #ifndef MAX_PAYLOAD_SIZE                                /* max incoming POST data length (16 MB) */
 #define MAX_PAYLOAD_SIZE                16777216
 #endif
@@ -1030,6 +1035,7 @@ typedef struct {
     char     cookie_in_a[SESID_LEN+1];       /* anonymous */
     char     cookie_in_l[SESID_LEN+1];       /* logged in */
     char     host[MAX_VALUE_LEN+1];
+    char     host_normalized[MAX_VALUE_LEN+1];
     char     website[256];
     char     lang[LANG_LEN+1];
     time_t   if_mod_since;
@@ -1038,6 +1044,7 @@ typedef struct {
     char     boundary[MAX_VALUE_LEN+1];      /* for POST multipart/form-data type */
     char     authorization[MAX_VALUE_LEN+1]; /* Authorization */
     bool     accept_deflate;
+    int      host_id;
     /* what goes out */
     unsigned out_hlen;                       /* outgoing header length */
     unsigned out_len;                        /* outgoing length (all) */
@@ -1094,6 +1101,7 @@ typedef struct {
 /* static resources */
 
 typedef struct {
+    char     host[256];
     char     name[STATIC_PATH_LEN];
     char     type;
     char     *data;
@@ -1273,6 +1281,7 @@ extern "C" {
     void eng_block_ip(const char *value, bool autoblocked);
     bool eng_host(int ci, const char *host);
     bool eng_is_uri(int ci, const char *uri);
+    bool silgy_set_host_res(const char *host, const char *res, const char *resmin);
     void eng_out_check(int ci, const char *str);
     void eng_out_check_realloc(int ci, const char *str);
     void eng_out_check_realloc_bin(int ci, const char *data, int len);

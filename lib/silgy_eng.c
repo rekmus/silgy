@@ -116,6 +116,21 @@ static struct {
         {"-", EOS}
     };
 
+
+/* hosts */
+
+static struct {
+    char host[256];
+    char res[256];
+    char resmin[256];
+    bool index_present;
+    } M_hosts[MAX_HOSTS] = {
+        {"", "res", "resmin", FALSE}
+    };
+
+static int      M_hosts_cnt=1;              /* main host always present */
+
+
 static char     *M_pidfile;                 /* pid file name */
 
 #ifdef _WIN32   /* Windows */
@@ -196,7 +211,7 @@ static void read_allowed_ips(void);
 static bool ip_allowed(const char *addr);
 static int  first_free_stat(void);
 static bool read_resources(bool first_scan);
-static int  is_static_res(int ci, const char *name);
+static int  is_static_res(int ci);
 static void process_req(int ci);
 static unsigned deflate_data(unsigned char *dest, const unsigned char *src, unsigned src_len);
 static void gen_response_header(int ci);
@@ -2565,7 +2580,7 @@ static bool ip_allowed(const char *addr)
    Read all the files from G_appdir/res or resmin directory
    path is a relative path uder `res` or `resmin`
 -------------------------------------------------------------------------- */
-static bool read_files(const char *directory, bool first_scan, const char *path)
+static bool read_files(const char *host, const char *directory, char source, bool first_scan, const char *path)
 {
     bool    minify=FALSE;
     int     i;
@@ -2650,9 +2665,12 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
         {
             if ( M_stat[i].name[0]==EOS ) continue;   /* already removed */
 
-            if ( 0==strcmp(directory, "res") && M_stat[i].source != STATIC_SOURCE_RES ) continue;
+            if ( 0 != strcmp(M_stat[i].host, host) || M_stat[i].source != source ) continue;
+
+/*            if ( 0==strcmp(directory, "res") && M_stat[i].source != STATIC_SOURCE_RES ) continue;
             if ( 0==strcmp(directory, "resmin") && M_stat[i].source != STATIC_SOURCE_RESMIN ) continue;
-            if ( 0==strcmp(directory, "snippets") && M_stat[i].source != STATIC_SOURCE_SNIPPET ) continue;
+            if ( 0==strcmp(directory, "snippets") && M_stat[i].source != STATIC_SOURCE_SNIPPET ) continue; */
+
 #ifdef DUMP
 //            DBG("Checking %s...", M_stat[i].name);
 #endif
@@ -2663,17 +2681,39 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
             {
                 INF("Removing %s from static resources", M_stat[i].name);
 
-                if ( 0==strcmp(M_stat[i].name, "index.html") )
-                    G_index_present = FALSE;
-                else if ( 0==strcmp(M_stat[i].name, "favicon.ico") )
-                    M_popular_favicon = FALSE;
-                else if ( 0==strcmp(M_stat[i].name, "apple-touch-icon.png") )
-                    M_popular_appleicon = FALSE;
-                else if ( 0==strcmp(M_stat[i].name, "robots.txt") )
-                    M_popular_robots = FALSE;
-                else if ( 0==strcmp(M_stat[i].name, "sw.js") )
-                    M_popular_sw = FALSE;
+                if ( 0==strcmp(directory, "res") )
+                {
+                    if ( 0==strcmp(M_stat[i].name, "index.html") )
+                        G_index_present = FALSE;
+                    else if ( 0==strcmp(M_stat[i].name, "favicon.ico") )
+                        M_popular_favicon = FALSE;
+                    else if ( 0==strcmp(M_stat[i].name, "apple-touch-icon.png") )
+                        M_popular_appleicon = FALSE;
+                    else if ( 0==strcmp(M_stat[i].name, "robots.txt") )
+                        M_popular_robots = FALSE;
+                }
+                else if ( 0==strcmp(directory, "resmin") )
+                {
+                    if ( 0==strcmp(M_stat[i].name, "sw.js") )
+                        M_popular_sw = FALSE;
+                }
+                else if ( 0!=strcmp(directory, "snippets") )   /* side gig */
+                {
+                    if ( 0==strcmp(M_stat[i].name, "index.html") )
+                    {
+                        int j;
+                        for ( j=0; j<M_hosts_cnt; ++j )
+                        {
+                            if ( 0==strcmp(M_hosts[j].host, host) )
+                            {
+                                M_hosts[j].index_present = FALSE;
+                                break;
+                            }
+                        }
+                    }
+                }
 
+                M_stat[i].host[0] = EOS;
                 M_stat[i].name[0] = EOS;
 
                 free(M_stat[i].data);
@@ -2739,7 +2779,7 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
             if ( first_scan )
                 DBG("Reading subdirectory [%s]...", dirent->d_name);
 #endif
-            read_files(directory, first_scan, resname);
+            read_files(host, directory, source, first_scan, resname);
             continue;
         }
         else if ( !S_ISREG(fstat.st_mode) )    /* skip if not a regular file nor directory */
@@ -2766,11 +2806,14 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
 
                 /* ------------------------------------------------------------------- */
 
-                if ( 0==strcmp(M_stat[i].name, resname) )
+                if ( 0==strcmp(M_stat[i].host, host) && 0==strcmp(M_stat[i].name, resname) && M_stat[i].source == source )
                 {
-                    if ( 0==strcmp(directory, "res") && M_stat[i].source != STATIC_SOURCE_RES ) continue;
+//                    if ( M_stat[i].source != source ) continue;
+
+/*                    if ( 0==strcmp(directory, "res") && M_stat[i].source != STATIC_SOURCE_RES ) continue;
                     if ( 0==strcmp(directory, "resmin") && M_stat[i].source != STATIC_SOURCE_RESMIN ) continue;
-                    if ( 0==strcmp(directory, "snippets") && M_stat[i].source != STATIC_SOURCE_SNIPPET ) continue;
+                    if ( 0==strcmp(directory, "snippets") && M_stat[i].source != STATIC_SOURCE_SNIPPET ) continue; */
+
 #ifdef DUMP
 //                    DBG("%s already read", resname);
 #endif
@@ -2799,13 +2842,19 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
         if ( !reread )
         {
             i = first_free_stat();
+
+            /* host -- already uppercase */
+
+            strcpy(M_stat[i].host, host);
+
             /* file name */
+
             strcpy(M_stat[i].name, resname);
         }
 
         /* source */
 
-        if ( 0==strcmp(directory, "res") )
+/*        if ( 0==strcmp(directory, "res") )
             M_stat[i].source = STATIC_SOURCE_RES;
         else if ( 0==strcmp(directory, "resmin") )
         {
@@ -2813,7 +2862,12 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
             minify = TRUE;
         }
         else
-            M_stat[i].source = STATIC_SOURCE_SNIPPET;
+            M_stat[i].source = STATIC_SOURCE_SNIPPET; */
+
+        M_stat[i].source = source;
+
+        if ( source == STATIC_SOURCE_RESMIN )
+            minify = TRUE;
 
         /* last modified */
 
@@ -2911,16 +2965,37 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
             {
                 M_stat[i].type = get_res_type(M_stat[i].name);
 
-                if ( 0==strcmp(M_stat[i].name, "index.html") )
-                    G_index_present = TRUE;
-                else if ( 0==strcmp(M_stat[i].name, "favicon.ico") )
-                    M_popular_favicon = TRUE;
-                else if ( 0==strcmp(M_stat[i].name, "apple-touch-icon.png") )
-                    M_popular_appleicon = TRUE;
-                else if ( 0==strcmp(M_stat[i].name, "robots.txt") )
-                    M_popular_robots = TRUE;
-                else if ( 0==strcmp(M_stat[i].name, "sw.js") )
-                    M_popular_sw = TRUE;
+                if ( 0==strcmp(directory, "res") )
+                {
+                    if ( 0==strcmp(M_stat[i].name, "index.html") )
+                        G_index_present = TRUE;
+                    else if ( 0==strcmp(M_stat[i].name, "favicon.ico") )
+                        M_popular_favicon = TRUE;
+                    else if ( 0==strcmp(M_stat[i].name, "apple-touch-icon.png") )
+                        M_popular_appleicon = TRUE;
+                    else if ( 0==strcmp(M_stat[i].name, "robots.txt") )
+                        M_popular_robots = TRUE;
+                }
+                else if ( 0==strcmp(directory, "resmin") )
+                {
+                    if ( 0==strcmp(M_stat[i].name, "sw.js") )
+                        M_popular_sw = TRUE;
+                }
+                else if ( 0!=strcmp(directory, "snippets") )   /* side gig */
+                {
+                    if ( 0==strcmp(M_stat[i].name, "index.html") )
+                    {
+                        int j;
+                        for ( j=0; j<M_hosts_cnt; ++j )
+                        {
+                            if ( 0==strcmp(M_hosts[j].host, host) )
+                            {
+                                M_hosts[j].index_present = TRUE;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
             /* compress ---------------------------------------- */
@@ -3002,13 +3077,13 @@ static bool read_files(const char *directory, bool first_scan, const char *path)
 -------------------------------------------------------------------------- */
 static bool read_resources(bool first_scan)
 {
-    if ( !read_files("res", first_scan, NULL) )
+    if ( !read_files("", "res", STATIC_SOURCE_RES, first_scan, NULL) )
     {
         ERR("reading res failed");
         return FALSE;
     }
 
-    if ( !read_files("resmin", first_scan, NULL) )
+    if ( !read_files("", "resmin", STATIC_SOURCE_RESMIN, first_scan, NULL) )
     {
         ERR("reading resmin failed");
         return FALSE;
@@ -3018,6 +3093,25 @@ static bool read_resources(bool first_scan)
     {
         ERR("reading snippets failed");
         return FALSE;
+    }
+
+    /* side gigs */
+
+    int i;
+
+    for ( i=1; i<M_hosts_cnt; ++i )
+    {
+        if ( !read_files(M_hosts[i].host, M_hosts[i].res, STATIC_SOURCE_RES, first_scan, NULL) )
+        {
+            ERR("reading %s's res failed", M_hosts[i].host);
+            return FALSE;
+        }
+
+        if ( !read_files(M_hosts[i].host, M_hosts[i].resmin, STATIC_SOURCE_RESMIN, first_scan, NULL) )
+        {
+            ERR("reading %s's resmin failed", M_hosts[i].host);
+            return FALSE;
+        }
     }
 
     return TRUE;
@@ -3049,22 +3143,42 @@ static int first_free_stat()
 /* --------------------------------------------------------------------------
    Return M_stat array index if name is on statics' list
 -------------------------------------------------------------------------- */
-static int is_static_res(int ci, const char *name)
+static int is_static_res(int ci)
 {
     int i;
 
-    for ( i=0; M_stat[i].name[0] != '-'; ++i )
+    if ( !conn[ci].host_id )    /* main host */
     {
-        if ( 0==strcmp(M_stat[i].name, name) && M_stat[i].source != STATIC_SOURCE_SNIPPET )
+        for ( i=0; M_stat[i].name[0] != '-'; ++i )
         {
-//          DBG("It is static");
-            if ( conn[ci].if_mod_since >= M_stat[i].modified )
+            if ( !M_stat[i].host[0] && 0==strcmp(M_stat[i].name, conn[ci].uri) && M_stat[i].source != STATIC_SOURCE_SNIPPET )
             {
-//              DBG("Not Modified");
-                conn[ci].status = 304;  /* Not Modified */
-            }
+    //          DBG("It is static");
+                if ( conn[ci].if_mod_since >= M_stat[i].modified )
+                {
+    //              DBG("Not Modified");
+                    conn[ci].status = 304;  /* Not Modified */
+                }
 
-            return i;
+                return i;
+            }
+        }
+    }
+    else    /* side gig */
+    {
+        for ( i=0; M_stat[i].name[0] != '-'; ++i )
+        {
+            if ( 0==strcmp(M_stat[i].host, conn[ci].host_normalized) && 0==strcmp(M_stat[i].name, conn[ci].uri) )
+            {
+    //          DBG("It is static");
+                if ( conn[ci].if_mod_since >= M_stat[i].modified )
+                {
+    //              DBG("Not Modified");
+                    conn[ci].status = 304;  /* Not Modified */
+                }
+
+                return i;
+            }
         }
     }
 
@@ -3939,6 +4053,7 @@ static void reset_conn(int ci, char new_state)
     conn[ci].dont_cache = FALSE;
     conn[ci].keep_content = FALSE;
     conn[ci].accept_deflate = FALSE;
+    conn[ci].host_id = 0;
 
 #ifdef ASYNC
     conn[ci].service[0] = EOS;
@@ -4142,6 +4257,7 @@ static int parse_req(int ci, int len)
 #endif
 
     /* -------------------------------------------------------------- */
+    /* parse the rest of the header */
 
     char flg_data=FALSE;
     char now_label=TRUE;
@@ -4217,14 +4333,29 @@ static int parse_req(int ci, int len)
         }
     }
 
-    /* behave as one good web server ------------------------------------- */
+    /* -------------------------------------------------------------- */
+    /* determine whether main host has been requested */
+
+    for ( i=0; i<M_hosts_cnt; ++i )
+    {
+        if ( 0==strcmp(M_hosts[i].host, conn[ci].host_normalized) )
+        {
+            conn[ci].host_id = i;
+            break;
+        }
+    }
+
+    /* Serve index if present --------------------------------------- */
 
 #ifndef DONT_LOOK_FOR_INDEX
 
-    if ( conn[ci].uri[0]==EOS && G_index_present && REQ_GET )
+    if ( !conn[ci].uri[0] && REQ_GET )
     {
-        INF("Serving index.html");
-        strcpy(conn[ci].uri, "index.html");
+        if ( (!conn[ci].host_id && G_index_present) || M_hosts[conn[ci].host_id].index_present )
+        {
+            INF("Serving index.html");
+            strcpy(conn[ci].uri, "index.html");
+        }
     }
 
 #endif  /* DONT_LOOK_FOR_INDEX */
@@ -4239,7 +4370,7 @@ static int parse_req(int ci, int len)
                 || (0==strcmp(conn[ci].uri, "sw.js") && !M_popular_sw) )
             return 404;     /* Not Found */
 
-        /* cut query string off */
+        /* cut the query string off */
 
         char uri[MAX_URI_LEN+1];
         int  uri_i=0;
@@ -4322,7 +4453,7 @@ static int parse_req(int ci, int len)
 #endif
         /* -------------------------------------------------------------- */
 
-        conn[ci].static_res = is_static_res(ci, conn[ci].uri);    /* statics --> set the flag!!! */
+        conn[ci].static_res = is_static_res(ci);    /* statics --> set the flag!!! */
         /* now, it may have set conn[ci].status to 304 */
 
         if ( conn[ci].static_res != NOT_STATIC )    /* static resource */
@@ -4337,7 +4468,6 @@ static int parse_req(int ci, int len)
         i = 0;
         while ( M_auth_levels[i].path[0] != '-' )
         {
-//            if ( REQ(M_auth_levels[i].resource) )
             if ( URI(M_auth_levels[i].path) )
             {
                 conn[ci].required_auth_level = M_auth_levels[i].level;
@@ -4621,6 +4751,26 @@ static int set_http_req_val(int ci, const char *label, const char *value)
             return 404;     /* Forbidden */
 #endif
         strcpy(conn[ci].host, value);
+
+        /* normalize for comparisons */
+        /* upper */
+
+        strcpy(conn[ci].host_normalized, upper(value));
+
+        /* cut the port off */
+
+        i = 0;
+
+        while ( conn[ci].host_normalized[i] )
+        {
+            if ( conn[ci].host_normalized[i] == ':' )
+            {
+                conn[ci].host_normalized[i] = EOS;
+                break;
+            }
+
+            ++i;
+        }
     }
     else if ( 0==strcmp(ulabel, "USER-AGENT") )
     {
@@ -5464,17 +5614,32 @@ void eng_block_ip(const char *value, bool autoblocked)
 
 
 /* --------------------------------------------------------------------------
-   Return true if host matches
+   Return true if host matches requested host
 -------------------------------------------------------------------------- */
 bool eng_host(int ci, const char *host)
 {
     char uhost[MAX_VALUE_LEN+1];
-    char conn_uhost[MAX_VALUE_LEN+1];
 
     strcpy(uhost, upper(host));
-    strcpy(conn_uhost, upper(conn[ci].host));
 
-    return (0==strcmp(conn_uhost, uhost));
+    return (0==strcmp(conn[ci].host_normalized, uhost));
+}
+
+
+/* --------------------------------------------------------------------------
+   Assign resource directories to a host
+-------------------------------------------------------------------------- */
+bool silgy_set_host_res(const char *host, const char *res, const char *resmin)
+{
+    if ( M_hosts_cnt >= MAX_HOSTS ) return FALSE;
+
+    COPY(M_hosts[M_hosts_cnt].host, upper(host), 255);
+    COPY(M_hosts[M_hosts_cnt].res, res, 255);
+    COPY(M_hosts[M_hosts_cnt].resmin, resmin, 255);
+
+    ++M_hosts_cnt;
+
+    return TRUE;
 }
 
 
