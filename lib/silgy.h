@@ -720,7 +720,7 @@ typedef char str64k[1024*64];
 #define ID                              conn[ci].id
 #define US                              uses[conn[ci].usi]
 #define AUS                             auses[conn[ci].usi]
-#define HOST(str)                       eng_host(ci, str)
+#define HOST(str)                       (0==strcmp(conn[ci].host_normalized, upper(str)))
 #define REQ_GET_HEADER(header)          eng_get_header(ci, header)
 
 #define REQ_DATA                        conn[ci].in_data
@@ -1279,7 +1279,7 @@ extern "C" {
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size);
     void silgy_add_to_static_res(const char *name, const char *src);
     void eng_block_ip(const char *value, bool autoblocked);
-    bool eng_host(int ci, const char *host);
+//    bool eng_host(int ci, const char *host);
     bool eng_is_uri(int ci, const char *uri);
     bool silgy_set_host_res(const char *host, const char *res, const char *resmin);
     void eng_out_check(int ci, const char *str);

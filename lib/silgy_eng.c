@@ -2666,11 +2666,6 @@ static bool read_files(const char *host, const char *directory, char source, boo
             if ( M_stat[i].name[0]==EOS ) continue;   /* already removed */
 
             if ( 0 != strcmp(M_stat[i].host, host) || M_stat[i].source != source ) continue;
-
-/*            if ( 0==strcmp(directory, "res") && M_stat[i].source != STATIC_SOURCE_RES ) continue;
-            if ( 0==strcmp(directory, "resmin") && M_stat[i].source != STATIC_SOURCE_RESMIN ) continue;
-            if ( 0==strcmp(directory, "snippets") && M_stat[i].source != STATIC_SOURCE_SNIPPET ) continue; */
-
 #ifdef DUMP
 //            DBG("Checking %s...", M_stat[i].name);
 #endif
@@ -2702,7 +2697,7 @@ static bool read_files(const char *host, const char *directory, char source, boo
                     if ( 0==strcmp(M_stat[i].name, "index.html") )
                     {
                         int j;
-                        for ( j=0; j<M_hosts_cnt; ++j )
+                        for ( j=1; j<M_hosts_cnt; ++j )
                         {
                             if ( 0==strcmp(M_hosts[j].host, host) )
                             {
@@ -2734,7 +2729,7 @@ static bool read_files(const char *host, const char *directory, char source, boo
 #ifdef DUMP
 //    DBG("Reading %sfiles", first_scan?"":"new ");
 #endif
-    /* read the files into memory */
+    /* read files into memory */
 
     while ( (dirent=readdir(dir)) )
     {
@@ -2808,12 +2803,6 @@ static bool read_files(const char *host, const char *directory, char source, boo
 
                 if ( 0==strcmp(M_stat[i].host, host) && 0==strcmp(M_stat[i].name, resname) && M_stat[i].source == source )
                 {
-//                    if ( M_stat[i].source != source ) continue;
-
-/*                    if ( 0==strcmp(directory, "res") && M_stat[i].source != STATIC_SOURCE_RES ) continue;
-                    if ( 0==strcmp(directory, "resmin") && M_stat[i].source != STATIC_SOURCE_RESMIN ) continue;
-                    if ( 0==strcmp(directory, "snippets") && M_stat[i].source != STATIC_SOURCE_SNIPPET ) continue; */
-
 #ifdef DUMP
 //                    DBG("%s already read", resname);
 #endif
@@ -2853,16 +2842,6 @@ static bool read_files(const char *host, const char *directory, char source, boo
         }
 
         /* source */
-
-/*        if ( 0==strcmp(directory, "res") )
-            M_stat[i].source = STATIC_SOURCE_RES;
-        else if ( 0==strcmp(directory, "resmin") )
-        {
-            M_stat[i].source = STATIC_SOURCE_RESMIN;
-            minify = TRUE;
-        }
-        else
-            M_stat[i].source = STATIC_SOURCE_SNIPPET; */
 
         M_stat[i].source = source;
 
@@ -2986,7 +2965,7 @@ static bool read_files(const char *host, const char *directory, char source, boo
                     if ( 0==strcmp(M_stat[i].name, "index.html") )
                     {
                         int j;
-                        for ( j=0; j<M_hosts_cnt; ++j )
+                        for ( j=1; j<M_hosts_cnt; ++j )
                         {
                             if ( 0==strcmp(M_hosts[j].host, host) )
                             {
@@ -3153,10 +3132,8 @@ static int is_static_res(int ci)
         {
             if ( !M_stat[i].host[0] && 0==strcmp(M_stat[i].name, conn[ci].uri) && M_stat[i].source != STATIC_SOURCE_SNIPPET )
             {
-    //          DBG("It is static");
                 if ( conn[ci].if_mod_since >= M_stat[i].modified )
                 {
-    //              DBG("Not Modified");
                     conn[ci].status = 304;  /* Not Modified */
                 }
 
@@ -3170,10 +3147,8 @@ static int is_static_res(int ci)
         {
             if ( 0==strcmp(M_stat[i].host, conn[ci].host_normalized) && 0==strcmp(M_stat[i].name, conn[ci].uri) )
             {
-    //          DBG("It is static");
                 if ( conn[ci].if_mod_since >= M_stat[i].modified )
                 {
-    //              DBG("Not Modified");
                     conn[ci].status = 304;  /* Not Modified */
                 }
 
@@ -5616,14 +5591,10 @@ void eng_block_ip(const char *value, bool autoblocked)
 /* --------------------------------------------------------------------------
    Return true if host matches requested host
 -------------------------------------------------------------------------- */
-bool eng_host(int ci, const char *host)
+/*bool eng_host(int ci, const char *host)
 {
-    char uhost[MAX_VALUE_LEN+1];
-
-    strcpy(uhost, upper(host));
-
-    return (0==strcmp(conn[ci].host_normalized, uhost));
-}
+    return (0==strcmp(conn[ci].host_normalized, upper(host)));
+}*/
 
 
 /* --------------------------------------------------------------------------
