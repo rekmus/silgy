@@ -63,7 +63,7 @@ typedef char                            bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION              "4.5.2"
+#define WEB_SERVER_VERSION              "4.5.3"
 /* alias */
 #define SILGY_VERSION                   WEB_SERVER_VERSION
 
@@ -511,7 +511,7 @@ typedef char str64k[1024*64];
 #define APP_VERSION                     "1.0"
 #endif
 #ifndef APP_LOGIN_URI
-#define APP_LOGIN_URI                   "login"
+#define APP_LOGIN_URI                   "/login"
 #endif
 
 
