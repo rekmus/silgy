@@ -1960,7 +1960,7 @@ static bool init(int argc, char **argv)
 
     /* ------------------------------------------------------------------- */
 
-    for (i=0; i<MAX_ASYNC_REQS; ++i)
+    for ( i=0; i<MAX_ASYNC_REQS; ++i )
         areqs[i].state = ASYNC_STATE_FREE;
 
     M_last_call_id = 0;
@@ -3968,7 +3968,8 @@ static void close_uses(int usi, int ci)
 static void reset_conn(int ci, char new_state)
 {
 #ifdef DUMP
-    DBG("Resetting connection ci=%d, fd=%d, new state == %s\n", ci, conn[ci].fd, new_state==CONN_STATE_CONNECTED?"CONN_STATE_CONNECTED":"CONN_STATE_DISCONNECTED");
+    if ( G_initialized )
+        DBG("Resetting connection ci=%d, fd=%d, new state == %s\n", ci, conn[ci].fd, new_state==CONN_STATE_CONNECTED?"CONN_STATE_CONNECTED":"CONN_STATE_DISCONNECTED");
 #endif
 
     conn[ci].conn_state = new_state;
