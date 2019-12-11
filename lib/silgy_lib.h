@@ -365,6 +365,7 @@ extern "C" {
     void silgy_lib_init(void);
     void silgy_lib_done(void);
     void silgy_safe_copy(char *dst, const char *src, size_t dst_len);
+    char *silgy_render_md(char *dest, const char *src);
     bool lib_csrft_ok(int ci);
     void silgy_add_message(int code, const char *lang, const char *message, ...);
     int  compare_messages(const void *a, const void *b);

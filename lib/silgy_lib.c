@@ -68,6 +68,8 @@ static char M_df=0;                     /* date format */
 static char M_tsep=' ';                 /* thousand separator */
 static char M_dsep='.';                 /* decimal separator */
 
+static char *M_md_dest;
+
 #ifndef _WIN32
 static int  M_shmid[MAX_SHM_SEGMENTS]={0}; /* SHM id-s */
 #endif
@@ -216,6 +218,175 @@ void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
     }
 
     dst[dst_len] = EOS;
+}
+
+
+
+#define MD_TAG_NONE '0'
+#define MD_TAG_P    'p'
+#define MD_TAG_H1   '1'
+#define MD_TAG_H2   '2'
+#define MD_TAG_H3   '3'
+
+
+/* --------------------------------------------------------------------------
+   Detect MD block tag
+   src is at the beginning of the new line
+-------------------------------------------------------------------------- */
+static int detect_tag(const char *src, char *tag)
+{
+    int skip=0;
+
+    while ( *src && (*src==' ' || *src=='\t') )
+    {
+        ++src;
+        ++skip;
+    }
+
+    if ( *src=='#' )
+    {
+        if ( *(src+1)=='#' )
+        {
+            if ( *(src+2)=='#' )
+            {
+                *tag = MD_TAG_H3;
+                skip += 4;
+            }
+            else
+            {
+                *tag = MD_TAG_H2;
+                skip += 3;
+            }
+        }
+        else
+        {
+            *tag = MD_TAG_H1;
+            skip += 2;
+        }
+    }
+    else if ( *src )
+    {
+        *tag = MD_TAG_P;
+    }
+    else    /* end of document */
+    {
+        *tag = MD_TAG_NONE;
+    }
+
+    return skip;
+}
+
+
+/* --------------------------------------------------------------------------
+   Open HTML tag
+-------------------------------------------------------------------------- */
+static void open_tag(char tag)
+{
+    if ( tag == MD_TAG_P )
+        M_md_dest = stpcpy(M_md_dest, "<p>");
+    else if ( tag == MD_TAG_H1 )
+        M_md_dest = stpcpy(M_md_dest, "<h1>");
+    else if ( tag == MD_TAG_H2 )
+        M_md_dest = stpcpy(M_md_dest, "<h2>");
+    else if ( tag == MD_TAG_H3 )
+        M_md_dest = stpcpy(M_md_dest, "<h3>");
+}
+
+
+/* --------------------------------------------------------------------------
+   Close HTML tag
+-------------------------------------------------------------------------- */
+static void close_tag(const char *src, char tag)
+{
+    if ( tag == MD_TAG_P && (*src==EOS || *(src+1)==EOS || *(src+1)=='\n' || *(src+1)=='\r') )
+        M_md_dest = stpcpy(M_md_dest, "</p>");
+    else if ( tag == MD_TAG_H1 )
+        M_md_dest = stpcpy(M_md_dest, "</h1>");
+    else if ( tag == MD_TAG_H2 )
+        M_md_dest = stpcpy(M_md_dest, "</h2>");
+    else if ( tag == MD_TAG_H3 )
+        M_md_dest = stpcpy(M_md_dest, "</h3>");
+}
+
+
+/* --------------------------------------------------------------------------
+   Render simplified md to HTML
+-------------------------------------------------------------------------- */
+char *silgy_render_md(char *dest, const char *src)
+{
+    int pos=0;    /* source position */
+    int skip;
+
+    M_md_dest = dest;
+
+    char tag;
+
+    skip = detect_tag(src, &tag);
+
+    if ( skip )
+    {
+        src += skip;
+        pos += skip;
+    }
+
+    open_tag(tag);
+
+    const char *prev1, *prev2;
+
+    while ( *src )
+    {
+        if ( pos > 0 )
+            prev1 = src - 1;
+
+        if ( pos > 1 )
+            prev2 = src - 2;
+
+        if ( *src=='\n' )
+        {
+            close_tag(src, tag);
+
+            /* skip to the next line */
+
+            while ( *src && (*src==' ' || *src=='\t' || *src=='\r' || *src=='\n') )
+            {
+                ++src;
+                ++pos;
+            }
+
+            skip = detect_tag(src, &tag);
+
+            if ( skip )
+            {
+                src += skip;
+                pos += skip;
+            }
+
+            open_tag(tag);
+
+            if ( pos )
+            {
+                src--;
+                pos--;
+            }
+        }
+        else if ( pos > 0 && *src=='-' && *prev1=='-' )  /* convert -- to ndash */
+        {
+            M_md_dest = stpcpy(--M_md_dest, "–");
+        }
+        else if ( *src!='\r' && *src!='\n' && *src!='#' )
+        {
+            *M_md_dest++ = *src;
+        }
+
+        ++src;
+        ++pos;
+    }
+
+    close_tag(src, tag);
+
+    *M_md_dest = EOS;
+
+    return dest;
 }
 
 
