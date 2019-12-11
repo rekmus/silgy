@@ -391,6 +391,51 @@ char *silgy_render_md(char *dest, const char *src)
 
 
 /* --------------------------------------------------------------------------
+   Encode string for JSON
+-------------------------------------------------------------------------- */
+char *silgy_json_enc(const char *src)
+{
+static char dst[JSON_VAL_LEN+1];
+//    char *dst=dest;
+    int cnt=0;
+
+    while ( *src && cnt < JSON_VAL_LEN-3 )
+    {
+        if ( *src=='\t' )
+        {
+            dst[cnt++] = '\\';
+            dst[cnt++] = '\\';
+            dst[cnt++] = 't';
+//            cnt += 2;
+        }
+        else if ( *src=='\n' )
+        {
+            dst[cnt++] = '\\';
+            dst[cnt++] = '\\';
+            dst[cnt++] = 'n';
+//            cnt += 2;
+        }
+        else if ( *src=='\r' )
+        {
+            /* ignore */
+//            cnt--;
+        }
+        else
+        {
+            dst[cnt++] = *src;
+        }
+
+        ++src;
+//        ++cnt;
+    }
+
+    dst[cnt] = EOS;
+
+    return dst;
+}
+
+
+/* --------------------------------------------------------------------------
    Verify CSRF token
 -------------------------------------------------------------------------- */
 bool lib_csrft_ok(int ci)
