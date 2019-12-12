@@ -395,10 +395,10 @@ char *silgy_render_md(char *dest, const char *src)
 -------------------------------------------------------------------------- */
 char *silgy_json_enc(const char *src)
 {
-static char dst[JSON_VAL_LEN+1];
+static char dst[JSON_BUFSIZE];
     int cnt=0;
 
-    while ( *src && cnt < JSON_VAL_LEN-2 )
+    while ( *src && cnt < JSON_BUFSIZE-3 )
     {
         if ( *src=='\t' )
         {
