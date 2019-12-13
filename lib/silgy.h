@@ -202,6 +202,7 @@ typedef char str64k[1024*64];
 #define REQ_POST                    (0==strcmp(conn[ci].method, "POST"))
 #define REQ_PUT                     (0==strcmp(conn[ci].method, "PUT"))
 #define REQ_DELETE                  (0==strcmp(conn[ci].method, "DELETE"))
+#define REQ_OPTIONS                 (0==strcmp(conn[ci].method, "OPTIONS"))
 #define REQ_URI                     conn[ci].uri
 #define REQ_CONTENT_TYPE            conn[ci].in_ctypestr
 #define REQ_DSK                     !conn[ci].mobile
@@ -384,6 +385,10 @@ typedef char str64k[1024*64];
 
 #define OUT_HEADER_BUFSIZE              4096            /* response header buffer length */
 
+
+#ifndef CUST_HDR_LEN
+#define CUST_HDR_LEN                    255
+#endif
 
 #ifndef MAX_HOSTS                                       /* M_hosts size */
 #define MAX_HOSTS                       10
@@ -924,6 +929,7 @@ typedef struct {
 typedef struct {
     int      err_code;
     int      status;
+    char     cust_headers[CUST_HDR_LEN+1];
     char     ctype;
     char     ctypestr[256];
     char     cdisp[256];
@@ -990,6 +996,7 @@ typedef struct {                            /* request details for silgy_svc */
     char     boundary[MAX_VALUE_LEN+1];
     int      usi;
     int      status;
+    char     cust_headers[CUST_HDR_LEN+1];
     char     ctype;
     char     ctypestr[256];
     char     cdisp[256];
@@ -1057,6 +1064,7 @@ typedef struct {
     unsigned out_data_allocated;             /* number of allocated bytes */
     char     *out_data;                      /* pointer to the data to send */
     int      status;                         /* HTTP status */
+    char     cust_headers[CUST_HDR_LEN+1];
     unsigned data_sent;                      /* how many content bytes have been sent */
     char     ctype;                          /* content type */
     char     ctypestr[256];                  /* user (custom) content type */

@@ -10,52 +10,55 @@
 #define SILGY_LIB_H
 
 
-#define ALWAYS(str, ...)        log_write(LOG_ALWAYS, str, ##__VA_ARGS__)
-#define ERR(str, ...)           log_write(LOG_ERR, str, ##__VA_ARGS__)
-#define WAR(str, ...)           log_write(LOG_WAR, str, ##__VA_ARGS__)
-#define INF(str, ...)           log_write(LOG_INF, str, ##__VA_ARGS__)
-#define DBG(str, ...)           log_write(LOG_DBG, str, ##__VA_ARGS__)
+#define ALWAYS(str, ...)            log_write(LOG_ALWAYS, str, ##__VA_ARGS__)
+#define ERR(str, ...)               log_write(LOG_ERR, str, ##__VA_ARGS__)
+#define WAR(str, ...)               log_write(LOG_WAR, str, ##__VA_ARGS__)
+#define INF(str, ...)               log_write(LOG_INF, str, ##__VA_ARGS__)
+#define DBG(str, ...)               log_write(LOG_DBG, str, ##__VA_ARGS__)
 
-#define ALWAYS_T(str, ...)      log_write_time(LOG_ALWAYS, str, ##__VA_ARGS__)
-#define ERR_T(str, ...)         log_write_time(LOG_ERR, str, ##__VA_ARGS__)
-#define WAR_T(str, ...)         log_write_time(LOG_WAR, str, ##__VA_ARGS__)
-#define INF_T(str, ...)         log_write_time(LOG_INF, str, ##__VA_ARGS__)
-#define DBG_T(str, ...)         log_write_time(LOG_DBG, str, ##__VA_ARGS__)
+#define ALWAYS_T(str, ...)          log_write_time(LOG_ALWAYS, str, ##__VA_ARGS__)
+#define ERR_T(str, ...)             log_write_time(LOG_ERR, str, ##__VA_ARGS__)
+#define WAR_T(str, ...)             log_write_time(LOG_WAR, str, ##__VA_ARGS__)
+#define INF_T(str, ...)             log_write_time(LOG_INF, str, ##__VA_ARGS__)
+#define DBG_T(str, ...)             log_write_time(LOG_DBG, str, ##__VA_ARGS__)
 
-#define LOG_LINE                "--------------------------------------------------"
-#define LOG_LINE_N              "--------------------------------------------------\n"
-#define LOG_LINE_NN             "--------------------------------------------------\n\n"
-#define ALWAYS_LINE             ALWAYS(LOG_LINE)
-#define INF_LINE                INF(LOG_LINE)
-#define DBG_LINE                DBG(LOG_LINE)
+#define LOG_LINE                    "--------------------------------------------------"
+#define LOG_LINE_N                  "--------------------------------------------------\n"
+#define LOG_LINE_NN                 "--------------------------------------------------\n\n"
+#define ALWAYS_LINE                 ALWAYS(LOG_LINE)
+#define INF_LINE                    INF(LOG_LINE)
+#define DBG_LINE                    DBG(LOG_LINE)
 
-#define LOG_LINE_LONG           "--------------------------------------------------------------------------------------------------"
-#define LOG_LINE_LONG_N         "--------------------------------------------------------------------------------------------------\n"
-#define LOG_LINE_LONG_NN        "--------------------------------------------------------------------------------------------------\n\n"
-#define ALWAYS_LINE_LONG        ALWAYS(LOG_LINE_LONG)
-#define INF_LINE_LONG           INF(LOG_LINE_LONG)
-#define DBG_LINE_LONG           DBG(LOG_LINE_LONG)
+#define LOG_LINE_LONG               "--------------------------------------------------------------------------------------------------"
+#define LOG_LINE_LONG_N             "--------------------------------------------------------------------------------------------------\n"
+#define LOG_LINE_LONG_NN            "--------------------------------------------------------------------------------------------------\n\n"
+#define ALWAYS_LINE_LONG            ALWAYS(LOG_LINE_LONG)
+#define INF_LINE_LONG               INF(LOG_LINE_LONG)
+#define DBG_LINE_LONG               DBG(LOG_LINE_LONG)
 
-#define LOREM_IPSUM             "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+#define LOREM_IPSUM                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
-#define PARAM(param)            (0==strcmp(label, param))
+#define PARAM(param)                (0==strcmp(label, param))
 
-#define UTF8_ANY(c)             (((unsigned char)c & 0x80) == 0x80)
-#define UTF8_START(c)           (UTF8_ANY(c) && ((unsigned char)c & 0x40) == 0x40)
+#define UTF8_ANY(c)                 (((unsigned char)c & 0x80) == 0x80)
+#define UTF8_START(c)               (UTF8_ANY(c) && ((unsigned char)c & 0x40) == 0x40)
 
-#define COPY(dst, src, dst_len) silgy_safe_copy(dst, src, dst_len)
+#define COPY(dst, src, dst_len)     silgy_safe_copy(dst, src, dst_len)
 
 
 /* Query String Value */
 
-typedef char                    QSVAL[QSBUF];
-//typedef struct QSVAL          { char x[QSBUF]; } QSVAL;
+typedef char                        QSVAL[QSBUF];
+//typedef struct QSVAL              { char x[QSBUF]; } QSVAL;
+
+
+#define RES_HEADER(key, val)        lib_res_header(ci, key, val)
 
 
 #ifdef APP_EMAIL_FROM_USER
-#define EMAIL_FROM_USER         APP_EMAIL_FROM_USER
+#define EMAIL_FROM_USER             APP_EMAIL_FROM_USER
 #else
-#define EMAIL_FROM_USER         "noreply"
+#define EMAIL_FROM_USER             "noreply"
 #endif
 
 
@@ -65,14 +68,14 @@ typedef char                    QSVAL[QSBUF];
 #define SHUTDOWN    3
 
 
-#define MAX_SHM_SEGMENTS        100
+#define MAX_SHM_SEGMENTS            100
 
 
 
 /* languages */
 
 #ifndef MAX_LANGUAGES
-#define MAX_LANGUAGES           250
+#define MAX_LANGUAGES               250
 #endif
 
 typedef struct {
@@ -86,11 +89,11 @@ typedef struct {
 /* messages */
 
 #ifndef MAX_MSG_LEN
-#define MAX_MSG_LEN             255
+#define MAX_MSG_LEN                 255
 #endif
 
 #ifndef MAX_MESSAGES
-#define MAX_MESSAGES            1000
+#define MAX_MESSAGES                1000
 #endif
 
 typedef struct {
@@ -116,19 +119,19 @@ typedef struct {
 /* strings */
 
 #ifndef STRINGS_SEP
-#define STRINGS_SEP             '|'
+#define STRINGS_SEP                 '|'
 #endif
 
 #ifndef STRINGS_LANG
-#define STRINGS_LANG            "EN-US"
+#define STRINGS_LANG                "EN-US"
 #endif
 
 #ifndef MAX_STR_LEN
-#define MAX_STR_LEN             255
+#define MAX_STR_LEN                 255
 #endif
 
 #ifndef MAX_STRINGS
-#define MAX_STRINGS             1000
+#define MAX_STRINGS                 1000
 #endif
 
 typedef struct {
@@ -141,7 +144,7 @@ typedef struct {
 
 /* format amount */
 
-#define AMT(val)                silgy_amt(val)
+#define AMT(val)                    silgy_amt(val)
 
 
 
@@ -399,6 +402,7 @@ extern "C" {
     bool lib_qsf(int ci, const char *fieldname, float *retbuf);
     bool lib_qsd(int ci, const char *fieldname, double *retbuf);
     void lib_set_res_status(int ci, int status);
+    void lib_res_header(int ci, const char *hdr, const char *val);
     void lib_set_res_content_type(int ci, const char *str);
     void lib_set_res_location(int ci, const char *str, ...);
     void lib_set_res_content_disposition(int ci, const char *str, ...);

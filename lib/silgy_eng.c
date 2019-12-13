@@ -3746,6 +3746,14 @@ static          bool first=TRUE;
 #endif
 
     /* ------------------------------------------------------------- */
+    /* custom headers */
+
+    if ( conn[ci].cust_headers[0] )
+    {
+        HOUT(conn[ci].cust_headers);
+    }
+
+    /* ------------------------------------------------------------- */
 
     PRINT_HTTP_END_OF_HEADER;
 
@@ -4008,6 +4016,10 @@ static void reset_conn(int ci, char new_state)
     conn[ci].boundary[0] = EOS;
     conn[ci].authorization[0] = EOS;
     conn[ci].required_auth_level = DEF_RES_AUTH_LEVEL;
+
+    /* what goes out */
+
+    conn[ci].cust_headers[0] = EOS;
 
     conn[ci].out_data = conn[ci].out_data_alloc;
 

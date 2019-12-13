@@ -2380,6 +2380,18 @@ void lib_set_res_status(int ci, int status)
 
 
 /* --------------------------------------------------------------------------
+   Set custom header
+-------------------------------------------------------------------------- */
+void lib_res_header(int ci, const char *hdr, const char *val)
+{
+    strcat(conn[ci].cust_headers, hdr);
+    strcat(conn[ci].cust_headers, ": ");
+    strcat(conn[ci].cust_headers, val);
+    strcat(conn[ci].cust_headers, "\r\n");
+}
+
+
+/* --------------------------------------------------------------------------
    Set response content type
    Mirrored print_content_type
 -------------------------------------------------------------------------- */
