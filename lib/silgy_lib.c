@@ -57,6 +57,7 @@ double      G_rest_elapsed=0;           /* REST calls elapsed for calculating av
 double      G_rest_average=0;           /* REST calls average elapsed */
 int         G_rest_status;              /* last REST call response status */
 char        G_rest_content_type[MAX_VALUE_LEN+1];
+int         G_qs_len=0;
 
 
 /* locals */
@@ -1586,7 +1587,7 @@ static char *uri_decode(char *src, int srclen, char *dest, int maxlen)
     char    *endp=src+srclen;
     char    *srcp;
     char    *destp=dest;
-    int     nwrote=0;
+    int     written=0;
 
     for ( srcp=src; srcp<endp; ++srcp )
     {
@@ -1600,9 +1601,9 @@ static char *uri_decode(char *src, int srclen, char *dest, int maxlen)
         else    /* copy as it is */
             *destp++ = *srcp;
 
-        ++nwrote;
+        ++written;
 
-        if ( nwrote == maxlen )
+        if ( written == maxlen )
         {
             WAR("URI val truncated");
             break;
@@ -1610,6 +1611,8 @@ static char *uri_decode(char *src, int srclen, char *dest, int maxlen)
     }
 
     *destp = EOS;
+
+    G_qs_len = written;
 
     return dest;
 }
@@ -2066,7 +2069,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
     retbuf[i] = EOS;
 
 #ifdef DUMP
-    DBG("get_qs_param_raw: retbuf [%s]", retbuf);
+    log_long(retbuf, i, "get_qs_param_raw: retbuf");
 #endif
 
     return TRUE;

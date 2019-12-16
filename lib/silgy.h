@@ -1265,6 +1265,7 @@ extern double       G_rest_elapsed;             /* REST calls elapsed for calcul
 extern double       G_rest_average;             /* REST calls average elapsed */
 extern char         G_rest_content_type[MAX_VALUE_LEN+1];
 extern int          G_new_user_id;
+extern int          G_qs_len;
 
 #ifdef __cplusplus
 }   /* extern "C" */
