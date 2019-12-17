@@ -716,6 +716,12 @@ char *lib_get_message(int ci, int code)
 
     return lib_get_message_fallback(code);
 
+#else   /* SILGY_WATCHER */
+
+static char dummy[16];
+
+    return dummy;
+
 #endif  /* SILGY_WATCHER */
 }
 
@@ -943,6 +949,12 @@ const char *lib_get_string(int ci, const char *str)
     /* fallback */
 
     return str;
+
+#else   /* SILGY_WATCHER */
+
+static char dummy[16];
+
+    return dummy;
 
 #endif  /* SILGY_WATCHER */
 }
@@ -1977,6 +1989,8 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 {
     char *qs, *end;
 
+    G_qs_len = 0;
+
 #ifdef DUMP
     DBG("get_qs_param_raw: fieldname [%s]", fieldname);
 #endif
@@ -2071,6 +2085,8 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 #ifdef DUMP
     log_long(retbuf, i, "get_qs_param_raw: retbuf");
 #endif
+
+    G_qs_len = i;
 
     return TRUE;
 }
@@ -8703,62 +8719,61 @@ static const unsigned char pr2six[256] =
 
 int Base64decode_len(const char *bufcoded)
 {
-    int nbytesdecoded;
-    register const unsigned char *bufin;
-    register int nprbytes;
+	int nbytesdecoded;
+	register const unsigned char *bufin;
+	register int nprbytes;
 
-    bufin = (const unsigned char *) bufcoded;
-    while (pr2six[*(bufin++)] <= 63);
+	bufin = (const unsigned char *)bufcoded;
+	while (pr2six[*(bufin++)] <= 63);
 
-    nprbytes = (bufin - (const unsigned char *) bufcoded) - 1;
-    nbytesdecoded = ((nprbytes + 3) / 4) * 3;
+	nprbytes = (bufin - (const unsigned char *)bufcoded) - 1;
+	nbytesdecoded = ((nprbytes + 3) / 4) * 3;
 
-    return nbytesdecoded + 1;
+	return nbytesdecoded;
 }
 
 int Base64decode(char *bufplain, const char *bufcoded)
 {
-    int nbytesdecoded;
-    register const unsigned char *bufin;
-    register unsigned char *bufout;
-    register int nprbytes;
+	int nbytesdecoded;
+	register const unsigned char *bufin;
+	register unsigned char *bufout;
+	register int nprbytes;
 
-    bufin = (const unsigned char *) bufcoded;
-    while (pr2six[*(bufin++)] <= 63);
-    nprbytes = (bufin - (const unsigned char *) bufcoded) - 1;
-    nbytesdecoded = ((nprbytes + 3) / 4) * 3;
+	bufin = (const unsigned char *)bufcoded;
+	while (pr2six[*(bufin++)] <= 63);
+	nprbytes = (bufin - (const unsigned char *)bufcoded) - 1;
+	nbytesdecoded = ((nprbytes + 3) / 4) * 3;
 
-    bufout = (unsigned char *) bufplain;
-    bufin = (const unsigned char *) bufcoded;
+	bufout = (unsigned char *)bufplain;
+	bufin = (const unsigned char *)bufcoded;
 
-    while (nprbytes > 4) {
-    *(bufout++) =
-        (unsigned char) (pr2six[*bufin] << 2 | pr2six[bufin[1]] >> 4);
-    *(bufout++) =
-        (unsigned char) (pr2six[bufin[1]] << 4 | pr2six[bufin[2]] >> 2);
-    *(bufout++) =
-        (unsigned char) (pr2six[bufin[2]] << 6 | pr2six[bufin[3]]);
-    bufin += 4;
-    nprbytes -= 4;
-    }
+	while (nprbytes > 4) {
+		*(bufout++) =
+			(unsigned char)(pr2six[*bufin] << 2 | pr2six[bufin[1]] >> 4);
+		*(bufout++) =
+			(unsigned char)(pr2six[bufin[1]] << 4 | pr2six[bufin[2]] >> 2);
+		*(bufout++) =
+			(unsigned char)(pr2six[bufin[2]] << 6 | pr2six[bufin[3]]);
+		bufin += 4;
+		nprbytes -= 4;
+	}
 
-    /* Note: (nprbytes == 1) would be an error, so just ingore that case */
-    if (nprbytes > 1) {
-    *(bufout++) =
-        (unsigned char) (pr2six[*bufin] << 2 | pr2six[bufin[1]] >> 4);
-    }
-    if (nprbytes > 2) {
-    *(bufout++) =
-        (unsigned char) (pr2six[bufin[1]] << 4 | pr2six[bufin[2]] >> 2);
-    }
-    if (nprbytes > 3) {
-    *(bufout++) =
-        (unsigned char) (pr2six[bufin[2]] << 6 | pr2six[bufin[3]]);
-    }
+	/* Note: (nprbytes == 1) would be an error, so just ingore that case */
+	if (nprbytes > 1) {
+		*(bufout++) =
+			(unsigned char)(pr2six[*bufin] << 2 | pr2six[bufin[1]] >> 4);
+	}
+	if (nprbytes > 2) {
+		*(bufout++) =
+			(unsigned char)(pr2six[bufin[1]] << 4 | pr2six[bufin[2]] >> 2);
+	}
+	if (nprbytes > 3) {
+		*(bufout++) =
+			(unsigned char)(pr2six[bufin[2]] << 6 | pr2six[bufin[3]]);
+	}
 
-    *(bufout++) = '\0';
-    nbytesdecoded -= (4 - nprbytes) & 3;
-    return nbytesdecoded;
+	nbytesdecoded -= (4 - nprbytes) & 3;
+	return nbytesdecoded;
 }
 
 static const char basis_64[] =
