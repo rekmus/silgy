@@ -396,7 +396,6 @@ extern "C" {
     bool get_qs_param(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen);
     bool get_qs_param_long(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf);
     char *get_qs_param_multipart(int ci, const char *fieldname, unsigned *retlen, char *retfname);
     bool lib_qsi(int ci, const char *fieldname, int *retbuf);
     bool lib_qsf(int ci, const char *fieldname, float *retbuf);

@@ -1872,14 +1872,44 @@ bool get_qs_param(int ci, const char *fieldname, char *retbuf)
     {
         if ( retbuf )
         {
-            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED || conn[ci].in_ctype == CONTENT_TYPE_UNSET )
+            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED )
             {
                 uri_decode(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
             }
-            else    /* JSON or multipart */
+            else    /* usually JSON or multipart */
             {
                 strncpy(retbuf, buf, MAX_URI_VAL_LEN);
                 retbuf[MAX_URI_VAL_LEN] = EOS;
+            }
+        }
+
+        return TRUE;
+    }
+    else if ( retbuf ) retbuf[0] = EOS;
+
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get incoming request data -- long string version. TRUE if found.
+-------------------------------------------------------------------------- */
+bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
+{
+    char buf[MAX_LONG_URI_VAL_LEN*2+1];
+
+    if ( get_qs_param_raw(ci, fieldname, buf, MAX_LONG_URI_VAL_LEN*2) )
+    {
+        if ( retbuf )
+        {
+            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED )
+            {
+                uri_decode(buf, strlen(buf), retbuf, MAX_LONG_URI_VAL_LEN);
+            }
+            else    /* usually JSON or multipart */
+            {
+                strncpy(retbuf, buf, MAX_LONG_URI_VAL_LEN);
+                retbuf[MAX_LONG_URI_VAL_LEN] = EOS;
             }
         }
 
@@ -1902,11 +1932,11 @@ bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf)
     {
         if ( retbuf )
         {
-            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED || conn[ci].in_ctype == CONTENT_TYPE_UNSET )
+            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED )
             {
                 uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
             }
-            else    /* JSON or multipart */
+            else    /* usually JSON or multipart */
             {
                 sanitize_html(retbuf, buf, MAX_URI_VAL_LEN);
             }
@@ -1931,11 +1961,11 @@ bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf)
     {
         if ( retbuf )
         {
-            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED || conn[ci].in_ctype == CONTENT_TYPE_UNSET )
+            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED )
             {
                 uri_decode_sql_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
             }
-            else    /* JSON or multipart */
+            else    /* usually JSON or multipart */
             {
                 sanitize_sql(retbuf, buf, MAX_URI_VAL_LEN);
             }
@@ -1983,6 +2013,39 @@ static JSON req={0};
 
 
 /* --------------------------------------------------------------------------
+   Get text value from multipart-form-data
+-------------------------------------------------------------------------- */
+static bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf, int maxlen)
+{
+    char     *p;
+    unsigned len;
+
+    p = get_qs_param_multipart(ci, fieldname, &len, NULL);
+
+    if ( !p ) return FALSE;
+
+//    if ( len > MAX_URI_VAL_LEN ) return FALSE;
+
+#ifdef DUMP
+    DBG("len = %d", len);
+#endif
+
+    if ( len > maxlen )
+    {
+        len = maxlen;
+#ifdef DUMP
+        DBG("len reduced to %d", len);
+#endif
+    }
+
+    strncpy(retbuf, p, len);
+    retbuf[len] = EOS;
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
    Get the query string value. Return TRUE if found.
 -------------------------------------------------------------------------- */
 bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
@@ -2003,7 +2066,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
         }
         else if ( conn[ci].in_ctype == CONTENT_TYPE_MULTIPART )
         {
-            return get_qs_param_multipart_txt(ci, fieldname, retbuf);
+            return get_qs_param_multipart_txt(ci, fieldname, retbuf, maxlen);
         }
         else if ( conn[ci].in_ctype != CONTENT_TYPE_URLENCODED && conn[ci].in_ctype != CONTENT_TYPE_UNSET )
         {
@@ -2087,44 +2150,6 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 #endif
 
     G_qs_len = i;
-
-    return TRUE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get incoming request data -- long string version. TRUE if found.
--------------------------------------------------------------------------- */
-bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
-{
-    char buf[MAX_LONG_URI_VAL_LEN*2+1];
-
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_LONG_URI_VAL_LEN*2) )
-    {
-        uri_decode(buf, strlen(buf), retbuf, MAX_LONG_URI_VAL_LEN);
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get text value from multipart-form-data
--------------------------------------------------------------------------- */
-bool get_qs_param_multipart_txt(int ci, const char *fieldname, char *retbuf)
-{
-    char     *p;
-    unsigned len;
-
-    p = get_qs_param_multipart(ci, fieldname, &len, NULL);
-
-    if ( !p ) return FALSE;
-
-    if ( len > MAX_URI_VAL_LEN ) return FALSE;
-
-    strncpy(retbuf, p, len);
-    retbuf[len] = EOS;
 
     return TRUE;
 }
