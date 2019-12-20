@@ -1594,12 +1594,12 @@ static int xctod(int c)
 /* --------------------------------------------------------------------------
    URI-decode src
 -------------------------------------------------------------------------- */
-static char *uri_decode(char *src, int srclen, char *dest, int maxlen)
+char *uri_decode(char *src, int srclen, char *dest, int maxlen)
 {
-    char    *endp=src+srclen;
-    char    *srcp;
-    char    *destp=dest;
-    int     written=0;
+    char *endp=src+srclen;
+    char *srcp;
+    char *destp=dest;
+    int  written=0;
 
     for ( srcp=src; srcp<endp; ++srcp )
     {
@@ -1610,7 +1610,7 @@ static char *uri_decode(char *src, int srclen, char *dest, int maxlen)
             *destp++ = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
             srcp += 2;
         }
-        else    /* copy as it is */
+        else
             *destp++ = *srcp;
 
         ++written;
@@ -2077,7 +2077,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
         qs = conn[ci].in_data;
         end = qs + conn[ci].clen;
     }
-    else
+    else    /* GET */
     {
         qs = strchr(conn[ci].uri, '?');
     }
@@ -2156,7 +2156,7 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 
 
 /* --------------------------------------------------------------------------
-   Experimental multipart-form-data receipt
+   multipart-form-data receipt
    Return length or -1 if error
    If retfname is not NULL then assume binary data and it must be the last
    data element

@@ -391,6 +391,7 @@ extern "C" {
     void lib_out_html_footer(int ci);
     void lib_append_css(int ci, const char *fname, bool first);
     void lib_append_script(int ci, const char *fname, bool first);
+    char *uri_decode(char *src, int srclen, char *dest, int maxlen);
     bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf);
     bool get_qs_param(int ci, const char *fieldname, char *retbuf);
