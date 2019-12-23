@@ -4617,7 +4617,7 @@ static char dst[4096];
                 || (src[i] >= 97 && src[i] <= 122)
                 || isdigit(src[i]) )
             dst[j++] = src[i];
-        else if ( src[i] == ' ' )
+        else if ( src[i] == ' ' || src[i] == '\t' || src[i] == '\n' )
             dst[j++] = '_';
 
         ++i;
