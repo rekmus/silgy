@@ -1629,30 +1629,25 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
 -------------------------------------------------------------------------- */
 int silgy_usr_send_message(int ci)
 {
-    char message[MAX_LONG_URI_VAL_LEN+1];
+    QSVAL_TEXT message;
 
     DBG("silgy_usr_send_message");
 
-    if ( !get_qs_param_long(ci, "msg_box", message) )
+    if ( !QS_TEXT_DONT_ESCAPE("msg_box", message) )
     {
         WAR("Invalid request (URI val missing?)");
         return ERR_INVALID_REQUEST;
     }
 
     QSVAL   email;
-static char sanmessage[MAX_LONG_URI_VAL_LEN*2];
+static char sanmessage[MAX_LONG_URI_VAL_LEN+1];
 static char sql[MAX_LONG_URI_VAL_LEN*2];
 
     if ( QS_HTML_ESCAPE("email", email) )
         stp_right(email);
 
     sprintf(sanmessage, "From %s\n\n", conn[ci].ip);
-    strcpy(sanmessage+strlen(sanmessage), silgy_html_esc(message));
-
-    /* remember user details in case of error or warning to correct */
-
-//    if ( conn[ci].usi )
-//        strcpy(US.email_tmp, email);
+    COPY(sanmessage+strlen(sanmessage), silgy_sql_esc(message), MAX_LONG_URI_VAL_LEN);
 
     sprintf(sql, "INSERT INTO users_messages (user_id,msg_id,email,message,created) VALUES (%d,%d,'%s','%s','%s')", UID, get_max(ci, "messages")+1, email, sanmessage, DT_NOW);
     DBG("sql: INSERT INTO users_messages (user_id,msg_id,email,...) VALUES (%d,get_max(),'%s',...)", UID, email);
@@ -1663,7 +1658,7 @@ static char sql[MAX_LONG_URI_VAL_LEN*2];
         return ERR_INT_SERVER_ERROR;
     }
 
-    /* send an email to admin */
+    /* email admin */
 
 #ifdef APP_CONTACT_EMAIL
     silgy_email(APP_CONTACT_EMAIL, "New message!", sanmessage);

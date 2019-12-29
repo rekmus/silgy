@@ -1630,352 +1630,52 @@ char *uri_decode(char *src, int srclen, char *dest, int maxlen)
 }
 
 
-/* --------------------------------------------------------------------------
-   URI-decode src, HTML-escape
-   Duplicated code for speed
--------------------------------------------------------------------------- */
-static char *uri_decode_html_esc(char *src, int srclen, char *dest, int maxlen)
-{
-    char    *endp=src+srclen;
-    char    *srcp;
-    char    *destp=dest;
-    int     nwrote=0;
-    char    tmp;
-
-    maxlen -= 7;
-
-    for ( srcp=src; srcp<endp; ++srcp )
-    {
-        if ( *srcp == '+' )
-        {
-            *destp++ = ' ';
-            ++nwrote;
-        }
-        else if ( *srcp == '%' )
-        {
-            tmp = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
-            srcp += 2;
-
-            if ( tmp == '\'' )      /* single quote */
-            {
-                *destp++ = '&';
-                *destp++ = 'a';
-                *destp++ = 'p';
-                *destp++ = 'o';
-                *destp++ = 's';
-                *destp++ = ';';
-                nwrote += 6;
-            }
-            else if ( tmp == '"' )  /* double quote */
-            {
-                *destp++ = '&';
-                *destp++ = 'q';
-                *destp++ = 'u';
-                *destp++ = 'o';
-                *destp++ = 't';
-                *destp++ = ';';
-                nwrote += 6;
-            }
-            else if ( tmp == '\\' ) /* backslash */
-            {
-                *destp++ = '\\';
-                *destp++ = '\\';
-                nwrote += 2;
-            }
-            else if ( tmp == '<' )
-            {
-                *destp++ = '&';
-                *destp++ = 'l';
-                *destp++ = 't';
-                *destp++ = ';';
-                nwrote += 4;
-            }
-            else if ( tmp == '>' )
-            {
-                *destp++ = '&';
-                *destp++ = 'g';
-                *destp++ = 't';
-                *destp++ = ';';
-                nwrote += 4;
-            }
-            else if ( tmp == '&' )
-            {
-                *destp++ = '&';
-                *destp++ = 'a';
-                *destp++ = 'm';
-                *destp++ = 'p';
-                *destp++ = ';';
-                nwrote += 5;
-            }
-            else if ( tmp != '\r' && tmp != '\n' )
-            {
-                *destp++ = tmp;
-                ++nwrote;
-            }
-        }
-        else if ( *srcp == '\'' )    /* ugly but fast -- everything again */
-        {
-            *destp++ = '&';
-            *destp++ = 'a';
-            *destp++ = 'p';
-            *destp++ = 'o';
-            *destp++ = 's';
-            *destp++ = ';';
-            nwrote += 6;
-        }
-        else if ( *srcp == '"' )    /* double quote */
-        {
-            *destp++ = '&';
-            *destp++ = 'q';
-            *destp++ = 'u';
-            *destp++ = 'o';
-            *destp++ = 't';
-            *destp++ = ';';
-            nwrote += 6;
-        }
-        else if ( *srcp == '\\' )   /* backslash */
-        {
-            *destp++ = '\\';
-            *destp++ = '\\';
-            nwrote += 2;
-        }
-        else if ( *srcp == '<' )
-        {
-            *destp++ = '&';
-            *destp++ = 'l';
-            *destp++ = 't';
-            *destp++ = ';';
-            nwrote += 4;
-        }
-        else if ( *srcp == '>' )
-        {
-            *destp++ = '&';
-            *destp++ = 'g';
-            *destp++ = 't';
-            *destp++ = ';';
-            nwrote += 4;
-        }
-        else if ( *srcp == '&' )
-        {
-            *destp++ = '&';
-            *destp++ = 'a';
-            *destp++ = 'm';
-            *destp++ = 'p';
-            *destp++ = ';';
-            nwrote += 5;
-        }
-        else if ( *srcp != '\r' && *srcp != '\n' )
-        {
-            *destp++ = *srcp;
-            ++nwrote;
-        }
-
-        if ( nwrote > maxlen )
-        {
-            WAR("URI val truncated");
-            break;
-        }
-    }
-
-    *destp = EOS;
-
-    return dest;
-}
-
-
-/* --------------------------------------------------------------------------
-   URI-decode src, SQL-escape
-   Duplicated code for speed
--------------------------------------------------------------------------- */
-static char *uri_decode_sql_esc(char *src, int srclen, char *dest, int maxlen)
-{
-    char    *endp=src+srclen;
-    char    *srcp;
-    char    *destp=dest;
-    int     nwrote=0;
-    char    tmp;
-
-    maxlen -= 3;
-
-    for ( srcp=src; srcp<endp; ++srcp )
-    {
-        if ( *srcp == '+' )
-        {
-            *destp++ = ' ';
-            ++nwrote;
-        }
-        else if ( *srcp == '%' )
-        {
-            tmp = 16 * xctod(*(srcp+1)) + xctod(*(srcp+2));
-            srcp += 2;
-
-            if ( tmp == '\'' )      /* single quote */
-            {
-                *destp++ = '\\';
-                *destp++ = '\'';
-                nwrote += 2;
-            }
-            else if ( *srcp == '"' )    /* double quote */
-            {
-                *destp++ = '\\';
-                *destp++ = '"';
-                nwrote += 2;
-            }
-            else if ( tmp == '\\' )     /* backslash */
-            {
-                *destp++ = '\\';
-                *destp++ = '\\';
-                nwrote += 2;
-            }
-        }
-        else if ( *srcp == '\'' )   /* ugly but fast -- everything again */
-        {
-            *destp++ = '\\';
-            *destp++ = '\'';
-            nwrote += 2;
-        }
-        else if ( *srcp == '"' )    /* double quote */
-        {
-            *destp++ = '\\';
-            *destp++ = '"';
-            nwrote += 2;
-        }
-        else if ( *srcp == '\\' )   /* backslash */
-        {
-            *destp++ = '\\';
-            *destp++ = '\\';
-            nwrote += 2;
-        }
-
-        if ( nwrote > maxlen )
-        {
-            WAR("URI val truncated");
-            break;
-        }
-    }
-
-    *destp = EOS;
-
-    return dest;
-}
-
-
 #ifndef SILGY_WATCHER
 /* --------------------------------------------------------------------------
-   Get query string value and URI-decode. Return TRUE if found.
+   Get incoming request data. TRUE if found.
 -------------------------------------------------------------------------- */
-bool get_qs_param(int ci, const char *fieldname, char *retbuf)
+bool get_qs_param(int ci, const char *fieldname, char *retbuf, int maxlen, char esc_type)
 {
-    char buf[MAX_URI_VAL_LEN*2+1];
+static char interbuf[65536];
 
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
+    if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED )
     {
-        if ( retbuf )
+static char rawbuf[196608];    /* URL-encoded can have up to 3 times bytes count */
+
+        if ( !get_qs_param_raw(ci, fieldname, rawbuf, maxlen*3-1) )
         {
-            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED )
-            {
-                uri_decode(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
-            }
-            else    /* usually JSON or multipart */
-            {
-                strncpy(retbuf, buf, MAX_URI_VAL_LEN);
-                retbuf[MAX_URI_VAL_LEN] = EOS;
-            }
+            if ( retbuf ) retbuf[0] = EOS;
+            return FALSE;
         }
 
-        return TRUE;
-    }
-    else if ( retbuf ) retbuf[0] = EOS;
-
-    return FALSE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get incoming request data -- long string version. TRUE if found.
--------------------------------------------------------------------------- */
-bool get_qs_param_long(int ci, const char *fieldname, char *retbuf)
-{
-    char buf[MAX_LONG_URI_VAL_LEN*2+1];
-
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_LONG_URI_VAL_LEN*2) )
-    {
         if ( retbuf )
-        {
-            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED )
-            {
-                uri_decode(buf, strlen(buf), retbuf, MAX_LONG_URI_VAL_LEN);
-            }
-            else    /* usually JSON or multipart */
-            {
-                strncpy(retbuf, buf, MAX_LONG_URI_VAL_LEN);
-                retbuf[MAX_LONG_URI_VAL_LEN] = EOS;
-            }
-        }
-
-        return TRUE;
+            uri_decode(rawbuf, G_qs_len, interbuf, maxlen);
     }
-    else if ( retbuf ) retbuf[0] = EOS;
-
-    return FALSE;
-}
-
-
-/* --------------------------------------------------------------------------
-   Get, URI-decode and HTML-escape query string value. Return TRUE if found.
--------------------------------------------------------------------------- */
-bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf)
-{
-    char buf[MAX_URI_VAL_LEN*2+1];
-
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
+    else    /* usually JSON or multipart */
     {
-        if ( retbuf )
+        if ( !get_qs_param_raw(ci, fieldname, interbuf, maxlen) )
         {
-            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED )
-            {
-                uri_decode_html_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
-            }
-            else    /* usually JSON or multipart */
-            {
-                sanitize_html(retbuf, buf, MAX_URI_VAL_LEN);
-            }
+            if ( retbuf ) retbuf[0] = EOS;
+            return FALSE;
         }
-
-        return TRUE;
     }
-    else if ( retbuf ) retbuf[0] = EOS;
 
-    return FALSE;
-}
+    /* now we have URI-decoded string in interbuf */
 
-
-/* --------------------------------------------------------------------------
-   Get, URI-decode and SQL-escape query string value. Return TRUE if found.
--------------------------------------------------------------------------- */
-bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf)
-{
-    char buf[MAX_URI_VAL_LEN*2+1];
-
-    if ( get_qs_param_raw(ci, fieldname, buf, MAX_URI_VAL_LEN*2) )
+    if ( retbuf )
     {
-        if ( retbuf )
+        if ( esc_type == ESC_HTML )
+            sanitize_html(retbuf, interbuf, maxlen);
+        else if ( esc_type == ESC_SQL )
+            sanitize_sql(retbuf, interbuf, maxlen);
+        else
         {
-            if ( conn[ci].in_ctype == CONTENT_TYPE_URLENCODED )
-            {
-                uri_decode_sql_esc(buf, strlen(buf), retbuf, MAX_URI_VAL_LEN);
-            }
-            else    /* usually JSON or multipart */
-            {
-                sanitize_sql(retbuf, buf, MAX_URI_VAL_LEN);
-            }
+            strncpy(retbuf, interbuf, maxlen);
+            retbuf[maxlen] = EOS;
         }
-
-        return TRUE;
     }
-    else if ( retbuf ) retbuf[0] = EOS;
 
-    return FALSE;
+    return TRUE;
 }
 
 
@@ -5431,11 +5131,6 @@ void sanitize_html(char *dst, const char *str, int len)
             dst[j++] = 's';
             dst[j++] = ';';
         }
-        else if ( str[i] == '\\' )
-        {
-            dst[j++] = '\\';
-            dst[j++] = '\\';
-        }
         else if ( str[i] == '"' )
         {
             dst[j++] = '&';
@@ -5444,6 +5139,11 @@ void sanitize_html(char *dst, const char *str, int len)
             dst[j++] = 'o';
             dst[j++] = 't';
             dst[j++] = ';';
+        }
+        else if ( str[i] == '\\' )
+        {
+            dst[j++] = '\\';
+            dst[j++] = '\\';
         }
         else if ( str[i] == '<' )
         {
@@ -5467,14 +5167,14 @@ void sanitize_html(char *dst, const char *str, int len)
             dst[j++] = 'p';
             dst[j++] = ';';
         }
-/*        else if ( str[i] == '\n' )
+        else if ( str[i] == '\n' )
         {
             dst[j++] = '<';
             dst[j++] = 'b';
             dst[j++] = 'r';
             dst[j++] = '>';
-        } */
-        else // if ( str[i] != '\r' )
+        }
+        else if ( str[i] != '\r' )
             dst[j++] = str[i];
         ++i;
     }
@@ -5572,28 +5272,6 @@ static char dst[MAX_LONG_URI_VAL_LEN+1];
 
     return dst;
 }
-
-
-/* --------------------------------------------------------------------------
-   Primitive URI encoding
----------------------------------------------------------------------------*/
-/*char *uri_encode(const char *str)
-{
-static char uri_encode[4096];
-    int     i;
-
-    for ( i=0; str[i] && i<4095; ++i )
-    {
-        if ( str[i] == ' ' )
-            uri_encode[i] = '+';
-        else
-            uri_encode[i] = str[i];
-    }
-
-    uri_encode[i] = EOS;
-
-    return uri_encode;
-}*/
 
 
 /* --------------------------------------------------------------------------

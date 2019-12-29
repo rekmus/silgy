@@ -51,6 +51,15 @@
 typedef char                        QSVAL[QSBUF];
 //typedef struct QSVAL              { char x[QSBUF]; } QSVAL;
 
+typedef char                        QSVAL1K[1024];
+typedef char                        QSVAL2K[2048];
+typedef char                        QSVAL4K[4096];
+typedef char                        QSVAL8K[8192];
+typedef char                        QSVAL16K[16384];
+typedef char                        QSVAL32K[32768];
+typedef char                        QSVAL64K[65536];
+typedef char                        QSVAL_TEXT[65536];
+
 
 #define RES_HEADER(key, val)        lib_res_header(ci, key, val)
 
@@ -392,11 +401,8 @@ extern "C" {
     void lib_append_css(int ci, const char *fname, bool first);
     void lib_append_script(int ci, const char *fname, bool first);
     char *uri_decode(char *src, int srclen, char *dest, int maxlen);
-    bool get_qs_param_html_esc(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param_sql_esc(int ci, const char *fieldname, char *retbuf);
-    bool get_qs_param(int ci, const char *fieldname, char *retbuf);
+    bool get_qs_param(int ci, const char *fieldname, char *retbuf, int maxlen, char esc_type);
     bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen);
-    bool get_qs_param_long(int ci, const char *fieldname, char *retbuf);
     char *get_qs_param_multipart(int ci, const char *fieldname, unsigned *retlen, char *retfname);
     bool lib_qsi(int ci, const char *fieldname, int *retbuf);
     bool lib_qsf(int ci, const char *fieldname, float *retbuf);
