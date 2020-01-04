@@ -3246,7 +3246,10 @@ static int rest_res_content_length(const char *buffer, int len)
 {
     const char *p;
 
-    if ( (p=strstr(buffer, "\nContent-Length: ")) == NULL ) return -1;
+    if ( (p=strstr(buffer, "\nContent-Length: ")) == NULL
+            && (p=strstr(buffer, "\nContent-length: ")) == NULL
+            && (p=strstr(buffer, "\ncontent-length: ")) == NULL )
+        return -1;
 
     if ( len < (p-buffer) + 18 ) return -1;
 
