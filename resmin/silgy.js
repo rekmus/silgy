@@ -42,8 +42,9 @@ function gt(l)
 function p(t)
 {
     let p = document.createElement("p");
-    p.innerHTML = t;
+    if ( t ) p.innerHTML = t;
     document.body.appendChild(p);
+    return p;
 }
 
 
