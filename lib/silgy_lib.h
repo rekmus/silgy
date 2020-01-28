@@ -80,6 +80,21 @@ typedef char                        QSVAL_TEXT[65536];
 #define MAX_SHM_SEGMENTS            100
 
 
+/* API authorization system */
+
+#define AUTH_NONE                   0x00
+#define AUTH_CREATE                 0x01
+#define AUTH_READ                   0x02
+#define AUTH_UPDATE                 0x04
+#define AUTH_DELETE                 0x08
+#define AUTH_FULL                   0xFF
+
+#define IS_AUTH_CREATE(flags)       ((flags & AUTH_CREATE) == AUTH_CREATE)
+#define IS_AUTH_READ(flags)         ((flags & AUTH_READ) == AUTH_READ)
+#define IS_AUTH_UPDATE(flags)       ((flags & AUTH_UPDATE) == AUTH_UPDATE)
+#define IS_AUTH_DELETE(flags)       ((flags & AUTH_DELETE) == AUTH_DELETE)
+
+
 
 /* languages */
 

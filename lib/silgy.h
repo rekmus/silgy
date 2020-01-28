@@ -149,6 +149,8 @@ typedef char str64k[1024*64];
 #define CHAR_HEAVY_MINUS                "&#10134;"
 #define CHAR_DOWN_ARROWHEAD2            "&#65088;"
 #define CHAR_FULLW_PLUS                 "&#65291;"
+#define CHAR_LESS_EQUAL                 "&#8804;"
+#define CHAR_GREATER_EQUAL              "&#8805;"
 
 
 
@@ -1301,6 +1303,7 @@ extern char         G_rest_content_type[MAX_VALUE_LEN+1];
 extern int          G_new_user_id;
 extern int          G_qs_len;
 
+
 #ifdef __cplusplus
 }   /* extern "C" */
 #endif
@@ -1322,7 +1325,6 @@ extern "C" {
     void eng_async_req(int ci, const char *service, const char *data, char response, int timeout, int size);
     void silgy_add_to_static_res(const char *name, const char *src);
     void eng_block_ip(const char *value, bool autoblocked);
-//    bool eng_host(int ci, const char *host);
     bool eng_is_uri(int ci, const char *uri);
     bool silgy_set_host_res(const char *host, const char *res, const char *resmin);
     void eng_out_check(int ci, const char *str);

@@ -223,6 +223,10 @@ void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
 
 
 
+
+/* --------------------------------------------------------- */
+/* MD parsing ---------------------------------------------- */
+
 #define MD_TAG_NONE '0'
 #define MD_TAG_P    'p'
 #define MD_TAG_H1   '1'
