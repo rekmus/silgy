@@ -57,6 +57,7 @@ double      G_rest_elapsed=0;           /* REST calls elapsed for calculating av
 double      G_rest_average=0;           /* REST calls average elapsed */
 int         G_rest_status;              /* last REST call response status */
 char        G_rest_content_type[MAX_VALUE_LEN+1];
+int         G_rest_res_len=0;
 int         G_qs_len=0;
 
 
@@ -3824,6 +3825,8 @@ static char res_content[JSON_BUFSIZE];
     res_content[content_read] = EOS;
 
     DBG("Read %d bytes of content", content_read);
+
+    G_rest_res_len = content_read;
 
 #ifdef DUMP
     log_long(res_content, content_read, "Content");

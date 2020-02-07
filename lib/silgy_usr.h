@@ -258,7 +258,7 @@ extern "C" {
 #endif
     int  silgy_usr_login(int ci);
     int  silgy_usr_create_account(int ci);
-    int  silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email, const char *name, const char *passwd, const char *phone, const char *lang, const char *tz, const char *about, char group_id, char auth_level);
+    int  silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email, const char *name, const char *passwd, const char *phone, const char *lang, const char *tz, const char *about, char group_id, char auth_level, char status);
     int  silgy_usr_send_message(int ci);
     int  silgy_usr_save_account(int ci);
     int  silgy_usr_email_registered(int ci);

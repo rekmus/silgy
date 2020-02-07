@@ -1489,7 +1489,7 @@ int silgy_usr_create_account(int ci)
 /* --------------------------------------------------------------------------
    Send an email about new account
 -------------------------------------------------------------------------- */
-static int new_account_notification(int ci, const char *login, const char *email, const char *name, const char *passwd)
+static int new_account_notification(int ci, const char *login, const char *email, const char *name, const char *passwd, char status)
 {
     char subject[256];
     char message[4096];
@@ -1507,7 +1507,8 @@ static int new_account_notification(int ci, const char *login, const char *email
 #else
     OUTP("http://%s/%s\n\n", conn[ci].host, APP_LOGIN_URI);
 #endif
-    OUTP("Your password is %s and you will have to change it on your first login.\n\n", passwd[0]?passwd:"empty");
+    if ( status == USER_STATUS_PASSWORD_CHANGE )
+        OUTP("Your password is %s and you will have to change it on your first login.\n\n", passwd[0]?passwd:"empty");
 #ifdef APP_CONTACT_EMAIL
     OUTP("In case you needed any help, please contact us at %s.\n\n", APP_CONTACT_EMAIL);
 #endif
@@ -1528,7 +1529,7 @@ static int new_account_notification(int ci, const char *login, const char *email
 /* --------------------------------------------------------------------------
    Create user account
 -------------------------------------------------------------------------- */
-int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email, const char *name, const char *passwd, const char *phone, const char *lang, const char *tz, const char *about, char group_id, char auth_level)
+int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email, const char *name, const char *passwd, const char *phone, const char *lang, const char *tz, const char *about, char group_id, char auth_level, char status)
 {
     int   ret=OK;
     QSVAL password;
@@ -1537,7 +1538,8 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
 
     if ( use_qs )   /* use query string / POST payload */
     {
-        if ( (ret=create_account(ci, auth_level, USER_STATUS_PASSWORD_CHANGE, FALSE)) != OK )
+//        if ( (ret=create_account(ci, auth_level, USER_STATUS_PASSWORD_CHANGE, FALSE)) != OK )
+        if ( (ret=create_account(ci, auth_level, status, FALSE)) != OK )
         {
             ERR("create_account failed");
             return ret;
@@ -1566,8 +1568,8 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
             return ERR_EMAIL_EMPTY;
         else if ( !valid_email(email) )                 /* invalid email format */
             return ERR_EMAIL_FORMAT;
-        else if ( OK != (ret=email_exists(email)) )     /* email not unique */
-            return ret;
+//        else if ( OK != (ret=email_exists(email)) )     /* email not unique */
+//            return ret;
 #else
         if ( strlen(login) < MIN_USERNAME_LEN )         /* user name too short */
             return ERR_USERNAME_TOO_SHORT;
@@ -1579,6 +1581,11 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
             return ERR_EMAIL_FORMAT_OR_EMPTY;
 #endif  /* USERSBYEMAIL */
 
+        if ( email[0] && OK != (ret=email_exists(email)) )  /* email in use */
+            return ret;
+        else if ( (ret=passwd_quality(passwd)) != OK )
+            return ret;
+
         /* --------------------------------------------------------------- */
 
         get_hashes(str1, str2, login, email, password);
@@ -1588,7 +1595,7 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
         strcpy(login_u, upper(login));
         strcpy(email_u, upper(email));
 
-        sprintf(sql, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,lang,tz,about,group_id,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,%d,'%s',0,0)", login, login_u, email, email_u, name?name:"", phone?phone:"", str1, str2, lang?lang:"", tz?tz:"", about?about:"", group_id, auth_level, USER_STATUS_PASSWORD_CHANGE, DT_NOW);
+        sprintf(sql, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,lang,tz,about,group_id,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,%d,'%s',0,0)", login, login_u, email, email_u, name?name:"", phone?phone:"", str1, str2, lang?lang:"", tz?tz:"", about?about:"", group_id, auth_level, status, DT_NOW);
 
         DBG("sql: INSERT INTO users (id,login,email,name,phone,...) VALUES (0,'%s','%s','%s','%s',...)", login, email, name?name:"", phone?phone:"");
 
@@ -1617,7 +1624,7 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
         strcpy(email_, email);
 
     if ( email_[0] )
-        new_account_notification(ci, login, email_, name, password);
+        new_account_notification(ci, login, email_, name, password, status);
 #endif
 
     return ret;

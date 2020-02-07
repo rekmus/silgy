@@ -1300,6 +1300,7 @@ extern unsigned     G_rest_req;                 /* REST calls counter */
 extern double       G_rest_elapsed;             /* REST calls elapsed for calculating average */
 extern double       G_rest_average;             /* REST calls average elapsed */
 extern char         G_rest_content_type[MAX_VALUE_LEN+1];
+extern int          G_rest_res_len;
 extern int          G_new_user_id;
 extern int          G_qs_len;
 
