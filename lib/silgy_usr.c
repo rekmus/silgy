@@ -1061,7 +1061,7 @@ int silgy_usr_login(int ci)
 
     get_hashes(str1, str2, us.login, us.email, passwd);
 
-    /* compare them with stored ones */
+    /* compare them with the stored ones */
 
     if ( 0 != strcmp(str1, p1) || (us.email[0] && 0 != strcmp(str2, p2)) )   /* passwd1, passwd2 */
     {
@@ -1234,7 +1234,7 @@ static bool load_common_passwd()
 /* --------------------------------------------------------------------------
    Assess password quality
 -------------------------------------------------------------------------- */
-static int passwd_quality(const char *passwd)
+int silgy_usr_password_quality(const char *passwd)
 {
     int len = strlen(passwd);
 
@@ -1323,7 +1323,7 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
     {
 #ifdef USERSBYEMAIL
         COPY(login, email, LOGIN_LEN);
-#else
+#else   /* USERSBYLOGIN */
         if ( email[0] )
             COPY(login, email, LOGIN_LEN);
         else
@@ -1424,7 +1424,7 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
 
     if ( email[0] && OK != (ret=email_exists(email)) )  /* email in use */
         return ret;
-    else if ( (ret=passwd_quality(passwd)) != OK )
+    else if ( (ret=silgy_usr_password_quality(passwd)) != OK )
         return ret;
     else if ( 0 != strcmp(passwd, rpasswd) )            /* passwords differ */
         return ERR_PASSWORD_DIFFERENT;
@@ -1532,6 +1532,7 @@ static int new_account_notification(int ci, const char *login, const char *email
 int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email, const char *name, const char *passwd, const char *phone, const char *lang, const char *tz, const char *about, char group_id, char auth_level, char status)
 {
     int   ret=OK;
+    QSVAL dst_login;
     QSVAL password;
 
     DBG("silgy_usr_add_user");
@@ -1549,10 +1550,32 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
     }
     else    /* use function arguments */
     {
-        QSVAL login_u;
-        QSVAL email_u;
-        char sql[SQLBUF];
-        char str1[32], str2[32];
+#ifdef USERSBYEMAIL
+        if ( !email || !email[0] )    /* email empty */
+        {
+            ERR("Invalid request (email missing)");
+            return ERR_EMAIL_EMPTY;
+        }
+#endif  /* USERSBYEMAIL */
+
+        if ( !login || !login[0] )    /* login empty */
+        {
+#ifdef USERSBYEMAIL
+            COPY(dst_login, email, LOGIN_LEN);
+#else   /* USERSBYLOGIN */
+            if ( email[0] )
+                COPY(dst_login, email, LOGIN_LEN);
+            else
+            {
+                ERR("Either login or email is required");
+                return ERR_INVALID_REQUEST;
+            }
+#endif
+        }
+        else    /* login supplied */
+        {
+            COPY(dst_login, login, LOGIN_LEN);
+        }
 
         /* --------------------------------------------------------------- */
 
@@ -1568,14 +1591,12 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
             return ERR_EMAIL_EMPTY;
         else if ( !valid_email(email) )                 /* invalid email format */
             return ERR_EMAIL_FORMAT;
-//        else if ( OK != (ret=email_exists(email)) )     /* email not unique */
-//            return ret;
-#else
-        if ( strlen(login) < MIN_USERNAME_LEN )         /* user name too short */
+#else   /* USERSBYLOGIN */
+        if ( strlen(dst_login) < MIN_USERNAME_LEN )     /* user name too short */
             return ERR_USERNAME_TOO_SHORT;
-        else if ( !valid_username(login) )              /* only certain chars are allowed in user name */
+        else if ( !valid_username(dst_login) )          /* only certain chars are allowed in user name */
             return ERR_USERNAME_CHARS;
-        else if ( OK != (ret=user_exists(login)) )      /* user name taken */
+        else if ( OK != (ret=user_exists(dst_login)) )  /* user name taken */
             return ret;
         else if ( email[0] && !valid_email(email) )     /* invalid email format */
             return ERR_EMAIL_FORMAT_OR_EMPTY;
@@ -1583,21 +1604,27 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
 
         if ( email[0] && OK != (ret=email_exists(email)) )  /* email in use */
             return ret;
-        else if ( (ret=passwd_quality(passwd)) != OK )
+        else if ( (ret=silgy_usr_password_quality(password)) != OK )
             return ret;
 
         /* --------------------------------------------------------------- */
 
-        get_hashes(str1, str2, login, email, password);
+        char str1[32], str2[32];
+
+        get_hashes(str1, str2, dst_login, email, password);
 
         /* --------------------------------------------------------------- */
 
-        strcpy(login_u, upper(login));
+        QSVAL login_u;
+        QSVAL email_u;
+        char sql[SQLBUF];
+
+        strcpy(login_u, upper(dst_login));
         strcpy(email_u, upper(email));
 
-        sprintf(sql, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,lang,tz,about,group_id,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,%d,'%s',0,0)", login, login_u, email, email_u, name?name:"", phone?phone:"", str1, str2, lang?lang:"", tz?tz:"", about?about:"", group_id, auth_level, status, DT_NOW);
+        sprintf(sql, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,lang,tz,about,group_id,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,%d,'%s',0,0)", dst_login, login_u, email, email_u, name?name:"", phone?phone:"", str1, str2, lang?lang:"", tz?tz:"", about?about:"", group_id, auth_level, status, DT_NOW);
 
-        DBG("sql: INSERT INTO users (id,login,email,name,phone,...) VALUES (0,'%s','%s','%s','%s',...)", login, email, name?name:"", phone?phone:"");
+        DBG("sql: INSERT INTO users (id,login,email,name,phone,...) VALUES (0,'%s','%s','%s','%s',...)", dst_login, email, name?name:"", phone?phone:"");
 
         if ( mysql_query(G_dbconn, sql) )
         {
@@ -1612,7 +1639,7 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
 #ifdef USERSBYEMAIL
         INF("User [%s] created", email);
 #else
-        INF("User [%s] created", login);
+        INF("User [%s] created", dst_login);
 #endif
     }
 
@@ -1624,7 +1651,7 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
         strcpy(email_, email);
 
     if ( email_[0] )
-        new_account_notification(ci, login, email_, name, password, status);
+        new_account_notification(ci, dst_login, email_, name, password, status);
 #endif
 
     return ret;
@@ -1814,7 +1841,7 @@ int silgy_usr_save_account(int ci)
     if ( email[0] && !valid_email(email) )
         return ERR_EMAIL_FORMAT_OR_EMPTY;
 #endif  /* USERSBYEMAIL */
-    else if ( plen && (ret=passwd_quality(passwd)) != OK )
+    else if ( plen && (ret=silgy_usr_password_quality(passwd)) != OK )
         return ret;
     else if ( plen && 0 != strcmp(passwd, rpasswd) )
         return ERR_PASSWORD_DIFFERENT;
@@ -2463,7 +2490,7 @@ int silgy_usr_change_password(int ci)
 
     int plen = strlen(passwd);
 
-    if ( (ret=passwd_quality(passwd)) != OK )
+    if ( (ret=silgy_usr_password_quality(passwd)) != OK )
         return ret;
     else if ( 0 != strcmp(passwd, rpasswd) )   /* passwords differ */
         return ERR_PASSWORD_DIFFERENT;
@@ -2524,7 +2551,7 @@ int silgy_usr_reset_password(int ci)
 
     if ( !valid_email(email) )
         return ERR_EMAIL_FORMAT;
-    else if ( (ret=passwd_quality(passwd)) != OK )
+    else if ( (ret=silgy_usr_password_quality(passwd)) != OK )
         return ret;
     else if ( 0 != strcmp(passwd, rpasswd) )    /* passwords differ */
         return ERR_PASSWORD_DIFFERENT;
@@ -2620,19 +2647,6 @@ void silgy_usr_logout(int ci)
 
 
 /* --------------------------------------------------------------------------
-   doit wrapper
--------------------------------------------------------------------------- */
-static void get_hashes(char *result1, char *result2, const char *login, const char *email, const char *passwd)
-{
-#ifdef USERSBYLOGIN
-    doit(result1, result2, login, email[0]?email:STR_005, passwd);
-#else
-    doit(result1, result2, email, email, passwd);
-#endif
-}
-
-
-/* --------------------------------------------------------------------------
    Generate password hashes
 -------------------------------------------------------------------------- */
 static void doit(char *result1, char *result2, const char *login, const char *email, const char *src)
@@ -2662,6 +2676,19 @@ static void doit(char *result1, char *result2, const char *login, const char *em
             result2[j++] = tmp[i];
     }
     result2[j] = EOS;
+}
+
+
+/* --------------------------------------------------------------------------
+   doit wrapper
+-------------------------------------------------------------------------- */
+static void get_hashes(char *result1, char *result2, const char *login, const char *email, const char *passwd)
+{
+#ifdef USERSBYLOGIN
+    doit(result1, result2, login, email[0]?email:STR_005, passwd);
+#else
+    doit(result1, result2, email, email, passwd);
+#endif
 }
 
 
