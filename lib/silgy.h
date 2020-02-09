@@ -109,6 +109,9 @@ typedef char str64k[1024*64];
 #define QSBUF                           MAX_URI_VAL_LEN+1
 #define QS_BUF                          QSBUF
 
+#define WEBSITE_LEN                     63
+#define CONTENT_TYPE_LEN                63
+#define CONTENT_DISP_LEN                127
 
 #define LOGIN_LEN                       30
 #define EMAIL_LEN                       120
@@ -912,18 +915,29 @@ typedef struct {
     char     payload_location;
     char     uri[MAX_URI_LEN+1];
     char     resource[MAX_RESOURCE_LEN+1];
+    char     id[MAX_RESOURCE_LEN+1];
     char     uagent[MAX_VALUE_LEN+1];
     bool     mobile;
     char     referer[MAX_VALUE_LEN+1];
     unsigned clen;
     char     host[MAX_VALUE_LEN+1];
-    char     website[256];
+    char     website[WEBSITE_LEN+1];
     char     lang[LANG_LEN+1];
     char     in_ctype;
     char     boundary[MAX_VALUE_LEN+1];
     char     response;
     int      status;
+    char     cust_headers[CUST_HDR_LEN+1];
     char     ctype;
+    char     ctypestr[CONTENT_TYPE_LEN+1];
+    char     cdisp[CONTENT_DISP_LEN+1];
+    char     cookie_out_a[SESID_LEN+1];
+    char     cookie_out_a_exp[32];
+    char     cookie_out_l[SESID_LEN+1];
+    char     cookie_out_l_exp[32];
+    char     location[MAX_URI_LEN+1];
+    bool     dont_cache;
+    bool     keep_content;
     usession_t uses;
 #ifndef ASYNC_EXCLUDE_AUSES
     ausession_t auses;
@@ -938,10 +952,6 @@ typedef struct {
     int      sessions_hwm;
     char     last_modified[32];
     int      blacklist_cnt;
-    char     cookie_out_a[SESID_LEN+1];
-    char     cookie_out_a_exp[32];
-    char     cookie_out_l[SESID_LEN+1];
-    char     cookie_out_l_exp[32];
 } async_req_hdr_t;
 
 typedef struct {
@@ -967,8 +977,8 @@ typedef struct {
     int      status;
     char     cust_headers[CUST_HDR_LEN+1];
     char     ctype;
-    char     ctypestr[256];
-    char     cdisp[256];
+    char     ctypestr[CONTENT_TYPE_LEN+1];
+    char     cdisp[CONTENT_DISP_LEN+1];
     char     cookie_out_a[SESID_LEN+1];
     char     cookie_out_a_exp[32];
     char     cookie_out_l[SESID_LEN+1];
@@ -1026,7 +1036,7 @@ typedef struct {                            /* request details for silgy_svc */
     char     *in_data;
     unsigned in_data_allocated;
     char     host[MAX_VALUE_LEN+1];
-    char     website[256];
+    char     website[WEBSITE_LEN+1];
     char     lang[LANG_LEN+1];
     char     in_ctype;
     char     boundary[MAX_VALUE_LEN+1];
@@ -1034,8 +1044,8 @@ typedef struct {                            /* request details for silgy_svc */
     int      status;
     char     cust_headers[CUST_HDR_LEN+1];
     char     ctype;
-    char     ctypestr[256];
-    char     cdisp[256];
+    char     ctypestr[CONTENT_TYPE_LEN+1];
+    char     cdisp[CONTENT_DISP_LEN+1];
     char     cookie_out_a[SESID_LEN+1];
     char     cookie_out_a_exp[32];
     char     cookie_out_l[SESID_LEN+1];
@@ -1079,7 +1089,7 @@ typedef struct {
     char     cookie_in_l[SESID_LEN+1];       /* logged in */
     char     host[MAX_VALUE_LEN+1];
     char     host_normalized[MAX_VALUE_LEN+1];
-    char     website[256];
+    char     website[WEBSITE_LEN+1];
     char     lang[LANG_LEN+1];
     time_t   if_mod_since;
     char     in_ctypestr[MAX_VALUE_LEN+1];   /* content type as an original string */
@@ -1103,8 +1113,8 @@ typedef struct {
     char     cust_headers[CUST_HDR_LEN+1];
     unsigned data_sent;                      /* how many content bytes have been sent */
     char     ctype;                          /* content type */
-    char     ctypestr[256];                  /* user (custom) content type */
-    char     cdisp[256];                     /* content disposition */
+    char     ctypestr[CONTENT_TYPE_LEN+1];   /* user (custom) content type */
+    char     cdisp[CONTENT_DISP_LEN+1];      /* content disposition */
     time_t   modified;
     char     cookie_out_a[SESID_LEN+1];
     char     cookie_out_a_exp[32];           /* cookie expires */
@@ -1145,7 +1155,7 @@ typedef struct {
 /* static resources */
 
 typedef struct {
-    char     host[256];
+    char     host[MAX_VALUE_LEN+1];
     char     name[STATIC_PATH_LEN];
     char     type;
     char     *data;

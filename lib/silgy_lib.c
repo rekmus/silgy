@@ -601,7 +601,7 @@ static char unknown[128];
 -------------------------------------------------------------------------- */
 static char *get_msg_cat(int code)
 {
-static char cat[32];
+static char cat[64];
 
     if ( code == OK )
     {
@@ -661,7 +661,7 @@ static char cat[32];
 -------------------------------------------------------------------------- */
 bool silgy_is_msg_main_cat(int code, const char *arg_cat)
 {
-    char cat[32];
+    char cat[64];
 
     strcpy(cat, get_msg_cat(code));
 
@@ -2187,7 +2187,7 @@ void lib_set_res_content_type(int ci, const char *str)
         else
             conn[ci].ctype = CONTENT_TYPE_USER;
 
-        strcpy(conn[ci].ctypestr, str);
+        COPY(conn[ci].ctypestr, str, CONTENT_TYPE_LEN);
     }
 }
 
@@ -2224,7 +2224,7 @@ void lib_set_res_content_disposition(int ci, const char *str, ...)
 -------------------------------------------------------------------------- */
 void lib_send_msg_description(int ci, int code)
 {
-    char cat[32];
+    char cat[64];
     char msg[1024];
 
     strcpy(cat, get_msg_cat(code));

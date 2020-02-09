@@ -871,6 +871,7 @@ int main(int argc, char **argv)
 
                 /* update connection details */
 
+                strcpy(conn[res.ci].cust_headers, res.hdr.cust_headers);
                 conn[res.ci].ctype = res.hdr.ctype;
                 strcpy(conn[res.ci].ctypestr, res.hdr.ctypestr);
                 strcpy(conn[res.ci].cdisp, res.hdr.cdisp);
@@ -5389,6 +5390,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     req.hdr.post = conn[ci].post;
     strcpy(req.hdr.uri, conn[ci].uri);
     strcpy(req.hdr.resource, conn[ci].resource);
+    strcpy(req.hdr.id, conn[ci].id);
     strcpy(req.hdr.uagent, conn[ci].uagent);
     req.hdr.mobile = conn[ci].mobile;
     strcpy(req.hdr.referer, conn[ci].referer);
@@ -5399,11 +5401,17 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     req.hdr.in_ctype = conn[ci].in_ctype;
     strcpy(req.hdr.boundary, conn[ci].boundary);
     req.hdr.status = conn[ci].status;
+    strcpy(req.hdr.cust_headers, conn[ci].cust_headers);
     req.hdr.ctype = conn[ci].ctype;
+    strcpy(req.hdr.ctypestr, conn[ci].ctypestr);
+    strcpy(req.hdr.cdisp, conn[ci].cdisp);
     strcpy(req.hdr.cookie_out_a, conn[ci].cookie_out_a);
     strcpy(req.hdr.cookie_out_a_exp, conn[ci].cookie_out_a_exp);
     strcpy(req.hdr.cookie_out_l, conn[ci].cookie_out_l);
     strcpy(req.hdr.cookie_out_l_exp, conn[ci].cookie_out_l_exp);
+    strcpy(req.hdr.location, conn[ci].location);
+    req.hdr.dont_cache = conn[ci].dont_cache;
+    req.hdr.keep_content = conn[ci].keep_content;
 
     /* For POST, the payload can be in the data space of the message,
        or -- if it's bigger -- in the shared memory */
@@ -6016,8 +6024,8 @@ int main(int argc, char *argv[])
 
     /* init dummy conn structure ----------------------------------------- */
 
-    strcpy(conn[0].host, APP_DOMAIN);
-    strcpy(conn[0].website, APP_WEBSITE);
+    COPY(conn[0].host, APP_DOMAIN, MAX_VALUE_LEN);
+    COPY(conn[0].website, APP_WEBSITE, WEBSITE_LEN);
 
     if ( !(conn[0].in_data = (char*)malloc(G_async_req_data_size)) )
     {
@@ -6186,6 +6194,7 @@ int main(int argc, char *argv[])
             conn[0].post = req.hdr.post;
             strcpy(conn[0].uri, req.hdr.uri);
             strcpy(conn[0].resource, req.hdr.resource);
+            strcpy(conn[0].id, req.hdr.id);
             strcpy(conn[0].uagent, req.hdr.uagent);
             conn[0].mobile = req.hdr.mobile;
             strcpy(conn[0].referer, req.hdr.referer);
@@ -6196,11 +6205,17 @@ int main(int argc, char *argv[])
             conn[0].in_ctype = req.hdr.in_ctype;
             strcpy(conn[0].boundary, req.hdr.boundary);
             conn[0].status = req.hdr.status;
+            strcpy(conn[0].cust_headers, req.hdr.cust_headers);
             conn[0].ctype = req.hdr.ctype;
+            strcpy(conn[0].ctypestr, req.hdr.ctypestr);
+            strcpy(conn[0].cdisp, req.hdr.cdisp);
             strcpy(conn[0].cookie_out_a, req.hdr.cookie_out_a);
             strcpy(conn[0].cookie_out_a_exp, req.hdr.cookie_out_a_exp);
             strcpy(conn[0].cookie_out_l, req.hdr.cookie_out_l);
             strcpy(conn[0].cookie_out_l_exp, req.hdr.cookie_out_l_exp);
+            strcpy(conn[0].location, req.hdr.location);
+            conn[0].dont_cache = req.hdr.dont_cache;
+            conn[0].keep_content = req.hdr.keep_content;
 
             /* For POST, the payload can be in the data space of the message,
                or -- if it's bigger -- in the shared memory */
@@ -6298,6 +6313,7 @@ int main(int argc, char *argv[])
                 res.hdr.err_code = G_error_code;
 
                 res.hdr.status = conn[0].status;
+                strcpy(res.hdr.cust_headers, conn[0].cust_headers);
                 res.hdr.ctype = conn[0].ctype;
                 strcpy(res.hdr.ctypestr, conn[0].ctypestr);
                 strcpy(res.hdr.cdisp, conn[0].cdisp);
