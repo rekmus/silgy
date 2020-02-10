@@ -5385,6 +5385,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
 
     /* conn */
 
+    req.hdr.secure = conn[ci].secure;
     strcpy(req.hdr.ip, conn[ci].ip);
     strcpy(req.hdr.method, conn[ci].method);
     req.hdr.post = conn[ci].post;
@@ -6189,6 +6190,7 @@ int main(int argc, char *argv[])
 
             /* request details */
 
+            conn[0].secure = req.hdr.secure;
             strcpy(conn[0].ip, req.hdr.ip);
             strcpy(conn[0].method, req.hdr.method);
             conn[0].post = req.hdr.post;

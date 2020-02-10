@@ -909,6 +909,7 @@ typedef struct {
     int      ci;
     char     service[SVC_NAME_LEN+1];
     /* pass some request details over */
+    bool     secure;
     char     ip[INET_ADDRSTRLEN];
     char     method[MAX_METHOD_LEN+1];
     bool     post;
@@ -1023,6 +1024,7 @@ typedef struct {
 
 #ifdef SILGY_SVC
 typedef struct {                            /* request details for silgy_svc */
+    bool     secure;
     char     ip[INET_ADDRSTRLEN];
     char     method[MAX_METHOD_LEN+1];
     bool     post;
