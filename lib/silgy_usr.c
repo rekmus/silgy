@@ -225,7 +225,7 @@ int libusr_luses_ok(int ci)
                 && 0==strcmp(conn[ci].cookie_in_l, uses[conn[ci].usi].sesid)
                 && 0==strcmp(conn[ci].uagent, uses[conn[ci].usi].uagent) )
         {
-            DBG("Logged in session found in cache, usi=%d, sesid [%s]", conn[ci].usi, uses[conn[ci].usi].sesid);
+            DBG("Logged in session found in cache, usi=%d, sesid [%s] (1)", conn[ci].usi, uses[conn[ci].usi].sesid);
             return OK;
         }
         else    /* session was closed */
@@ -242,7 +242,7 @@ int libusr_luses_ok(int ci)
                     && 0==strcmp(conn[ci].cookie_in_l, uses[i].sesid)
                     && 0==strcmp(conn[ci].uagent, uses[i].uagent) )
             {
-                DBG("Logged in session found in cache, usi=%d, sesid [%s]", i, uses[i].sesid);
+                DBG("Logged in session found in cache, usi=%d, sesid [%s] (2)", i, uses[i].sesid);
                 conn[ci].usi = i;
                 return OK;
             }
@@ -254,8 +254,6 @@ int libusr_luses_ok(int ci)
     char        sql[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
-    usession_t  us;
-    time_t      created;
 
     char sanuagent[DB_UAGENT_LEN+1];
     sanitize_sql(sanuagent, conn[ci].uagent, DB_UAGENT_LEN);
@@ -354,7 +352,7 @@ int libusr_luses_ok(int ci)
     /* -------------------------------------------------- */
     /* Verify time. If created more than USER_KEEP_LOGGED_DAYS ago -- refuse */
 
-    created = db2epoch(row[2]);
+    time_t created = db2epoch(row[2]);
 
     if ( created < G_now - 3600*24*USER_KEEP_LOGGED_DAYS )
     {
@@ -384,11 +382,13 @@ int libusr_luses_ok(int ci)
     /* -------------------------------------------------- */
     /* cookie has not expired -- log user in */
 
+    usession_t us={0};   /* pass user information (in this case id) over to do_login */
+
     us.uid = atoi(row[1]);
 
     char csrft[CSRFT_LEN+1];
 
-    if ( row[3] && row[3][0] )
+    if ( row[3] && row[3][0] )   /* from users_logins */
     {
         DBG("Using previous CSRFT [%s]", row[3]);
         strcpy(csrft, row[3]);
@@ -628,7 +628,9 @@ static int email_exists(const char *email)
 
 /* --------------------------------------------------------------------------
    Log user in -- called either by l_usession_ok or silgy_usr_login
-   Authentication has already been done prior to calling this
+   Authentication has already been done prior to calling this.
+   Connection (conn[ci]) has to have an anonymous session.
+   us serves here to pass user information
 -------------------------------------------------------------------------- */
 static int do_login(int ci, usession_t *us, char status, int visits)
 {
@@ -639,11 +641,11 @@ static int do_login(int ci, usession_t *us, char status, int visits)
 
     DBG("do_login");
 
-    /* get user record by id */
+    UID = us->uid;
 
-    if ( status == 100 )   /* login from cookie */
+    if ( status == 100 )    /* login from cookie -- we only have a user id from users_logins */
     {
-        sprintf(sql, "SELECT login,email,name,phone,lang,tz,about,group_id,auth_level,status,visits FROM users WHERE id=%d", us->uid);
+        sprintf(sql, "SELECT login,email,name,phone,lang,tz,about,group_id,auth_level,status,visits FROM users WHERE id=%d", UID);
         DBG("sql: %s", sql);
         mysql_query(G_dbconn, sql);
         result = mysql_store_result(G_dbconn);
@@ -655,65 +657,73 @@ static int do_login(int ci, usession_t *us, char status, int visits)
 
         row = mysql_fetch_row(result);
 
-        if ( !row )
+        if ( !row )    /* this should never happen */
         {
             mysql_free_result(result);
-            WAR("Cookie sesid does not match user id");
+            ERR("Cookie sesid [%s] does not match user id=%d", US.sesid, UID);
             return ERR_INVALID_LOGIN;   /* invalid user and/or password */
         }
 
-        /* user found */
+        strcpy(US.login, row[0]?row[0]:"");
+        strcpy(US.email, row[1]?row[1]:"");
+        strcpy(US.name, row[2]?row[2]:"");
+        strcpy(US.phone, row[3]?row[3]:"");
+        strcpy(US.lang, row[4]?row[4]:"");
+        strcpy(US.tz, row[5]?row[5]:"");
+        strcpy(US.about, row[6]?row[6]:"");
+        US.group_id = row[7]?atoi(row[7]):0;
+        US.auth_level = row[8]?atoi(row[8]):DEF_USER_AUTH_LEVEL;
 
-        strcpy(us->login, row[0]?row[0]:"");
-        strcpy(us->email, row[1]?row[1]:"");
-        strcpy(us->name, row[2]?row[2]:"");
-        strcpy(us->phone, row[3]?row[3]:"");
-        strcpy(us->lang, row[4]?row[4]:"");
-        strcpy(us->tz, row[5]?row[5]:"");
-        strcpy(us->about, row[6]?row[6]:"");
-        us->group_id = row[7]?atoi(row[7]):0;
-        us->auth_level = row[8]?atoi(row[8]):DEF_USER_AUTH_LEVEL;
+        /* non-session data */
+
         status = row[9]?atoi(row[9]):USER_STATUS_ACTIVE;
         visits = row[10]?atoi(row[10]):0;
 
         mysql_free_result(result);
+    }
+    else    /* called by silgy_usr_login -- user data already read from users */
+    {
+        strcpy(US.login, us->login);
+        strcpy(US.email, us->email);
+        strcpy(US.name, us->name);
+        strcpy(US.phone, us->phone);
+        strcpy(US.lang, us->lang);
+        strcpy(US.tz, us->tz);
+        strcpy(US.about, us->about);
+        US.group_id = us->group_id;
+        US.auth_level = us->auth_level;
+    }
 
-        if ( us->group_id > 0 )
+    if ( US.group_id > 0 )    /* auth_level inherited from a group */
+    {
+        sprintf(sql, "SELECT name,about,auth_level FROM users_groups WHERE id=%d", US.group_id);
+        DBG("sql: %s", sql);
+        mysql_query(G_dbconn, sql);
+        result = mysql_store_result(G_dbconn);
+        if ( !result )
         {
-            sprintf(sql, "SELECT name,about,auth_level FROM users_groups WHERE id=%d", us->group_id);
-            DBG("sql: %s", sql);
-            mysql_query(G_dbconn, sql);
-            result = mysql_store_result(G_dbconn);
-            if ( !result )
-            {
-                ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-                return ERR_INT_SERVER_ERROR;
-            }
-
-            row = mysql_fetch_row(result);
-
-            if ( row )
-            {
-//                strcpy(us->group_name, row[0]?row[0]:"");
-                us->auth_level = row[2]?atoi(row[2]):DEF_USER_AUTH_LEVEL;
-            }
-            else
-            {
-                WAR("group_id=%d not found in users_groups", us->group_id);
-            }
-
-            mysql_free_result(result);
+            ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+            return ERR_INT_SERVER_ERROR;
         }
+
+        row = mysql_fetch_row(result);
+
+        if ( row )
+            US.auth_level = row[2]?atoi(row[2]):DEF_USER_AUTH_LEVEL;
+        else
+            WAR("group_id=%d not found in users_groups", US.group_id);
+
+        mysql_free_result(result);
     }
 
     /* upgrade anonymous session to logged in */
 
-    if ( (ret=upgrade_uses(ci, us)) != OK )
+    if ( (ret=upgrade_uses(ci, &US)) != OK )
         return ret;
 
     /* update user record */
 
-    sprintf(sql, "UPDATE users SET visits=%d, last_login='%s' WHERE id=%d", visits+1, DT_NOW, us->uid);
+    sprintf(sql, "UPDATE users SET visits=%d, last_login='%s' WHERE id=%d", visits+1, DT_NOW, UID);
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
     {
@@ -742,7 +752,7 @@ static int do_login(int ci, usession_t *us, char status, int visits)
 /* --------------------------------------------------------------------------
    Send activation link
 -------------------------------------------------------------------------- */
-static int send_activation_link(int ci, const char *login, const char *email)
+static int send_activation_link(int ci, int uid, const char *email)
 {
     char linkkey[PASSWD_RESET_KEY_LEN+1];
     char sql[SQLBUF];
@@ -751,7 +761,7 @@ static int send_activation_link(int ci, const char *login, const char *email)
 
     silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
 
-    sprintf(sql, "INSERT INTO users_activations (linkkey,user_id,created,activated) VALUES ('%s',%d,'%s','%s')", linkkey, UID, DT_NOW, DT_NULL);
+    sprintf(sql, "INSERT INTO users_activations (linkkey,user_id,created,activated) VALUES ('%s',%d,'%s','%s')", linkkey, uid, DT_NOW, DT_NULL);
     DBG("sql: %s", sql);
 
     if ( mysql_query(G_dbconn, sql) )
@@ -767,7 +777,7 @@ static int send_activation_link(int ci, const char *login, const char *email)
 
     OUTP_BEGIN(message);
 
-    OUTP("Dear %s,\n\n", silgy_usr_name(NULL, NULL, NULL, UID));
+    OUTP("Dear %s,\n\n", silgy_usr_name(NULL, NULL, NULL, uid));
     OUTP("Welcome to %s! Your account requires activation. Please visit this URL to activate your account:\n\n", conn[ci].website);
 #ifdef HTTPS
     if ( G_test )
@@ -901,7 +911,7 @@ int silgy_usr_login(int ci)
     char        ula_time[32];
     int         new_ula_cnt;
 
-    usession_t  us;
+    usession_t  us={0};    /* pass user information over to do_login */
 
     DBG("silgy_usr_login");
 
@@ -949,21 +959,23 @@ int silgy_usr_login(int ci)
         return ERR_INVALID_LOGIN;   /* invalid user and/or password */
     }
 
-    /* user name found */
+    /* login/email found */
 
     us.uid = atoi(row[0]);
     strcpy(us.login, row[1]?row[1]:"");
     strcpy(us.email, row[2]?row[2]:"");
     strcpy(us.name, row[3]?row[3]:"");
     strcpy(us.phone, row[4]?row[4]:"");
-    strcpy(p1, row[5]?row[5]:"");
-    strcpy(p2, row[6]?row[6]:"");
     strcpy(us.lang, row[7]?row[7]:"");
     strcpy(us.tz, row[8]?row[8]:"");
     strcpy(us.about, row[9]?row[9]:"");
     us.group_id = row[10]?atoi(row[10]):0;
     us.auth_level = row[11]?atoi(row[11]):DEF_USER_AUTH_LEVEL;
 
+    /* non-session data */
+
+    strcpy(p1, row[5]?row[5]:"");
+    strcpy(p2, row[6]?row[6]:"");
     status = row[12]?atoi(row[12]):USER_STATUS_ACTIVE;
     visits = row[13]?atoi(row[13]):0;
     ula_cnt = row[14]?atoi(row[14]):0;
@@ -1453,7 +1465,7 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
 
     if ( G_usersRequireAccountActivation )
     {
-        if ( (ret=send_activation_link(ci, login, email)) != OK )
+        if ( (ret=send_activation_link(ci, G_new_user_id, email)) != OK )
             return ret;
     }
 
