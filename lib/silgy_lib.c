@@ -2355,7 +2355,7 @@ static void users_info(int ci, char activity, int rows, admin_info_t ai[], int a
     amt(formatted2, last_to_show);
     OUT("<p>%s %s users, showing %s of last seen</p>", formatted1, activity_desc, formatted2);
 
-    OUT("<table cellpadding=4 border=1>");
+    OUT("<table cellpadding=4 border=1 style=\"margin-bottom:3em;\">");
 
     char ai_th[1024]="";
 
