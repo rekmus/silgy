@@ -5177,6 +5177,7 @@ void sanitize_html(char *dst, const char *str, int len)
             dst[j++] = 'p';
             dst[j++] = ';';
         }
+#ifdef HTML_ESCAPE_NEW_LINES
         else if ( str[i] == '\n' )
         {
             dst[j++] = '<';
@@ -5184,6 +5185,7 @@ void sanitize_html(char *dst, const char *str, int len)
             dst[j++] = 'r';
             dst[j++] = '>';
         }
+#endif  /* HTML_ESCAPE_NEW_LINES */
         else if ( str[i] != '\r' )
             dst[j++] = str[i];
         ++i;
