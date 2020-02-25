@@ -2120,6 +2120,30 @@ bool lib_qsd(int ci, const char *fieldname, double *retbuf)
 
 
 /* --------------------------------------------------------------------------
+   Get bool value from the query string
+-------------------------------------------------------------------------- */
+bool lib_qsb(int ci, const char *fieldname, bool *retbuf)
+{
+    QSVAL s;
+
+    if ( get_qs_param_raw(ci, fieldname, s, MAX_URI_VAL_LEN) )
+    {
+        if ( s[0] == 't'
+                || s[0] == 'T'
+                || s[0] == '1'
+                || 0==strcmp(s, "on") )
+            *retbuf = true;
+        else
+            *retbuf = false;
+
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
    Set response status
 -------------------------------------------------------------------------- */
 void lib_set_res_status(int ci, int status)

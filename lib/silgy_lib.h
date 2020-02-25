@@ -422,6 +422,7 @@ extern "C" {
     bool lib_qsi(int ci, const char *fieldname, int *retbuf);
     bool lib_qsf(int ci, const char *fieldname, float *retbuf);
     bool lib_qsd(int ci, const char *fieldname, double *retbuf);
+    bool lib_qsb(int ci, const char *fieldname, bool *retbuf);
     void lib_set_res_status(int ci, int status);
     void lib_res_header(int ci, const char *hdr, const char *val);
     void lib_set_res_content_type(int ci, const char *str);

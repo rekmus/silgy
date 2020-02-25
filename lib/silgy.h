@@ -588,16 +588,18 @@ typedef char str64k[1024*64];
 #define ERR_UNAUTHORIZED                2
 #define ERR_FORBIDDEN                   3
 #define ERR_NOT_FOUND                   4
-#define ERR_INT_SERVER_ERROR            5
-#define ERR_SERVER_TOOBUSY              6
-#define ERR_FILE_TOO_BIG                7
-#define ERR_REDIRECTION                 8
-#define ERR_ASYNC_NO_SUCH_SERVICE       9
-#define ERR_ASYNC_TIMEOUT               10
-#define ERR_REMOTE_CALL                 11
-#define ERR_REMOTE_CALL_STATUS          12
-#define ERR_REMOTE_CALL_DATA            13
-#define ERR_CSRFT                       14
+#define ERR_METHOD                      5
+#define ERR_INT_SERVER_ERROR            6
+#define ERR_SERVER_TOOBUSY              7
+#define ERR_FILE_TOO_BIG                8
+#define ERR_REDIRECTION                 9
+#define ERR_ASYNC_NO_SUCH_SERVICE       10
+#define ERR_ASYNC_TIMEOUT               11
+#define ERR_REMOTE_CALL                 12
+#define ERR_REMOTE_CALL_STATUS          13
+#define ERR_REMOTE_CALL_DATA            14
+#define ERR_CSRFT                       15
+#define ERR_RECORD_NOT_FOUND            16
 /* ------------------------------------- */
 #define ERR_MAX_ENGINE_ERROR            99
 /* ------------------------------------- */
@@ -805,6 +807,7 @@ typedef char str64k[1024*64];
 #define QSI(param, val)                 lib_qsi(ci, param, val)
 #define QSF(param, val)                 lib_qsf(ci, param, val)
 #define QSD(param, val)                 lib_qsd(ci, param, val)
+#define QSB(param, val)                 lib_qsb(ci, param, val)
 
 
 #define SVC_NAME_LEN                    63      /* async service name length */
@@ -816,8 +819,10 @@ typedef char str64k[1024*64];
 
 /* Date-Time */
 
-#define DT_NULL                         "2000-01-01 00:00:00"
+//#define DT_NULL                         "2000-01-01 00:00:00"
+#define DT_NULL                         "0000-00-00 00:00:00"
 #define DT_NOW                          G_dt
+#define IS_DT_NULL(dt)                  (0==strcmp(dt, DT_NULL))
 
 
 
