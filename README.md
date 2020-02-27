@@ -6,10 +6,10 @@ It's open-source and free.
 
 It can act as:
 
-* a static web server
-* a standalone, self-contained, single-process web application
-* a standalone, multi-process web application, connected and load-balanced via standard POSIX queues
-* a fast HTTP servlet/microservice that makes up a building block of the more complex architecture
+* a static web server;
+* a standalone, self-contained, single-process web application;
+* a standalone, multi-process web application, connected and load-balanced via standard POSIX queues;
+* a fast HTTP servlet/microservice that makes up a building block of the more complex architecture.
 
 ## Why bother?
 
