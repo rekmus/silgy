@@ -461,12 +461,13 @@ static void load_err_messages()
     DBG("load_err_messages");
 
     silgy_add_message(OK,                        "EN-US", "OK");
-    silgy_add_message(ERR_INT_SERVER_ERROR,      "EN-US", "Apologies, this is our fault. Please try again later.");
-    silgy_add_message(ERR_SERVER_TOOBUSY,        "EN-US", "Apologies, we are experiencing very high demand right now, please try again in a few minutes.");
     silgy_add_message(ERR_INVALID_REQUEST,       "EN-US", "Invalid HTTP request");
-    silgy_add_message(ERR_NOT_FOUND,             "EN-US", "Page not found");
     silgy_add_message(ERR_UNAUTHORIZED,          "EN-US", "Unauthorized");
     silgy_add_message(ERR_FORBIDDEN,             "EN-US", "Forbidden");
+    silgy_add_message(ERR_NOT_FOUND,             "EN-US", "Page not found");
+    silgy_add_message(ERR_METHOD,                "EN-US", "Method not allowed");
+    silgy_add_message(ERR_INT_SERVER_ERROR,      "EN-US", "Apologies, this is our fault. Please try again later.");
+    silgy_add_message(ERR_SERVER_TOOBUSY,        "EN-US", "Apologies, we are experiencing very high demand right now, please try again in a few minutes.");
     silgy_add_message(ERR_FILE_TOO_BIG,          "EN-US", "File too big");
     silgy_add_message(ERR_REDIRECTION,           "EN-US", "Redirection required");
     silgy_add_message(ERR_ASYNC_NO_SUCH_SERVICE, "EN-US", "No such service");
@@ -475,6 +476,7 @@ static void load_err_messages()
     silgy_add_message(ERR_REMOTE_CALL_STATUS,    "EN-US", "Remote service call returned unsuccessful status");
     silgy_add_message(ERR_REMOTE_CALL_DATA,      "EN-US", "Data returned from the remote service is invalid");
     silgy_add_message(ERR_CSRFT,                 "EN-US", "Your previous session has expired. Please refresh this page before trying again.");
+    silgy_add_message(ERR_RECORD_NOT_FOUND,      "EN-US", "Record not found");
 }
 
 
