@@ -921,6 +921,9 @@ typedef struct {
     char     payload_location;
     char     uri[MAX_URI_LEN+1];
     char     resource[MAX_RESOURCE_LEN+1];
+    char     req1[MAX_RESOURCE_LEN+1];
+    char     req2[MAX_RESOURCE_LEN+1];
+    char     req3[MAX_RESOURCE_LEN+1];
     char     id[MAX_RESOURCE_LEN+1];
     char     uagent[MAX_VALUE_LEN+1];
     bool     mobile;
@@ -1035,6 +1038,9 @@ typedef struct {                            /* request details for silgy_svc */
     bool     post;
     char     uri[MAX_URI_LEN+1];
     char     resource[MAX_RESOURCE_LEN+1];
+    char     req1[MAX_RESOURCE_LEN+1];
+    char     req2[MAX_RESOURCE_LEN+1];
+    char     req3[MAX_RESOURCE_LEN+1];
     char     id[MAX_RESOURCE_LEN+1];
     char     uagent[MAX_VALUE_LEN+1];
     bool     mobile;

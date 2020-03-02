@@ -5391,6 +5391,9 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     req.hdr.post = conn[ci].post;
     strcpy(req.hdr.uri, conn[ci].uri);
     strcpy(req.hdr.resource, conn[ci].resource);
+    strcpy(req.hdr.req1, conn[ci].req1);
+    strcpy(req.hdr.req2, conn[ci].req2);
+    strcpy(req.hdr.req3, conn[ci].req3);
     strcpy(req.hdr.id, conn[ci].id);
     strcpy(req.hdr.uagent, conn[ci].uagent);
     req.hdr.mobile = conn[ci].mobile;
@@ -6196,6 +6199,9 @@ int main(int argc, char *argv[])
             conn[0].post = req.hdr.post;
             strcpy(conn[0].uri, req.hdr.uri);
             strcpy(conn[0].resource, req.hdr.resource);
+            strcpy(conn[0].req1, req.hdr.req1);
+            strcpy(conn[0].req2, req.hdr.req2);
+            strcpy(conn[0].req3, req.hdr.req3);
             strcpy(conn[0].id, req.hdr.id);
             strcpy(conn[0].uagent, req.hdr.uagent);
             conn[0].mobile = req.hdr.mobile;
