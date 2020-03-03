@@ -448,7 +448,6 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
     char tag_i=MD_TAG_NONE;   /* inline */
     int  skip;
     int  written=0;
-//    bool par=0;
     bool list=0;
 
     M_md_dest = dest;
@@ -459,6 +458,16 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
     DBG("tag %c detected", tag);
 #endif
 
+    if ( tag == MD_TAG_LI )
+    {
+#ifdef DUMP
+        DBG("Starting unordered list");
+#endif
+        M_md_dest = stpcpy(M_md_dest, "<ul>");
+        written += 4;
+        list = 1;
+    }
+
     if ( skip )
     {
         src += skip;
@@ -468,12 +477,12 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
     if ( IS_TAG_BLOCK )
     {
         tag_b = tag;
-        written = open_tag(tag_b);
+        written += open_tag(tag_b);
     }
     else    /* inline */
     {
         tag_i = tag;
-        written = open_tag(tag_i);
+        written += open_tag(tag_i);
     }
 
     const char *prev1, *prev2;
@@ -635,6 +644,15 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
         DBG("Closing block tag %c", tag_b);
 #endif
         written += close_tag(src, tag_b);
+
+        if ( list )    /* close unordered list */
+        {
+#ifdef DUMP
+            DBG("Closing unordered list");
+#endif
+            M_md_dest = stpcpy(M_md_dest, "</ul>");
+            written += 5;
+        }
     }
 
     *M_md_dest = EOS;
