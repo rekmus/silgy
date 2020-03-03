@@ -487,7 +487,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
 
     const char *prev1, *prev2;
 
-    while ( *src && written < len-10 )
+    while ( *src && written < len-15 )   /* worst case: </b></li></ul> */
     {
 #ifdef DUMP
 //        DBG("*src=%c", *src);
