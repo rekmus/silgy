@@ -608,7 +608,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
 #endif
             if ( tag == MD_TAG_LI )
             {
-                if ( !list )    /* start unordered list */
+                if ( !list )    /* start a list */
                 {
 #ifdef DUMP
                     DBG("Starting %sordered list", M_md_list_type==MD_LIST_ORDERED?"":"un");
@@ -624,7 +624,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
             }
             else    /* tag != MD_TAG_LI */
             {
-                if ( list )    /* close unordered list */
+                if ( list )    /* close a list */
                 {
 #ifdef DUMP
                     DBG("Closing %sordered list", M_md_list_type==MD_LIST_ORDERED?"":"un");
@@ -680,7 +680,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
 #endif
         written += close_tag(src, tag_b);
 
-        if ( list )    /* close unordered list */
+        if ( list )    /* close a list */
         {
 #ifdef DUMP
             DBG("Closing %sordered list", M_md_list_type==MD_LIST_ORDERED?"":"un");
