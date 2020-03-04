@@ -230,14 +230,15 @@ void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
 /* MD parsing ---------------------------------------------- */
 
 #define MD_TAG_NONE         '0'
+#define MD_TAG_B            'b'
+#define MD_TAG_I            'i'
+#define MD_TAG_U            'u'
+#define MD_TAG_CODE         'c'
 #define MD_TAG_P            'p'
 #define MD_TAG_H1           '1'
 #define MD_TAG_H2           '2'
 #define MD_TAG_H3           '3'
 #define MD_TAG_H4           '4'
-#define MD_TAG_B            'b'
-#define MD_TAG_I            'i'
-#define MD_TAG_U            'u'
 #define MD_TAG_LI           'l'
 #define MD_TAG_EOD          '~'
 
@@ -283,6 +284,11 @@ static int detect_tag(const char *src, char *tag)
     else if ( *src=='_' )   /* underline */
     {
         *tag = MD_TAG_U;
+        skip += 1;
+    }
+    else if ( *src=='`' )   /* monospace */
+    {
+        *tag = MD_TAG_CODE;
         skip += 1;
     }
     else if ( *src=='1' && *(src+1)=='.' && *(src+2)==' ' )   /* ordered list */
@@ -340,7 +346,27 @@ static int open_tag(char tag)
 {
     int written=0;
 
-    if ( tag == MD_TAG_P )
+    if ( tag == MD_TAG_B )
+    {
+        M_md_dest = stpcpy(M_md_dest, "<b>");
+        written = 3;
+    }
+    else if ( tag == MD_TAG_I )
+    {
+        M_md_dest = stpcpy(M_md_dest, "<i>");
+        written = 3;
+    }
+    else if ( tag == MD_TAG_U )
+    {
+        M_md_dest = stpcpy(M_md_dest, "<u>");
+        written = 3;
+    }
+    else if ( tag == MD_TAG_CODE )
+    {
+        M_md_dest = stpcpy(M_md_dest, "<code>");
+        written = 6;
+    }
+    else if ( tag == MD_TAG_P )
     {
         M_md_dest = stpcpy(M_md_dest, "<p>");
         written = 3;
@@ -365,21 +391,6 @@ static int open_tag(char tag)
         M_md_dest = stpcpy(M_md_dest, "<h4>");
         written = 4;
     }
-    else if ( tag == MD_TAG_B )
-    {
-        M_md_dest = stpcpy(M_md_dest, "<b>");
-        written = 3;
-    }
-    else if ( tag == MD_TAG_I )
-    {
-        M_md_dest = stpcpy(M_md_dest, "<i>");
-        written = 3;
-    }
-    else if ( tag == MD_TAG_U )
-    {
-        M_md_dest = stpcpy(M_md_dest, "<u>");
-        written = 3;
-    }
     else if ( tag == MD_TAG_LI )
     {
         M_md_dest = stpcpy(M_md_dest, "<li>");
@@ -397,8 +408,28 @@ static int close_tag(const char *src, char tag)
 {
     int written=0;
 
+    if ( tag == MD_TAG_B )
+    {
+        M_md_dest = stpcpy(M_md_dest, "</b>");
+        written = 4;
+    }
+    else if ( tag == MD_TAG_I )
+    {
+        M_md_dest = stpcpy(M_md_dest, "</i>");
+        written = 4;
+    }
+    else if ( tag == MD_TAG_U )
+    {
+        M_md_dest = stpcpy(M_md_dest, "</u>");
+        written = 4;
+    }
+    else if ( tag == MD_TAG_CODE )
+    {
+        M_md_dest = stpcpy(M_md_dest, "</code>");
+        written = 7;
+    }
 //    if ( tag == MD_TAG_P && (*src==EOS || *(src+1)==EOS || *(src+1)=='\n' || *(src+1)=='\r') )
-    if ( tag == MD_TAG_P )
+    else if ( tag == MD_TAG_P )
     {
         M_md_dest = stpcpy(M_md_dest, "</p>");
         written = 4;
@@ -422,21 +453,6 @@ static int close_tag(const char *src, char tag)
     {
         M_md_dest = stpcpy(M_md_dest, "</h4>");
         written = 5;
-    }
-    else if ( tag == MD_TAG_B )
-    {
-        M_md_dest = stpcpy(M_md_dest, "</b>");
-        written = 4;
-    }
-    else if ( tag == MD_TAG_I )
-    {
-        M_md_dest = stpcpy(M_md_dest, "</i>");
-        written = 4;
-    }
-    else if ( tag == MD_TAG_U )
-    {
-        M_md_dest = stpcpy(M_md_dest, "</u>");
-        written = 4;
     }
     else if ( tag == MD_TAG_LI )
     {
@@ -498,7 +514,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
 
     const char *prev1, *prev2;
 
-    while ( *src && written < len-15 )   /* worst case: </b></li></ul> */
+    while ( *src && written < len-18 )   /* worst case: </code></li></ul> */
     {
 #ifdef DUMP
 //        DBG("*src=%c", *src);
@@ -509,9 +525,9 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
         if ( pos > 1 )
             prev2 = src - 2;
 
-        if ( (*src=='*' || *src=='_') && (!pos || *(src-1) != '\\') )   /* inline tags */
+        if ( (*src=='*' || *src=='_' || *src=='`') && (!pos || *(src-1) != '\\') )   /* inline tags */
         {
-            if ( tag_i==MD_TAG_B || tag_i==MD_TAG_I || tag_i==MD_TAG_U )
+            if ( tag_i==MD_TAG_B || tag_i==MD_TAG_I || tag_i==MD_TAG_U || tag_i==MD_TAG_CODE )
             {
 #ifdef DUMP
                 DBG("Closing inline tag %c", tag_i);
