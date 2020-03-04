@@ -479,6 +479,12 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
 
     M_md_dest = dest;
 
+    if ( len < 40 )
+    {
+        *M_md_dest = EOS;
+        return dest;
+    }
+
     skip = detect_tag(src, &tag);
 
 #ifdef DUMP
@@ -508,6 +514,9 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
     }
     else    /* inline */
     {
+        tag_b = MD_TAG_P;   /* there should always be a block */
+        written += open_tag(tag_b);
+
         tag_i = tag;
         written += open_tag(tag_i);
     }
@@ -652,6 +661,12 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
             }
             else    /* inline */
             {
+                if ( tag_b == MD_TAG_NONE )
+                {
+                    tag_b = MD_TAG_P;
+                    written += open_tag(tag_b);
+                }
+
                 tag_i = tag;
                 written += open_tag(tag_i);
             }
