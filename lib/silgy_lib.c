@@ -71,6 +71,7 @@ static char M_tsep=' ';                 /* thousand separator */
 static char M_dsep='.';                 /* decimal separator */
 
 static char *M_md_dest;
+static char M_md_list_type;
 
 #ifndef _WIN32
 static int  M_shmid[MAX_SHM_SEGMENTS]={0}; /* SHM id-s */
@@ -228,19 +229,22 @@ void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
 /* --------------------------------------------------------- */
 /* MD parsing ---------------------------------------------- */
 
-#define MD_TAG_NONE     '0'
-#define MD_TAG_P        'p'
-#define MD_TAG_H1       '1'
-#define MD_TAG_H2       '2'
-#define MD_TAG_H3       '3'
-#define MD_TAG_H4       '4'
-#define MD_TAG_B        'b'
-#define MD_TAG_I        'i'
-#define MD_TAG_U        'u'
-#define MD_TAG_LI       'l'
-#define MD_TAG_EOD      '~'
+#define MD_TAG_NONE         '0'
+#define MD_TAG_P            'p'
+#define MD_TAG_H1           '1'
+#define MD_TAG_H2           '2'
+#define MD_TAG_H3           '3'
+#define MD_TAG_H4           '4'
+#define MD_TAG_B            'b'
+#define MD_TAG_I            'i'
+#define MD_TAG_U            'u'
+#define MD_TAG_LI           'l'
+#define MD_TAG_EOD          '~'
 
-#define IS_TAG_BLOCK    (tag==MD_TAG_P || tag==MD_TAG_H1 || tag==MD_TAG_H2 || tag==MD_TAG_H3 || tag==MD_TAG_H4 || tag==MD_TAG_LI)
+#define MD_LIST_ORDERED     'O'
+#define MD_LIST_UNORDERED   'U'
+
+#define IS_TAG_BLOCK        (tag==MD_TAG_P || tag==MD_TAG_H1 || tag==MD_TAG_H2 || tag==MD_TAG_H3 || tag==MD_TAG_H4 || tag==MD_TAG_LI)
 
 
 /* --------------------------------------------------------------------------
@@ -257,7 +261,37 @@ static int detect_tag(const char *src, char *tag)
         ++skip;
     }
 
-    if ( *src=='#' )    /* headers */
+    if ( *src=='*' )   /* bold, italic or list item */
+    {
+        if ( *(src+1)=='*' )
+        {
+            *tag = MD_TAG_B;
+            skip += 2;
+        }
+        else if ( *(src+1)==' ' )
+        {
+            *tag = MD_TAG_LI;
+            skip += 2;
+            M_md_list_type = MD_LIST_UNORDERED;
+        }
+        else    /* italic */
+        {
+            *tag = MD_TAG_I;
+            skip += 1;
+        }
+    }
+    else if ( *src=='_' )   /* underline */
+    {
+        *tag = MD_TAG_U;
+        skip += 1;
+    }
+    else if ( *src=='1' && *(src+1)=='.' && *(src+2)==' ' )   /* ordered list */
+    {
+        *tag = MD_TAG_LI;
+        skip += 3;
+        M_md_list_type = MD_LIST_ORDERED;
+    }
+    else if ( *src=='#' )    /* headers */
     {
         if ( *(src+1)=='#' )
         {
@@ -285,29 +319,6 @@ static int detect_tag(const char *src, char *tag)
             *tag = MD_TAG_H1;
             skip += 2;
         }
-    }
-    else if ( *src=='*' )   /* bold, italic or list item */
-    {
-        if ( *(src+1)=='*' )
-        {
-            *tag = MD_TAG_B;
-            skip += 2;
-        }
-        else if ( *(src+1)==' ' )
-        {
-            *tag = MD_TAG_LI;
-            skip += 2;
-        }
-        else    /* italic */
-        {
-            *tag = MD_TAG_I;
-            skip += 1;
-        }
-    }
-    else if ( *src=='_' )   /* underline */
-    {
-        *tag = MD_TAG_U;
-        skip += 1;
     }
     else if ( *src )    /* paragraph as default */
     {
@@ -584,11 +595,15 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 if ( !list )    /* start unordered list */
                 {
 #ifdef DUMP
-                    DBG("Starting unordered list");
+                    DBG("Starting %sordered list", M_md_list_type==MD_LIST_ORDERED?"":"un");
 #endif
-                    M_md_dest = stpcpy(M_md_dest, "<ul>");
-                    written += 4;
+                    if ( M_md_list_type == MD_LIST_ORDERED )
+                        M_md_dest = stpcpy(M_md_dest, "<ol>");
+                    else
+                        M_md_dest = stpcpy(M_md_dest, "<ul>");
+
                     list = 1;
+                    written += 4;
                 }
             }
             else    /* tag != MD_TAG_LI */
@@ -596,11 +611,15 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 if ( list )    /* close unordered list */
                 {
 #ifdef DUMP
-                    DBG("Closing unordered list");
+                    DBG("Closing %sordered list", M_md_list_type==MD_LIST_ORDERED?"":"un");
 #endif
-                    M_md_dest = stpcpy(M_md_dest, "</ul>");
-                    written += 5;
+                    if ( M_md_list_type == MD_LIST_ORDERED )
+                        M_md_dest = stpcpy(M_md_dest, "</ol>");
+                    else
+                        M_md_dest = stpcpy(M_md_dest, "</ul>");
+
                     list = 0;
+                    written += 5;
                 }
             }
 
@@ -648,9 +667,13 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
         if ( list )    /* close unordered list */
         {
 #ifdef DUMP
-            DBG("Closing unordered list");
+            DBG("Closing %sordered list", M_md_list_type==MD_LIST_ORDERED?"":"un");
 #endif
-            M_md_dest = stpcpy(M_md_dest, "</ul>");
+            if ( M_md_list_type == MD_LIST_ORDERED )
+                M_md_dest = stpcpy(M_md_dest, "</ol>");
+            else
+                M_md_dest = stpcpy(M_md_dest, "</ul>");
+
             written += 5;
         }
     }
