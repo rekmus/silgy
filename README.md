@@ -27,7 +27,7 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 6. **Beautiful URL**. I want `full/control/over/my/URIs`.
 
-7. **Planet-friendliness**. Even if I could afford fat, 64-core VS, why would I waste the Earth? It turns out, data centers became a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
+7. **Planet-friendliness**. Even if I could afford fat, 64-core, 512 GB RAM VS, why would I waste the Earth? It turns out, data centers have become a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
 
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
 
