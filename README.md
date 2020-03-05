@@ -25,6 +25,10 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 5. **Simplicity**. Before writing my own web server, I tried a couple of libraries. They were either complicated, not intuitive, bloated or slow. Some look promising (Node.js), however database connections proved to be too slow for my needs. There's also a tendency for using every new fireworks that's available in town, like i.e. functional programming. I just don't feel comfortable with this, so I wanted **straight, intuitive, procedural, single-threaded code**. All the complexity needs to be hidden in the library.
 
+6. **Beautiful URL**. I want `full/control/over/my/URIs`.
+
+7. **Planet-friendliness**. Even if I could afford fat, 64-core VS, why would I waste the Earth? It turns out, data centers became a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
+
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
 
 ## What's in the box?
