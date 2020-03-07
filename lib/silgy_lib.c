@@ -249,17 +249,25 @@ void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
 
 
 /* --------------------------------------------------------------------------
-   Detect MD block tag
-   src is at the beginning of the new line
+   Detect MD tag
 -------------------------------------------------------------------------- */
-static int detect_tag(const char *src, char *tag)
+static int detect_tag(const char *src, char *tag, bool start, bool newline, bool nested)
 {
     int skip=0;
 
-    while ( *src && (*src==' ' || *src=='\t') )
+    if ( newline )
     {
-        ++src;
+        ++src;   /* skip '\n' */
         ++skip;
+    }
+
+    if ( start || newline || nested )
+    {
+        while ( *src=='\r' || *src==' ' || *src=='\t' )
+        {
+            ++src;
+            ++skip;
+        }
     }
 
     if ( *src=='*' )   /* bold, italic or list item */
@@ -269,7 +277,7 @@ static int detect_tag(const char *src, char *tag)
             *tag = MD_TAG_B;
             skip += 2;
         }
-        else if ( *(src+1)==' ' )
+        else if ( (start || newline) && *(src+1)==' ' )
         {
             *tag = MD_TAG_LI;
             skip += 2;
@@ -291,13 +299,19 @@ static int detect_tag(const char *src, char *tag)
         *tag = MD_TAG_CODE;
         skip += 1;
     }
-    else if ( *src=='1' && *(src+1)=='.' && *(src+2)==' ' )   /* ordered list */
+    else if ( (start || newline || nested) && isdigit(*src) && *(src+1)=='.' && *(src+2)==' ' )   /* single-digit ordered list */
     {
         *tag = MD_TAG_LI;
         skip += 3;
         M_md_list_type = MD_LIST_ORDERED;
     }
-    else if ( *src=='#' )    /* headers */
+    else if ( (start || newline || nested) && isdigit(*src) && isdigit(*(src+1)) && *(src+2)=='.' && *(src+3)==' ' )   /* double-digit ordered list */
+    {
+        *tag = MD_TAG_LI;
+        skip += 4;
+        M_md_list_type = MD_LIST_ORDERED;
+    }
+    else if ( (start || newline || nested) && *src=='#' )    /* headers */
     {
         if ( *(src+1)=='#' )
         {
@@ -326,9 +340,25 @@ static int detect_tag(const char *src, char *tag)
             skip += 2;
         }
     }
-    else if ( *src )    /* paragraph as default */
+    else if ( start || nested || (newline && *src=='\n') )    /* paragraph */
     {
-        *tag = MD_TAG_P;
+//        DBG("kuku 01");
+
+        if ( start || nested )
+        {
+//            DBG("kuku 02");
+            *tag = MD_TAG_P;
+        }
+        else
+        {
+//            DBG("kuku 03");
+            skip += detect_tag(src, tag, false, true, true);
+        }
+    }
+    else if ( *src )
+    {
+//        DBG("kuku 04");
+        *tag = MD_TAG_NONE;   /* accidental line break perhaps */
     }
     else    /* end of document */
     {
@@ -485,11 +515,17 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
         return dest;
     }
 
-    skip = detect_tag(src, &tag);
+    skip = detect_tag(src, &tag, true, false, false);
 
 #ifdef DUMP
     DBG("tag %c detected", tag);
 #endif
+
+    if ( skip )
+    {
+        src += skip;
+        pos += skip;
+    }
 
     if ( tag == MD_TAG_LI )
     {
@@ -499,12 +535,6 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
         M_md_dest = stpcpy(M_md_dest, "<ul>");
         written += 4;
         list = 1;
-    }
-
-    if ( skip )
-    {
-        src += skip;
-        pos += skip;
     }
 
     if ( IS_TAG_BLOCK )
@@ -526,7 +556,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
     while ( *src && written < len-18 )   /* worst case: </code></li></ul> */
     {
 #ifdef DUMP
-//        DBG("*src=%c", *src);
+        DBG("%c", *src);
 #endif
         if ( pos > 0 )
             prev1 = src - 1;
@@ -553,7 +583,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
             }
             else    /* opening tag */
             {
-                skip = detect_tag(src, &tag);
+                skip = detect_tag(src, &tag, false, false, false);
 #ifdef DUMP
                 DBG("tag %c detected", tag);
 #endif
@@ -594,7 +624,17 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
         }
         else if ( *src=='\n' )   /* block tags */
         {
-            if ( tag_b != MD_TAG_NONE )
+            skip = detect_tag(src, &tag, false, true, false);
+#ifdef DUMP
+            DBG("tag %c detected", tag);
+#endif
+            if ( skip )
+            {
+                src += skip;
+                pos += skip;
+            }
+
+            if ( tag != MD_TAG_NONE && tag_b != MD_TAG_NONE )
             {
 #ifdef DUMP
                 DBG("Closing block tag %c", tag_b);
@@ -603,18 +643,6 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 tag_b = MD_TAG_NONE;
             }
 
-            /* skip to the next line */
-
-            while ( *src && (*src==' ' || *src=='\t' || *src=='\r' || *src=='\n') )
-            {
-                ++src;
-                ++pos;
-            }
-
-            skip = detect_tag(src, &tag);
-#ifdef DUMP
-            DBG("tag %c detected", tag);
-#endif
             if ( tag == MD_TAG_LI )
             {
                 if ( !list )    /* start a list */
@@ -631,27 +659,23 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                     written += 4;
                 }
             }
-            else    /* tag != MD_TAG_LI */
+            else if ( tag == MD_TAG_NONE )   /* accidental line break */
             {
-                if ( list )    /* close a list */
-                {
-#ifdef DUMP
-                    DBG("Closing %sordered list", M_md_list_type==MD_LIST_ORDERED?"":"un");
-#endif
-                    if ( M_md_list_type == MD_LIST_ORDERED )
-                        M_md_dest = stpcpy(M_md_dest, "</ol>");
-                    else
-                        M_md_dest = stpcpy(M_md_dest, "</ul>");
-
-                    list = 0;
-                    written += 5;
-                }
+                M_md_dest = stpcpy(M_md_dest, " ");
+                ++written;
             }
-
-            if ( skip )
+            else if ( list )    /* close the list */
             {
-                src += skip;
-                pos += skip;
+#ifdef DUMP
+                DBG("Closing %sordered list", M_md_list_type==MD_LIST_ORDERED?"":"un");
+#endif
+                if ( M_md_list_type == MD_LIST_ORDERED )
+                    M_md_dest = stpcpy(M_md_dest, "</ol>");
+                else
+                    M_md_dest = stpcpy(M_md_dest, "</ul>");
+
+                list = 0;
+                written += 5;
             }
 
             if ( IS_TAG_BLOCK )
@@ -667,8 +691,11 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                     written += open_tag(tag_b);
                 }
 
-                tag_i = tag;
-                written += open_tag(tag_i);
+                if ( tag != MD_TAG_NONE )
+                {
+                    tag_i = tag;
+                    written += open_tag(tag_i);
+                }
             }
 
             if ( pos )
