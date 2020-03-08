@@ -567,7 +567,11 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
         if ( pos > 1 )
             prev2 = src - 2;
 
-        if ( (*src=='*' || *src=='_' || *src=='`') && (!pos || *(src-1) != '\\') )   /* inline tags */
+        if ( *src == '\\' && !escape )
+        {
+            escape = true;
+        }
+        else if ( (*src=='*' || *src=='_' || *src=='`') && !escape )   /* inline tags */
         {
             if ( tag_i==MD_TAG_B || tag_i==MD_TAG_I || tag_i==MD_TAG_U || tag_i==MD_TAG_CODE )
             {
@@ -700,10 +704,6 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 src--;
                 pos--;
             }
-        }
-        else if ( *src == '\\' && !escape )
-        {
-            escape = true;
         }
         else
         {
