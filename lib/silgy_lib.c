@@ -344,12 +344,20 @@ static int detect_tag(const char *src, char *tag, bool start, bool newline, bool
     {
 //        DBG("kuku 01");
 
-        if ( start || nested )
+        if ( start )
+        {
+            *tag = MD_TAG_P;
+        }
+        else if ( *(src+1) == EOS )
+        {
+            *tag = MD_TAG_EOD;
+        }
+        else if ( nested )
         {
 //            DBG("kuku 02");
             *tag = MD_TAG_P;
         }
-        else
+        else    /* block tag begins */
         {
 //            DBG("kuku 03");
             skip += detect_tag(src, tag, false, true, true);
@@ -506,6 +514,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
     int  skip;
     int  written=0;
     bool list=0;
+    bool escape=false;
 
     M_md_dest = dest;
 
@@ -645,7 +654,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
 
             if ( tag == MD_TAG_LI )
             {
-                if ( !list )    /* start a list */
+                if ( !list )   /* start a list */
                 {
 #ifdef DUMP
                     DBG("Starting %sordered list", M_md_list_type==MD_LIST_ORDERED?"":"un");
@@ -664,7 +673,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 M_md_dest = stpcpy(M_md_dest, " ");
                 ++written;
             }
-            else if ( list )    /* close the list */
+            else if ( list )   /* close the list */
             {
 #ifdef DUMP
                 DBG("Closing %sordered list", M_md_list_type==MD_LIST_ORDERED?"":"un");
@@ -683,19 +692,13 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 tag_b = tag;
                 written += open_tag(tag_b);
             }
-            else    /* inline */
+            else if ( tag != MD_TAG_NONE && tag != MD_TAG_EOD )   /* inline */
             {
-                if ( tag_b == MD_TAG_NONE )
-                {
-                    tag_b = MD_TAG_P;
-                    written += open_tag(tag_b);
-                }
+                tag_b = MD_TAG_P;   /* always open block tag */
+                written += open_tag(tag_b);
 
-                if ( tag != MD_TAG_NONE )
-                {
-                    tag_i = tag;
-                    written += open_tag(tag_i);
-                }
+                tag_i = tag;    /* open inline tag */
+                written += open_tag(tag_i);
             }
 
             if ( pos )
@@ -704,11 +707,27 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 pos--;
             }
         }
-//        else if ( *src!='\r' && *src!='\n' && *src!='#' )
-        else if ( *src!='\r' )
+        else //if ( *src!='\r' )
         {
-            *M_md_dest++ = *src;
-            ++written;
+            if ( *src == '\\' )
+            {
+                if ( escape )   /* backslash itself */
+                {
+                    *M_md_dest++ = *src;
+                    ++written;
+                    escape = false;
+                }
+                else   /* first time */
+                {
+                    escape = true;
+                }
+            }
+            else
+            {
+                *M_md_dest++ = *src;
+                ++written;
+                escape = false;
+            }
         }
 
         ++src;
@@ -5526,11 +5545,11 @@ void sanitize_html(char *dst, const char *str, int len)
             dst[j++] = 't';
             dst[j++] = ';';
         }
-        else if ( str[i] == '\\' )
+/*        else if ( str[i] == '\\' )
         {
             dst[j++] = '\\';
             dst[j++] = '\\';
-        }
+        }*/
         else if ( str[i] == '<' )
         {
             dst[j++] = '&';
