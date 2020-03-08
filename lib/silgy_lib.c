@@ -342,8 +342,6 @@ static int detect_tag(const char *src, char *tag, bool start, bool newline, bool
     }
     else if ( start || nested || (newline && *src=='\n') )    /* paragraph */
     {
-//        DBG("kuku 01");
-
         if ( start )
         {
             *tag = MD_TAG_P;
@@ -354,18 +352,15 @@ static int detect_tag(const char *src, char *tag, bool start, bool newline, bool
         }
         else if ( nested )
         {
-//            DBG("kuku 02");
             *tag = MD_TAG_P;
         }
         else    /* block tag begins */
         {
-//            DBG("kuku 03");
             skip += detect_tag(src, tag, false, true, true);
         }
     }
     else if ( *src )
     {
-//        DBG("kuku 04");
         *tag = MD_TAG_NONE;   /* accidental line break perhaps */
     }
     else    /* end of document */
@@ -466,7 +461,6 @@ static int close_tag(const char *src, char tag)
         M_md_dest = stpcpy(M_md_dest, "</code>");
         written = 7;
     }
-//    if ( tag == MD_TAG_P && (*src==EOS || *(src+1)==EOS || *(src+1)=='\n' || *(src+1)=='\r') )
     else if ( tag == MD_TAG_P )
     {
         M_md_dest = stpcpy(M_md_dest, "</p>");
@@ -707,27 +701,15 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 pos--;
             }
         }
-        else //if ( *src!='\r' )
+        else if ( *src == '\\' && !escape )
         {
-            if ( *src == '\\' )
-            {
-                if ( escape )   /* backslash itself */
-                {
-                    *M_md_dest++ = *src;
-                    ++written;
-                    escape = false;
-                }
-                else   /* first time */
-                {
-                    escape = true;
-                }
-            }
-            else
-            {
-                *M_md_dest++ = *src;
-                ++written;
-                escape = false;
-            }
+            escape = true;
+        }
+        else
+        {
+            *M_md_dest++ = *src;
+            ++written;
+            escape = false;
         }
 
         ++src;
