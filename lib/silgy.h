@@ -63,7 +63,7 @@ typedef char                            bool;
 #endif  /* __cplusplus */
 
 
-#define WEB_SERVER_VERSION              "4.5.5"
+#define WEB_SERVER_VERSION              "4.5.6"
 /* alias */
 #define SILGY_VERSION                   WEB_SERVER_VERSION
 
@@ -85,6 +85,8 @@ typedef char str8k[1024*8];
 typedef char str16k[1024*16];
 typedef char str32k[1024*32];
 typedef char str64k[1024*64];
+typedef char str128k[1024*128];
+typedef char str256k[1024*256];
 
 
 #define OK                              0

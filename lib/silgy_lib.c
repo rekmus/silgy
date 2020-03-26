@@ -240,6 +240,7 @@ void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
 #define MD_TAG_H3           '3'
 #define MD_TAG_H4           '4'
 #define MD_TAG_LI           'l'
+#define MD_TAG_ACC_BR       'B'
 #define MD_TAG_EOD          '~'
 
 #define MD_LIST_ORDERED     'O'
@@ -291,8 +292,13 @@ static int detect_tag(const char *src, char *tag, bool start, bool newline, bool
     }
     else if ( *src=='_' )   /* underline */
     {
-        *tag = MD_TAG_U;
-        skip += 1;
+        if ( start || newline || *(src-1)==' ' )
+        {
+            *tag = MD_TAG_U;
+            skip += 1;
+        }
+        else
+            *tag = MD_TAG_NONE;
     }
     else if ( *src=='`' )   /* monospace */
     {
@@ -361,7 +367,7 @@ static int detect_tag(const char *src, char *tag, bool start, bool newline, bool
     }
     else if ( *src )
     {
-        *tag = MD_TAG_NONE;   /* accidental line break perhaps */
+        *tag = MD_TAG_ACC_BR;   /* accidental line break perhaps */
     }
     else    /* end of document */
     {
@@ -588,7 +594,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
 
                 tag_i = MD_TAG_NONE;
             }
-            else    /* opening tag */
+            else if ( !pos || *(src-1)=='\r' || *(src-1)=='\n' || *(src-1)==' ' || *(src-1)=='(' )    /* opening tag */
             {
                 skip = detect_tag(src, &tag, false, false, false);
 #ifdef DUMP
@@ -611,11 +617,17 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                     written += open_tag(tag_i);
                 }
 
-                if ( pos )
+                if ( tag != MD_TAG_NONE && pos )
                 {
                     src--;
                     pos--;
                 }
+            }
+            else    /* copy character to dest */
+            {
+                *M_md_dest++ = *src;
+                ++written;
+                escape = false;
             }
         }
         else if ( pos && *src=='-' && *prev1=='-' )   /* convert -- to ndash */
@@ -641,7 +653,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 pos += skip;
             }
 
-            if ( tag != MD_TAG_NONE && tag_b != MD_TAG_NONE )
+            if ( tag != MD_TAG_NONE && tag != MD_TAG_ACC_BR && tag_b != MD_TAG_NONE )
             {
 #ifdef DUMP
                 DBG("Closing block tag %c", tag_b);
@@ -666,7 +678,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                     written += 4;
                 }
             }
-            else if ( tag == MD_TAG_NONE )   /* accidental line break */
+            else if ( tag == MD_TAG_ACC_BR )   /* accidental line break */
             {
                 M_md_dest = stpcpy(M_md_dest, " ");
                 ++written;
@@ -690,7 +702,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 tag_b = tag;
                 written += open_tag(tag_b);
             }
-            else if ( tag != MD_TAG_NONE && tag != MD_TAG_EOD )   /* inline */
+            else if ( tag != MD_TAG_NONE && tag != MD_TAG_ACC_BR && tag != MD_TAG_EOD )   /* inline */
             {
                 tag_b = MD_TAG_P;   /* always open block tag */
                 written += open_tag(tag_b);
@@ -705,7 +717,7 @@ char *silgy_render_md(char *dest, const char *src, size_t len)
                 pos--;
             }
         }
-        else
+        else    /* copy character to dest */
         {
             *M_md_dest++ = *src;
             ++written;
