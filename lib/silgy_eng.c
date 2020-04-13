@@ -3538,9 +3538,21 @@ static void gen_response_header(int ci)
 #ifdef DUMP
         DBG("Not Modified");
 #endif
+        /*
+           Since the goal of a 304 response is to minimize information transfer
+           when the recipient already has one or more cached representations,
+           a sender SHOULD NOT generate representation metadata other than
+           the above listed fields unless said metadata exists for the purpose
+           of guiding cache updates (e.g., Last-Modified might be useful if
+           the response does not have an ETag field).
+        */
+
         if ( conn[ci].static_res == NOT_STATIC )    /* generated */
         {
-            PRINT_HTTP_LAST_MODIFIED(G_last_modified);
+            if ( conn[ci].modified )
+                PRINT_HTTP_LAST_MODIFIED(time_epoch2http(conn[ci].modified));
+            else
+                PRINT_HTTP_LAST_MODIFIED(G_last_modified);
 
             if ( EXPIRES_GENERATED > 0 )
                 PRINT_HTTP_EXPIRES_GENERATED;
