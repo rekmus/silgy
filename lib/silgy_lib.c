@@ -2659,6 +2659,7 @@ static void format_counters(counters_fmt_t *s, counters_t *n)
 static void users_info(int ci, char activity, int rows, admin_info_t ai[], int ai_cnt)
 {
 #ifdef DBMYSQL
+#ifdef USERS
     char        sql[SQLBUF];
     MYSQL_RES   *result;
     MYSQL_ROW   row;
@@ -2850,6 +2851,7 @@ static void users_info(int ci, char activity, int rows, admin_info_t ai[], int a
 
     mysql_free_result(result);
 
+#endif  /* USERS */
 #endif  /* DBMYSQL */
 }
 
