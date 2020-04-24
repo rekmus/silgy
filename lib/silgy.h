@@ -482,7 +482,7 @@ typedef char str256k[1024*256];
 #endif
 
 #ifndef USES_TIMEOUT
-#define USES_TIMEOUT                    300             /* anonymous user session timeout in seconds */
+#define USES_TIMEOUT                    600             /* anonymous user session timeout in seconds */
 #endif
 
 #define NOT_CONNECTED                   -1
