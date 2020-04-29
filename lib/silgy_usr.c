@@ -176,17 +176,9 @@ static int upgrade_uses(int ci, usession_t *us)
     strcpy(US.name, us->name);
     strcpy(US.phone, us->phone);
     strcpy(US.lang, us->lang);
-    strcpy(US.tz, us->tz);
     strcpy(US.about, us->about);
 
-/*    strcpy(US.login_tmp, us->login);
-    strcpy(US.email_tmp, us->email);
-    strcpy(US.name_tmp, us->name);
-    strcpy(US.phone_tmp, us->phone);
-    strcpy(US.about_tmp, us->about); */
-
     US.group_id = us->group_id;
-//    strcpy(US.group_name, us->group_name);
     US.auth_level = us->auth_level;
 
 #ifndef SILGY_SVC
@@ -504,9 +496,11 @@ void libusr_luses_downgrade(int usi, int ci, bool usr_logout)
     if ( ci != NOT_CONNECTED )   /* still connected */
         strcpy(uses[usi].lang, conn[ci].lang);
     else
+    {
         uses[usi].lang[0] = EOS;
+        uses[usi].tz_offset = 0;
+    }
 
-    uses[usi].tz[0] = EOS;
     uses[usi].about[0] = EOS;
     uses[usi].group_id = 0;
     uses[usi].auth_level = AUTH_LEVEL_ANONYMOUS;
@@ -645,7 +639,7 @@ static int do_login(int ci, usession_t *us, char status, int visits)
 
     if ( status == 100 )    /* login from cookie -- we only have a user id from users_logins */
     {
-        sprintf(sql, "SELECT login,email,name,phone,lang,tz,about,group_id,auth_level,status,visits FROM users WHERE id=%d", UID);
+        sprintf(sql, "SELECT login,email,name,phone,lang,about,group_id,auth_level,status,visits FROM users WHERE id=%d", UID);
         DBG("sql: %s", sql);
         mysql_query(G_dbconn, sql);
         result = mysql_store_result(G_dbconn);
@@ -669,15 +663,14 @@ static int do_login(int ci, usession_t *us, char status, int visits)
         strcpy(US.name, row[2]?row[2]:"");
         strcpy(US.phone, row[3]?row[3]:"");
         strcpy(US.lang, row[4]?row[4]:"");
-        strcpy(US.tz, row[5]?row[5]:"");
-        strcpy(US.about, row[6]?row[6]:"");
-        US.group_id = row[7]?atoi(row[7]):0;
-        US.auth_level = row[8]?atoi(row[8]):DEF_USER_AUTH_LEVEL;
+        strcpy(US.about, row[5]?row[5]:"");
+        US.group_id = row[6]?atoi(row[6]):0;
+        US.auth_level = row[7]?atoi(row[7]):DEF_USER_AUTH_LEVEL;
 
         /* non-session data */
 
-        status = row[9]?atoi(row[9]):USER_STATUS_ACTIVE;
-        visits = row[10]?atoi(row[10]):0;
+        status = row[8]?atoi(row[8]):USER_STATUS_ACTIVE;
+        visits = row[9]?atoi(row[9]):0;
 
         mysql_free_result(result);
     }
@@ -688,7 +681,6 @@ static int do_login(int ci, usession_t *us, char status, int visits)
         strcpy(US.name, us->name);
         strcpy(US.phone, us->phone);
         strcpy(US.lang, us->lang);
-        strcpy(US.tz, us->tz);
         strcpy(US.about, us->about);
         US.group_id = us->group_id;
         US.auth_level = us->auth_level;
@@ -923,7 +915,7 @@ int silgy_usr_login(int ci)
         return ERR_INVALID_REQUEST;
     }
     stp_right(email);
-    sprintf(sql, "SELECT id,login,email,name,phone,passwd1,passwd2,lang,tz,about,group_id,auth_level,status,visits,ula_cnt,ula_time FROM users WHERE email_u='%s'", upper(email));
+    sprintf(sql, "SELECT id,login,email,name,phone,passwd1,passwd2,lang,about,group_id,auth_level,status,visits,ula_cnt,ula_time FROM users WHERE email_u='%s'", upper(email));
 
 #else    /* by login */
 
@@ -935,7 +927,7 @@ int silgy_usr_login(int ci)
     stp_right(login);
     QSVAL ulogin;
     strcpy(ulogin, upper(login));
-    sprintf(sql, "SELECT id,login,email,name,phone,passwd1,passwd2,lang,tz,about,group_id,auth_level,status,visits,ula_cnt,ula_time FROM users WHERE login_u='%s' OR email_u='%s'", ulogin, ulogin);
+    sprintf(sql, "SELECT id,login,email,name,phone,passwd1,passwd2,lang,about,group_id,auth_level,status,visits,ula_cnt,ula_time FROM users WHERE login_u='%s' OR email_u='%s'", ulogin, ulogin);
 
 #endif  /* USERSBYEMAIL */
 
@@ -967,19 +959,18 @@ int silgy_usr_login(int ci)
     strcpy(us.name, row[3]?row[3]:"");
     strcpy(us.phone, row[4]?row[4]:"");
     strcpy(us.lang, row[7]?row[7]:"");
-    strcpy(us.tz, row[8]?row[8]:"");
-    strcpy(us.about, row[9]?row[9]:"");
-    us.group_id = row[10]?atoi(row[10]):0;
-    us.auth_level = row[11]?atoi(row[11]):DEF_USER_AUTH_LEVEL;
+    strcpy(us.about, row[8]?row[8]:"");
+    us.group_id = row[9]?atoi(row[9]):0;
+    us.auth_level = row[10]?atoi(row[10]):DEF_USER_AUTH_LEVEL;
 
     /* non-session data */
 
     strcpy(p1, row[5]?row[5]:"");
     strcpy(p2, row[6]?row[6]:"");
-    status = row[12]?atoi(row[12]):USER_STATUS_ACTIVE;
-    visits = row[13]?atoi(row[13]):0;
-    ula_cnt = row[14]?atoi(row[14]):0;
-    strcpy(ula_time, row[15]?row[15]:DT_NULL);
+    status = row[11]?atoi(row[11]):USER_STATUS_ACTIVE;
+    visits = row[12]?atoi(row[12]):0;
+    ula_cnt = row[13]?atoi(row[13]):0;
+    strcpy(ula_time, row[14]?row[14]:DT_NULL);
 
     mysql_free_result(result);
 
@@ -1291,7 +1282,6 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
     char    name[UNAME_LEN+1];
     char    phone[PHONE_LEN+1];
     QSVAL   lang;
-    QSVAL   tz;
     char    about[ABOUT_LEN+1];
     QSVAL   passwd;
     QSVAL   rpasswd;
@@ -1393,15 +1383,6 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
 
     if ( current_session && conn[ci].usi ) strcpy(US.lang, lang);
 
-    if ( QS_HTML_ESCAPE("tz", tz) )
-    {
-        tz[5] = EOS;
-        stp_right(tz);
-        if ( current_session && conn[ci].usi ) strcpy(US.tz, tz);
-    }
-    else
-        tz[0] = EOS;
-
     if ( QS_HTML_ESCAPE("about", tmp) )
     {
         COPY(about, tmp, ABOUT_LEN);
@@ -1448,7 +1429,7 @@ static int create_account(int ci, char auth_level, char status, bool current_ses
     strcpy(login_u, upper(login));
     strcpy(email_u, upper(email));
 
-    sprintf(sql, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,lang,tz,about,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',0,0)", login, login_u, email, email_u, name, phone, str1, str2, lang, tz, about, auth_level, status, DT_NOW);
+    sprintf(sql, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,lang,about,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,'%s',0,0)", login, login_u, email, email_u, name, phone, str1, str2, lang, about, auth_level, status, DT_NOW);
 
     DBG("sql: INSERT INTO users (id,login,email,name,phone,...) VALUES (0,'%s','%s','%s','%s',...)", login, email, name, phone);
 
@@ -1541,7 +1522,7 @@ static int new_account_notification(int ci, const char *login, const char *email
 /* --------------------------------------------------------------------------
    Create user account
 -------------------------------------------------------------------------- */
-int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email, const char *name, const char *passwd, const char *phone, const char *lang, const char *tz, const char *about, char group_id, char auth_level, char status)
+int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email, const char *name, const char *passwd, const char *phone, const char *lang, const char *about, char group_id, char auth_level, char status)
 {
     int   ret=OK;
     QSVAL dst_login;
@@ -1634,7 +1615,7 @@ int silgy_usr_add_user(int ci, bool use_qs, const char *login, const char *email
         strcpy(login_u, upper(dst_login));
         strcpy(email_u, upper(email));
 
-        sprintf(sql, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,lang,tz,about,group_id,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,%d,'%s',0,0)", dst_login, login_u, email, email_u, name?name:"", phone?phone:"", str1, str2, lang?lang:"", tz?tz:"", about?about:"", group_id, auth_level, status, DT_NOW);
+        sprintf(sql, "INSERT INTO users (id,login,login_u,email,email_u,name,phone,passwd1,passwd2,lang,about,group_id,auth_level,status,created,visits,ula_cnt) VALUES (0,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%d,%d,%d,'%s',0,0)", dst_login, login_u, email, email_u, name?name:"", phone?phone:"", str1, str2, lang?lang:"", about?about:"", group_id, auth_level, status, DT_NOW);
 
         DBG("sql: INSERT INTO users (id,login,email,name,phone,...) VALUES (0,'%s','%s','%s','%s',...)", dst_login, email, name?name:"", phone?phone:"");
 
@@ -1726,7 +1707,6 @@ int silgy_usr_save_account(int ci)
     char        name[UNAME_LEN+1];
     char        phone[PHONE_LEN+1];
     QSVAL       lang;
-    QSVAL       tz;
     char        about[ABOUT_LEN+1];
     QSVAL       passwd;
     QSVAL       rpasswd;
@@ -1809,11 +1789,6 @@ int silgy_usr_save_account(int ci)
     else
         lang[0] = EOS;
 
-    if ( QS_HTML_ESCAPE("tz", tz) )
-        stp_right(tz);
-    else
-        tz[0] = EOS;
-
     if ( QS_HTML_ESCAPE("about", tmp) )
     {
         COPY(about, tmp, ABOUT_LEN);
@@ -1834,10 +1809,6 @@ int silgy_usr_save_account(int ci)
 
     strncpy(us_new.lang, lang, LANG_LEN);
     us_new.lang[LANG_LEN] = EOS;
-
-    strncpy(us_new.tz, tz, 5);
-    us_new.tz[5] = EOS;
-
     strcpy(us_new.about, about);
 
     /* basic validation */
@@ -1933,7 +1904,7 @@ int silgy_usr_save_account(int ci)
 
     get_hashes(str1, str2, login, email, plen?passwd:opasswd);
 
-    sprintf(sql, "UPDATE users SET login='%s', email='%s', email_u='%s', name='%s', phone='%s', passwd1='%s', passwd2='%s', lang='%s', tz='%s', about='%s' WHERE id=%d", login, email, upper(email), name, phone, str1, str2, lang, tz, about, UID);
+    sprintf(sql, "UPDATE users SET login='%s', email='%s', email_u='%s', name='%s', phone='%s', passwd1='%s', passwd2='%s', lang='%s', about='%s' WHERE id=%d", login, email, upper(email), name, phone, str1, str2, lang, about, UID);
     DBG("sql: UPDATE users SET login='%s', email='%s', name='%s', phone='%s',... WHERE id=%d", login, email, name, phone, UID);
 
     if ( mysql_query(G_dbconn, sql) )
@@ -1949,7 +1920,6 @@ int silgy_usr_save_account(int ci)
     strcpy(US.name, us_new.name);
     strcpy(US.phone, us_new.phone);
     strcpy(US.lang, us_new.lang);
-    strcpy(US.tz, us_new.tz);
     strcpy(US.about, us_new.about);
 
     /* On password change invalidate all existing sessions except of the current one */

@@ -15,7 +15,6 @@ create table users (
     passwd1 char(30),               -- base64 of SHA1 hash
     passwd2 char(30),               -- base64 of SHA1 hash
     lang char(5),
-    tz char(5),
     about varchar(250),
     avatar_name varchar(60),
     avatar_data blob,               -- 64 kB

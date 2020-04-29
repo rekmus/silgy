@@ -3276,8 +3276,18 @@ static void process_req(int ci)
 
     if ( ret == OK )
     {
-        if ( !conn[ci].location[0] )
+        if ( !conn[ci].location[0] )    /* if not redirection */
+        {
+#ifdef USES_SET_TZ
+            if ( REQ("set_tz") )
+            {
+                if ( conn[ci].usi && !US.tz_set )
+                    silgy_set_tz(ci);
+            }
+            else
+#endif
             silgy_app_main(ci);         /* main application called here */
+        }
     }
 
     /* ------------------------------------------------------------------------ */

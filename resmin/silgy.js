@@ -165,3 +165,17 @@ function yn(t, a, w)
 {
     mw(t, "<div style=\"text-align:center;\"><button class=ynb onClick=\"{"+a+"}mw_off();\">Yes</button> &nbsp; <button class=ynb onClick=\"mw_off();\">No</button></div>", w);
 }
+
+
+// --------------------------------------------------------------------------
+// Set client's time on the server
+// --------------------------------------------------------------------------
+function set_tz()
+{
+    let dt = new Date();
+
+    let x = new XMLHttpRequest();
+
+    x.open("POST", "/set_tz", true);
+    x.send("tz=" + Intl.DateTimeFormat().resolvedOptions().timeZone + "&tzo=" + dt.getTimezoneOffset());
+}

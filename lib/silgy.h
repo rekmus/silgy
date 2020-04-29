@@ -119,6 +119,7 @@ typedef char str256k[1024*256];
 #define EMAIL_LEN                       120
 #define UNAME_LEN                       120
 #define PHONE_LEN                       30
+//#define TZ_CODE_LEN                     5
 #define ABOUT_LEN                       250
 
 
@@ -862,10 +863,12 @@ typedef struct {
     char    email[EMAIL_LEN+1];
     char    name[UNAME_LEN+1];
     char    phone[PHONE_LEN+1];
-    char    tz[6];
     char    about[ABOUT_LEN+1];
     int     group_id;
     char    auth_level;
+    /* time zone info */
+    short   tz_offset;
+    bool    tz_set;
     /* CSRF token */
     char    csrft[CSRFT_LEN+1];
     /* internal */

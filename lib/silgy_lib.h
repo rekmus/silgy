@@ -405,6 +405,8 @@ extern "C" {
     void silgy_lib_init(void);
     void silgy_lib_done(void);
     void silgy_safe_copy(char *dst, const char *src, size_t dst_len);
+    void silgy_set_tz(int ci);
+    time_t silgy_ua_time(int ci);
     char *silgy_render_md(char *dest, const char *src, size_t len);
     char *silgy_json_enc(const char *src);
     bool lib_csrft_ok(int ci);
@@ -463,6 +465,7 @@ extern "C" {
     time_t time_http2epoch(const char *str);
     time_t time_db2epoch(const char *str);
     char *time_epoch2http(time_t epoch);
+    char *time_epoch2db(time_t epoch);
     void lib_set_datetime_formats(const char *lang);
     char *silgy_amt(double val);
     void amt(char *stramt, long long in_amt);

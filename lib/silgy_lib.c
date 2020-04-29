@@ -225,6 +225,54 @@ void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
 
 
 
+/* --------------------------------------------------------- */
+/* Time zone handling -------------------------------------- */
+
+
+#ifndef SILGY_WATCHER
+/* --------------------------------------------------------------------------
+   Set client's time zone offset on the server
+-------------------------------------------------------------------------- */
+void silgy_set_tz(int ci)
+{
+    DBG("silgy_set_tz");
+
+    /* Log user's time zone */
+
+    QSVAL tz;
+
+    if ( QS("tz", tz) )
+        INF("Time zone: %s", tz);
+
+    /* set it only once */
+
+    US.tz_set = TRUE;
+
+    /* time zone offset */
+
+    int tzo;
+
+    if ( !QSI("tzo", &tzo) ) return;
+
+    DBG("tzo=%d", tzo);
+
+    if ( tzo < -900 || tzo > 900 ) return;
+
+    US.tz_offset = tzo * -1;
+}
+
+
+/* --------------------------------------------------------------------------
+   Calculate client's local time
+-------------------------------------------------------------------------- */
+time_t silgy_ua_time(int ci)
+{
+    return G_now + US.tz_offset * 60;
+}
+#endif  /* SILGY_WATCHER */
+
+
+
 
 /* --------------------------------------------------------- */
 /* MD parsing ---------------------------------------------- */
@@ -5163,6 +5211,25 @@ static char str[32];
     G_ptm = gmtime(&G_now);  /* make sure G_ptm is up to date */
 
 //  DBG("time_epoch2http: [%s]", str);
+
+    return str;
+}
+
+
+/* --------------------------------------------------------------------------
+   Convert epoch to db time (YYYY-MM-DD HH:mm:ss)
+-------------------------------------------------------------------------- */
+char *time_epoch2db(time_t epoch)
+{
+static char str[20];
+
+    G_ptm = gmtime(&epoch);
+
+    strftime(str, 20, "%Y-%m-%d %H:%M:%S", G_ptm);
+
+    G_ptm = gmtime(&G_now);  /* make sure G_ptm is up to date */
+
+//    DBG("time_epoch2db: [%s]", str);
 
     return str;
 }
