@@ -825,7 +825,10 @@ typedef char str256k[1024*256];
 //#define DT_NULL                         "2000-01-01 00:00:00"
 #define DT_NULL                         "0000-00-00 00:00:00"
 #define DT_NOW                          G_dt
-#define IS_DT_NULL(dt)                  (0==strcmp(dt, DT_NULL))
+#define DT_TODAY                        silgy_today()
+#define DT_NOW_LOCAL                    time_epoch2db(silgy_ua_time(ci))
+#define DT_TODAY_LOCAL                  silgy_ua_today(ci)
+#define DT_IS_NULL(dt)                  (0==strcmp(dt, DT_NULL))
 
 
 

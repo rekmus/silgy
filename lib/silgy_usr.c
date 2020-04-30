@@ -241,6 +241,8 @@ int libusr_luses_ok(int ci)
         }
     }
 
+    DBG("Session [%s] not found in cache", conn[ci].cookie_in_l);
+
     /* not found in memory -- try database */
 
     char        sql[SQLBUF];
@@ -333,7 +335,7 @@ int libusr_luses_ok(int ci)
     if ( 0 != strcmp(sanuagent, row[0]) )
     {
         mysql_free_result(result);
-        DBG("Different uagent in database for sesid [%s]", sanlscookie);
+        INF("Different uagent in database for sesid [%s]", sanlscookie);
         strcpy(conn[ci].cookie_out_l, "x");
         strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* expire ls cookie */
         return ERR_SESSION_EXPIRED;
@@ -365,6 +367,8 @@ int libusr_luses_ok(int ci)
 
         strcpy(conn[ci].cookie_out_l, "x");
         strcpy(conn[ci].cookie_out_l_exp, G_last_modified);     /* expire ls cookie */
+
+        INF("Session [%s] expired", sanlscookie);
 
         return ERR_SESSION_EXPIRED;
     }

@@ -407,6 +407,8 @@ extern "C" {
     void silgy_safe_copy(char *dst, const char *src, size_t dst_len);
     void silgy_set_tz(int ci);
     time_t silgy_ua_time(int ci);
+    char *silgy_ua_today(int ci);
+    char *silgy_today(void);
     char *silgy_render_md(char *dest, const char *src, size_t len);
     char *silgy_json_enc(const char *src);
     bool lib_csrft_ok(int ci);

@@ -269,8 +269,31 @@ time_t silgy_ua_time(int ci)
 {
     return G_now + US.tz_offset * 60;
 }
+
+
+/* --------------------------------------------------------------------------
+   Return client's local today string
+-------------------------------------------------------------------------- */
+char *silgy_ua_today(int ci)
+{
+static char today[11];
+    strncpy(today, DT_NOW_LOCAL, 10);
+    today[10] = EOS;
+    return today;
+}
 #endif  /* SILGY_WATCHER */
 
+
+/* --------------------------------------------------------------------------
+   Return today string
+-------------------------------------------------------------------------- */
+char *silgy_today()
+{
+static char today[11];
+    strncpy(today, DT_NOW, 10);
+    today[10] = EOS;
+    return today;
+}
 
 
 
