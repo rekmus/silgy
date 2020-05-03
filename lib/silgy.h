@@ -119,7 +119,6 @@ typedef char str256k[1024*256];
 #define EMAIL_LEN                       120
 #define UNAME_LEN                       120
 #define PHONE_LEN                       30
-//#define TZ_CODE_LEN                     5
 #define ABOUT_LEN                       250
 
 

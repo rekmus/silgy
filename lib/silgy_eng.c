@@ -4347,14 +4347,18 @@ static int parse_req(int ci, int len)
     /* -------------------------------------------------------------- */
     /* determine whether main host has been requested */
 
+#ifndef DONT_NORMALIZE_HOST
+
     for ( i=0; i<M_hosts_cnt; ++i )
     {
-        if ( 0==strcmp(M_hosts[i].host, conn[ci].host_normalized) )
+        if ( HOST(M_hosts[i].host) )
         {
             conn[ci].host_id = i;
             break;
         }
     }
+
+#endif  /* DONT_NORMALIZE_HOST */
 
     /* Serve index if present --------------------------------------- */
 
@@ -4743,11 +4747,11 @@ static int parse_req(int ci, int len)
 -------------------------------------------------------------------------- */
 static int set_http_req_val(int ci, const char *label, const char *value)
 {
-    char     new_value[MAX_VALUE_LEN+1];
-    char     ulabel[MAX_LABEL_LEN+1];
-    char     uvalue[MAX_VALUE_LEN+1];
-    char     *p;
-    int      i;
+    char    new_value[MAX_VALUE_LEN+1];
+    char    ulabel[MAX_LABEL_LEN+1];
+    char    uvalue[MAX_VALUE_LEN+1];
+    char    *p;
+    int     i;
 
     /* only for low-level tests ------------------------------------- */
 //  DBG("label: [%s], value: [%s]", label, value);
@@ -4763,25 +4767,75 @@ static int set_http_req_val(int ci, const char *label, const char *value)
 #endif
         strcpy(conn[ci].host, value);
 
+#ifndef DONT_NORMALIZE_HOST
+
+#ifdef DUMP
+        DBG("Host before normalization [%s]", conn[ci].host);
+#endif
         /* normalize for comparisons */
         /* upper */
 
-        strcpy(conn[ci].host_normalized, upper(value));
+//        strcpy(conn[ci].host_normalized, upper(value));
 
         /* cut the port off */
 
         i = 0;
+        int dots = 0;
+        int first_dot;
 
-        while ( conn[ci].host_normalized[i] )
+        while ( conn[ci].host[i] )
         {
-            if ( conn[ci].host_normalized[i] == ':' )
+            if ( conn[ci].host[i] == '.' )
             {
-                conn[ci].host_normalized[i] = EOS;
+                if ( !dots )
+                    first_dot = i;
+
+                ++dots;
+
+                conn[ci].host_normalized[i] = '.';
+            }
+            else if ( conn[ci].host[i] == ':' )
+            {
                 break;
+            }
+            else
+            {
+                conn[ci].host_normalized[i] = toupper(conn[ci].host[i]);
             }
 
             ++i;
         }
+
+        conn[ci].host_normalized[i] = EOS;
+
+        if ( dots > 1 && !isdigit(conn[ci].host_normalized[i-1]) )
+        {
+#ifdef DUMP
+            DBG("Need to cut subdomain off [%s]", conn[ci].host_normalized);
+#endif
+//            char tmp[MAX_VALUE_LEN+1];
+//            strcpy(tmp, upper(value+first_dot+1));
+
+            i = first_dot + 1;
+            int j=0;
+
+            while ( conn[ci].host[i] )
+            {
+                if ( conn[ci].host[i] == ':' ) break;
+
+                conn[ci].host_normalized[j++] = toupper(conn[ci].host[i]);
+
+                ++i;
+            }
+
+            conn[ci].host_normalized[j] = EOS;
+        }
+
+#ifdef DUMP
+        DBG("host_normalized [%s]", conn[ci].host_normalized);
+#endif
+
+#endif  /* DONT_NORMALIZE_HOST */
     }
     else if ( 0==strcmp(ulabel, "USER-AGENT") )
     {
