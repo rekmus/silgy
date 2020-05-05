@@ -2240,6 +2240,12 @@ bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen)
 
     int fnamelen = strlen(fieldname);
 
+    if ( fnamelen < 1 )
+    {
+        if ( retbuf ) retbuf[0] = EOS;
+        return FALSE;
+    }
+
     char *val = qs;
 
     bool found=FALSE;

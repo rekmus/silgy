@@ -724,6 +724,15 @@ int main(int argc, char **argv)
 
                         sockets_ready--;
                     }
+#ifdef DUMP
+                    else
+                    {
+                        DBG("Not IN nor OUT, ci=%d, fd=%d conn_state = %c", i, conn[i].fd, conn[i].conn_state);
+#ifdef FD_MON_POLL
+                        DBG("revents=%d", M_pollfds[pi].revents);
+#endif
+                    }
+#endif  /* DUMP */
 
                     /* --------------------------------------------------------------------------------------- */
                     /* after reading / writing it may be ready for parsing and processing ... */
@@ -1815,7 +1824,6 @@ static bool init(int argc, char **argv)
 
     uint8_t sha1_res1[SHA1_DIGEST_SIZE];
     char    sha1_res2[64];
-    char    sha1_res3[64];
 
     DBG("");
     DBG("Trying libSHA1...\n");
@@ -2189,7 +2197,7 @@ static void accept_https()
     struct sockaddr_in cli_addr;
     socklen_t   addr_len;
     char        remote_addr[INET_ADDRSTRLEN]="";
-    int         ret, ssl_err;
+    int         ret;
 
     /* We have a new connection coming in! We'll
        try to find a spot for it in conn array  */
@@ -2427,7 +2435,7 @@ static void read_blocked_ips()
         strcpy(G_blacklist[G_blacklist_cnt++], value);
     }
 
-    if ( NULL != h_file )
+//    if ( NULL != h_file )
         fclose(h_file);
 
     ALWAYS("%d IPs blacklisted", G_blacklist_cnt);
@@ -2552,7 +2560,7 @@ static void read_allowed_ips()
         strcpy(G_whitelist[G_whitelist_cnt++], value);
     }
 
-    if ( NULL != h_file )
+//    if ( NULL != h_file )
         fclose(h_file);
 
     ALWAYS("%d IPs on whitelist", G_whitelist_cnt);
@@ -4747,7 +4755,6 @@ static int parse_req(int ci, int len)
 -------------------------------------------------------------------------- */
 static int set_http_req_val(int ci, const char *label, const char *value)
 {
-    char    new_value[MAX_VALUE_LEN+1];
     char    ulabel[MAX_LABEL_LEN+1];
     char    uvalue[MAX_VALUE_LEN+1];
     char    *p;
@@ -4773,9 +4780,6 @@ static int set_http_req_val(int ci, const char *label, const char *value)
         DBG("Host before normalization [%s]", conn[ci].host);
 #endif
         /* normalize for comparisons */
-        /* upper */
-
-//        strcpy(conn[ci].host_normalized, upper(value));
 
         /* cut the port off */
 
@@ -4813,9 +4817,6 @@ static int set_http_req_val(int ci, const char *label, const char *value)
 #ifdef DUMP
             DBG("Need to cut subdomain off [%s]", conn[ci].host_normalized);
 #endif
-//            char tmp[MAX_VALUE_LEN+1];
-//            strcpy(tmp, upper(value+first_dot+1));
-
             i = first_dot + 1;
             int j=0;
 
@@ -4932,7 +4933,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     else if ( 0==strcmp(ulabel, "CONTENT-LENGTH") )
     {
         conn[ci].clen = atoi(value);
-        if ( conn[ci].clen < 0 || (!conn[ci].post && conn[ci].clen >= IN_BUFSIZE) || (conn[ci].post && conn[ci].clen >= MAX_PAYLOAD_SIZE-1) )
+        if ( (!conn[ci].post && conn[ci].clen >= IN_BUFSIZE) || (conn[ci].post && conn[ci].clen >= MAX_PAYLOAD_SIZE-1) )
         {
             ERR("Request too long, clen = %u, sending 413", conn[ci].clen);
             return 413;
@@ -5106,8 +5107,6 @@ static void dump_counters()
 -------------------------------------------------------------------------- */
 static void clean_up()
 {
-    char command[1024];
-
     M_shutdown = TRUE;
 
     ALWAYS("");
@@ -5120,6 +5119,7 @@ static void clean_up()
     if ( access(M_pidfile, F_OK) != -1 )
     {
         DBG("Removing pid file...");
+        char command[1024];
 #ifdef _WIN32   /* Windows */
         sprintf(command, "del %s", M_pidfile);
 #else
@@ -5895,61 +5895,6 @@ void eng_rest_header_pass(int ci, const char *key)
 }
 
 
-/* --------------------------------------------------------------------------
-   Blacklist IP
--------------------------------------------------------------------------- */
-static void do_add2blocked(int ci)
-{
-    QSVAL   ip;
-    char    comm[1024];
-
-    INF("do_add2blocked");
-
-    OUT_HTML_HEADER;
-
-    if ( G_blacklist_cnt > MAX_BLACKLIST-1 )
-    {
-        WAR("G_blacklist_cnt at max (%d)!", MAX_BLACKLIST);
-        OUT("<p class=m50>ERROR: Blacklist already full!</p>");
-    }
-    else    /* some rudimentary validation */
-    {
-        if ( !QS("ip", ip) )
-        {
-            ERR("ip expected in URI");
-            OUT("<p class=m50>ERROR: ip expected in URI!</p>");
-        }
-        else if ( strlen(ip) > INET_ADDRSTRLEN-1 )
-        {
-            ERR("ip too long");
-            OUT("<p class=m50>ERROR: ip too long!</p>");
-        }
-        else if ( strlen(ip) < 7 )
-        {
-            ERR("ip too short");
-            OUT("<p class=m50>ERROR: ip too short!</p>");
-        }
-        else if ( !isdigit(ip[0]) )
-        {
-            ERR("ip does not start with digit");
-            OUT("<p class=m50>ERROR: ip does not start with digit!</p>");
-        }
-        else
-        {
-            eng_block_ip(ip, FALSE);
-            WAR("IP %s manually blacklisted", ip);
-            OUT("<p class=m50>IP %s blacklisted.</p>", ip);
-        }
-    }
-
-    OUT("<p class=m15><a href=\"/\"><< Back to Main</a></p>");
-
-    OUT_HTML_FOOTER;
-
-    RES_DONT_CACHE;
-}
-
-
 
 #else   /* SILGY_SVC ====================================================================================== */
 
@@ -6672,8 +6617,6 @@ static void sigdisp(int sig)
 -------------------------------------------------------------------------- */
 static void clean_up()
 {
-    char command[1024];
-
     ALWAYS("");
     ALWAYS("Cleaning up...\n");
     lib_log_memory();
@@ -6683,6 +6626,7 @@ static void clean_up()
     if ( access(M_pidfile, F_OK) != -1 )
     {
         DBG("Removing pid file...");
+        char command[1024];
 #ifdef _WIN32   /* Windows */
         sprintf(command, "del %s", M_pidfile);
 #else
