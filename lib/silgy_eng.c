@@ -5491,6 +5491,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     strcpy(req.hdr.cookie_out_l, conn[ci].cookie_out_l);
     strcpy(req.hdr.cookie_out_l_exp, conn[ci].cookie_out_l_exp);
     strcpy(req.hdr.location, conn[ci].location);
+    req.hdr.usi = conn[ci].usi;
     req.hdr.bot = conn[ci].bot;
     req.hdr.dont_cache = conn[ci].dont_cache;
     req.hdr.keep_content = conn[ci].keep_content;
@@ -5904,6 +5905,7 @@ void eng_rest_header_pass(int ci, const char *key)
 
 char        G_service[SVC_NAME_LEN+1];
 int         G_error_code=OK;
+int         G_usi=0;
 int         G_ASYNCId=-1;
 char        G_req_queue_name[256]="";
 char        G_res_queue_name[256]="";
@@ -6244,6 +6246,7 @@ int main(int argc, char *argv[])
             strcpy(conn[0].cookie_out_l, req.hdr.cookie_out_l);
             strcpy(conn[0].cookie_out_l_exp, req.hdr.cookie_out_l_exp);
             strcpy(conn[0].location, req.hdr.location);
+            G_usi = req.hdr.usi;    /* original usi */
             conn[0].bot = req.hdr.bot;
             conn[0].dont_cache = req.hdr.dont_cache;
             conn[0].keep_content = req.hdr.keep_content;

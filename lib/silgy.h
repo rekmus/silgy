@@ -952,6 +952,7 @@ typedef struct {
     char     cookie_out_l[SESID_LEN+1];
     char     cookie_out_l_exp[32];
     char     location[MAX_URI_LEN+1];
+    int      usi;
     bool     bot;
     bool     dont_cache;
     bool     keep_content;
@@ -1061,7 +1062,6 @@ typedef struct {                            /* request details for silgy_svc */
     char     lang[LANG_LEN+1];
     char     in_ctype;
     char     boundary[MAX_VALUE_LEN+1];
-    int      usi;
     int      status;
     char     cust_headers[CUST_HDR_LEN+1];
     char     ctype;
@@ -1072,6 +1072,7 @@ typedef struct {                            /* request details for silgy_svc */
     char     cookie_out_l[SESID_LEN+1];
     char     cookie_out_l_exp[32];
     char     location[MAX_URI_LEN+1];
+    int      usi;
     bool     bot;
     bool     dont_cache;
     bool     keep_content;
@@ -1314,7 +1315,7 @@ extern char         *out_data;
 extern char         *p_content;
 extern char         G_service[SVC_NAME_LEN+1];
 extern int          G_error_code;
-//extern int          ci;
+extern int          G_usi;
 #endif  /* SILGY_SVC */
 
 extern char         G_blacklist[MAX_BLACKLIST+1][INET_ADDRSTRLEN];
