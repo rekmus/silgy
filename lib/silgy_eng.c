@@ -724,15 +724,16 @@ int main(int argc, char **argv)
 
                         sockets_ready--;
                     }
-#ifdef DUMP
                     else
                     {
+#ifdef DUMP
                         DBG("Not IN nor OUT, ci=%d, fd=%d conn_state = %c", i, conn[i].fd, conn[i].conn_state);
 #ifdef FD_MON_POLL
                         DBG("revents=%d", M_pollfds[pi].revents);
 #endif
-                    }
 #endif  /* DUMP */
+//                        sockets_ready--;
+                    }
 
                     /* --------------------------------------------------------------------------------------- */
                     /* after reading / writing it may be ready for parsing and processing ... */
@@ -5490,6 +5491,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     strcpy(req.hdr.cookie_out_l, conn[ci].cookie_out_l);
     strcpy(req.hdr.cookie_out_l_exp, conn[ci].cookie_out_l_exp);
     strcpy(req.hdr.location, conn[ci].location);
+    req.hdr.bot = conn[ci].bot;
     req.hdr.dont_cache = conn[ci].dont_cache;
     req.hdr.keep_content = conn[ci].keep_content;
 
@@ -5918,7 +5920,6 @@ unsigned    out_data_allocated;
 #endif
 char        *p_content=NULL;
 conn_t      conn[MAX_CONNECTIONS+1]={0}; /* request details */
-//int         ci=0;
 usession_t  uses[MAX_SESSIONS+1]={0};   /* user sessions -- they start from 1 */
 ausession_t auses[MAX_SESSIONS+1]={0};  /* app user sessions, using the same index (usi) */
 
@@ -6243,6 +6244,7 @@ int main(int argc, char *argv[])
             strcpy(conn[0].cookie_out_l, req.hdr.cookie_out_l);
             strcpy(conn[0].cookie_out_l_exp, req.hdr.cookie_out_l_exp);
             strcpy(conn[0].location, req.hdr.location);
+            conn[0].bot = req.hdr.bot;
             conn[0].dont_cache = req.hdr.dont_cache;
             conn[0].keep_content = req.hdr.keep_content;
 

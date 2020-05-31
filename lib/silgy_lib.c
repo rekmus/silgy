@@ -574,7 +574,7 @@ static int close_tag(const char *src, char tag)
 
 
 /* --------------------------------------------------------------------------
-   Render simplified md to HTML
+   Render simplified markdown to HTML
 -------------------------------------------------------------------------- */
 char *silgy_render_md(char *dest, const char *src, size_t len)
 {
@@ -1854,6 +1854,28 @@ void lib_out_snippet(int ci, const char *name)
 }
 
 
+/* --------------------------------------------------------------------------
+   OUT markdown snippet
+-------------------------------------------------------------------------- */
+void lib_out_snippet_md(int ci, const char *name)
+{
+#ifndef SILGY_WATCHER
+    int i;
+
+    for ( i=0; G_snippets[i].name[0] != '-'; ++i )
+    {
+        if ( 0==strcmp(G_snippets[i].name, name) )
+        {
+            silgy_render_md(G_tmp, G_snippets[i].data, TMP_BUFSIZE-1);
+            OUT(G_tmp);
+            break;
+        }
+    }
+#endif  /* SILGY_WATCHER */
+}
+
+
+
 #ifdef HTTPS
 /* --------------------------------------------------------------------------
    Log SSL error
@@ -2707,7 +2729,7 @@ void lib_send_msg_description(int ci, int code)
 
     RES_KEEP_CONTENT;
 
-    DBG("lib_send_msg_description: [%s]", G_tmp);
+//    DBG("lib_send_msg_description: [%s]", G_tmp);
 
     RES_DONT_CACHE;
 }

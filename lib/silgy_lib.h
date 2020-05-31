@@ -138,6 +138,7 @@ typedef struct {
 #define OUT_HTML_HEADER             lib_out_html_header(ci)
 #define OUT_HTML_FOOTER             lib_out_html_footer(ci)
 #define OUT_SNIPPET(name)           lib_out_snippet(ci, name)
+#define OUT_SNIPPET_MD(name)        lib_out_snippet_md(ci, name)
 
 
 /* strings */
@@ -427,6 +428,7 @@ extern "C" {
     void lib_update_time_globals(void);
     bool read_snippets(bool first_scan, const char *path);
     void lib_out_snippet(int ci, const char *name);
+    void lib_out_snippet_md(int ci, const char *name);
     void lib_setnonblocking(int sock);
     void lib_out_html_header(int ci);
     void lib_out_html_footer(int ci);

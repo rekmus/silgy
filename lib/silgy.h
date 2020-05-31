@@ -952,6 +952,7 @@ typedef struct {
     char     cookie_out_l[SESID_LEN+1];
     char     cookie_out_l_exp[32];
     char     location[MAX_URI_LEN+1];
+    bool     bot;
     bool     dont_cache;
     bool     keep_content;
     usession_t uses;
@@ -1071,10 +1072,11 @@ typedef struct {                            /* request details for silgy_svc */
     char     cookie_out_l[SESID_LEN+1];
     char     cookie_out_l_exp[32];
     char     location[MAX_URI_LEN+1];
+    bool     bot;
     bool     dont_cache;
     bool     keep_content;
 } conn_t;
-#else   /* not SILGY_SVC */
+#else   /* SILGY_APP */
 typedef struct {
     /* what comes in */
 #ifdef _WIN32   /* Windows */
