@@ -4,6 +4,16 @@ Silgy is an extreme speed asynchronous web application backend engine. It can re
 
 It's open-source and free.
 
+## Node++ announcement
+
+I am starting working on Silgy's successor: [Node++](https://github.com/silgy/nodeplusplus). As I gathered a lot of experience from writing about 20 web applications myself and helping others, I feel I'm ready to take a bigger step to the new name and a few breaches that will, I believe, make Silgy applications better. No worries: I'll be supporting Silgy project for at least a year from the first Node++ release and will provide an automated conversion tool for existing applications, as I will need this myself.
+
+I need to thank you all for all your questions, encouragement and kind words!
+
+Please keep asking, suggesting and express your wishes: here in Issues or silgy.help@gmail.com.
+
+\*\*\*
+
 It can act as:
 
 * a static web server;
