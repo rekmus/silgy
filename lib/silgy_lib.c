@@ -7520,8 +7520,8 @@ bool silgy_email(const char *to, const char *subject, const char *message)
         fprintf(mailpipe, "To: %s\n", to);
         fprintf(mailpipe, "Subject: %s\n", subject);
         fprintf(mailpipe, "Content-Type: text/plain; charset=\"utf-8\"\n\n");
-        fwrite(message, 1, strlen(message), mailpipe);
-        fwrite("\n.\n", 1, 3, mailpipe);
+        fwrite(message, strlen(message), 1, mailpipe);
+        fwrite("\n.\n", 3, 1, mailpipe);
         pclose(mailpipe);
     }
 
@@ -7649,7 +7649,7 @@ bool silgy_email_attach(const char *to, const char *subject, const char *message
 
         DBG("qpm [%s]", qpm); */
 
-        fwrite(message, 1, strlen(message), mailpipe);
+        fwrite(message, strlen(message), 1, mailpipe);
 //        fwrite(qpm, 1, strlen(qpm), mailpipe);
 //        free(qpm);
         fprintf(mailpipe, "\n\n");
@@ -7680,7 +7680,7 @@ bool silgy_email_attach(const char *to, const char *subject, const char *message
 
         DBG("     Real b64data_len = %d", b64data_len);
 
-        fwrite(b64data, 1, b64data_len, mailpipe);
+        fwrite(b64data, b64data_len, 1, mailpipe);
 
         free(b64data);
 
@@ -7868,6 +7868,7 @@ static int minify_2(char *dest, const char *src)
                     || (0==strcmp(word, "else") && src[i]!='{')
                     || 0==strcmp(word, "new")
                     || 0==strcmp(word, "enum")
+                    || 0==strcmp(word, "const")
                     || (0==strcmp(word, "return") && src[i]!=';') )
                 dest[j++] = ' ';
             openwo = FALSE;

@@ -2370,7 +2370,7 @@ static void read_blocked_ips()
 
     if ( NULL == (h_file=fopen(fname, "r")) )
     {
-        WAR("Couldn't open %s\n", fname);
+        WAR("Couldn't open %s", fname);
         return;
     }
 
@@ -2495,7 +2495,7 @@ static void read_allowed_ips()
 
     if ( NULL == (h_file=fopen(fname, "r")) )
     {
-        WAR("Couldn't open %s\n", fname);
+        WAR("Couldn't open %s", fname);
         return;
     }
 
@@ -5246,7 +5246,7 @@ static bool init_ssl()
         return FALSE;
     }
 
-    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1;
+    const long flags = SSL_OP_ALL | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1;
     SSL_CTX_set_options(M_ssl_ctx, flags);
 
     /* support ECDH using the most appropriate shared curve */
