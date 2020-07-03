@@ -4,16 +4,6 @@ Silgy is an extreme speed asynchronous web application backend engine. It can re
 
 It's open-source and free.
 
-## Node++ announcement
-
-I am starting working on Silgy's successor: [Node++](https://github.com/silgy/nodeplusplus). As I gathered a lot of experience from writing about 20 web applications myself and helping others, I feel I'm ready to take a bigger step to the new name and a few breaches that will, I believe, make Silgy applications better. No worries: I'll be supporting Silgy project for at least a year from the first Node++ release and will provide an automated conversion tool for existing applications, as I will need this myself.
-
-I need to thank you all for all your questions, encouragement and kind words!
-
-Please keep asking, suggesting and express your wishes: here in Issues or silgy.help@gmail.com.
-
-\*\*\*
-
 It can act as:
 
 * a static web server;
@@ -27,19 +17,31 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 1. It has to be **responsive**, in a way compiled programs used locally are responsive. It needs to feel solid and reliable. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/show?p=MWPcAbmY).
 
-2. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~500 users application and use ~1% of the server's resources.
+1. It needs to be **universal**. Silgy applications work on _every_ currently used browser.
 
-3. **Safety**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it. My application consistently gets grade A from [SSL Labs](https://www.ssllabs.com/ssltest/analyze.html?d=silgy.org).
+1. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~500 users application and use ~1% of the server's resources.
 
-4. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
+1. **Safety**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it. My application consistently gets grade A from [SSL Labs](https://www.ssllabs.com/ssltest/analyze.html?d=silgy.org).
 
-5. **Simplicity**. Before writing my own web server, I tried a couple of libraries. They were either complicated, not intuitive, bloated or slow. Some look promising (Node.js), however database connections proved to be too slow for my needs. There's also a tendency for using every new fireworks that's available in town, like i.e. functional programming. I just don't feel comfortable with this, so I wanted **straight, intuitive, procedural, single-threaded code**. All the complexity needs to be hidden in the library.
+1. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
 
-6. **Beautiful URL**. I want `full/control/over/my/URIs`.
+1. **Simplicity**. Before writing my own web server, I tried a couple of libraries. They were either complicated, not intuitive, bloated or slow. Some look promising (Node.js), however database connections proved to be too slow for my needs. There's also a tendency for using every new fireworks that's available in town, like i.e. functional programming. I just don't feel comfortable with this, so I wanted **straight, intuitive, procedural, single-threaded code**. All the complexity needs to be hidden in the library.
 
-7. **Planet-friendliness**. Even if I could afford fat, 64-core, 512 GB RAM VS, why would I waste the Earth? It turns out, data centers have become a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
+1. **Beautiful URL**. I want `full/control/over/my/URIs`.
+
+1. **Planet-friendliness**. Even if I could afford fat, 64-core, 512 GB RAM VS, why would I waste the Earth? It turns out, data centers have become a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
 
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
+
+## Node++ announcement
+
+I am starting working on Silgy's successor: [Node++](https://github.com/silgy/nodeplusplus). As I gathered a lot of experience from writing about 20 web applications myself and helping others, I feel I'm ready to take a bigger step to the new name and a few breaches that will, I believe, make Silgy applications better. No worries: I'll be supporting Silgy project for at least a year from the first Node++ release and will provide an automated conversion tool for existing applications, as I will need this myself.
+
+I need to thank you all for all your questions, encouragement and kind words!
+
+Please keep asking, suggesting and express your wishes: here in Issues or silgy.help@gmail.com.
+
+\*\*\*
 
 ## What's in the box?
 
