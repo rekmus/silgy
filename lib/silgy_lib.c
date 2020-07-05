@@ -2637,6 +2637,8 @@ bool lib_res_header(int ci, const char *hdr, const char *val)
     strcat(conn[ci].cust_headers, val);
     strcat(conn[ci].cust_headers, "\r\n");
 
+    conn[ci].cust_headers_len += all;
+
     return TRUE;
 }
 
