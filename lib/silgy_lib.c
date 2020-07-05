@@ -2620,12 +2620,74 @@ void lib_set_res_status(int ci, int status)
 /* --------------------------------------------------------------------------
    Set custom header
 -------------------------------------------------------------------------- */
-void lib_res_header(int ci, const char *hdr, const char *val)
+bool lib_res_header(int ci, const char *hdr, const char *val)
 {
+    int hlen = strlen(hdr);
+    int vlen = strlen(val);
+    int all = hlen + vlen + 4;
+
+    if ( all > CUST_HDR_LEN - conn[ci].cust_headers_len )
+    {
+        WAR("Couldn't add %s to custom headers: no space", hdr);
+        return FALSE;
+    }
+
     strcat(conn[ci].cust_headers, hdr);
     strcat(conn[ci].cust_headers, ": ");
     strcat(conn[ci].cust_headers, val);
     strcat(conn[ci].cust_headers, "\r\n");
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get request cookie
+-------------------------------------------------------------------------- */
+bool lib_get_cookie(int ci, const char *key, char *value)
+{
+    char nkey[128];
+    char *v;
+
+    sprintf(nkey, "%s=", key);
+
+    v = strstr(conn[ci].in_cookie, nkey);
+
+    if ( !v ) return FALSE;
+
+    /* key present */
+
+    if ( value )
+    {
+        int j=0;
+
+        while ( *v!='=' ) ++v;
+
+        ++v;    /* skip '=' */
+
+        while ( *v && *v!=';' )
+            value[j++] = *(v++);
+
+        value[j] = EOS;
+    }
+
+    return TRUE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Set cookie
+-------------------------------------------------------------------------- */
+bool lib_set_cookie(int ci, const char *key, const char *value, int days)
+{
+    char v[CUST_HDR_LEN+1];
+
+    if ( days )
+        sprintf(v, "%s=%s; Expires=%s;", key, value, time_epoch2http(G_now + 3600*24*days));
+    else    /* current session only */
+        sprintf(v, "%s=%s", key, value);
+
+    return lib_res_header(ci, "Set-Cookie", v);
 }
 
 

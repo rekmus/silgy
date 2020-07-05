@@ -158,6 +158,12 @@ typedef char str256k[1024*256];
 #define CHAR_GREATER_EQUAL              "&#8805;"
 
 
+#ifndef SILGY_SVC
+#ifndef SILGY_WATCHER
+#define SILGY_APP
+#endif
+#endif
+
 
 #include "silgy_app.h"
 
@@ -366,15 +372,15 @@ typedef char str256k[1024*256];
 
 /* cookie */
 #ifdef HSTS_ON
-#define PRINT_HTTP_COOKIE_A(ci)         (sprintf(G_tmp, "Set-Cookie: as=%s; %sHttpOnly\r\n", conn[ci].cookie_out_a, G_test?"":"secure; "), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_L(ci)         (sprintf(G_tmp, "Set-Cookie: ls=%s; %sHttpOnly\r\n", conn[ci].cookie_out_l, G_test?"":"secure; "), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_A_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: as=%s; expires=%s; %sHttpOnly\r\n", conn[ci].cookie_out_a, conn[ci].cookie_out_a_exp, G_test?"":"secure; "), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_L_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: ls=%s; expires=%s; %sHttpOnly\r\n", conn[ci].cookie_out_l, conn[ci].cookie_out_l_exp, G_test?"":"secure; "), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_A(ci)         (sprintf(G_tmp, "Set-Cookie: as=%s; %sHttpOnly\r\n", conn[ci].cookie_out_a, G_test?"":"Secure; "), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_L(ci)         (sprintf(G_tmp, "Set-Cookie: ls=%s; %sHttpOnly\r\n", conn[ci].cookie_out_l, G_test?"":"Secure; "), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_A_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: as=%s; Expires=%s; %sHttpOnly\r\n", conn[ci].cookie_out_a, conn[ci].cookie_out_a_exp, G_test?"":"Secure; "), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_L_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: ls=%s; Expires=%s; %sHttpOnly\r\n", conn[ci].cookie_out_l, conn[ci].cookie_out_l_exp, G_test?"":"Secure; "), HOUT(G_tmp))
 #else
 #define PRINT_HTTP_COOKIE_A(ci)         (sprintf(G_tmp, "Set-Cookie: as=%s; HttpOnly\r\n", conn[ci].cookie_out_a), HOUT(G_tmp))
 #define PRINT_HTTP_COOKIE_L(ci)         (sprintf(G_tmp, "Set-Cookie: ls=%s; HttpOnly\r\n", conn[ci].cookie_out_l), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_A_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: as=%s; expires=%s; HttpOnly\r\n", conn[ci].cookie_out_a, conn[ci].cookie_out_a_exp), HOUT(G_tmp))
-#define PRINT_HTTP_COOKIE_L_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: ls=%s; expires=%s; HttpOnly\r\n", conn[ci].cookie_out_l, conn[ci].cookie_out_l_exp), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_A_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: as=%s; Expires=%s; HttpOnly\r\n", conn[ci].cookie_out_a, conn[ci].cookie_out_a_exp), HOUT(G_tmp))
+#define PRINT_HTTP_COOKIE_L_EXP(ci)     (sprintf(G_tmp, "Set-Cookie: ls=%s; Expires=%s; HttpOnly\r\n", conn[ci].cookie_out_l, conn[ci].cookie_out_l_exp), HOUT(G_tmp))
 #endif
 
 /* framing */
@@ -936,6 +942,7 @@ typedef struct {
     bool     mobile;
     char     referer[MAX_VALUE_LEN+1];
     unsigned clen;
+    char     in_cookie[MAX_VALUE_LEN+1];
     char     host[MAX_VALUE_LEN+1];
     char     website[WEBSITE_LEN+1];
     char     lang[LANG_LEN+1];
@@ -944,6 +951,7 @@ typedef struct {
     char     response;
     int      status;
     char     cust_headers[CUST_HDR_LEN+1];
+    int      cust_headers_len;
     char     ctype;
     char     ctypestr[CONTENT_TYPE_LEN+1];
     char     cdisp[CONTENT_DISP_LEN+1];
@@ -994,6 +1002,7 @@ typedef struct {
     int      err_code;
     int      status;
     char     cust_headers[CUST_HDR_LEN+1];
+    int      cust_headers_len;
     char     ctype;
     char     ctypestr[CONTENT_TYPE_LEN+1];
     char     cdisp[CONTENT_DISP_LEN+1];
@@ -1055,15 +1064,17 @@ typedef struct {                            /* request details for silgy_svc */
     bool     mobile;
     char     referer[MAX_VALUE_LEN+1];
     unsigned clen;
-    char     *in_data;
+    char     in_cookie[MAX_VALUE_LEN+1];
     unsigned in_data_allocated;
     char     host[MAX_VALUE_LEN+1];
     char     website[WEBSITE_LEN+1];
     char     lang[LANG_LEN+1];
     char     in_ctype;
     char     boundary[MAX_VALUE_LEN+1];
+    char     *in_data;
     int      status;
     char     cust_headers[CUST_HDR_LEN+1];
+    int      cust_headers_len;
     char     ctype;
     char     ctypestr[CONTENT_TYPE_LEN+1];
     char     cdisp[CONTENT_DISP_LEN+1];
@@ -1107,7 +1118,7 @@ typedef struct {
     bool     keep_alive;
     char     referer[MAX_VALUE_LEN+1];
     unsigned clen;                           /* incoming & outgoing content length */
-    char     *in_data;                       /* POST data */
+    char     in_cookie[MAX_VALUE_LEN+1];
     char     cookie_in_a[SESID_LEN+1];       /* anonymous */
     char     cookie_in_l[SESID_LEN+1];       /* logged in */
     char     host[MAX_VALUE_LEN+1];
@@ -1121,6 +1132,8 @@ typedef struct {
     char     authorization[MAX_VALUE_LEN+1]; /* Authorization */
     bool     accept_deflate;
     int      host_id;
+    /* POST data */
+    char     *in_data;                       /* POST data */
     /* what goes out */
     unsigned out_hlen;                       /* outgoing header length */
     unsigned out_len;                        /* outgoing length (all) */
@@ -1134,6 +1147,7 @@ typedef struct {
     char     *out_data;                      /* pointer to the data to send */
     int      status;                         /* HTTP status */
     char     cust_headers[CUST_HDR_LEN+1];
+    int      cust_headers_len;
     unsigned data_sent;                      /* how many content bytes have been sent */
     char     ctype;                          /* content type */
     char     ctypestr[CONTENT_TYPE_LEN+1];   /* user (custom) content type */

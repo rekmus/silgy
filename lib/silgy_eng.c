@@ -882,6 +882,7 @@ int main(int argc, char **argv)
                 /* update connection details */
 
                 strcpy(conn[res.ci].cust_headers, res.hdr.cust_headers);
+                conn[res.ci].cust_headers_len = res.hdr.cust_headers_len;
                 conn[res.ci].ctype = res.hdr.ctype;
                 strcpy(conn[res.ci].ctypestr, res.hdr.ctypestr);
                 strcpy(conn[res.ci].cdisp, res.hdr.cdisp);
@@ -986,27 +987,11 @@ int main(int argc, char **argv)
 -------------------------------------------------------------------------- */
 static void set_expiry_dates()
 {
-    time_t sometimeahead;
-
-    sometimeahead = G_now + 3600*24*EXPIRES_STATICS;
-    G_ptm = gmtime(&sometimeahead);
-#ifdef _WIN32   /* Windows */
-    strftime(M_expires_stat, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
-#else
-    strftime(M_expires_stat, 32, "%a, %d %b %Y %T GMT", G_ptm);
-#endif  /* _WIN32 */
+    strcpy(M_expires_stat, time_epoch2http(G_now + 3600*24*EXPIRES_STATICS));
     DBG("New M_expires_stat: %s", M_expires_stat);
 
-    sometimeahead = G_now + 3600*24*EXPIRES_GENERATED;
-    G_ptm = gmtime(&sometimeahead);
-#ifdef _WIN32   /* Windows */
-    strftime(M_expires_gen, 32, "%a, %d %b %Y %H:%M:%S GMT", G_ptm);
-#else
-    strftime(M_expires_gen, 32, "%a, %d %b %Y %T GMT", G_ptm);
-#endif  /* _WIN32 */
+    strcpy(M_expires_stat, time_epoch2http(G_now + 3600*24*EXPIRES_GENERATED));
     DBG("New M_expires_gen: %s", M_expires_gen);
-
-    G_ptm = gmtime(&G_now);   /* reset to today */
 }
 
 
@@ -4037,6 +4022,7 @@ static void reset_conn(int ci, char new_state)
     conn[ci].keep_alive = FALSE;
     conn[ci].proto[0] = EOS;
     conn[ci].clen = 0;
+    conn[ci].in_cookie[0] = EOS;
     conn[ci].cookie_in_a[0] = EOS;
     conn[ci].cookie_in_l[0] = EOS;
     conn[ci].host[0] = EOS;
@@ -4052,6 +4038,7 @@ static void reset_conn(int ci, char new_state)
     /* what goes out */
 
     conn[ci].cust_headers[0] = EOS;
+    conn[ci].cust_headers_len = 0;
 
     conn[ci].out_data = conn[ci].out_data_alloc;
 
@@ -4881,11 +4868,15 @@ static int set_http_req_val(int ci, const char *label, const char *value)
     }
     else if ( 0==strcmp(ulabel, "COOKIE") )
     {
-        if ( strlen(value) < SESID_LEN+3 ) return 200;  /* no valid cookie but request still OK */
+        strcpy(conn[ci].in_cookie, value);
+
+        /* parse authentication data */
+
+        if ( strlen(value) < SESID_LEN+3 ) return 200;   /* no valid session cookie but request still OK */
 
         /* parse cookies, set anonymous and / or logged in sesid */
 
-        if ( NULL != (p=(char*)strstr(value, "as=")) )  /* anonymous sesid present? */
+        if ( NULL != (p=(char*)strstr(value, "as=")) )   /* anonymous sesid present? */
         {
             p += 3;
             if ( strlen(p) >= SESID_LEN )
@@ -4894,7 +4885,7 @@ static int set_http_req_val(int ci, const char *label, const char *value)
                 conn[ci].cookie_in_a[SESID_LEN] = EOS;
             }
         }
-        if ( NULL != (p=(char*)strstr(value, "ls=")) )  /* logged in sesid present? */
+        if ( NULL != (p=(char*)strstr(value, "ls=")) )   /* logged in sesid present? */
         {
             p += 3;
             if ( strlen(p) >= SESID_LEN )
@@ -5476,6 +5467,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     req.hdr.mobile = conn[ci].mobile;
     strcpy(req.hdr.referer, conn[ci].referer);
     req.hdr.clen = conn[ci].clen;
+    strcpy(req.hdr.in_cookie, conn[ci].in_cookie);
     strcpy(req.hdr.host, conn[ci].host);
     strcpy(req.hdr.website, conn[ci].website);
     strcpy(req.hdr.lang, conn[ci].lang);
@@ -5483,6 +5475,7 @@ void eng_async_req(int ci, const char *service, const char *data, char response,
     strcpy(req.hdr.boundary, conn[ci].boundary);
     req.hdr.status = conn[ci].status;
     strcpy(req.hdr.cust_headers, conn[ci].cust_headers);
+    req.hdr.cust_headers_len = conn[ci].cust_headers_len;
     req.hdr.ctype = conn[ci].ctype;
     strcpy(req.hdr.ctypestr, conn[ci].ctypestr);
     strcpy(req.hdr.cdisp, conn[ci].cdisp);
@@ -5877,6 +5870,11 @@ static char value[MAX_VALUE_LEN+1];
         strcpy(value, conn[ci].authorization);
         return value;
     }
+    else if ( 0==strcmp(uheader, "COOKIE") )
+    {
+        strcpy(value, conn[ci].in_cookie);
+        return value;
+    }
     else
     {
         return NULL;
@@ -5896,6 +5894,7 @@ void eng_rest_header_pass(int ci, const char *key)
     if ( value[0] )
         REST_HEADER_SET(key, value);
 }
+
 
 
 
@@ -6231,6 +6230,7 @@ int main(int argc, char *argv[])
             conn[0].mobile = req.hdr.mobile;
             strcpy(conn[0].referer, req.hdr.referer);
             conn[0].clen = req.hdr.clen;
+            strcpy(conn[0].in_cookie, req.hdr.in_cookie);
             strcpy(conn[0].host, req.hdr.host);
             strcpy(conn[0].website, req.hdr.website);
             strcpy(conn[0].lang, req.hdr.lang);
@@ -6238,6 +6238,7 @@ int main(int argc, char *argv[])
             strcpy(conn[0].boundary, req.hdr.boundary);
             conn[0].status = req.hdr.status;
             strcpy(conn[0].cust_headers, req.hdr.cust_headers);
+            conn[0].cust_headers_len = req.hdr.cust_headers_len;
             conn[0].ctype = req.hdr.ctype;
             strcpy(conn[0].ctypestr, req.hdr.ctypestr);
             strcpy(conn[0].cdisp, req.hdr.cdisp);
@@ -6348,6 +6349,7 @@ int main(int argc, char *argv[])
 
                 res.hdr.status = conn[0].status;
                 strcpy(res.hdr.cust_headers, conn[0].cust_headers);
+                res.hdr.cust_headers_len = conn[0].cust_headers_len;
                 res.hdr.ctype = conn[0].ctype;
                 strcpy(res.hdr.ctypestr, conn[0].ctypestr);
                 strcpy(res.hdr.cdisp, conn[0].cdisp);

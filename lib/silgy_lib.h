@@ -140,6 +140,9 @@ typedef struct {
 #define OUT_SNIPPET(name)           lib_out_snippet(ci, name)
 #define OUT_SNIPPET_MD(name)        lib_out_snippet_md(ci, name)
 
+#define GET_COOKIE(key, val)        lib_get_cookie(ci, key, val)
+#define SET_COOKIE(key, val, days)  lib_set_cookie(ci, key, val, days)
+
 
 /* strings */
 
@@ -443,7 +446,9 @@ extern "C" {
     bool lib_qsd(int ci, const char *fieldname, double *retbuf);
     bool lib_qsb(int ci, const char *fieldname, bool *retbuf);
     void lib_set_res_status(int ci, int status);
-    void lib_res_header(int ci, const char *hdr, const char *val);
+    bool lib_res_header(int ci, const char *hdr, const char *val);
+    bool lib_get_cookie(int ci, const char *key, char *value);
+    bool lib_set_cookie(int ci, const char *key, const char *value, int days);
     void lib_set_res_content_type(int ci, const char *str);
     void lib_set_res_location(int ci, const char *str, ...);
     void lib_set_res_content_disposition(int ci, const char *str, ...);

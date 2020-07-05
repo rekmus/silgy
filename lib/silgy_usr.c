@@ -153,10 +153,7 @@ static bool valid_email(const char *email)
 -------------------------------------------------------------------------- */
 static void set_ls_cookie_expiration(int ci, time_t from)
 {
-    time_t sometimeahead = from + 3600*24*USER_KEEP_LOGGED_DAYS;
-    G_ptm = gmtime(&sometimeahead);
-    strftime(conn[ci].cookie_out_l_exp, 32, "%a, %d %b %Y %T GMT", G_ptm);
-    G_ptm = gmtime(&G_now);  /* make sure G_ptm is always up to date */
+    strcpy(conn[ci].cookie_out_l_exp, time_epoch2http(from + 3600*24*USER_KEEP_LOGGED_DAYS));
 }
 
 
