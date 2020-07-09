@@ -743,28 +743,10 @@ static int do_login(int ci, usession_t *us, char status, int visits)
 
 
 /* --------------------------------------------------------------------------
-   Send activation link
+   Send activation email
 -------------------------------------------------------------------------- */
-static int send_activation_link(int ci, int uid, const char *email)
+static int generic_user_activation_email(int ci, int uid, const char *email, const char *linkkey)
 {
-    char linkkey[PASSWD_RESET_KEY_LEN+1];
-    char sql[SQLBUF];
-    
-    /* generate the key */
-
-    silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
-
-    sprintf(sql, "INSERT INTO users_activations (linkkey,user_id,created,activated) VALUES ('%s',%d,'%s','%s')", linkkey, uid, DT_NOW, DT_NULL);
-    DBG("sql: %s", sql);
-
-    if ( mysql_query(G_dbconn, sql) )
-    {
-        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
-        return ERR_INT_SERVER_ERROR;
-    }
-
-    /* send an email */
-
     char subject[256];
     char message[4096];
 
@@ -796,6 +778,40 @@ static int send_activation_link(int ci, int uid, const char *email)
         return ERR_INT_SERVER_ERROR;
 
     return OK;
+}
+
+    
+/* --------------------------------------------------------------------------
+   Send activation link
+-------------------------------------------------------------------------- */
+static int send_activation_link(int ci, int uid, const char *email)
+{
+    int  ret=OK;
+    char linkkey[PASSWD_RESET_KEY_LEN+1];
+    char sql[SQLBUF];
+    
+    /* generate the key */
+
+    silgy_random(linkkey, PASSWD_RESET_KEY_LEN);
+
+    sprintf(sql, "INSERT INTO users_activations (linkkey,user_id,created,activated) VALUES ('%s',%d,'%s','%s')", linkkey, uid, DT_NOW, DT_NULL);
+    DBG("sql: %s", sql);
+
+    if ( mysql_query(G_dbconn, sql) )
+    {
+        ERR("%u: %s", mysql_errno(G_dbconn), mysql_error(G_dbconn));
+        return ERR_INT_SERVER_ERROR;
+    }
+
+    /* send an email */
+
+#ifdef APP_ACTIVATION_EMAIL
+    ret = silgy_app_user_activation_email(ci, uid, email, linkkey);
+#else
+    ret = generic_user_activation_email(ci, uid, email, linkkey);
+#endif
+
+    return ret;
 }
 
 

@@ -58,7 +58,7 @@
 #endif
 
 #ifndef USER_ACTIVATION_HOURS
-#define USER_ACTIVATION_HOURS           24                      /* activate user account within */
+#define USER_ACTIVATION_HOURS           48                      /* activate user account within */
 #endif
 
 #ifndef USER_KEEP_LOGGED_DAYS

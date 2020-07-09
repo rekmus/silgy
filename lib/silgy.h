@@ -1390,6 +1390,12 @@ extern "C" {
     bool silgy_svc_init(void);
     void silgy_svc_main(int ci);
     void silgy_svc_done(void);
+#ifdef APP_ERROR_PAGE
+    void silgy_app_error_page(int ci, int code);
+#endif
+#ifdef APP_ACTIVATION_EMAIL
+    int silgy_app_user_activation_email(int ci, int uid, const char *email, const char *linkkey);
+#endif
 #else   /* not SILGY_SVC */
     bool silgy_app_init(int argc, char *argv[]);
     void silgy_app_done(void);
@@ -1406,6 +1412,9 @@ extern "C" {
 #endif
 #ifdef EVERY_SECOND
     void app_every_second(void);
+#endif
+#ifdef APP_ACTIVATION_EMAIL
+    int silgy_app_user_activation_email(int ci, int uid, const char *email, const char *linkkey);
 #endif
 #endif  /* SILGY_SVC */
 
