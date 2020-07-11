@@ -223,13 +223,14 @@ typedef struct {
 
 /* JSON */
 
-#define JSON_STRING             0
-#define JSON_INTEGER            1
+#define JSON_INTEGER            0
+#define JSON_UNSIGNED           1
 #define JSON_FLOAT              2
 #define JSON_DOUBLE             3
-#define JSON_BOOL               4
-#define JSON_RECORD             5
-#define JSON_ARRAY              6
+#define JSON_STRING             4
+#define JSON_BOOL               5
+#define JSON_RECORD             6
+#define JSON_ARRAY              7
 
 #ifndef JSON_KEY_LEN
 #define JSON_KEY_LEN            31
@@ -297,16 +298,18 @@ typedef json_t JSON;
 #define JSON_FROM_STRING(json, str)         lib_json_from_string(json, str, 0, 0)
 
 
-#define JSON_ADD_STR(json, name, val)       lib_json_add(json, name, val, 0, 0, 0, JSON_STRING, -1)
-#define JSON_ADD_STR_A(json, i, val)        lib_json_add(json, NULL, val, 0, 0, 0, JSON_STRING, i)
-#define JSON_ADD_INT(json, name, val)       lib_json_add(json, name, NULL, val, 0, 0, JSON_INTEGER, -1)
-#define JSON_ADD_INT_A(json, i, val)        lib_json_add(json, NULL, NULL, val, 0, 0, JSON_INTEGER, i)
-#define JSON_ADD_FLOAT(json, name, val)     lib_json_add(json, name, NULL, 0, val, 0, JSON_FLOAT, -1)
-#define JSON_ADD_FLOAT_A(json, i, val)      lib_json_add(json, NULL, NULL, 0, val, 0, JSON_FLOAT, i)
-#define JSON_ADD_DOUBLE(json, name, val)    lib_json_add(json, name, NULL, 0, 0, val, JSON_DOUBLE, -1)
-#define JSON_ADD_DOUBLE_A(json, i, val)     lib_json_add(json, NULL, NULL, 0, 0, val, JSON_DOUBLE, i)
-#define JSON_ADD_BOOL(json, name, val)      lib_json_add(json, name, NULL, val, 0, 0, JSON_BOOL, -1)
-#define JSON_ADD_BOOL_A(json, i, val)       lib_json_add(json, NULL, NULL, val, 0, 0, JSON_BOOL, i)
+#define JSON_ADD_STR(json, name, val)       lib_json_add(json, name, val, 0, 0, 0, 0, JSON_STRING, -1)
+#define JSON_ADD_STR_A(json, i, val)        lib_json_add(json, NULL, val, 0, 0, 0, 0, JSON_STRING, i)
+#define JSON_ADD_INT(json, name, val)       lib_json_add(json, name, NULL, val, 0, 0, 0, JSON_INTEGER, -1)
+#define JSON_ADD_INT_A(json, i, val)        lib_json_add(json, NULL, NULL, val, 0, 0, 0, JSON_INTEGER, i)
+#define JSON_ADD_UINT(json, name, val)      lib_json_add(json, name, NULL, 0, val, 0, 0, JSON_UNSIGNED, -1)
+#define JSON_ADD_UINT_A(json, i, val)       lib_json_add(json, NULL, NULL, 0, val, 0, 0, JSON_UNSIGNED, i)
+#define JSON_ADD_FLOAT(json, name, val)     lib_json_add(json, name, NULL, 0, 0, val, 0, JSON_FLOAT, -1)
+#define JSON_ADD_FLOAT_A(json, i, val)      lib_json_add(json, NULL, NULL, 0, 0, val, 0, JSON_FLOAT, i)
+#define JSON_ADD_DOUBLE(json, name, val)    lib_json_add(json, name, NULL, 0, 0, 0, val, JSON_DOUBLE, -1)
+#define JSON_ADD_DOUBLE_A(json, i, val)     lib_json_add(json, NULL, NULL, 0, 0, 0, val, JSON_DOUBLE, i)
+#define JSON_ADD_BOOL(json, name, val)      lib_json_add(json, name, NULL, val, 0, 0, 0, JSON_BOOL, -1)
+#define JSON_ADD_BOOL_A(json, i, val)       lib_json_add(json, NULL, NULL, val, 0, 0, 0, JSON_BOOL, i)
 
 #define JSON_ADD_RECORD(json, name, val)    lib_json_add_record(json, name, val, FALSE, -1)
 #define JSON_ADD_RECORD_A(json, i ,val)     lib_json_add_record(json, NULL, val, FALSE, i)
@@ -320,6 +323,8 @@ typedef json_t JSON;
 #define JSON_GET_STR_A(json, i)             lib_json_get_str(json, NULL, i)
 #define JSON_GET_INT(json, name)            lib_json_get_int(json, name, -1)
 #define JSON_GET_INT_A(json, i)             lib_json_get_int(json, NULL, i)
+#define JSON_GET_UINT(json, name)           lib_json_get_uint(json, name, -1)
+#define JSON_GET_UINT_A(json, i)            lib_json_get_uint(json, NULL, i)
 #define JSON_GET_FLOAT(json, name)          lib_json_get_float(json, name, -1)
 #define JSON_GET_FLOAT_A(json, i)           lib_json_get_float(json, NULL, i)
 #define JSON_GET_DOUBLE(json, name)         lib_json_get_double(json, name, -1)
@@ -347,16 +352,18 @@ typedef json_t JSON;
 #define JSON_FROM_STRING(json, str)         lib_json_from_string(&json, str, 0, 0)
 
 
-#define JSON_ADD_STR(json, name, val)       lib_json_add(&json, name, val, 0, 0, 0, JSON_STRING, -1)
-#define JSON_ADD_STR_A(json, i, val)        lib_json_add(&json, NULL, val, 0, 0, 0, JSON_STRING, i)
-#define JSON_ADD_INT(json, name, val)       lib_json_add(&json, name, NULL, val, 0, 0, JSON_INTEGER, -1)
-#define JSON_ADD_INT_A(json, i, val)        lib_json_add(&json, NULL, NULL, val, 0, 0, JSON_INTEGER, i)
-#define JSON_ADD_FLOAT(json, name, val)     lib_json_add(&json, name, NULL, 0, val, 0, JSON_FLOAT, -1)
-#define JSON_ADD_FLOAT_A(json, i, val)      lib_json_add(&json, NULL, NULL, 0, val, 0, JSON_FLOAT, i)
-#define JSON_ADD_DOUBLE(json, name, val)    lib_json_add(&json, name, NULL, 0, 0, val, JSON_DOUBLE, -1)
-#define JSON_ADD_DOUBLE_A(json, i, val)     lib_json_add(&json, NULL, NULL, 0, 0, val, JSON_DOUBLE, i)
-#define JSON_ADD_BOOL(json, name, val)      lib_json_add(&json, name, NULL, val, 0, 0, JSON_BOOL, -1)
-#define JSON_ADD_BOOL_A(json, i, val)       lib_json_add(&json, NULL, NULL, val, 0, 0, JSON_BOOL, i)
+#define JSON_ADD_STR(json, name, val)       lib_json_add(&json, name, val, 0, 0, 0, 0, JSON_STRING, -1)
+#define JSON_ADD_STR_A(json, i, val)        lib_json_add(&json, NULL, val, 0, 0, 0, 0, JSON_STRING, i)
+#define JSON_ADD_INT(json, name, val)       lib_json_add(&json, name, NULL, val, 0, 0, 0, JSON_INTEGER, -1)
+#define JSON_ADD_INT_A(json, i, val)        lib_json_add(&json, NULL, NULL, val, 0, 0, 0, JSON_INTEGER, i)
+#define JSON_ADD_UINT(json, name, val)      lib_json_add(&json, name, NULL, 0, val, 0, 0, JSON_UNSIGNED, -1)
+#define JSON_ADD_UINT_A(json, i, val)       lib_json_add(&json, NULL, NULL, 0, val, 0, 0, JSON_UNSIGNED, i)
+#define JSON_ADD_FLOAT(json, name, val)     lib_json_add(&json, name, NULL, 0, 0, val, 0, JSON_FLOAT, -1)
+#define JSON_ADD_FLOAT_A(json, i, val)      lib_json_add(&json, NULL, NULL, 0, 0, val, 0, JSON_FLOAT, i)
+#define JSON_ADD_DOUBLE(json, name, val)    lib_json_add(&json, name, NULL, 0, 0, 0, val, JSON_DOUBLE, -1)
+#define JSON_ADD_DOUBLE_A(json, i, val)     lib_json_add(&json, NULL, NULL, 0, 0, 0, val, JSON_DOUBLE, i)
+#define JSON_ADD_BOOL(json, name, val)      lib_json_add(&json, name, NULL, val, 0, 0, 0, JSON_BOOL, -1)
+#define JSON_ADD_BOOL_A(json, i, val)       lib_json_add(&json, NULL, NULL, val, 0, 0, 0, JSON_BOOL, i)
 
 #define JSON_ADD_RECORD(json, name, val)    lib_json_add_record(&json, name, &val, FALSE, -1)
 #define JSON_ADD_RECORD_A(json, i, val)     lib_json_add_record(&json, NULL, &val, FALSE, i)
@@ -370,6 +377,8 @@ typedef json_t JSON;
 #define JSON_GET_STR_A(json, i)             lib_json_get_str(&json, NULL, i)
 #define JSON_GET_INT(json, name)            lib_json_get_int(&json, name, -1)
 #define JSON_GET_INT_A(json, i)             lib_json_get_int(&json, NULL, i)
+#define JSON_GET_UINT(json, name)           lib_json_get_uint(&json, name, -1)
+#define JSON_GET_UINT_A(json, i)            lib_json_get_uint(&json, NULL, i)
 #define JSON_GET_FLOAT(json, name)          lib_json_get_float(&json, name, -1)
 #define JSON_GET_FLOAT_A(json, i)           lib_json_get_float(&json, NULL, i)
 #define JSON_GET_DOUBLE(json, name)         lib_json_get_double(&json, name, -1)
@@ -504,12 +513,13 @@ extern "C" {
     char *lib_json_to_string(JSON *json);
     char *lib_json_to_string_pretty(JSON *json);
     bool lib_json_from_string(JSON *json, const char *src, int len, int level);
-    bool lib_json_add(JSON *json, const char *name, const char *str_value, int int_value, float flo_value, double dbl_value, char type, int i);
+    bool lib_json_add(JSON *json, const char *name, const char *str_value, int int_value, unsigned uint_value, float flo_value, double dbl_value, char type, int i);
     bool lib_json_add_record(JSON *json, const char *name, JSON *json_sub, bool is_array, int i);
     bool lib_json_get(JSON *json, const char *name, char *str_value, int *num_value, char type);
     bool lib_json_present(JSON *json, const char *name);
     char *lib_json_get_str(JSON *json, const char *name, int i);
     int  lib_json_get_int(JSON *json, const char *name, int i);
+    unsigned lib_json_get_uint(JSON *json, const char *name, int i);
     float lib_json_get_float(JSON *json, const char *name, int i);
     double lib_json_get_double(JSON *json, const char *name, int i);
     bool lib_json_get_bool(JSON *json, const char *name, int i);

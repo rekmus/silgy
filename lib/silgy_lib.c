@@ -6822,50 +6822,54 @@ static char tmp[JSON_BUFSIZE];
             if ( inside_array )
             {
                 if ( type==JSON_STRING )
-                    lib_json_add(json, NULL, value, 0, 0, 0, JSON_STRING, index);
+                    lib_json_add(json, NULL, value, 0, 0, 0, 0, JSON_STRING, index);
                 else if ( value[0]=='t' )
-                    lib_json_add(json, NULL, NULL, 1, 0, 0, JSON_BOOL, index);
+                    lib_json_add(json, NULL, NULL, 1, 0, 0, 0, JSON_BOOL, index);
                 else if ( value[0]=='f' )
-                    lib_json_add(json, NULL, NULL, 0, 0, 0, JSON_BOOL, index);
+                    lib_json_add(json, NULL, NULL, 0, 0, 0, 0, JSON_BOOL, index);
                 else if ( strchr(value, '.') )
                 {
                     if ( strlen(value) <= JSON_MAX_FLOAT_LEN )
                     {
                         sscanf(value, "%f", &flo_value);
-                        lib_json_add(json, NULL, NULL, 0, flo_value, 0, JSON_FLOAT, index);
+                        lib_json_add(json, NULL, NULL, 0, 0, flo_value, 0, JSON_FLOAT, index);
                     }
                     else
                     {
                         sscanf(value, "%lf", &dbl_value);
-                        lib_json_add(json, NULL, NULL, 0, 0, dbl_value, JSON_DOUBLE, index);
+                        lib_json_add(json, NULL, NULL, 0, 0, 0, dbl_value, JSON_DOUBLE, index);
                     }
                 }
-                else
-                    lib_json_add(json, NULL, NULL, atoi(value), 0, 0, JSON_INTEGER, index);
+                else if ( value[0] == '-' || strtoul(value, NULL, 10) < INT_MAX )
+                    lib_json_add(json, NULL, NULL, atoi(value), 0, 0, 0, JSON_INTEGER, index);
+                else    /* unsigned */
+                    lib_json_add(json, NULL, NULL, 0, (unsigned)strtoul(value, NULL, 10), 0, 0, JSON_UNSIGNED, index);
             }
             else    /* not an array */
             {
                 if ( type==JSON_STRING )
-                    lib_json_add(json, key, value, 0, 0, 0, JSON_STRING, -1);
+                    lib_json_add(json, key, value, 0, 0, 0, 0, JSON_STRING, -1);
                 else if ( value[0]=='t' )
-                    lib_json_add(json, key, NULL, 1, 0, 0, JSON_BOOL, -1);
+                    lib_json_add(json, key, NULL, 1, 0, 0, 0, JSON_BOOL, -1);
                 else if ( value[0]=='f' )
-                    lib_json_add(json, key, NULL, 0, 0, 0, JSON_BOOL, -1);
+                    lib_json_add(json, key, NULL, 0, 0, 0, 0, JSON_BOOL, -1);
                 else if ( strchr(value, '.') )
                 {
                     if ( strlen(value) <= JSON_MAX_FLOAT_LEN )
                     {
                         sscanf(value, "%f", &flo_value);
-                        lib_json_add(json, key, NULL, 0, flo_value, 0, JSON_FLOAT, -1);
+                        lib_json_add(json, key, NULL, 0, 0, flo_value, 0, JSON_FLOAT, -1);
                     }
                     else
                     {
                         sscanf(value, "%lf", &dbl_value);
-                        lib_json_add(json, key, NULL, 0, 0, dbl_value, JSON_DOUBLE, -1);
+                        lib_json_add(json, key, NULL, 0, 0, 0, dbl_value, JSON_DOUBLE, -1);
                     }
                 }
-                else
-                    lib_json_add(json, key, NULL, atoi(value), 0, 0, JSON_INTEGER, -1);
+                else if ( value[0] == '-' || strtoul(value, NULL, 10) < INT_MAX )
+                    lib_json_add(json, key, NULL, atoi(value), 0, 0, 0, JSON_INTEGER, -1);
+                else    /* unsigned */
+                    lib_json_add(json, key, NULL, 0, (unsigned)strtoul(value, NULL, 10), 0, 0, JSON_UNSIGNED, -1);
             }
 
             now_value = 0;
@@ -6982,7 +6986,7 @@ void lib_json_log_inf(JSON *json, const char *name)
 /* --------------------------------------------------------------------------
    Add/set value to a JSON buffer
 -------------------------------------------------------------------------- */
-bool lib_json_add(JSON *json, const char *name, const char *str_value, int int_value, float flo_value, double dbl_value, char type, int i)
+bool lib_json_add(JSON *json, const char *name, const char *str_value, int int_value, unsigned uint_value, float flo_value, double dbl_value, char type, int i)
 {
 #ifdef AUTO_INIT_EXPERIMENT
     json_auto_init(json);
@@ -7017,6 +7021,10 @@ bool lib_json_add(JSON *json, const char *name, const char *str_value, int int_v
     else if ( type == JSON_INTEGER )
     {
         sprintf(json->rec[i].value, "%d", int_value);
+    }
+    else if ( type == JSON_UNSIGNED )
+    {
+        sprintf(json->rec[i].value, "%u", uint_value);
     }
     else if ( type == JSON_FLOAT )
     {
@@ -7172,6 +7180,8 @@ int lib_json_get_int(JSON *json, const char *name, int i)
 
         if ( json->rec[i].type == JSON_INTEGER )
             return atoi(json->rec[i].value);
+        else if ( json->rec[i].type == JSON_UNSIGNED && strtoul(json->rec[i].value, NULL, 10) < INT_MAX )
+            return (int)strtoul(json->rec[i].value, NULL, 10);
         else    /* types don't match */
             return 0;
     }
@@ -7181,8 +7191,64 @@ int lib_json_get_int(JSON *json, const char *name, int i)
         if ( 0==strcmp(json->rec[i].name, name) )
         {
             if ( json->rec[i].type == JSON_INTEGER )
-            {
                 return atoi(json->rec[i].value);
+            else if ( json->rec[i].type == JSON_UNSIGNED && strtoul(json->rec[i].value, NULL, 10) < INT_MAX )
+                return (int)strtoul(json->rec[i].value, NULL, 10);
+
+            return 0;   /* types don't match or couldn't convert */
+        }
+    }
+
+    return 0;   /* no such field */
+}
+
+
+/* --------------------------------------------------------------------------
+   Get value from JSON buffer
+-------------------------------------------------------------------------- */
+unsigned lib_json_get_uint(JSON *json, const char *name, int i)
+{
+    if ( !name )    /* array elem */
+    {
+        if ( i >= json->cnt )
+        {
+            ERR("lib_json_get_uint index (%d) out of bound (max = %d)", i, json->cnt-1);
+            return 0;
+        }
+
+        if ( json->rec[i].type == JSON_UNSIGNED )
+        {
+            return (unsigned)strtoul(json->rec[i].value, NULL, 10);
+        }
+        else if ( json->rec[i].type == JSON_INTEGER )
+        {
+            int tmp = atoi(json->rec[i].value);
+
+            if ( tmp >= 0 )
+                return (unsigned)tmp;
+            else
+                WAR("lib_json_get_uint value < 0");
+        }
+        else    /* types don't match */
+            return 0;
+    }
+
+    for ( i=0; i<json->cnt; ++i )
+    {
+        if ( 0==strcmp(json->rec[i].name, name) )
+        {
+            if ( json->rec[i].type == JSON_UNSIGNED )
+            {
+                return (unsigned)strtoul(json->rec[i].value, NULL, 10);
+            }
+            else if ( json->rec[i].type == JSON_INTEGER )
+            {
+                int tmp = atoi(json->rec[i].value);
+
+                if ( tmp >= 0 )
+                    return (unsigned)tmp;
+                else
+                    WAR("lib_json_get_uint value < 0");
             }
 
             return 0;   /* types don't match or couldn't convert */
