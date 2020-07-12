@@ -185,16 +185,20 @@ typedef char str256k[1024*256];
 
 
 #ifdef SILGY_WATCHER
+#define SILGY_CLIENT
+#ifdef HTTPS
+#undef HTTPS
+#endif
+#endif
+
+#ifdef SILGY_CLIENT
 #ifdef DBMYSQL
 #undef DBMYSQL
 #endif
 #ifdef USERS
 #undef USERS
 #endif
-#ifdef HTTPS
-#undef HTTPS
-#endif
-#endif  /* SILGY_WATCHER */
+#endif  /* SILGY_CLIENT */
 
 
 #ifdef DBMYSQL

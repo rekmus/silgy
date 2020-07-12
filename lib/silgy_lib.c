@@ -93,6 +93,7 @@ static SSL *M_rest_ssl=NULL;
 #else
 static void *M_rest_ssl=NULL;    /* dummy */
 #endif  /* HTTPS */
+static char M_rest_mode;
 
 static bool M_rest_proxy=FALSE;
 
@@ -137,7 +138,7 @@ void silgy_lib_init()
 
     load_err_messages();
 
-#ifndef SILGY_WATCHER
+#ifndef SILGY_CLIENT
     /* load strings */
     load_strings();
 
@@ -231,7 +232,7 @@ void silgy_safe_copy(char *dst, const char *src, size_t dst_len)
 /* Time zone handling -------------------------------------- */
 
 
-#ifndef SILGY_WATCHER
+#ifndef SILGY_CLIENT
 /* --------------------------------------------------------------------------
    Set client's time zone offset on the server
 -------------------------------------------------------------------------- */
@@ -283,7 +284,7 @@ static char today[11];
     today[10] = EOS;
     return today;
 }
-#endif  /* SILGY_WATCHER */
+#endif  /* SILGY_CLIENT */
 
 
 /* --------------------------------------------------------------------------
@@ -875,7 +876,7 @@ static char dst[JSON_BUFSIZE];
 -------------------------------------------------------------------------- */
 bool lib_csrft_ok(int ci)
 {
-#ifndef SILGY_WATCHER
+#ifndef SILGY_CLIENT
 
     QSVAL csrft;
 
@@ -883,7 +884,7 @@ bool lib_csrft_ok(int ci)
 
     if ( 0 != strcmp(csrft, US.csrft) ) return FALSE;
 
-#endif  /* SILGY_WATCHER */
+#endif  /* SILGY_CLIENT */
 
     return TRUE;
 }
@@ -1123,7 +1124,7 @@ bool silgy_is_msg_main_cat(int code, const char *arg_cat)
 -------------------------------------------------------------------------- */
 char *lib_get_message(int ci, int code)
 {
-#ifndef SILGY_WATCHER
+#ifndef SILGY_CLIENT
 
     if ( 0==strcmp(US.lang, STRINGS_LANG) )   /* no need to translate */
         return lib_get_message_fallback(code);
@@ -1159,13 +1160,13 @@ char *lib_get_message(int ci, int code)
 
     return lib_get_message_fallback(code);
 
-#else   /* SILGY_WATCHER */
+#else   /* SILGY_CLIENT */
 
 static char dummy[16];
 
     return dummy;
 
-#endif  /* SILGY_WATCHER */
+#endif  /* SILGY_CLIENT */
 }
 
 
@@ -1350,7 +1351,7 @@ void silgy_add_string(const char *lang, const char *str, const char *str_lang)
 -------------------------------------------------------------------------- */
 const char *lib_get_string(int ci, const char *str)
 {
-#ifndef SILGY_WATCHER
+#ifndef SILGY_CLIENT
 
     if ( 0==strcmp(US.lang, STRINGS_LANG) )   /* no need to translate */
         return str;
@@ -1393,13 +1394,13 @@ const char *lib_get_string(int ci, const char *str)
 
     return str;
 
-#else   /* SILGY_WATCHER */
+#else   /* SILGY_CLIENT */
 
 static char dummy[16];
 
     return dummy;
 
-#endif  /* SILGY_WATCHER */
+#endif  /* SILGY_CLIENT */
 }
 
 
@@ -1841,7 +1842,7 @@ bool read_snippets(bool first_scan, const char *path)
 -------------------------------------------------------------------------- */
 void lib_out_snippet(int ci, const char *name)
 {
-#ifndef SILGY_WATCHER
+#ifndef SILGY_CLIENT
     int i;
 
     for ( i=0; G_snippets[i].name[0] != '-'; ++i )
@@ -1852,7 +1853,7 @@ void lib_out_snippet(int ci, const char *name)
             break;
         }
     }
-#endif  /* SILGY_WATCHER */
+#endif  /* SILGY_CLIENT */
 }
 
 
@@ -1861,7 +1862,7 @@ void lib_out_snippet(int ci, const char *name)
 -------------------------------------------------------------------------- */
 void lib_out_snippet_md(int ci, const char *name)
 {
-#ifndef SILGY_WATCHER
+#ifndef SILGY_CLIENT
     int i;
 
     for ( i=0; G_snippets[i].name[0] != '-'; ++i )
@@ -1873,7 +1874,7 @@ void lib_out_snippet_md(int ci, const char *name)
             break;
         }
     }
-#endif  /* SILGY_WATCHER */
+#endif  /* SILGY_CLIENT */
 }
 
 
@@ -1978,7 +1979,7 @@ void lib_setnonblocking(int sock)
 }
 
 
-#ifndef SILGY_WATCHER
+#ifndef SILGY_CLIENT
 /* --------------------------------------------------------------------------
    Output standard HTML header
 -------------------------------------------------------------------------- */
@@ -2037,7 +2038,7 @@ void lib_append_script(int ci, const char *fname, bool first)
     }
     OUT("ldscript('%s');", fname);
 }
-#endif  /* SILGY_WATCHER */
+#endif  /* SILGY_CLIENT */
 
 
 /* --------------------------------------------------------------------------
@@ -2095,7 +2096,7 @@ char *uri_decode(char *src, int srclen, char *dest, int maxlen)
 }
 
 
-#ifndef SILGY_WATCHER
+#ifndef SILGY_CLIENT
 /* --------------------------------------------------------------------------
    Get incoming request data. TRUE if found.
 -------------------------------------------------------------------------- */
@@ -3171,7 +3172,7 @@ void silgy_admin_info(int ci, int users, admin_info_t ai[], int ai_cnt, bool hea
 
     RES_DONT_CACHE;
 }
-#endif  /* SILGY_WATCHER */
+#endif  /* SILGY_CLIENT */
 
 
 /* --------------------------------------------------------------------------
@@ -3802,40 +3803,6 @@ static void rest_disconnect(int ssl_ret)
 
 
 /* --------------------------------------------------------------------------
-   REST call / get response content length
--------------------------------------------------------------------------- */
-static int rest_res_content_length(const char *buffer, int len)
-{
-    const char *p;
-
-    if ( (p=strstr(buffer, "\nContent-Length: ")) == NULL
-            && (p=strstr(buffer, "\nContent-length: ")) == NULL
-            && (p=strstr(buffer, "\ncontent-length: ")) == NULL )
-        return -1;
-
-    if ( len < (p-buffer) + 18 ) return -1;
-
-    char result_str[8];
-    char i=0;
-
-    p += 17;
-
-    while ( isdigit(*p) && i<7 )
-    {
-        result_str[i++] = *p++;
-    }
-
-    result_str[i] = EOS;
-
-#ifdef DUMP
-    DBG("result_str [%s]", result_str);
-#endif
-
-    return atoi(result_str);
-}
-
-
-/* --------------------------------------------------------------------------
    REST call / convert chunked to normal content
    Return number of bytes written to res_content
 -------------------------------------------------------------------------- */
@@ -3923,6 +3890,45 @@ static int chunked2content(char *res_content, const char *buffer, int src_len, i
 
 
 /* --------------------------------------------------------------------------
+   REST call / get response content length
+-------------------------------------------------------------------------- */
+static int rest_res_content_length(const char *u_res_header, int len)
+{
+    const char *p;
+
+    if ( (p=strstr(u_res_header, "\nCONTENT-LENGTH: ")) == NULL )
+        return -1;
+
+    if ( len < (p-u_res_header) + 18 ) return -1;
+
+    char result_str[8];
+    char i=0;
+
+    p += 17;
+
+    while ( isdigit(*p) && i<7 )
+    {
+        result_str[i++] = *p++;
+    }
+
+    result_str[i] = EOS;
+
+#ifdef DUMP
+    DBG("result_str [%s]", result_str);
+#endif
+
+    return atoi(result_str);
+}
+
+
+
+#define TRANSFER_MODE_NORMAL     '1'
+#define TRANSFER_MODE_NO_CONTENT '2'
+#define TRANSFER_MODE_CHUNKED    '3'
+#define TRANSFER_MODE_ERROR      '4'
+
+
+/* --------------------------------------------------------------------------
    REST call / parse response
 -------------------------------------------------------------------------- */
 bool lib_rest_res_parse(char *res_header, int bytes)
@@ -3931,41 +3937,43 @@ bool lib_rest_res_parse(char *res_header, int bytes)
 
     char status[4];
 
-    if ( bytes > 14 && 0==strncmp(res_header, "HTTP/1.", 7) )
+    if ( bytes < 14 || 0 != strncmp(res_header, "HTTP/1.", 7) )
     {
-        res_header[bytes] = EOS;
+        return FALSE;
+    }
+
+    res_header[bytes] = EOS;
 #ifdef DUMP
-        DBG("");
-        DBG("Got %d bytes of response [%s]", bytes, res_header);
+    DBG("");
+    DBG("Got %d bytes of response [%s]", bytes, res_header);
 #else
-        DBG("Got %d bytes of response", bytes);
+    DBG("Got %d bytes of response", bytes);
 #endif  /* DUMP */
 
-        /* Status */
+    /* Status */
 
-        strncpy(status, res_header+9, 3);
-        status[3] = EOS;
-        G_rest_status = atoi(status);
-        INF("REST response status: %s", status);
+    strncpy(status, res_header+9, 3);
+    status[3] = EOS;
+    G_rest_status = atoi(status);
+    INF("REST response status: %s", status);
 
-        /* Content-Type */
+    char u_res_header[REST_RES_HEADER_LEN+1];   /* uppercase */
+    strcpy(u_res_header, upper(res_header));
 
-        const char *p;
+    /* Content-Type */
 
-        if ( (p=strstr(res_header, "\nContent-Type: ")) == NULL
-                && (p=strstr(res_header, "\nContent-type: ")) == NULL
-                && (p=strstr(res_header, "\ncontent-type: ")) == NULL )
-        {
-            G_rest_content_type[0] = EOS;
-            return TRUE;
-        }
+    const char *p;
 
-        if ( bytes < (p-res_header) + 16 )
-        {
-            G_rest_content_type[0] = EOS;
-            return TRUE;
-        }
-
+    if ( (p=strstr(u_res_header, "\nCONTENT-TYPE: ")) == NULL )
+    {
+        G_rest_content_type[0] = EOS;
+    }
+    else if ( bytes < (p-res_header) + 16 )
+    {
+        G_rest_content_type[0] = EOS;
+    }
+    else
+    {
         char i=0;
 
         p += 15;
@@ -3977,12 +3985,44 @@ bool lib_rest_res_parse(char *res_header, int bytes)
 
         G_rest_content_type[i] = EOS;
         DBG("REST content type [%s]", G_rest_content_type);
-        return TRUE;
     }
-    else
+
+    /* content length */
+
+    G_rest_res_len = rest_res_content_length(u_res_header, bytes);
+
+    if ( G_rest_res_len > JSON_BUFSIZE-1 )
     {
+        WAR("Response content is too big (%d)", G_rest_res_len);
         return FALSE;
     }
+
+    if ( G_rest_res_len > 0 )     /* Content-Length present in response */
+    {
+        DBG("TRANSFER_MODE_NORMAL");
+        M_rest_mode = TRANSFER_MODE_NORMAL;
+    }
+    else if ( G_rest_res_len == 0 )
+    {
+        DBG("TRANSFER_MODE_NO_CONTENT");
+        M_rest_mode = TRANSFER_MODE_NO_CONTENT;
+    }
+    else    /* content length == -1 */
+    {
+        if ( strstr(u_res_header, "\nTRANSFER-ENCODING: CHUNKED") != NULL )
+        {
+            DBG("TRANSFER_MODE_CHUNKED");
+            M_rest_mode = TRANSFER_MODE_CHUNKED;
+        }
+        else
+        {
+            WAR("TRANSFER_MODE_ERROR");
+            M_rest_mode = TRANSFER_MODE_ERROR;
+            return FALSE;
+        }
+    }
+
+    return TRUE;
 }
 
 
@@ -4171,7 +4211,7 @@ static char  buffer[JSON_BUFSIZE];
 
     if ( !lib_rest_res_parse(res_header, bytes) )
     {
-        ERR("No or incomplete response");
+        ERR("No or invalid response");
 #ifdef DUMP
         if ( bytes >= 0 )
         {
@@ -4189,61 +4229,7 @@ static char  buffer[JSON_BUFSIZE];
     /* at this point we've got something that seems to be a HTTP header,
        possibly with content */
 
-    /* ------------------------------------------------------------------- */
-    /* find the expected Content-Length                                    */
-
-    int content_length = rest_res_content_length(res_header, bytes);
-
-    if ( content_length > JSON_BUFSIZE-1 )
-    {
-        ERR("Response content is too big (%d)", content_length);
-        rest_disconnect(bytes);
-        connected = FALSE;
-        return FALSE;
-    }
-
-    /* ------------------------------------------------------------------- */
-    /*
-       There are 4 options now:
-
-       1. Normal content with explicit Content-Length (content_length > 0)
-       2. No content gracefully (content_length = 0)
-       3. Chunked content (content_length = -1 and Transfer-Encoding says 'chunked')
-       4. Error -- that is, no Content-Length header and no Transfer-Encoding
-
-    */
-
-#define TRANSFER_MODE_NORMAL     '1'
-#define TRANSFER_MODE_NO_CONTENT '2'
-#define TRANSFER_MODE_CHUNKED    '3'
-#define TRANSFER_MODE_ERROR      '4'
-
 static char res_content[JSON_BUFSIZE];
-    char mode;
-
-    if ( content_length > 0 )     /* Content-Length present in response */
-    {
-        DBG("TRANSFER_MODE_NORMAL");
-        mode = TRANSFER_MODE_NORMAL;
-    }
-    else if ( content_length == 0 )
-    {
-        DBG("TRANSFER_MODE_NO_CONTENT");
-        mode = TRANSFER_MODE_NO_CONTENT;
-    }
-    else    /* content_length == -1 */
-    {
-        if ( strstr(res_header, "\nTransfer-Encoding: chunked") != NULL )
-        {
-            DBG("TRANSFER_MODE_CHUNKED");
-            mode = TRANSFER_MODE_CHUNKED;
-        }
-        else
-        {
-            WAR("TRANSFER_MODE_ERROR");
-            mode = TRANSFER_MODE_ERROR;
-        }
-    }
 
     /* ------------------------------------------------------------------- */
     /* some content may have already been read                             */
@@ -4258,12 +4244,12 @@ static char res_content[JSON_BUFSIZE];
 
         if ( was_read > 0 )
         {
-            if ( mode == TRANSFER_MODE_NORMAL )   /* not chunked goes directly to res_content */
+            if ( M_rest_mode == TRANSFER_MODE_NORMAL )   /* not chunked goes directly to res_content */
             {
                 content_read = was_read;
                 strncpy(res_content, body, content_read);
             }
-            else if ( mode == TRANSFER_MODE_CHUNKED )   /* chunked goes to buffer before res_content */
+            else if ( M_rest_mode == TRANSFER_MODE_CHUNKED )   /* chunked goes to buffer before res_content */
             {
                 buffer_read = was_read;
                 strncpy(buffer, body, buffer_read);
@@ -4274,9 +4260,9 @@ static char res_content[JSON_BUFSIZE];
     /* ------------------------------------------------------------------- */
     /* read content                                                        */
 
-    if ( mode == TRANSFER_MODE_NORMAL )
+    if ( M_rest_mode == TRANSFER_MODE_NORMAL )
     {
-        while ( content_read < content_length && timeout_remain > 1 )   /* read whatever we can within timeout */
+        while ( content_read < G_rest_res_len && timeout_remain > 1 )   /* read whatever we can within timeout */
         {
 #ifdef DUMP
             DBG("trying again (content-length)");
@@ -4304,7 +4290,7 @@ static char res_content[JSON_BUFSIZE];
             return FALSE;
         }
     }
-    else if ( mode == TRANSFER_MODE_CHUNKED )
+    else if ( M_rest_mode == TRANSFER_MODE_CHUNKED )
     {
         /* for single-threaded process, I can't see better option than to read everything
            into a buffer and then parse and copy chunks into final res_content */
@@ -4340,11 +4326,6 @@ static char res_content[JSON_BUFSIZE];
                 DBG("Last chunk detected (with \\r\\n)");
                 break;
             }
-/*            else if ( buffer_read>1 && buffer[buffer_read-2]=='\n' && buffer[buffer_read-1]=='0' )
-            {
-                DBG("Last chunk detected (without \\r\\n)");
-                break;
-            } */
 
 #ifdef DUMP
             DBG("trying again (chunked)");
@@ -4371,8 +4352,6 @@ static char res_content[JSON_BUFSIZE];
             connected = FALSE;
             return FALSE;
         }
-
-//        buffer[buffer_read] = EOS;
 
         content_read = chunked2content(res_content, buffer, buffer_read, JSON_BUFSIZE);
     }
@@ -5939,7 +5918,7 @@ char *nospaces(char *dst, const char *src)
 
 
 
-#ifndef SILGY_WATCHER
+#ifndef SILGY_CLIENT
 /* --------------------------------------------------------------------------
    Return a random 8-bit number from M_random_numbers
 -------------------------------------------------------------------------- */
@@ -6249,7 +6228,7 @@ static int  since_seed=0;
     DBG("silgy_random took %.3lf ms", lib_elapsed(&start));
 #endif
 }
-#endif  /* SILGY_WATCHER */
+#endif  /* SILGY_CLIENT */
 
 
 /* --------------------------------------------------------------------------
