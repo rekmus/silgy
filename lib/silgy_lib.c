@@ -6348,7 +6348,7 @@ static void json_to_string(char *dst, JSON *json, bool array)
             p = stpcpy(p, json->rec[i].value);
             p = stpcpy(p, "\"");
         }
-        else if ( json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_DOUBLE || json->rec[i].type==JSON_BOOL )
+        else if ( json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_UNSIGNED || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_DOUBLE || json->rec[i].type==JSON_BOOL )
         {
             p = stpcpy(p, json->rec[i].value);
         }
@@ -6430,7 +6430,7 @@ static void json_to_string_pretty(char *dst, JSON *json, bool array, int level)
             p = stpcpy(p, json->rec[i].value);
             p = stpcpy(p, "\"");
         }
-        else if ( json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_DOUBLE || json->rec[i].type==JSON_BOOL )
+        else if ( json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_UNSIGNED || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_DOUBLE || json->rec[i].type==JSON_BOOL )
         {
             p = stpcpy(p, json->rec[i].value);
         }
@@ -6778,7 +6778,7 @@ static char tmp[JSON_BUFSIZE];
             else    /* number */
             {
 #ifdef DUMP
-                DBG("JSON_INTEGER || JSON_FLOAT || JSON_DOUBLE || JSON_BOOL");
+                DBG("JSON_INTEGER || JSON_UNSIGNED || JSON_FLOAT || JSON_DOUBLE || JSON_BOOL");
 #endif
                 type = JSON_INTEGER;    /* we're not sure yet but need to mark it's definitely not STRING */
 
@@ -6897,6 +6897,8 @@ void lib_json_log_dbg(JSON *json, const char *name)
             strcpy(type, "JSON_STRING");
         else if ( json->rec[i].type == JSON_INTEGER )
             strcpy(type, "JSON_INTEGER");
+        else if ( json->rec[i].type == JSON_UNSIGNED )
+            strcpy(type, "JSON_UNSIGNED");
         else if ( json->rec[i].type == JSON_FLOAT )
             strcpy(type, "JSON_FLOAT");
         else if ( json->rec[i].type == JSON_DOUBLE )
@@ -6941,6 +6943,8 @@ void lib_json_log_inf(JSON *json, const char *name)
             strcpy(type, "JSON_STRING");
         else if ( json->rec[i].type == JSON_INTEGER )
             strcpy(type, "JSON_INTEGER");
+        else if ( json->rec[i].type == JSON_UNSIGNED )
+            strcpy(type, "JSON_UNSIGNED");
         else if ( json->rec[i].type == JSON_FLOAT )
             strcpy(type, "JSON_FLOAT");
         else if ( json->rec[i].type == JSON_DOUBLE )
@@ -7114,7 +7118,7 @@ static char dst[JSON_VAL_LEN+1];
             return dst;
         }
 
-        if ( json->rec[i].type==JSON_STRING || json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_DOUBLE || json->rec[i].type==JSON_BOOL )
+        if ( json->rec[i].type==JSON_STRING || json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_UNSIGNED || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_DOUBLE || json->rec[i].type==JSON_BOOL )
         {
             strcpy(dst, json->rec[i].value);
             return dst;
@@ -7130,7 +7134,7 @@ static char dst[JSON_VAL_LEN+1];
     {
         if ( 0==strcmp(json->rec[i].name, name) )
         {
-            if ( json->rec[i].type==JSON_STRING || json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_DOUBLE || json->rec[i].type==JSON_BOOL )
+            if ( json->rec[i].type==JSON_STRING || json->rec[i].type==JSON_INTEGER || json->rec[i].type==JSON_UNSIGNED || json->rec[i].type==JSON_FLOAT || json->rec[i].type==JSON_DOUBLE || json->rec[i].type==JSON_BOOL )
             {
                 strcpy(dst, json->rec[i].value);
                 return dst;
