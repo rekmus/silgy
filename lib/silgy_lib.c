@@ -14,6 +14,7 @@
 #include <locale.h>
 #endif
 
+#include <limits.h>     /* INT_MAX */
 
 #define RANDOM_NUMBERS 1024*64
 
@@ -32,6 +33,7 @@ time_t      G_now=0;                    /* current time (GMT) */
 struct tm   *G_ptm={0};                 /* human readable current time */
 char        G_dt[20]="";                /* datetime for database or log (YYYY-MM-DD hh:mm:ss) */
 char        G_tmp[TMP_BUFSIZE];         /* temporary string buffer */
+bool        G_initialized=0;
 
 /* messages */
 message_t   G_messages[MAX_MESSAGES]={0};

@@ -12,7 +12,6 @@
 
 
 int         G_httpPort;
-bool        G_initialized=0;
 
 
 static char M_watcherStopCmd[256];

@@ -53,7 +53,7 @@ ausession_t auses[MAX_SESSIONS+1]={0};  /* app user sessions, using the same ind
 int         G_sessions=0;               /* number of active user sessions */
 int         G_sessions_hwm=0;           /* highest number of active user sessions (high water mark) */
 char        G_last_modified[32]="";     /* response header field with server's start time */
-bool        G_initialized=0;
+//bool        G_initialized=0;
 
 #ifdef DBMYSQL
 MYSQL       *G_dbconn=NULL;             /* database connection */
@@ -5937,7 +5937,7 @@ int         G_sessions=0;               /* number of active user sessions */
 int         G_sessions_hwm=0;           /* highest number of active user sessions (high water mark) */
 int         G_blacklist_cnt=0;          /* G_blacklist length */
 char        G_last_modified[32]="";     /* response header field with server's start time */
-bool        G_initialized=0;
+//bool        G_initialized=0;
 
 
 #ifdef DBMYSQL
