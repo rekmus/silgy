@@ -3841,47 +3841,102 @@ static int chunked2content(char *res_content, const char *buffer, int src_len, i
         }
         else if ( chunk_size < 0 )
         {
-            ERR("chunk_size < 0");
+            WAR("chunk_size < 0");
             break;
         }
         else if ( chunk_size > res_len-written )
         {
-            ERR("chunk_size > res_len-written");
+            WAR("chunk_size > res_len-written");
             break;
         }
 
         /* --------------------------------------------------------------- */
         /* skip "\r\n" */
 
-        p += 2;
+//        p += 2;
+#ifdef DUMP
+        DBG("skip %d (should be 13)", *p);
+#endif
+        ++p;    /* skip '\r' */
+#ifdef DUMP
+        DBG("skip %d (should be 10)", *p);
+#endif
+        ++p;    /* skip '\n' */
+
         was_read += 2;
+
+        /* once again may be needed */
+
+        if ( *p == '\r' )
+        {
+#ifdef DUMP
+            DBG("skip 13");
+#endif
+            ++p;    /* skip '\r' */
+            ++was_read;
+        }
+
+        if ( *p == '\n' )
+        {
+#ifdef DUMP
+            DBG("skip 10");
+#endif
+            ++p;    /* skip '\n' */
+            ++was_read;
+        }
+
+#ifdef DUMP
+        DBG("was_read = %d", was_read);
+#endif
 
         /* --------------------------------------------------------------- */
 
         if ( was_read >= src_len || chunk_size > src_len-was_read )
         {
-            ERR("Unexpected end of buffer");
+            WAR("Unexpected end of buffer");
             break;
         }
 
         /* --------------------------------------------------------------- */
         /* copy chunk to destination */
 
+        /* stpncpy() returns a pointer to the terminating null byte in dest, or,
+           if dest is not null-terminated, dest+n. */
+
+        DBG("Appending %d bytes to the content buffer", chunk_size);
+
+#ifdef DUMP
+        DBG("p starts with '%c'", *p);
+#endif
         res = stpncpy(res, p, chunk_size);
         written += chunk_size;
+
+#ifdef DUMP
+        DBG("written = %d", written);
+#endif
 
         p += chunk_size;
         was_read += chunk_size;
 
+#ifdef DUMP
+//        DBG("p starts with '%c'", *p);
+#endif
         /* --------------------------------------------------------------- */
 
         while ( *p != '\n' && was_read<src_len-1 )
         {
-//            DBG("Skip '%c'", *p);
+#ifdef DUMP
+            DBG("skip %d (expected 13)", *p);
+#endif
             ++p;
+            ++was_read;
         }
 
+#ifdef DUMP
+        DBG("skip %d (should be 10)", *p);
+#endif
         ++p;    /* skip '\n' */
+
         ++was_read;
     }
 
@@ -6509,7 +6564,9 @@ static char *get_json_closing_bracket(const char *src)
     bool    in_quotes=0;
 
 #ifdef DUMP
-//    DBG("get_json_closing_bracket [%s]", src);
+    int len = strlen(src);
+    DBG("len = %d", len);
+    log_long(src, len, "get_json_closing_bracket");
 #endif  /* DUMP */
 
     while ( src[i] )
@@ -6528,13 +6585,17 @@ static char *get_json_closing_bracket(const char *src)
         else if ( src[i]=='}' && !in_quotes )
         {
             if ( subs<1 )
-                return (char*)src+i;
+                return (char*)(src+i);
             else
                 subs--;
         }
 
         ++i;
     }
+
+#ifdef DUMP
+    DBG("get_json_closing_bracket not found");
+#endif
 
     return NULL;
 }
@@ -6549,7 +6610,9 @@ static char *get_json_closing_square_bracket(const char *src)
     bool    in_quotes=0;
 
 #ifdef DUMP
-//    DBG("get_json_closing_square_bracket [%s]", src);
+    int len = strlen(src);
+    DBG("len = %d", len);
+    log_long(src, len, "get_json_closing_square_bracket");
 #endif  /* DUMP */
 
     while ( src[i] )
@@ -6564,17 +6627,27 @@ static char *get_json_closing_square_bracket(const char *src)
         else if ( src[i]=='[' && !in_quotes )
         {
             ++subs;
+#ifdef DUMP
+//            DBG("subs+1 = %d", subs);
+#endif
         }
         else if ( src[i]==']' && !in_quotes )
         {
             if ( subs<1 )
-                return (char*)src+i;
+                return (char*)(src+i);
             else
                 subs--;
+#ifdef DUMP
+//            DBG("subs-1 = %d", subs);
+#endif
         }
 
         ++i;
     }
+
+#ifdef DUMP
+    DBG("get_json_closing_square_bracket not found");
+#endif
 
     return NULL;
 }
@@ -6606,7 +6679,7 @@ static int  json_pool_cnt[JSON_MAX_LEVELS]={0};
 
         if ( src[i] != '{' )    /* no opening bracket */
         {
-            ERR("JSON syntax error -- no opening curly bracket");
+            WAR("JSON syntax error -- no opening curly bracket");
             return FALSE;
         }
 
@@ -6678,7 +6751,7 @@ static char tmp[JSON_BUFSIZE];
 
                 if ( src[i] != ':' )
                 {
-                    ERR("JSON syntax error -- no colon after name");
+                    WAR("JSON syntax error -- no colon after name");
                     return FALSE;
                 }
 
@@ -6689,7 +6762,7 @@ static char tmp[JSON_BUFSIZE];
 
             if ( i==len )
             {
-                ERR("JSON syntax error -- expected value");
+                WAR("JSON syntax error -- expected value");
                 return FALSE;
             }
 
@@ -6728,15 +6801,16 @@ static char tmp[JSON_BUFSIZE];
                     if ( (closing=get_json_closing_bracket(src+i)) )
                     {
 //                        DBG("closing [%s], len=%d", closing, closing-(src+i));
-                        lib_json_from_string(&json_pool[pool_idx], src+i, closing-(src+i)+1, level+1);
+                        if ( !lib_json_from_string(&json_pool[pool_idx], src+i, closing-(src+i)+1, level+1) )
+                            return FALSE;
                         ++json_pool_cnt[level];
                         i += closing-(src+i);
 //                        DBG("after closing record bracket [%s]", src+i);
                     }
                     else    /* syntax error */
                     {
-                        ERR("No closing bracket in JSON record");
-                        break;
+                        WAR("No closing bracket in JSON record");
+                        return FALSE;
                     }
                 }
             }
@@ -6763,15 +6837,16 @@ static char tmp[JSON_BUFSIZE];
                     if ( (closing=get_json_closing_square_bracket(src+i)) )
                     {
 //                        DBG("closing [%s], len=%d", closing, closing-(src+i));
-                        lib_json_from_string(&json_pool[pool_idx], src+i, closing-(src+i)+1, level+1);
+                        if ( !lib_json_from_string(&json_pool[pool_idx], src+i, closing-(src+i)+1, level+1) )
+                            return FALSE;
                         ++json_pool_cnt[level];
                         i += closing-(src+i);
 //                        DBG("after closing array bracket [%s]", src+i);
                     }
                     else    /* syntax error */
                     {
-                        ERR("No closing square bracket in JSON array");
-                        break;
+                        WAR("No closing square bracket in JSON array");
+                        return FALSE;
                     }
                 }
             }
@@ -6815,7 +6890,7 @@ static char tmp[JSON_BUFSIZE];
                         sscanf(value, "%f", &flo_value);
                         lib_json_add(json, NULL, NULL, 0, 0, flo_value, 0, JSON_FLOAT, index);
                     }
-                    else
+                    else    /* double */
                     {
                         sscanf(value, "%lf", &dbl_value);
                         lib_json_add(json, NULL, NULL, 0, 0, 0, dbl_value, JSON_DOUBLE, index);
@@ -6841,7 +6916,7 @@ static char tmp[JSON_BUFSIZE];
                         sscanf(value, "%f", &flo_value);
                         lib_json_add(json, key, NULL, 0, 0, flo_value, 0, JSON_FLOAT, -1);
                     }
-                    else
+                    else    /* double */
                     {
                         sscanf(value, "%lf", &dbl_value);
                         lib_json_add(json, key, NULL, 0, 0, 0, dbl_value, JSON_DOUBLE, -1);
@@ -9571,7 +9646,7 @@ char *stpcpy(char *dest, const char *src)
         *d++ = *s;
     while (*s++ != '\0');
 
-    return d - 1;
+    return d-1;
 }
 
 
@@ -9588,7 +9663,10 @@ char *stpncpy(char *dest, const char *src, size_t len)
         *d++ = *s;
     while (*s++ != '\0' && ++count<len);
 
-    return d - 1;
+    if ( *(s-1) == EOS )
+        return d-1;
+
+    return d;
 }
 #endif  /* _WIN32 */
 
