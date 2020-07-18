@@ -6561,17 +6561,25 @@ static char dst[JSON_BUFSIZE];
 static char *get_json_closing_bracket(const char *src)
 {
     int     i=1, subs=0;
-    bool    in_quotes=0;
+    bool    in_quotes=0, escape=0;
 
 #ifdef DUMP
     int len = strlen(src);
-    DBG("len = %d", len);
-    log_long(src, len, "get_json_closing_bracket");
+    DBG("get_json_closing_bracket: len = %d", len);
+//    log_long(src, len, "get_json_closing_bracket");
 #endif  /* DUMP */
 
     while ( src[i] )
     {
-        if ( src[i]=='"' )
+        if ( escape )
+        {
+            escape = 0;
+        }
+        else if ( src[i]=='\\' && in_quotes )
+        {
+            escape = 1;
+        }
+        else if ( src[i]=='"' )
         {
             if ( in_quotes )
                 in_quotes = 0;
@@ -6594,7 +6602,7 @@ static char *get_json_closing_bracket(const char *src)
     }
 
 #ifdef DUMP
-    DBG("get_json_closing_bracket not found");
+    DBG("get_json_closing_bracket: not found");
 #endif
 
     return NULL;
@@ -6607,22 +6615,39 @@ static char *get_json_closing_bracket(const char *src)
 static char *get_json_closing_square_bracket(const char *src)
 {
     int     i=1, subs=0;
-    bool    in_quotes=0;
+    bool    in_quotes=0, escape=0;
 
 #ifdef DUMP
     int len = strlen(src);
-    DBG("len = %d", len);
-    log_long(src, len, "get_json_closing_square_bracket");
+    DBG("get_json_closing_square_bracket: len = %d", len);
+//    log_long(src, len, "get_json_closing_square_bracket");
 #endif  /* DUMP */
 
     while ( src[i] )
     {
-        if ( src[i]=='"' )
+#ifdef DUMP
+//        DBG("%c", src[i]);
+#endif
+        if ( escape )
         {
+            escape = 0;
+        }
+        else if ( src[i]=='\\' && in_quotes )
+        {
+            escape = 1;
+        }
+        else if ( src[i]=='"' )
+        {
+#ifdef DUMP
+//            DBG("in_quotes = %d", in_quotes);
+#endif
             if ( in_quotes )
                 in_quotes = 0;
             else
                 in_quotes = 1;
+#ifdef DUMP
+//            DBG("in_quotes switched to %d", in_quotes);
+#endif
         }
         else if ( src[i]=='[' && !in_quotes )
         {
@@ -6646,7 +6671,7 @@ static char *get_json_closing_square_bracket(const char *src)
     }
 
 #ifdef DUMP
-    DBG("get_json_closing_square_bracket not found");
+    DBG("get_json_closing_square_bracket: not found");
 #endif
 
     return NULL;
@@ -6943,7 +6968,7 @@ static char tmp[JSON_BUFSIZE];
                 value[j++] = src[i];
         }
 
-//        if ( src[i-2]=='}' && !now_value && level==0 )
+//        if ( src[i-2]=='}' && !now_value && level==0 )    /* end of JSON */
 //            break;
     }
 
