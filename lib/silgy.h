@@ -661,11 +661,11 @@ typedef char str256k[1024*256];
 #endif
 
 #ifndef ASYNC_REQ_MSG_SIZE
-#define ASYNC_REQ_MSG_SIZE              8192                    /* request message size */
+#define ASYNC_REQ_MSG_SIZE              16384                   /* request message size */
 #endif
 
 #ifndef ASYNC_RES_MSG_SIZE
-#define ASYNC_RES_MSG_SIZE              8192                    /* response message size */
+#define ASYNC_RES_MSG_SIZE              16384                   /* response message size */
 #endif
 
 #define ASYNC_REQ_QUEUE                 "/silgy_req"            /* request queue name */
