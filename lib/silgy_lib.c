@@ -1838,6 +1838,42 @@ bool read_snippets(bool first_scan, const char *path)
 
 
 /* --------------------------------------------------------------------------
+   Get snippet
+-------------------------------------------------------------------------- */
+char *silgy_get_snippet(const char *name)
+{
+#ifndef SILGY_CLIENT
+    int i;
+
+    for ( i=0; G_snippets[i].name[0] != '-'; ++i )
+    {
+        if ( 0==strcmp(G_snippets[i].name, name) )
+            return G_snippets[i].data;
+    }
+#endif  /* SILGY_CLIENT */
+    return NULL;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get snippet length
+-------------------------------------------------------------------------- */
+unsigned silgy_get_snippet_len(const char *name)
+{
+#ifndef SILGY_CLIENT
+    int i;
+
+    for ( i=0; G_snippets[i].name[0] != '-'; ++i )
+    {
+        if ( 0==strcmp(G_snippets[i].name, name) )
+            return G_snippets[i].len;
+    }
+#endif  /* SILGY_CLIENT */
+    return 0;
+}
+
+
+/* --------------------------------------------------------------------------
    OUT snippet
 -------------------------------------------------------------------------- */
 void lib_out_snippet(int ci, const char *name)

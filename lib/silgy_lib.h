@@ -439,6 +439,8 @@ extern "C" {
     void lib_get_exec_name(char *dst, const char *path);
     void lib_update_time_globals(void);
     bool read_snippets(bool first_scan, const char *path);
+    char *silgy_get_snippet(const char *name);
+    unsigned silgy_get_snippet_len(const char *name);
     void lib_out_snippet(int ci, const char *name);
     void lib_out_snippet_md(int ci, const char *name);
     void lib_setnonblocking(int sock);

@@ -2297,6 +2297,8 @@ int silgy_usr_activate(int ci)
 
     /* everything's OK -- activate user -------------------- */
 
+    UID = uid;
+
     sprintf(sql, "UPDATE users SET status=%d WHERE id=%d", USER_STATUS_ACTIVE, uid);
     DBG("sql: %s", sql);
     if ( mysql_query(G_dbconn, sql) )
