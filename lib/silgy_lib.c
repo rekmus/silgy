@@ -2580,7 +2580,28 @@ bool lib_qsi(int ci, const char *fieldname, int *retbuf)
 
     if ( get_qs_param_raw(ci, fieldname, s, MAX_URI_VAL_LEN) )
     {
-        *retbuf = atoi(s);
+        if ( retbuf )
+            *retbuf = atoi(s);
+
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
+/* --------------------------------------------------------------------------
+   Get unsigned value from the query string
+-------------------------------------------------------------------------- */
+bool lib_qsu(int ci, const char *fieldname, unsigned *retbuf)
+{
+    QSVAL s;
+
+    if ( get_qs_param_raw(ci, fieldname, s, MAX_URI_VAL_LEN) )
+    {
+        if ( retbuf )
+            *retbuf = (unsigned)strtoul(s, NULL, 10);
+
         return TRUE;
     }
 
@@ -2597,8 +2618,9 @@ bool lib_qsf(int ci, const char *fieldname, float *retbuf)
 
     if ( get_qs_param_raw(ci, fieldname, s, MAX_URI_VAL_LEN) )
     {
-        sscanf(s, "%f", retbuf);
-//        DBG("retbuf = %f", *retbuf);
+        if ( retbuf )
+            sscanf(s, "%f", retbuf);
+
         return TRUE;
     }
 
@@ -2615,7 +2637,9 @@ bool lib_qsd(int ci, const char *fieldname, double *retbuf)
 
     if ( get_qs_param_raw(ci, fieldname, s, MAX_URI_VAL_LEN) )
     {
-        sscanf(s, "%lf", retbuf);
+        if ( retbuf )
+            sscanf(s, "%lf", retbuf);
+
         return TRUE;
     }
 
@@ -2632,13 +2656,16 @@ bool lib_qsb(int ci, const char *fieldname, bool *retbuf)
 
     if ( get_qs_param_raw(ci, fieldname, s, MAX_URI_VAL_LEN) )
     {
-        if ( s[0] == 't'
-                || s[0] == 'T'
-                || s[0] == '1'
-                || 0==strcmp(s, "on") )
-            *retbuf = true;
-        else
-            *retbuf = false;
+        if ( retbuf )
+        {
+            if ( s[0] == 't'
+                    || s[0] == 'T'
+                    || s[0] == '1'
+                    || 0==strcmp(s, "on") )
+                *retbuf = true;
+            else
+                *retbuf = false;
+        }
 
         return TRUE;
     }

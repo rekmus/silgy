@@ -10,64 +10,119 @@
 #define SILGY_LIB_H
 
 
-#define ALWAYS(str, ...)            log_write(LOG_ALWAYS, str, ##__VA_ARGS__)
-#define ERR(str, ...)               log_write(LOG_ERR, str, ##__VA_ARGS__)
-#define WAR(str, ...)               log_write(LOG_WAR, str, ##__VA_ARGS__)
-#define INF(str, ...)               log_write(LOG_INF, str, ##__VA_ARGS__)
-#define DBG(str, ...)               log_write(LOG_DBG, str, ##__VA_ARGS__)
+#define ALWAYS(str, ...)                log_write(LOG_ALWAYS, str, ##__VA_ARGS__)
+#define ERR(str, ...)                   log_write(LOG_ERR, str, ##__VA_ARGS__)
+#define WAR(str, ...)                   log_write(LOG_WAR, str, ##__VA_ARGS__)
+#define INF(str, ...)                   log_write(LOG_INF, str, ##__VA_ARGS__)
+#define DBG(str, ...)                   log_write(LOG_DBG, str, ##__VA_ARGS__)
 
-#define ALWAYS_T(str, ...)          log_write_time(LOG_ALWAYS, str, ##__VA_ARGS__)
-#define ERR_T(str, ...)             log_write_time(LOG_ERR, str, ##__VA_ARGS__)
-#define WAR_T(str, ...)             log_write_time(LOG_WAR, str, ##__VA_ARGS__)
-#define INF_T(str, ...)             log_write_time(LOG_INF, str, ##__VA_ARGS__)
-#define DBG_T(str, ...)             log_write_time(LOG_DBG, str, ##__VA_ARGS__)
+#define ALWAYS_T(str, ...)              log_write_time(LOG_ALWAYS, str, ##__VA_ARGS__)
+#define ERR_T(str, ...)                 log_write_time(LOG_ERR, str, ##__VA_ARGS__)
+#define WAR_T(str, ...)                 log_write_time(LOG_WAR, str, ##__VA_ARGS__)
+#define INF_T(str, ...)                 log_write_time(LOG_INF, str, ##__VA_ARGS__)
+#define DBG_T(str, ...)                 log_write_time(LOG_DBG, str, ##__VA_ARGS__)
 
-#define LOG_LINE                    "--------------------------------------------------"
-#define LOG_LINE_N                  "--------------------------------------------------\n"
-#define LOG_LINE_NN                 "--------------------------------------------------\n\n"
-#define ALWAYS_LINE                 ALWAYS(LOG_LINE)
-#define INF_LINE                    INF(LOG_LINE)
-#define DBG_LINE                    DBG(LOG_LINE)
+#define LOG_LINE                        "--------------------------------------------------"
+#define LOG_LINE_N                      "--------------------------------------------------\n"
+#define LOG_LINE_NN                     "--------------------------------------------------\n\n"
+#define ALWAYS_LINE                     ALWAYS(LOG_LINE)
+#define INF_LINE                        INF(LOG_LINE)
+#define DBG_LINE                        DBG(LOG_LINE)
 
-#define LOG_LINE_LONG               "--------------------------------------------------------------------------------------------------"
-#define LOG_LINE_LONG_N             "--------------------------------------------------------------------------------------------------\n"
-#define LOG_LINE_LONG_NN            "--------------------------------------------------------------------------------------------------\n\n"
-#define ALWAYS_LINE_LONG            ALWAYS(LOG_LINE_LONG)
-#define INF_LINE_LONG               INF(LOG_LINE_LONG)
-#define DBG_LINE_LONG               DBG(LOG_LINE_LONG)
+#define LOG_LINE_LONG                   "--------------------------------------------------------------------------------------------------"
+#define LOG_LINE_LONG_N                 "--------------------------------------------------------------------------------------------------\n"
+#define LOG_LINE_LONG_NN                "--------------------------------------------------------------------------------------------------\n\n"
+#define ALWAYS_LINE_LONG                ALWAYS(LOG_LINE_LONG)
+#define INF_LINE_LONG                   INF(LOG_LINE_LONG)
+#define DBG_LINE_LONG                   DBG(LOG_LINE_LONG)
 
-#define LOREM_IPSUM                 "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+#define LOREM_IPSUM                     "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
-#define PARAM(param)                (0==strcmp(label, param))
+#define PARAM(param)                    (0==strcmp(label, param))
 
-#define UTF8_ANY(c)                 (((unsigned char)c & 0x80) == 0x80)
-#define UTF8_START(c)               (UTF8_ANY(c) && ((unsigned char)c & 0x40) == 0x40)
+#define UTF8_ANY(c)                     (((unsigned char)c & 0x80) == 0x80)
+#define UTF8_START(c)                   (UTF8_ANY(c) && ((unsigned char)c & 0x40) == 0x40)
 
-#define COPY(dst, src, dst_len)     silgy_safe_copy(dst, src, dst_len)
+#define COPY(dst, src, dst_len)         silgy_safe_copy(dst, src, dst_len)
 
 
 /* Query String Value */
 
-typedef char                        QSVAL[QSBUF];
-//typedef struct QSVAL              { char x[QSBUF]; } QSVAL;
+typedef char                            QSVAL[QSBUF];
+//typedef struct QSVAL                  { char x[QSBUF]; } QSVAL;
 
-typedef char                        QSVAL1K[1024];
-typedef char                        QSVAL2K[2048];
-typedef char                        QSVAL4K[4096];
-typedef char                        QSVAL8K[8192];
-typedef char                        QSVAL16K[16384];
-typedef char                        QSVAL32K[32768];
-typedef char                        QSVAL64K[65536];
-typedef char                        QSVAL_TEXT[65536];
+typedef char                            QSVAL1K[1024];
+typedef char                            QSVAL2K[2048];
+typedef char                            QSVAL4K[4096];
+typedef char                            QSVAL8K[8192];
+typedef char                            QSVAL16K[16384];
+typedef char                            QSVAL32K[32768];
+typedef char                            QSVAL64K[65536];
+typedef char                            QSVAL_TEXT[65536];
 
 
-#define RES_HEADER(key, val)        lib_res_header(ci, key, val)
+/* query string values' retrieval */
+
+#define ESC_NONE                        (char)0
+#define ESC_SQL                         (char)1
+#define ESC_HTML                        (char)2
+
+#define QS_DONT_ESCAPE(param, val)      get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_NONE)
+#define QS_SQL_ESCAPE(param, val)       get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_SQL)
+#define QS_HTML_ESCAPE(param, val)      get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_HTML)
+
+#define QS_TEXT_DONT_ESCAPE(param, val) get_qs_param(ci, param, val, 65535, ESC_NONE)
+#define QS_TEXT_SQL_ESCAPE(param, val)  get_qs_param(ci, param, val, 65535, ESC_SQL)
+#define QS_TEXT_HTML_ESCAPE(param, val) get_qs_param(ci, param, val, 65535, ESC_HTML)
+
+#ifdef QS_DEF_HTML_ESCAPE
+#define QS(param, val)                  get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_HTML)
+#define QS1K(param, val)                get_qs_param(ci, param, val, 1023, ESC_HTML)
+#define QS2K(param, val)                get_qs_param(ci, param, val, 2047, ESC_HTML)
+#define QS4K(param, val)                get_qs_param(ci, param, val, 4095, ESC_HTML)
+#define QS8K(param, val)                get_qs_param(ci, param, val, 8191, ESC_HTML)
+#define QS16K(param, val)               get_qs_param(ci, param, val, 16383, ESC_HTML)
+#define QS32K(param, val)               get_qs_param(ci, param, val, 32767, ESC_HTML)
+#define QS64K(param, val)               get_qs_param(ci, param, val, 65535, ESC_HTML)
+#define QS_TEXT(param, val)             get_qs_param(ci, param, val, 65535, ESC_HTML)
+#endif
+#ifdef QS_DEF_SQL_ESCAPE
+#define QS(param, val)                  get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_SQL)
+#define QS1K(param, val)                get_qs_param(ci, param, val, 1023, ESC_SQL)
+#define QS2K(param, val)                get_qs_param(ci, param, val, 2047, ESC_SQL)
+#define QS4K(param, val)                get_qs_param(ci, param, val, 4095, ESC_SQL)
+#define QS8K(param, val)                get_qs_param(ci, param, val, 8191, ESC_SQL)
+#define QS16K(param, val)               get_qs_param(ci, param, val, 16383, ESC_SQL)
+#define QS32K(param, val)               get_qs_param(ci, param, val, 32767, ESC_SQL)
+#define QS64K(param, val)               get_qs_param(ci, param, val, 65535, ESC_SQL)
+#define QS_TEXT(param, val)             get_qs_param(ci, param, val, 65535, ESC_SQL)
+#endif
+#ifdef QS_DEF_DONT_ESCAPE
+#define QS(param, val)                  get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_NONE)
+#define QS1K(param, val)                get_qs_param(ci, param, val, 1023, ESC_NONE)
+#define QS2K(param, val)                get_qs_param(ci, param, val, 2047, ESC_NONE)
+#define QS4K(param, val)                get_qs_param(ci, param, val, 4095, ESC_NONE)
+#define QS8K(param, val)                get_qs_param(ci, param, val, 8191, ESC_NONE)
+#define QS16K(param, val)               get_qs_param(ci, param, val, 16383, ESC_NONE)
+#define QS32K(param, val)               get_qs_param(ci, param, val, 32767, ESC_NONE)
+#define QS64K(param, val)               get_qs_param(ci, param, val, 65535, ESC_NONE)
+#define QS_TEXT(param, val)             get_qs_param(ci, param, val, 65535, ESC_NONE)
+#endif
+
+#define QSI(param, val)                 lib_qsi(ci, param, val)
+#define QSU(param, val)                 lib_qsu(ci, param, val)
+#define QSF(param, val)                 lib_qsf(ci, param, val)
+#define QSD(param, val)                 lib_qsd(ci, param, val)
+#define QSB(param, val)                 lib_qsb(ci, param, val)
+
+
+#define RES_HEADER(key, val)            lib_res_header(ci, key, val)
 
 
 #ifdef APP_EMAIL_FROM_USER
-#define EMAIL_FROM_USER             APP_EMAIL_FROM_USER
+#define EMAIL_FROM_USER                 APP_EMAIL_FROM_USER
 #else
-#define EMAIL_FROM_USER             "noreply"
+#define EMAIL_FROM_USER                 "noreply"
 #endif
 
 
@@ -77,29 +132,29 @@ typedef char                        QSVAL_TEXT[65536];
 #define SHUTDOWN    3
 
 
-#define MAX_SHM_SEGMENTS            100
+#define MAX_SHM_SEGMENTS                100
 
 
 /* API authorization system */
 
-#define AUTH_NONE                   0x00
-#define AUTH_CREATE                 0x01
-#define AUTH_READ                   0x02
-#define AUTH_UPDATE                 0x04
-#define AUTH_DELETE                 0x08
-#define AUTH_FULL                   0xFF
+#define AUTH_NONE                       0x00
+#define AUTH_CREATE                     0x01
+#define AUTH_READ                       0x02
+#define AUTH_UPDATE                     0x04
+#define AUTH_DELETE                     0x08
+#define AUTH_FULL                       0xFF
 
-#define IS_AUTH_CREATE(flags)       ((flags & AUTH_CREATE) == AUTH_CREATE)
-#define IS_AUTH_READ(flags)         ((flags & AUTH_READ) == AUTH_READ)
-#define IS_AUTH_UPDATE(flags)       ((flags & AUTH_UPDATE) == AUTH_UPDATE)
-#define IS_AUTH_DELETE(flags)       ((flags & AUTH_DELETE) == AUTH_DELETE)
+#define IS_AUTH_CREATE(flags)           ((flags & AUTH_CREATE) == AUTH_CREATE)
+#define IS_AUTH_READ(flags)             ((flags & AUTH_READ) == AUTH_READ)
+#define IS_AUTH_UPDATE(flags)           ((flags & AUTH_UPDATE) == AUTH_UPDATE)
+#define IS_AUTH_DELETE(flags)           ((flags & AUTH_DELETE) == AUTH_DELETE)
 
 
 
 /* languages */
 
 #ifndef MAX_LANGUAGES
-#define MAX_LANGUAGES               250
+#define MAX_LANGUAGES                   250
 #endif
 
 typedef struct {
@@ -113,11 +168,11 @@ typedef struct {
 /* messages */
 
 #ifndef MAX_MSG_LEN
-#define MAX_MSG_LEN                 255
+#define MAX_MSG_LEN                     255
 #endif
 
 #ifndef MAX_MESSAGES
-#define MAX_MESSAGES                1000
+#define MAX_MESSAGES                    1000
 #endif
 
 typedef struct {
@@ -127,39 +182,39 @@ typedef struct {
 } message_t;
 
 
-#define silgy_message(code)         lib_get_message(ci, code)
-#define MSG(code)                   lib_get_message(ci, code)
-#define MSG_CAT_GREEN(code)         silgy_is_msg_main_cat(code, MSG_CAT_MESSAGE)
-#define MSG_CAT_ORANGE(code)        silgy_is_msg_main_cat(code, MSG_CAT_WARNING)
-#define MSG_CAT_RED(code)           silgy_is_msg_main_cat(code, MSG_CAT_ERROR)
+#define silgy_message(code)             lib_get_message(ci, code)
+#define MSG(code)                       lib_get_message(ci, code)
+#define MSG_CAT_GREEN(code)             silgy_is_msg_main_cat(code, MSG_CAT_MESSAGE)
+#define MSG_CAT_ORANGE(code)            silgy_is_msg_main_cat(code, MSG_CAT_WARNING)
+#define MSG_CAT_RED(code)               silgy_is_msg_main_cat(code, MSG_CAT_ERROR)
 
-#define OUT_MSG_DESCRIPTION(code)   lib_send_msg_description(ci, code)
+#define OUT_MSG_DESCRIPTION(code)       lib_send_msg_description(ci, code)
 
-#define OUT_HTML_HEADER             lib_out_html_header(ci)
-#define OUT_HTML_FOOTER             lib_out_html_footer(ci)
-#define OUT_SNIPPET(name)           lib_out_snippet(ci, name)
-#define OUT_SNIPPET_MD(name)        lib_out_snippet_md(ci, name)
+#define OUT_HTML_HEADER                 lib_out_html_header(ci)
+#define OUT_HTML_FOOTER                 lib_out_html_footer(ci)
+#define OUT_SNIPPET(name)               lib_out_snippet(ci, name)
+#define OUT_SNIPPET_MD(name)            lib_out_snippet_md(ci, name)
 
-#define GET_COOKIE(key, val)        lib_get_cookie(ci, key, val)
-#define SET_COOKIE(key, val, days)  lib_set_cookie(ci, key, val, days)
+#define GET_COOKIE(key, val)            lib_get_cookie(ci, key, val)
+#define SET_COOKIE(key, val, days)      lib_set_cookie(ci, key, val, days)
 
 
 /* strings */
 
 #ifndef STRINGS_SEP
-#define STRINGS_SEP                 '|'
+#define STRINGS_SEP                     '|'
 #endif
 
 #ifndef STRINGS_LANG
-#define STRINGS_LANG                "EN-US"
+#define STRINGS_LANG                    "EN-US"
 #endif
 
 #ifndef MAX_STR_LEN
-#define MAX_STR_LEN                 255
+#define MAX_STR_LEN                     255
 #endif
 
 #ifndef MAX_STRINGS
-#define MAX_STRINGS                 1000
+#define MAX_STRINGS                     1000
 #endif
 
 typedef struct {
@@ -172,7 +227,7 @@ typedef struct {
 
 /* format amount */
 
-#define AMT(val)                    silgy_amt(val)
+#define AMT(val)                        silgy_amt(val)
 
 
 
@@ -453,6 +508,7 @@ extern "C" {
     bool get_qs_param_raw(int ci, const char *fieldname, char *retbuf, int maxlen);
     char *get_qs_param_multipart(int ci, const char *fieldname, unsigned *retlen, char *retfname);
     bool lib_qsi(int ci, const char *fieldname, int *retbuf);
+    bool lib_qsu(int ci, const char *fieldname, unsigned *retbuf);
     bool lib_qsf(int ci, const char *fieldname, float *retbuf);
     bool lib_qsd(int ci, const char *fieldname, double *retbuf);
     bool lib_qsb(int ci, const char *fieldname, bool *retbuf);

@@ -768,59 +768,6 @@ typedef char str256k[1024*256];
 #define APPEND_SCRIPT(name, first)      lib_append_script(ci, name, first)
 
 
-/* query string values' retrieval */
-
-#define ESC_NONE                        (char)0
-#define ESC_SQL                         (char)1
-#define ESC_HTML                        (char)2
-
-#define QS_DONT_ESCAPE(param, val)      get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_NONE)
-#define QS_SQL_ESCAPE(param, val)       get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_SQL)
-#define QS_HTML_ESCAPE(param, val)      get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_HTML)
-
-#define QS_TEXT_DONT_ESCAPE(param, val) get_qs_param(ci, param, val, 65535, ESC_NONE)
-#define QS_TEXT_SQL_ESCAPE(param, val)  get_qs_param(ci, param, val, 65535, ESC_SQL)
-#define QS_TEXT_HTML_ESCAPE(param, val) get_qs_param(ci, param, val, 65535, ESC_HTML)
-
-#ifdef QS_DEF_HTML_ESCAPE
-#define QS(param, val)                  get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_HTML)
-#define QS1K(param, val)                get_qs_param(ci, param, val, 1023, ESC_HTML)
-#define QS2K(param, val)                get_qs_param(ci, param, val, 2047, ESC_HTML)
-#define QS4K(param, val)                get_qs_param(ci, param, val, 4095, ESC_HTML)
-#define QS8K(param, val)                get_qs_param(ci, param, val, 8191, ESC_HTML)
-#define QS16K(param, val)               get_qs_param(ci, param, val, 16383, ESC_HTML)
-#define QS32K(param, val)               get_qs_param(ci, param, val, 32767, ESC_HTML)
-#define QS64K(param, val)               get_qs_param(ci, param, val, 65535, ESC_HTML)
-#define QS_TEXT(param, val)             get_qs_param(ci, param, val, 65535, ESC_HTML)
-#endif
-#ifdef QS_DEF_SQL_ESCAPE
-#define QS(param, val)                  get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_SQL)
-#define QS1K(param, val)                get_qs_param(ci, param, val, 1023, ESC_SQL)
-#define QS2K(param, val)                get_qs_param(ci, param, val, 2047, ESC_SQL)
-#define QS4K(param, val)                get_qs_param(ci, param, val, 4095, ESC_SQL)
-#define QS8K(param, val)                get_qs_param(ci, param, val, 8191, ESC_SQL)
-#define QS16K(param, val)               get_qs_param(ci, param, val, 16383, ESC_SQL)
-#define QS32K(param, val)               get_qs_param(ci, param, val, 32767, ESC_SQL)
-#define QS64K(param, val)               get_qs_param(ci, param, val, 65535, ESC_SQL)
-#define QS_TEXT(param, val)             get_qs_param(ci, param, val, 65535, ESC_SQL)
-#endif
-#ifdef QS_DEF_DONT_ESCAPE
-#define QS(param, val)                  get_qs_param(ci, param, val, MAX_URI_VAL_LEN, ESC_NONE)
-#define QS1K(param, val)                get_qs_param(ci, param, val, 1023, ESC_NONE)
-#define QS2K(param, val)                get_qs_param(ci, param, val, 2047, ESC_NONE)
-#define QS4K(param, val)                get_qs_param(ci, param, val, 4095, ESC_NONE)
-#define QS8K(param, val)                get_qs_param(ci, param, val, 8191, ESC_NONE)
-#define QS16K(param, val)               get_qs_param(ci, param, val, 16383, ESC_NONE)
-#define QS32K(param, val)               get_qs_param(ci, param, val, 32767, ESC_NONE)
-#define QS64K(param, val)               get_qs_param(ci, param, val, 65535, ESC_NONE)
-#define QS_TEXT(param, val)             get_qs_param(ci, param, val, 65535, ESC_NONE)
-#endif
-
-#define QSI(param, val)                 lib_qsi(ci, param, val)
-#define QSF(param, val)                 lib_qsf(ci, param, val)
-#define QSD(param, val)                 lib_qsd(ci, param, val)
-#define QSB(param, val)                 lib_qsb(ci, param, val)
-
 
 #define SVC_NAME_LEN                    63      /* async service name length */
 
