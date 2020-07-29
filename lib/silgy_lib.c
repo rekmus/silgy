@@ -7613,22 +7613,10 @@ bool lib_json_get_record(JSON *json, const char *name, JSON *json_sub, int i)
 /* --------------------------------------------------------------------------
    Check system's endianness
 -------------------------------------------------------------------------- */
-void get_byteorder()
-{
-    if ( sizeof(long) == 4 )
-        get_byteorder32();
-    else
-        get_byteorder64();
-}
-
-
-/* --------------------------------------------------------------------------
-   Check system's endianness
--------------------------------------------------------------------------- */
 static void get_byteorder32()
 {
     union {
-        long l;
+        intptr_t p;
         char c[4];
     } test;
 
@@ -7636,7 +7624,7 @@ static void get_byteorder32()
 
     memset(&test, 0, sizeof(test));
 
-    test.l = 1;
+    test.p = 1;
 
     if ( test.c[3] && !test.c[2] && !test.c[1] && !test.c[0] )
     {
@@ -7660,15 +7648,17 @@ static void get_byteorder32()
 static void get_byteorder64()
 {
     union {
-        long l;
+        intptr_t p;
         char c[8];
     } test;
 
     DBG("Checking 64-bit endianness...");
 
+    INF("sizeof(long) = %d", sizeof(long));
+
     memset(&test, 0, sizeof(test));
 
-    test.l = 1;
+    test.p = 1;
 
     if ( test.c[7] && !test.c[3] && !test.c[2] && !test.c[1] && !test.c[0] )
     {
@@ -7683,6 +7673,18 @@ static void get_byteorder64()
     }
 
     DBG("Unknown Endianness!");
+}
+
+
+/* --------------------------------------------------------------------------
+   Check system's endianness
+-------------------------------------------------------------------------- */
+void get_byteorder()
+{
+    if ( sizeof(intptr_t) == 4 )
+        get_byteorder32();
+    else if ( sizeof(intptr_t) == 8 )
+        get_byteorder64();
 }
 
 

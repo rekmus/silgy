@@ -1597,8 +1597,6 @@ static bool init(int argc, char **argv)
 
     /* check endianness and some parameters */
 
-    get_byteorder();
-
     ALWAYS("");
     ALWAYS_LINE_LONG;
     ALWAYS("");
@@ -1606,8 +1604,10 @@ static bool init(int argc, char **argv)
     ALWAYS("-------");
 #ifdef DUMP
     // SIZE_MAX is not defined in older GCC!
-//    ALWAYS("              SIZE_MAX = %lu (%lu kB / %lu MB)", SIZE_MAX, SIZE_MAX/1024, SIZE_MAX/1024/1024);
+//    ALWAYS("              SIZE_MAX = %lu (%lu KiB / %lu MiB)", SIZE_MAX, SIZE_MAX/1024, SIZE_MAX/1024/1024);
 #endif
+    get_byteorder();
+
     ALWAYS("            FD_SETSIZE = %d", FD_SETSIZE);
     ALWAYS("             SOMAXCONN = %d", SOMAXCONN);
     ALWAYS("");
@@ -1651,20 +1651,20 @@ static bool init(int argc, char **argv)
     ALWAYS("         LUSES_TIMEOUT = %d seconds", LUSES_TIMEOUT);
 #endif
     ALWAYS("");
-    ALWAYS("           OUT_BUFSIZE = %lu B (%lu kB / %0.2lf MB)", OUT_BUFSIZE, OUT_BUFSIZE/1024, (double)OUT_BUFSIZE/1024/1024);
+    ALWAYS("           OUT_BUFSIZE = %lu B (%lu KiB / %0.2lf MiB)", OUT_BUFSIZE, OUT_BUFSIZE/1024, (double)OUT_BUFSIZE/1024/1024);
     ALWAYS("");
-    ALWAYS("           conn's size = %lu B (%lu kB / %0.2lf MB)", sizeof(conn), sizeof(conn)/1024, (double)sizeof(conn)/1024/1024);
-    ALWAYS("            uses' size = %lu B (%lu kB / %0.2lf MB)", sizeof(uses), sizeof(uses)/1024, (double)sizeof(uses)/1024/1024);
+    ALWAYS("           conn's size = %lu B (%lu KiB / %0.2lf MiB)", sizeof(conn), sizeof(conn)/1024, (double)sizeof(conn)/1024/1024);
+    ALWAYS("            uses' size = %lu B (%lu KiB / %0.2lf MiB)", sizeof(uses), sizeof(uses)/1024, (double)sizeof(uses)/1024/1024);
     ALWAYS("");
     ALWAYS("    ASYNC_REQ_MSG_SIZE = %d B", ASYNC_REQ_MSG_SIZE);
-    ALWAYS("    ASYNC req.hdr size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_req_hdr_t), sizeof(async_req_hdr_t)/1024, (double)sizeof(async_req_hdr_t)/1024/1024);
-    ALWAYS(" G_async_req_data_size = %lu B (%lu kB / %0.2lf MB)", G_async_req_data_size, G_async_req_data_size/1024, (double)G_async_req_data_size/1024/1024);
-    ALWAYS("    ASYNC req     size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_req_t), sizeof(async_req_t)/1024, (double)sizeof(async_req_t)/1024/1024);
+    ALWAYS("    ASYNC req.hdr size = %lu B (%lu KiB / %0.2lf MiB)", sizeof(async_req_hdr_t), sizeof(async_req_hdr_t)/1024, (double)sizeof(async_req_hdr_t)/1024/1024);
+    ALWAYS(" G_async_req_data_size = %lu B (%lu KiB / %0.2lf MiB)", G_async_req_data_size, G_async_req_data_size/1024, (double)G_async_req_data_size/1024/1024);
+    ALWAYS("    ASYNC req     size = %lu B (%lu KiB / %0.2lf MiB)", sizeof(async_req_t), sizeof(async_req_t)/1024, (double)sizeof(async_req_t)/1024/1024);
     ALWAYS("");
     ALWAYS("    ASYNC_RES_MSG_SIZE = %d B", ASYNC_RES_MSG_SIZE);
-    ALWAYS("    ASYNC res.hdr size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_res_hdr_t), sizeof(async_res_hdr_t)/1024, (double)sizeof(async_res_hdr_t)/1024/1024);
-    ALWAYS(" G_async_res_data_size = %lu B (%lu kB / %0.2lf MB)", G_async_res_data_size, G_async_res_data_size/1024, (double)G_async_res_data_size/1024/1024);
-    ALWAYS("    ASYNC res     size = %lu B (%lu kB / %0.2lf MB)", sizeof(async_res_t), sizeof(async_res_t)/1024, (double)sizeof(async_res_t)/1024/1024);
+    ALWAYS("    ASYNC res.hdr size = %lu B (%lu KiB / %0.2lf MiB)", sizeof(async_res_hdr_t), sizeof(async_res_hdr_t)/1024, (double)sizeof(async_res_hdr_t)/1024/1024);
+    ALWAYS(" G_async_res_data_size = %lu B (%lu KiB / %0.2lf MiB)", G_async_res_data_size, G_async_res_data_size/1024, (double)G_async_res_data_size/1024/1024);
+    ALWAYS("    ASYNC res     size = %lu B (%lu KiB / %0.2lf MiB)", sizeof(async_res_t), sizeof(async_res_t)/1024, (double)sizeof(async_res_t)/1024/1024);
     ALWAYS("");
 #ifdef OUTFAST
     ALWAYS("           Output type = OUTFAST");
