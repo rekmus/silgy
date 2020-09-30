@@ -35,7 +35,7 @@ As my wishes had come true, I decided to open my code and become famous. You're 
 
 ## IP2Location Demo
 
-Here: https://github.com/silgy/ip2loc is the simple demo project using Silgy to log visitors with their location in database. It uses [IP2Location™ LITE IP-COUNTRY](https://lite.ip2location.com/database/ip-country) free database.
+Here: https://github.com/silgy/ip2loc is the simple demo web application using Silgy to log visitors with their location in database. It uses [IP2Location™ LITE IP-COUNTRY](https://lite.ip2location.com/database/ip-country) free database. Live instance: http://silgy.org:2020
 
 ## Node++ announcement
 
