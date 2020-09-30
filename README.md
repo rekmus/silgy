@@ -33,6 +33,10 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
 
+## IP2Location Demo
+
+Here: https://github.com/silgy/ip2loc is the simple demo project using Silgy to log visitors with their location in database. It uses [IP2Location™ LITE IP-COUNTRY](https://lite.ip2location.com/database/ip-country) free database.
+
 ## Node++ announcement
 
 I am starting working on Silgy's successor: [Node++](https://github.com/silgy/nodeplusplus). As I gathered a lot of experience from writing about 20 web applications myself and helping others, I feel I'm ready to take a bigger step to the new name and a few breaches that will, I believe, make Silgy applications better. No worries: I'll be supporting Silgy project for at least a year from the first Node++ stable release and will provide an automated conversion tool for existing applications, as I will need this myself.
