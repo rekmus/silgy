@@ -17,7 +17,7 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 1. It has to be **responsive**, in a way compiled programs used locally are responsive. It needs to feel solid and reliable. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/show?p=MWPcAbmY).
 
-  ![Pingdom](https://minishare.com/show?p=MWPcAbmY&i=2)
+    ![Pingdom](https://minishare.com/show?p=MWPcAbmY&i=2)
 
 2. It needs to be **universal**. Silgy applications work on _every_ currently used browser.
 
@@ -25,7 +25,7 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 4. **Security**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it. My application consistently gets grade **A** from [SSL Labs](https://www.ssllabs.com/ssltest/analyze.html?d=silgy.org).
 
-  ![SSL Labs](https://minishare.com/show?p=K8GvQDag&i=2)
+    ![SSL Labs](https://minishare.com/show?p=K8GvQDag&i=2)
 
 5. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
 
