@@ -15,7 +15,7 @@ It can act as:
 
 Back in 2015 I decided to write a web application and had a wishlist:
 
-1. It has to be **responsive**, in a way compiled programs used locally are responsive. It needs to feel solid and reliable. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/show?p=MWPcAbmY).
+1. It has to be **responsive**, in a way compiled programs used locally are responsive. It needs to feel solid and reliable. My application consistently gets "Faster than 100% of tested sites" badge from [Pingdom](https://tools.pingdom.com).
 
     ![Pingdom](https://minishare.com/show?p=MWPcAbmY&i=2)
 
@@ -23,7 +23,7 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 3. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~1000 users' application and use ~1% of the server's resources.
 
-4. **Security**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it. My application consistently gets grade **A** from [SSL Labs](https://www.ssllabs.com/ssltest/analyze.html?d=silgy.org).
+4. **Security**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it. My application consistently gets grade **A** from [SSL Labs](https://www.ssllabs.com/ssltest).
 
     ![SSL Labs](https://minishare.com/show?p=K8GvQDag&i=2)
 
