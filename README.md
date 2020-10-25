@@ -19,21 +19,21 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 ![Pingdom](https://minishare.com/show?p=MWPcAbmY&i=2)
 
-1. It needs to be **universal**. Silgy applications work on _every_ currently used browser.
+2. It needs to be **universal**. Silgy applications work on _every_ currently used browser.
 
-1. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~1000 users' application and use ~1% of the server's resources.
+3. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~1000 users' application and use ~1% of the server's resources.
 
-1. **Security**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it. My application consistently gets grade **A** from [SSL Labs](https://www.ssllabs.com/ssltest/analyze.html?d=silgy.org).
+4. **Security**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it. My application consistently gets grade **A** from [SSL Labs](https://www.ssllabs.com/ssltest/analyze.html?d=silgy.org).
 
 ![SSL Labs](https://minishare.com/show?p=K8GvQDag&i=2)
 
-1. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
+5. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
 
-1. **Simplicity**. Before writing my own web server, I tried a couple of libraries. They were either complicated, not intuitive, bloated or slow. Some look promising (Node.js), however database connections proved to be too slow for my needs. There's also a tendency for using every new fireworks that's available in town, like i.e. functional programming. I just don't feel comfortable with this, so I wanted **straight, intuitive, procedural, single-threaded code**. All the complexity needs to be hidden in the library.
+6. **Simplicity**. Before writing my own web server, I tried a couple of libraries. They were either complicated, not intuitive, bloated or slow. Some look promising (Node.js), however database connections proved to be too slow for my needs. There's also a tendency for using every new fireworks that's available in town, like i.e. functional programming. I just don't feel comfortable with this, so I wanted **straight, intuitive, procedural, single-threaded code**. All the complexity needs to be hidden in the library.
 
-1. **Beautiful URL**. I want `full/control/over/my/URIs`.
+7. **Beautiful URL**. I want `full/control/over/my/URIs`.
 
-1. **Planet-friendliness**. Even if I could afford fat, 64-core, 512 GB RAM VS, why would I waste the Earth? It turns out, data centers have become a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
+8. **Planet-friendliness**. Even if I could afford fat, 64-core, 512 GB RAM VS, why would I waste the Earth? It turns out, data centers have become a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
 
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
 
