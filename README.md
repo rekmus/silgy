@@ -17,13 +17,15 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 1. It has to be **responsive**, in a way compiled programs used locally are responsive. It needs to feel solid and reliable. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/show?p=MWPcAbmY).
 
+![Pingdom](https://minishare.com/preview?p=MWPcAbmY&i=2 =400)
+
 1. It needs to be **universal**. Silgy applications work on _every_ currently used browser.
 
 1. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~1000 users' application and use ~1% of the server's resources.
 
 1. **Security**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it. My application consistently gets grade **A** from [SSL Labs](https://www.ssllabs.com/ssltest/analyze.html?d=silgy.org).
 
-![SSL Labs](https://minishare.com/show?p=K8GvQDag&i=2)
+![SSL Labs](https://minishare.com/show?p=K8GvQDag&i=2 =1110)
 
 1. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
 
