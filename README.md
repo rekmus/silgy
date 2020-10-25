@@ -33,7 +33,7 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 7. **Beautiful URL**. I want `full/control/over/my/URIs`.
 
-8. **Planet-friendliness**. Even if I could afford fat, 64-core, 512 GB RAM VS, why would I waste the Earth? It turns out, data centers have become a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
+8. **Planet-friendliness**. Even if I could afford fat, 64-core, with terabyte of RAM server, why would I want to pay for that and waste the Earth? It turns out, data centers have become a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
 
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
 
