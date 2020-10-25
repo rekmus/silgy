@@ -17,7 +17,7 @@ Back in 2015 I decided to write a web application and had a wishlist:
 
 1. It has to be **responsive**, in a way compiled programs used locally are responsive. It needs to feel solid and reliable. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/show?p=MWPcAbmY).
 
-![Pingdom](https://minishare.com/preview?p=MWPcAbmY&i=2 =400)
+![Pingdom](https://minishare.com/show?p=MWPcAbmY&i=2 =400)
 
 1. It needs to be **universal**. Silgy applications work on _every_ currently used browser.
 
