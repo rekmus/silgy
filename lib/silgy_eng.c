@@ -4167,7 +4167,7 @@ static int parse_req(int ci, int len)
 
             if ( 0==strcmp(conn[ci].method, "GET") )
             {
-                /* just go ahead */
+                conn[ci].in_ctype = CONTENT_TYPE_URLENCODED;
             }
             else if ( 0==strcmp(conn[ci].method, "POST") || 0==strcmp(conn[ci].method, "PUT") || 0==strcmp(conn[ci].method, "DELETE") )
             {
