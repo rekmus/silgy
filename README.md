@@ -15,23 +15,31 @@ It can act as:
 
 Back in 2015 I decided to write a web application and had a wishlist:
 
-1. It has to be **responsive**, in a way compiled programs used locally are responsive. It needs to feel solid and reliable. My application consistently gets "Faster than 100% of tested sites" [badge from Pingdom](https://minishare.com/show?p=MWPcAbmY).
+1. It has to be **responsive**, in a way compiled programs used locally are responsive. It needs to feel solid and reliable. My application consistently gets "Faster than 100% of tested sites" badge from [Pingdom](https://tools.pingdom.com).
 
-1. It needs to be **universal**. Silgy applications work on _every_ currently used browser.
+    ![Pingdom](https://minishare.com/show?p=MWPcAbmY&i=2)
 
-1. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~1000 users' application and use ~1% of the server's resources.
+2. It needs to be **universal**. Silgy applications work on _every_ currently used browser.
 
-1. **Safety**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it. My application consistently gets grade **A** from [SSL Labs](https://www.ssllabs.com/ssltest/analyze.html?d=silgy.org).
+3. Host it for **free** or at negligible cost. Websites that don't survive at least 10 years (or have a huge marketing budget) don't matter – it's not 1995 anymore. I wanted to make sure I'll be able to afford hosting for the rest of my life, or until users count would reach at least a million. I actually pay $3 per month for my ~1000 users' application and use ~1% of the server's resources.
 
-1. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
+4. **Security**. Again, it's not 1995 anymore. Put your server online, set *logLevel* to 4 and see what's coming in. In literally few days you'll be flooded by bots trying every known hole in PHP, Wordpress and whatever-was-ever-cool. Silgy inverted the philosophy the older servers were once built on: instead of putting up the wall between the gates, Silgy is a fortress with a gate only where you want it. My application consistently gets grade **A** from [SSL Labs](https://www.ssllabs.com/ssltest).
 
-1. **Simplicity**. Before writing my own web server, I tried a couple of libraries. They were either complicated, not intuitive, bloated or slow. Some look promising (Node.js), however database connections proved to be too slow for my needs. There's also a tendency for using every new fireworks that's available in town, like i.e. functional programming. I just don't feel comfortable with this, so I wanted **straight, intuitive, procedural, single-threaded code**. All the complexity needs to be hidden in the library.
+    ![SSL Labs](https://minishare.com/show?p=K8GvQDag&i=2)
 
-1. **Beautiful URL**. I want `full/control/over/my/URIs`.
+5. **Independency**. AWS getting nasty? It'd take 60 minutes to move anywhere else, most of them spent on setting up an account at my new cloud provider. Then I only need to install GCC, MySQL, restore database from backup, clone my repo, `m`, Enter and `silgystart`, Enter.
 
-1. **Planet-friendliness**. Even if I could afford fat, 64-core, 512 GB RAM VS, why would I waste the Earth? It turns out, data centers have become a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
+6. **Simplicity**. Before writing my own web server, I tried a couple of libraries. They were either complicated, not intuitive, bloated or slow. Some look promising (Node.js), however database connections proved to be too slow for my needs. There's also a tendency for using every new fireworks that's available in town, like i.e. functional programming. I just don't feel comfortable with this, so I wanted **straight, intuitive, procedural, single-threaded code**. All the complexity needs to be hidden in the library.
+
+7. **Beautiful URL**. I want `full/control/over/my/URIs`.
+
+8. **Planet-friendliness**. Even if I could afford fat, 64-core, with terabyte of RAM server, why would I want to pay for that and waste the Earth? It turns out, data centers have become a major pollutant: [Short BBC video on this](https://www.bbc.com/news/av/stories-51742336/dirty-streaming-the-internet-s-big-secret).
 
 As my wishes had come true, I decided to open my code and become famous. You're welcome.
+
+## IP2Location Demo
+
+Here: https://github.com/silgy/ip2loc is the simple demo web application using Silgy to log visitors with their location in database. It uses [IP2Location™ LITE IP-COUNTRY](https://lite.ip2location.com/database/ip-country) free database. Live instance: http://silgy.org:2020
 
 ## Node++ announcement
 
