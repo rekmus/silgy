@@ -8149,6 +8149,7 @@ static int minify_2(char *dest, const char *src)
                     || 0==strcmp(word, "new")
                     || 0==strcmp(word, "enum")
                     || 0==strcmp(word, "const")
+                    || 0==strcmp(word, "import")
                     || (0==strcmp(word, "return") && src[i]!=';') )
                 dest[j++] = ' ';
             openwo = FALSE;
