@@ -8236,7 +8236,11 @@ bool lib_read_conf(const char *file)
 
     /* open the conf file */
 
+#ifdef _WIN32   /* Windows */
+    if ( NULL == (h_file=fopen(file, "rb")) )
+#else
     if ( NULL == (h_file=fopen(file, "r")) )
+#endif
     {
 //        printf("Error opening %s, using defaults.\n", file);
         return FALSE;
@@ -8262,119 +8266,6 @@ bool lib_read_conf(const char *file)
 
     return TRUE;
 }
-
-
-#ifdef OLD_CODE
-bool lib_read_conf(const char *file)
-{
-    FILE    *h_file=NULL;
-    int     c=0;
-    int     i=0;
-    char    now_label=1;
-    char    now_value=0;
-    char    now_comment=0;
-    char    label[64]="";
-    char    value[256]="";
-
-    /* open the conf file */
-
-    if ( NULL == (h_file=fopen(file, "r")) )
-    {
-//        printf("Error opening %s, using defaults.\n", file);
-        return FALSE;
-    }
-
-    /* read content into M_conf for silgy_read_param */
-
-    fseek(h_file, 0, SEEK_END);     /* determine the file size */
-    long size = ftell(h_file);
-    rewind(h_file);
-    if ( (M_conf=(char*)malloc(size+1)) == NULL )
-    {
-        printf("ERROR: Couldn't get %ld bytes for M_conf\n", size+1);
-        fclose(h_file);
-        return FALSE;
-    }
-    fread(M_conf, size, 1, h_file);
-    *(M_conf+size) = EOS;
-    rewind(h_file);
-
-    /* parse the conf file */
-
-    while ( EOF != (c=fgetc(h_file)) )
-    {
-        if ( c == '\r' ) continue;
-
-        if ( !now_value && (c == ' ' || c == '\t') ) continue;  /* omit whitespaces */
-
-        if ( c == '\n' )    /* end of value or end of comment or empty line */
-        {
-            if ( now_value )    /* end of value */
-            {
-                value[i] = EOS;
-#ifndef SILGY_SVC
-                eng_set_param(label, value);
-//                app_set_param(label, value);
-#endif
-            }
-            now_label = 1;
-            now_value = 0;
-            now_comment = 0;
-            i = 0;
-        }
-        else if ( now_comment )
-        {
-            continue;
-        }
-        else if ( c == '=' )    /* end of label */
-        {
-            now_label = 0;
-            now_value = 1;
-            label[i] = EOS;
-            i = 0;
-        }
-        else if ( c == '#' )    /* possible end of value */
-        {
-            if ( now_value )    /* end of value */
-            {
-                value[i] = EOS;
-#ifndef SILGY_SVC
-                eng_set_param(label, value);
-//                app_set_param(label, value);
-#endif
-            }
-            now_label = 0;
-            now_value = 0;
-            now_comment = 1;
-            i = 0;
-        }
-        else if ( now_label )   /* label */
-        {
-            label[i] = c;
-            ++i;
-        }
-        else if ( now_value )   /* value */
-        {
-            value[i] = c;
-            ++i;
-        }
-    }
-
-    if ( now_value )    /* end of value */
-    {
-        value[i] = EOS;
-#ifndef SILGY_SVC
-        eng_set_param(label, value);
-//        app_set_param(label, value);
-#endif
-    }
-
-    if ( NULL != h_file )
-        fclose(h_file);
-
-    return TRUE;
-}
-#endif  /* OLD_CODE */
 
 
 /* --------------------------------------------------------------------------
@@ -8496,7 +8387,7 @@ static char pidfilename[512];
         INF("Killing the old process...");
 #ifdef _WIN32   /* Windows */
         /* open the pid file and read process id */
-        if ( NULL == (fpid=fopen(pidfilename, "r")) )
+        if ( NULL == (fpid=fopen(pidfilename, "rb")) )
         {
             ERR("Couldn't open pid file for reading");
             return NULL;
@@ -8539,7 +8430,11 @@ static char pidfilename[512];
 
     /* create a pid file */
 
+#ifdef _WIN32   /* Windows */
+    if ( NULL == (fpid=fopen(pidfilename, "wb")) )
+#else
     if ( NULL == (fpid=fopen(pidfilename, "w")) )
+#endif
     {
         INF("Tried to create [%s]", pidfilename);
         ERR("Failed to create pid file, errno = %d (%s)", errno, strerror(errno));
