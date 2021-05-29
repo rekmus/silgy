@@ -1,6 +1,10 @@
+# Node++
+
+If you're starting a new project, [Node++](https://github.com/silgy/nodepp) is now recommended.
+
 # Silgy
 
-Silgy is an extreme speed asynchronous web application backend engine. It can render pages in **microseconds**, even with a database, when used with efficient [DAO/ORM class](https://silgy.org/mysqldaogen) (see [live demo](https://silgy.org/products)).
+Silgy is an extreme speed asynchronous web application backend engine. It can render pages in **microseconds**, even with a database, when used with efficient [DAO/ORM class](https://nodepp.org/mysqldaogen) (see [live demo](https://nodepp.org/products)).
 
 It's open-source and free.
 
@@ -77,7 +81,7 @@ In case of using Silgy under heavy load or with external API calls, there's the 
 
 ## [Full documentation](https://github.com/silgy/silgy/wiki)
 
-## [Generate RESTful API](https://silgy.org/restapigen) as Silgy project
+## [Generate RESTful API](https://nodepp.org/restapigen) as Silgy project
 
 ## Hello Worlds
 
