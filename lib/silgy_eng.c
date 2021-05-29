@@ -990,7 +990,7 @@ static void set_expiry_dates()
     strcpy(M_expires_stat, time_epoch2http(G_now + 3600*24*EXPIRES_STATICS));
     DBG("New M_expires_stat: %s", M_expires_stat);
 
-    strcpy(M_expires_stat, time_epoch2http(G_now + 3600*24*EXPIRES_GENERATED));
+    strcpy(M_expires_gen, time_epoch2http(G_now + 3600*24*EXPIRES_GENERATED));
     DBG("New M_expires_gen: %s", M_expires_gen);
 }
 
