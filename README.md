@@ -1,4 +1,4 @@
-# Node++
+## Silgy
 
 If you're starting a new project, [Node++](https://github.com/silgy/nodepp) is now recommended.
 
